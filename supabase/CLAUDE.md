@@ -12,12 +12,20 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Current schema:
+Migrations live in `migrations/`. Three migrations in order:
 
-- `profiles` — `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
-  - RLS: users read/insert/update own rows only
-  - Trigger: auto-create profile on signup
-  - Trigger: auto-update `updated_at`
+1. `20260527002635_init_profiles.sql` — `profiles` table
+   - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
+   - RLS: users read/insert/update own rows only
+   - Trigger: auto-create profile on signup
+   - Trigger: auto-update `updated_at`
+
+2. `20260527111842_create_lore_entries.sql` — `lore_entries` table
+   - `id`, `slug`, `title`, `category` (enum), `content`, `pathway`, `epoch`, `city`, `npcs`, `sequences`, `tags`, `token_count`, `embedding` (vector 1536, nullable)
+   - RLS: authenticated users can read all entries
+   - Unique index on `slug`
+
+3. `20260527113655_seed_lore_entries.sql` — Seed data for lore entries (4 pathways, NPCs, locations, organizations)
 
 ## Auth Email Templates
 

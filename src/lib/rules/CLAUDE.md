@@ -6,12 +6,12 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 
 ## Structure
 
-- `pathways.ts` — Pathway and sequence definitions (abilities, ingredients, rituals). ~1650 lines of game data.
+- `pathways.ts` — Pathway and sequence definitions (abilities, ingredients, rituals). ~1,240 lines of game data.
 - `groups.ts` — Pathway group clustering (mysteries, god-almighty, eternal-darkness) and neighbor relationships.
 - `laws.ts` — Three cosmic laws: indestructibility (conservation of total characteristic weight), conservation (sequential advancement only), convergence (same/neighboring pathway attraction).
 - `validation.ts` — High-level validation API: `validateAdvancement()` and `validateTransfer()`.
 - `index.ts` — Public exports.
-- `rules.test.ts` — Comprehensive test suite (32 suites).
+- `rules.test.ts` — Comprehensive test suite (8 describe blocks, ~55 test cases).
 
 ## Key Types (from `@/lib/types/rules`)
 
