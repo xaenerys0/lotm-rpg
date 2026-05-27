@@ -25,6 +25,7 @@ src/
 │   └── auth/callback/   #   OAuth code-exchange handler
 ├── components/          # React components (auth/, ui/, game/)
 ├── lib/
+│   ├── lore/            # Lore database — RAG-ready chunks for AI layer
 │   ├── rules/           # Rules engine — pathways, laws, validation
 │   ├── supabase/        # Client factories (browser, server, middleware)
 │   ├── types/           # TypeScript type definitions
@@ -51,6 +52,18 @@ docs/
 - **Tests** colocated as `*.test.ts`, run with Vitest.
 - **No component libraries** — pure Tailwind utility classes.
 
+## Pre-Commit Checklist
+
+Before every commit, verify **all** of the following pass:
+
+1. `pnpm test` — all tests pass.
+2. `pnpm vitest run --coverage` — **95% minimum** on statements, branches, functions, and lines. Thresholds are enforced in `vitest.config.mts`; the build fails if coverage drops below 95%. When adding new logic in `src/lib/`, add or update colocated `*.test.ts` files to maintain coverage.
+3. `pnpm typecheck` — no TypeScript errors.
+4. `pnpm lint` — no ESLint errors or warnings.
+5. `pnpm format:check` — all files match Prettier style (run `pnpm format` to fix).
+6. **Update scoped CLAUDE.md docs** — if you add, rename, or remove files in a directory that has a `CLAUDE.md`, update that doc to reflect the change. Stale docs mislead future work. Check the list under "Scoped Documentation" below.
+7. **Keep database.ts in sync** — when adding Supabase migrations, update `src/lib/types/database.ts` to match the new schema.
+
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and fill in values:
@@ -66,6 +79,7 @@ Each major directory has its own `CLAUDE.md` with context-specific rules:
 
 - `src/app/CLAUDE.md` — routing, middleware, auth flow
 - `src/components/CLAUDE.md` — component patterns, styling
+- `src/lib/lore/CLAUDE.md` — lore database, RAG chunking, query helpers
 - `src/lib/rules/CLAUDE.md` — rules engine architecture
 - `src/lib/supabase/CLAUDE.md` — client factories, RLS
 - `src/lib/types/CLAUDE.md` — type conventions
