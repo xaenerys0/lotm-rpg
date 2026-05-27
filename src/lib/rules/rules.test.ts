@@ -154,6 +154,10 @@ describe("pathway groups", () => {
     expect(areNeighboringPathways(1, 3)).toBe(false);
     expect(areNeighboringPathways(3, 4)).toBe(false);
   });
+
+  it("areNeighboringPathways returns false for unknown pathway", () => {
+    expect(areNeighboringPathways(999, 1)).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -511,6 +515,27 @@ describe("prerequisite validation", () => {
       result.violations.some((v) => v.message.includes("Unknown pathway")),
     ).toBe(true);
   });
+
+  it("rejects unknown target sequence for a valid pathway", () => {
+    const attempt: AdvancementAttempt = {
+      characterId: "player-1",
+      currentPathwayId: 1,
+      currentSequence: 5,
+      targetSequence: 4,
+      consumedCharacteristics: [
+        { pathwayId: 1, sequenceLevel: 5, quantity: 1 },
+      ],
+      availableItems: [],
+      ritualCompleted: true,
+    };
+    const result = validatePrerequisites(attempt);
+    expect(result.valid).toBe(false);
+    expect(
+      result.violations.some((v) =>
+        v.message.includes("Unknown target sequence"),
+      ),
+    ).toBe(true);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -584,6 +609,28 @@ describe("validation API", () => {
     };
     const result = validateTransfer(transfer, ledger);
     expect(result.valid).toBe(false);
+  });
+
+  it("accepts advancement when target sequence already exists in the ledger", () => {
+    const ledger: WorldCharacteristicLedger = {
+      characteristics: [
+        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
+        { pathwayId: 1, sequenceLevel: 8, quantity: 1 },
+      ],
+    };
+    const attempt: AdvancementAttempt = {
+      characterId: "player-1",
+      currentPathwayId: 1,
+      currentSequence: 9,
+      targetSequence: 8,
+      consumedCharacteristics: [
+        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
+      ],
+      availableItems: makeItems(1, 8),
+      ritualCompleted: true,
+    };
+    const result = validateAdvancement(attempt, ledger);
+    expect(result.valid).toBe(true);
   });
 
   it("validates all four pathways' Seq 9→8 advancement with correct items", () => {
