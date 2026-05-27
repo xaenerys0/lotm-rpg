@@ -48,7 +48,7 @@ export default function PlayPage() {
 
       <div className="my-10 flex items-center gap-4" aria-hidden="true">
         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-        <span className="font-serif text-xs text-muted/25">&#10022;</span>
+        <span className="text-[10px] text-muted/25">&#9670;</span>
         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
       </div>
 

@@ -53,17 +53,6 @@
 
 @layer base {
   body {
-    background: var(--color-background);
-    color: var(--color-foreground);
-    font-family: var(--font-sans);
-  }
-
-  body::after {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
     background:
       radial-gradient(
         ellipse 80% 50% at 50% -10%,
@@ -79,7 +68,10 @@
         ellipse 50% 50% at 0% 60%,
         rgba(124, 58, 237, 0.012) 0%,
         transparent 100%
-      );
+      ),
+      var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
   }
 
   ::selection {

@@ -20,13 +20,13 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape" && mobileOpen) {
+      if (e.key === "Escape") {
         setMobileOpen(false);
       }
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [mobileOpen]);
+  }, []);
 
   async function handleSignOut() {
     setSigningOut(true);
@@ -34,7 +34,7 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
       const supabase = createClient();
       await supabase.auth.signOut();
       router.push("/login");
-    } finally {
+    } catch {
       setSigningOut(false);
     }
   }
@@ -118,7 +118,7 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
                   <Link
                     href={href}
                     onClick={() => setMobileOpen(false)}
-                    className={`group flex items-center rounded-md px-3 py-2.5 text-sm transition-all duration-150 ${
+                    className={`group flex items-center rounded-md px-3 py-2.5 text-sm transition-[color,background-color,box-shadow] duration-150 ${
                       isActive
                         ? "bg-amber/10 font-medium text-amber shadow-[inset_2px_0_0_var(--color-amber)]"
                         : "text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground"
