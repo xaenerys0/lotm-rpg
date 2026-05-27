@@ -1,0 +1,176 @@
+import type { Item, ValidationResult } from "@/lib/types/rules";
+import type { LoreEntry } from "@/lib/lore/types";
+
+export type ProviderId = "anthropic" | "openai" | "openrouter" | "ollama" | "custom";
+
+export type ModelTier = "routine" | "premium";
+
+export type CallClassification = ModelTier;
+
+export interface ProviderConfig {
+  providerId: ProviderId;
+  apiKey: string;
+  baseUrl?: string;
+  routineModel: string;
+  premiumModel: string;
+}
+
+export interface ModelOption {
+  id: string;
+  name: string;
+  tier: ModelTier;
+}
+
+export const PROVIDER_MODELS: Record<ProviderId, ModelOption[]> = {
+  anthropic: [
+    { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", tier: "routine" },
+    { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", tier: "routine" },
+    { id: "claude-opus-4-7", name: "Claude Opus 4.7", tier: "premium" },
+  ],
+  openai: [
+    { id: "gpt-4o-mini", name: "GPT-4o Mini", tier: "routine" },
+    { id: "gpt-4o", name: "GPT-4o", tier: "premium" },
+    { id: "o3-mini", name: "o3-mini", tier: "premium" },
+  ],
+  openrouter: [
+    {
+      id: "anthropic/claude-haiku-4-5-20251001",
+      name: "Claude Haiku 4.5",
+      tier: "routine",
+    },
+    { id: "openai/gpt-4o-mini", name: "GPT-4o Mini", tier: "routine" },
+    { id: "anthropic/claude-sonnet-4-6", name: "Claude Sonnet 4.6", tier: "premium" },
+    { id: "openai/gpt-4o", name: "GPT-4o", tier: "premium" },
+  ],
+  ollama: [
+    { id: "llama3.2", name: "Llama 3.2", tier: "routine" },
+    { id: "mistral", name: "Mistral", tier: "routine" },
+    { id: "llama3.1:70b", name: "Llama 3.1 70B", tier: "premium" },
+  ],
+  custom: [],
+};
+
+export interface Choice {
+  id: string;
+  text: string;
+  type: "action" | "dialogue" | "investigation" | "ritual";
+}
+
+export interface StateChange {
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
+  reason: string;
+}
+
+export interface ActingEvaluation {
+  alignment: number;
+  reasoning: string;
+}
+
+export interface AIResponse {
+  narrative: string;
+  choices?: Choice[];
+  worldStateChanges?: StateChange[];
+  actingEvaluation?: ActingEvaluation;
+  sanityImpact?: number;
+  itemsDiscovered?: Item[];
+}
+
+export interface ValidatedAIResponse {
+  response: AIResponse;
+  validation: ValidationResult;
+}
+
+export type InstructionType =
+  | "narrative"
+  | "choices"
+  | "evaluation"
+  | "advancement"
+  | "combat";
+
+export interface GameState {
+  characterId: string;
+  pathwayId: number;
+  sequenceLevel: number;
+  sanity: number;
+  maxSanity: number;
+  inventory: Item[];
+  location: string;
+  activeQuests: string[];
+  npcsPresent: string[];
+}
+
+export interface TurnRecord {
+  turnNumber: number;
+  playerAction: string;
+  aiResponse: AIResponse;
+  timestamp: number;
+}
+
+export interface BulletSummary {
+  turnNumber: number;
+  summary: string;
+}
+
+export interface SessionFact {
+  type: "event" | "npc-encounter" | "item-change" | "quest-progress";
+  description: string;
+  turnNumber: number;
+}
+
+export interface MemoryState {
+  immediateTurns: TurnRecord[];
+  recentSummaries: BulletSummary[];
+  sessionFacts: SessionFact[];
+}
+
+export interface PromptLayer {
+  role: "system" | "user";
+  content: string;
+  cacheControl?: boolean;
+}
+
+export interface PromptAssembly {
+  layers: PromptLayer[];
+  totalTokenEstimate: number;
+}
+
+export interface LoreContext {
+  entries: LoreEntry[];
+  totalTokens: number;
+}
+
+export interface PromptInput {
+  gameState: GameState;
+  memory: MemoryState;
+  loreContext: LoreContext;
+  instruction: InstructionType;
+  playerAction: string;
+  abilities: string[];
+  actingRequirements: string[];
+}
+
+export interface ChatMessage {
+  role: "system" | "user" | "assistant";
+  content: string;
+}
+
+export interface ProviderRequest {
+  messages: ChatMessage[];
+  model: string;
+  temperature: number;
+  maxTokens: number;
+  responseFormat?: { type: "json_object" };
+}
+
+export interface ProviderResponse {
+  content: string;
+  model: string;
+  usage: {
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+    cacheHit?: boolean;
+  };
+}

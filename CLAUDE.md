@@ -25,11 +25,11 @@ src/
 │   └── auth/callback/   #   OAuth code-exchange handler
 ├── components/          # React components (auth/, ui/, game/)
 ├── lib/
+│   ├── ai/              # AI integration — providers, prompts, memory, validation
 │   ├── lore/            # Lore database — RAG-ready chunks for AI layer
 │   ├── rules/           # Rules engine — pathways, laws, validation
 │   ├── supabase/        # Client factories (browser, server, middleware)
-│   ├── types/           # TypeScript type definitions
-│   └── ai/              # AI integration (planned)
+│   └── types/           # TypeScript type definitions
 ├── proxy.ts             # Middleware — CSP headers + auth session refresh
 └── app/globals.css      # Tailwind v4 theme tokens
 supabase/
@@ -79,6 +79,7 @@ Each major directory has its own `CLAUDE.md` with context-specific rules:
 
 - `src/app/CLAUDE.md` — routing, middleware, auth flow
 - `src/components/CLAUDE.md` — component patterns, styling
+- `src/lib/ai/CLAUDE.md` — AI integration, providers, prompts, memory
 - `src/lib/lore/CLAUDE.md` — lore database, RAG chunking, query helpers
 - `src/lib/rules/CLAUDE.md` — rules engine architecture
 - `src/lib/supabase/CLAUDE.md` — client factories, RLS

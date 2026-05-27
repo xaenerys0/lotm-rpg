@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
     "default-src 'self'",
     scriptSrc,
     "style-src 'self' 'unsafe-inline'",
-    `connect-src 'self' https://*.supabase.co`,
+    `connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.openai.com https://openrouter.ai http://localhost:* http://127.0.0.1:*`,
     "img-src 'self' data: blob:",
     "font-src 'self'",
     "frame-ancestors 'none'",
