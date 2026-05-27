@@ -15,7 +15,7 @@ Next.js App Router with two route groups:
 
 1. Generates a CSP nonce and sets security headers
 2. Calls `updateSession()` from `@/lib/supabase/middleware` to refresh the auth session
-3. Redirects unauthenticated users away from protected routes (e.g. `/play` -> `/login`)
+3. Redirects unauthenticated users away from protected routes (`/play`, `/character`, `/journal`, `/settings` -> `/login`)
 
 ## Auth Flow
 
@@ -28,4 +28,12 @@ Next.js App Router with two route groups:
 ## Layouts
 
 - Root layout (`layout.tsx`): loads Geist Sans/Mono and Lora fonts, sets CSS custom properties
-- Route group layouts are passthrough (`<>{children}</>`)
+- Auth layout (`(auth)/layout.tsx`): passthrough (`<>{children}</>`)
+- Game layout (`(game)/layout.tsx`): authenticated shell with sidebar navigation and user profile. Fetches user server-side and redirects to `/login` if unauthenticated.
+
+## Game Routes
+
+- `/play` — Dashboard / landing page with game start/continue actions
+- `/character` — Character creation and sheet (stub)
+- `/journal` — Story journal (stub)
+- `/settings` — AI provider configuration and preferences (stub)

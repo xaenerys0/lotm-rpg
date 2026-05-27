@@ -350,10 +350,11 @@ export class OllamaAdapter implements LLMProviderAdapter {
     return this.parseResponse(raw);
   }
 
-  async validateKey(/* apiKey unused for local Ollama */): Promise<{
+  async validateKey(apiKey: string): Promise<{
     valid: boolean;
     error?: string;
   }> {
+    void apiKey;
     try {
       await fetchWithErrorHandling(`${this.baseUrl}/api/tags`, {
         method: "GET",
