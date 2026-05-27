@@ -20,7 +20,7 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 
 ## Database Table
 
-`lore_entries` in Supabase (migration `20260527120000`). Seeded by `20260527120001`.
+`lore_entries` in Supabase (migration `20260527111842`). Seeded by `20260527113655`.
 
 Metadata columns for filtering: `category`, `pathway`, `epoch`, `city`, `npcs`, `sequences`, `tags`.
 `embedding` column (vector 1536) is nullable — populated post-MVP via pgvector.
