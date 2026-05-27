@@ -49,10 +49,10 @@ describe("Lore data integrity", () => {
     }
   });
 
-  it("token counts are within RAG chunk range (100-500)", () => {
+  it("token counts are within RAG chunk range (100-800)", () => {
     for (const entry of ALL_LORE_ENTRIES) {
       expect(entry.tokenCount).toBeGreaterThanOrEqual(100);
-      expect(entry.tokenCount).toBeLessThanOrEqual(500);
+      expect(entry.tokenCount).toBeLessThanOrEqual(800);
     }
   });
 

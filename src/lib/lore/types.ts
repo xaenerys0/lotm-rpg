@@ -1,10 +1,6 @@
-export type LoreCategory =
-  | "pathway"
-  | "npc"
-  | "location"
-  | "event"
-  | "organization"
-  | "metaphysics";
+import type { LoreCategoryEnum } from "@/lib/types/database";
+
+export type LoreCategory = LoreCategoryEnum;
 
 export interface LoreEntry {
   slug: string;

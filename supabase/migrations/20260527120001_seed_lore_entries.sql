@@ -1,4 +1,3 @@
-npm warn exec The following package was not found and will be installed: tsx@4.22.3
 -- Seed lore entries for MVP (4 pathways, Tingen City, Fifth Epoch)
 -- Generated from src/lib/lore/ TypeScript source files
 
@@ -781,10 +780,3 @@ values (
   ARRAY['death-pathway', 'undying', 'resurrection', 'undead-legion', 'mid-sequence-apex'],
   290
 );
-
-
-npm notice
-npm notice New major version of npm available! 10.9.7 -> 11.15.0
-npm notice Changelog: https://github.com/npm/cli/releases/tag/v11.15.0
-npm notice To update run: npm install -g npm@11.15.0
-npm notice

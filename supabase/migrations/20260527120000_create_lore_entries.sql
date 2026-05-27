@@ -1,6 +1,9 @@
 -- Lore entries table for RAG retrieval
 -- Each row is a semantic chunk (300-800 tokens) of lore content
 
+-- pgvector for future embedding-based retrieval (nullable column for MVP)
+create extension if not exists vector with schema extensions;
+
 create type public.lore_category as enum (
   'pathway',
   'npc',
@@ -23,7 +26,7 @@ create table public.lore_entries (
   sequences smallint[] not null default '{}',
   tags text[] not null default '{}',
   token_count smallint not null,
-  embedding vector(1536),
+  embedding extensions.vector(1536),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
