@@ -74,14 +74,18 @@ export function parseAIResponse(raw: string): AIResponse {
 
   if (obj.actingEvaluation !== undefined && obj.actingEvaluation !== null) {
     const eval_ = obj.actingEvaluation as Record<string, unknown>;
+    const rawAlignment = Number(eval_.alignment ?? 0);
     response.actingEvaluation = {
-      alignment: Number(eval_.alignment ?? 0),
+      alignment: Number.isFinite(rawAlignment) ? rawAlignment : 0,
       reasoning: String(eval_.reasoning ?? ""),
     };
   }
 
   if (obj.sanityImpact !== undefined && obj.sanityImpact !== null) {
-    response.sanityImpact = Number(obj.sanityImpact);
+    const rawImpact = Number(obj.sanityImpact);
+    if (Number.isFinite(rawImpact)) {
+      response.sanityImpact = rawImpact;
+    }
   }
 
   if (obj.itemsDiscovered !== undefined) {
@@ -184,6 +188,18 @@ export function sanitizeAIResponse(response: AIResponse): AIResponse {
     sanitized.actingEvaluation.alignment = Math.max(
       0,
       Math.min(1, sanitized.actingEvaluation.alignment),
+    );
+  }
+
+  if (sanitized.itemsDiscovered) {
+    sanitized.itemsDiscovered = sanitized.itemsDiscovered.filter(
+      (item) => item.name && item.description,
+    );
+  }
+
+  if (sanitized.worldStateChanges) {
+    sanitized.worldStateChanges = sanitized.worldStateChanges.filter(
+      (change) => change.field && change.reason,
     );
   }
 

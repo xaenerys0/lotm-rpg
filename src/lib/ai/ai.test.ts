@@ -438,6 +438,56 @@ describe("providers", () => {
       ).rejects.toThrow(AIError);
     });
 
+    it("makeRequest wraps non-JSON 200 response as MALFORMED_OUTPUT", async () => {
+      const adapter = new OpenAIAdapter();
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve("<html>Maintenance</html>"),
+      } as Response);
+
+      try {
+        await adapter.makeRequest(
+          {
+            messages: [],
+            model: "gpt-4o-mini",
+            temperature: 0.8,
+            maxTokens: 1000,
+          },
+          "key",
+        );
+        expect.unreachable("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AIError);
+        expect((err as AIError).code).toBe("MALFORMED_OUTPUT");
+      }
+    });
+
+    it("makeRequest wraps response.text() failure as NETWORK_ERROR", async () => {
+      const adapter = new OpenAIAdapter();
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.reject(new Error("body stream interrupted")),
+      } as Response);
+
+      try {
+        await adapter.makeRequest(
+          {
+            messages: [],
+            model: "gpt-4o-mini",
+            temperature: 0.8,
+            maxTokens: 1000,
+          },
+          "key",
+        );
+        expect.unreachable("should have thrown");
+      } catch (err) {
+        expect(err).toBeInstanceOf(AIError);
+        expect((err as AIError).code).toBe("NETWORK_ERROR");
+      }
+    });
+
     it("validateKey returns valid on success", async () => {
       const adapter = new OpenAIAdapter();
       vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
@@ -655,7 +705,7 @@ describe("providers", () => {
       expect(result.valid).toBe(false);
     });
 
-    it("validateKey returns valid on non-auth errors", async () => {
+    it("validateKey returns valid on transient errors (rate limited)", async () => {
       const adapter = new AnthropicAdapter();
       vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
         ok: false,
@@ -665,6 +715,18 @@ describe("providers", () => {
 
       const result = await adapter.validateKey("key");
       expect(result.valid).toBe(true);
+    });
+
+    it("validateKey returns invalid on quota exceeded", async () => {
+      const adapter = new AnthropicAdapter();
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: false,
+        status: 402,
+        text: () => Promise.resolve("payment required"),
+      } as Response);
+
+      const result = await adapter.validateKey("key");
+      expect(result.valid).toBe(false);
     });
   });
 
@@ -1432,6 +1494,21 @@ describe("memory", () => {
       state = addTurn(state, turn);
       expect(state.sessionFacts.length).toBeGreaterThan(0);
     });
+
+    it("caps session facts at maximum", () => {
+      let state = createMemoryState();
+      for (let i = 1; i <= 50; i++) {
+        const turn = makeTurnRecord(i);
+        turn.aiResponse.itemsDiscovered = [
+          { name: `Item${i}`, description: "desc", category: "main-ingredient" },
+        ];
+        turn.aiResponse.worldStateChanges = [
+          { field: "x", oldValue: i - 1, newValue: i, reason: "change" },
+        ];
+        state = addTurn(state, turn);
+      }
+      expect(state.sessionFacts.length).toBeLessThanOrEqual(40);
+    });
   });
 
   describe("estimateMemoryTokens", () => {
@@ -1470,6 +1547,19 @@ describe("memory", () => {
       }
       const trimmed = trimMemoryForBudget(state, 1);
       expect(trimmed.recentSummaries).toHaveLength(0);
+    });
+
+    it("drops session facts if still over budget", () => {
+      let state = createMemoryState();
+      for (let i = 1; i <= 30; i++) {
+        const turn = makeTurnRecord(i);
+        turn.aiResponse.itemsDiscovered = [
+          { name: `Item${i}`, description: "desc", category: "main-ingredient" },
+        ];
+        state = addTurn(state, turn);
+      }
+      const trimmed = trimMemoryForBudget(state, 1);
+      expect(trimmed.sessionFacts).toHaveLength(0);
     });
   });
 
@@ -1648,6 +1738,24 @@ describe("validation", () => {
       });
       const result = parseAIResponse(json);
       expect(result.sanityImpact).toBeUndefined();
+    });
+
+    it("discards NaN sanityImpact from non-numeric string", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        sanityImpact: "severe",
+      });
+      const result = parseAIResponse(json);
+      expect(result.sanityImpact).toBeUndefined();
+    });
+
+    it("defaults NaN alignment to 0", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        actingEvaluation: { alignment: "high", reasoning: "good" },
+      });
+      const result = parseAIResponse(json);
+      expect(result.actingEvaluation!.alignment).toBe(0);
     });
 
     it("throws on null input", () => {
@@ -1987,6 +2095,46 @@ describe("validation", () => {
       const response: AIResponse = { narrative: "test" };
       const sanitized = sanitizeAIResponse(response);
       expect(sanitized.actingEvaluation).toBeUndefined();
+    });
+
+    it("removes items with empty name", () => {
+      const response = makeValidAIResponse();
+      response.itemsDiscovered = [
+        { name: "", description: "desc", category: "main-ingredient" },
+        { name: "Valid Item", description: "valid", category: "main-ingredient" },
+      ];
+      const sanitized = sanitizeAIResponse(response);
+      expect(sanitized.itemsDiscovered).toHaveLength(1);
+      expect(sanitized.itemsDiscovered![0].name).toBe("Valid Item");
+    });
+
+    it("removes items with empty description", () => {
+      const response = makeValidAIResponse();
+      response.itemsDiscovered = [
+        { name: "Item", description: "", category: "main-ingredient" },
+      ];
+      const sanitized = sanitizeAIResponse(response);
+      expect(sanitized.itemsDiscovered).toHaveLength(0);
+    });
+
+    it("removes state changes with empty field", () => {
+      const response = makeValidAIResponse();
+      response.worldStateChanges = [
+        { field: "", oldValue: 1, newValue: 2, reason: "moved" },
+        { field: "location", oldValue: "a", newValue: "b", reason: "walked" },
+      ];
+      const sanitized = sanitizeAIResponse(response);
+      expect(sanitized.worldStateChanges).toHaveLength(1);
+      expect(sanitized.worldStateChanges![0].field).toBe("location");
+    });
+
+    it("removes state changes with empty reason", () => {
+      const response = makeValidAIResponse();
+      response.worldStateChanges = [
+        { field: "location", oldValue: "a", newValue: "b", reason: "" },
+      ];
+      const sanitized = sanitizeAIResponse(response);
+      expect(sanitized.worldStateChanges).toHaveLength(0);
     });
   });
 });

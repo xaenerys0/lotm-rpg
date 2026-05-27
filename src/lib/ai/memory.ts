@@ -9,6 +9,7 @@ import type {
 const IMMEDIATE_WINDOW_MAX = 5;
 const IMMEDIATE_WINDOW_MIN = 3;
 const RECENT_WINDOW_MAX = 15;
+const SESSION_FACTS_MAX = 40;
 const TOKEN_PER_TURN_ESTIMATE = 150;
 const TOKEN_PER_SUMMARY_ESTIMATE = 30;
 const TOKEN_PER_FACT_ESTIMATE = 20;
@@ -97,6 +98,10 @@ export function addTurn(state: MemoryState, turn: TurnRecord): MemoryState {
   const newFacts = extractSessionFacts(turn);
   next.sessionFacts.push(...newFacts);
 
+  while (next.sessionFacts.length > SESSION_FACTS_MAX) {
+    next.sessionFacts.shift();
+  }
+
   return next;
 }
 
@@ -126,6 +131,11 @@ export function trimMemoryForBudget(
 
   while (estimate > budgetTokens && trimmed.recentSummaries.length > 0) {
     trimmed.recentSummaries.shift();
+    estimate = estimateMemoryTokens(trimmed);
+  }
+
+  while (estimate > budgetTokens && trimmed.sessionFacts.length > 0) {
+    trimmed.sessionFacts.shift();
     estimate = estimateMemoryTokens(trimmed);
   }
 

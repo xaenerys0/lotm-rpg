@@ -47,13 +47,13 @@ async function executeWithRetry(
 ): Promise<ProviderResponse> {
   let lastError: AIError | undefined;
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= RETRY_DELAYS.length; attempt++) {
     try {
       return await adapter.makeRequest(request, apiKey);
     } catch (err) {
       if (err instanceof AIError) {
         lastError = err;
-        if (!err.retryable || attempt === MAX_RETRIES) {
+        if (!err.retryable || attempt >= RETRY_DELAYS.length) {
           throw err;
         }
         await sleep(RETRY_DELAYS[attempt]);

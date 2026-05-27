@@ -1,5 +1,5 @@
 import type { ChatMessage, ProviderId, ProviderRequest, ProviderResponse } from "./types";
-import { classifyHttpError, createNetworkError } from "./errors";
+import { AIError, classifyHttpError, createNetworkError } from "./errors";
 
 export interface LLMProviderAdapter {
   readonly name: ProviderId;
@@ -39,11 +39,24 @@ async function fetchWithErrorHandling(url: string, init: RequestInit): Promise<u
   } catch (err) {
     throw createNetworkError(err);
   }
-  const body = await response.text();
+  let body: string;
+  try {
+    body = await response.text();
+  } catch (err) {
+    throw createNetworkError(err);
+  }
   if (!response.ok) {
     throw classifyHttpError(response.status, body);
   }
-  return JSON.parse(body) as unknown;
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    throw new AIError(
+      "MALFORMED_OUTPUT",
+      "Provider returned non-JSON response",
+      body.slice(0, 500),
+    );
+  }
 }
 
 function parseOpenAIStyleResponse(raw: unknown): ProviderResponse {
@@ -214,10 +227,13 @@ export class AnthropicAdapter implements LLMProviderAdapter {
       return { valid: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      if (message.includes("Invalid or expired")) {
-        return { valid: false, error: message };
+      if (
+        err instanceof AIError &&
+        (err.code === "RATE_LIMITED" || err.code === "PROVIDER_ERROR")
+      ) {
+        return { valid: true };
       }
-      return { valid: true };
+      return { valid: false, error: message };
     }
   }
 }
