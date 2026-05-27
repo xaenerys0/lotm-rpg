@@ -6,6 +6,7 @@ import {
   FOOL_PATHWAY_LORE,
   getLoreByCategory,
   getLoreByCity,
+  getLoreByEpoch,
   getLoreByNpc,
   getLoreByPathway,
   getLoreBySequence,
@@ -147,6 +148,12 @@ describe("Lore query helpers", () => {
     const tingen = getLoreByCity("tingen");
     expect(tingen.length).toBeGreaterThan(0);
     expect(tingen.every((e) => e.city === "tingen")).toBe(true);
+  });
+
+  it("getLoreByEpoch filters correctly", () => {
+    const epoch5 = getLoreByEpoch(5);
+    expect(epoch5.length).toBeGreaterThan(0);
+    expect(epoch5.every((e) => e.epoch === 5)).toBe(true);
   });
 
   it("getLoreBySlug returns unique entry", () => {

@@ -42,6 +42,10 @@ export function getLoreByCity(city: string): LoreEntry[] {
   return ALL_LORE_ENTRIES.filter((e) => e.city === city);
 }
 
+export function getLoreByEpoch(epoch: number): LoreEntry[] {
+  return ALL_LORE_ENTRIES.filter((e) => e.epoch === epoch);
+}
+
 export function getLoreBySlug(slug: string): LoreEntry | undefined {
   return ALL_LORE_ENTRIES.find((e) => e.slug === slug);
 }
