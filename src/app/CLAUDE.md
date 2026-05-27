@@ -33,7 +33,7 @@ Next.js App Router with two route groups:
 
 ## Game Routes
 
-- `/play` — Dashboard / landing page with game start/continue actions
+- `/play` — Dashboard with pathway selection, new game, continue, and active game loop. Server component wraps `PlayDashboard` client component.
 - `/character` — Character creation and sheet (stub)
 - `/journal` — Story journal (stub)
-- `/settings` — AI provider configuration and preferences (stub)
+- `/settings` — AI provider configuration (BYOK) and preferences. Server component wraps `ProviderConfig` client component.

@@ -1,3 +1,5 @@
+import { ProviderConfig } from "@/components/game/provider-config";
+
 export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
@@ -13,15 +15,11 @@ export default function SettingsPage() {
           <h2 className="font-serif text-lg font-semibold text-foreground">
             AI Provider
           </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            Configure your AI provider for narrative generation. Support for multiple
-            providers and bring-your-own-key is planned.
+          <p className="mt-2 mb-6 text-sm leading-relaxed text-muted">
+            Configure your AI provider for narrative generation. Your API key is stored
+            locally in this browser and never sent to our servers.
           </p>
-          <div className="mt-4 rounded border border-dashed border-border/60 p-4 text-center">
-            <p className="text-xs italic text-muted/50">
-              Provider configuration &mdash; coming soon
-            </p>
-          </div>
+          <ProviderConfig />
         </section>
 
         <section className="rounded-lg border border-border bg-surface p-6 transition-colors duration-200 hover:border-amber/20">

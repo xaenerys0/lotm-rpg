@@ -28,9 +28,10 @@ src/
 │   └── page.tsx         #   Landing page (redirects to /login)
 ├── components/          # React components
 │   ├── auth/            #   Login & signup forms (client components)
-│   └── game/            #   Game shell — sidebar navigation
+│   └── game/            #   Game shell, provider config, game loop UI
 ├── lib/
 │   ├── ai/              # AI integration — providers, prompts, memory, validation
+│   ├── game/            # Game loop engine — state machine, world state, sessions
 │   ├── lore/            # Lore database — RAG-ready chunks for AI layer
 │   ├── rules/           # Rules engine — pathways, laws, validation
 │   ├── supabase/        # Client factories (browser, server, middleware)
@@ -54,7 +55,7 @@ docs/
 - **Supabase Auth** with email/password. RLS on all tables — users access only their own data.
 - **CSP nonces** generated in `src/proxy.ts` with `'strict-dynamic'`.
 - **Prettier**: double quotes, semicolons, trailing commas, 90-char print width. Config in `.prettierrc`.
-- **Tests** colocated as `*.test.ts`, run with Vitest 4.x. Coverage enforced on `src/lib/{rules,lore,ai}/**/*.ts` (excluding index files).
+- **Tests** colocated as `*.test.ts`, run with Vitest 4.x. Coverage enforced on `src/lib/{rules,lore,ai,game}/**/*.ts` (excluding index files).
 - **No component libraries** — pure Tailwind utility classes.
 - **PostCSS** via `@tailwindcss/postcss` plugin (config in `postcss.config.mjs`).
 - **Typed routes** enabled in `next.config.ts` (`typedRoutes: true`).
@@ -88,6 +89,7 @@ Each major directory has its own `CLAUDE.md` with context-specific rules:
 - `src/app/CLAUDE.md` — routing, middleware, auth flow
 - `src/components/CLAUDE.md` — component patterns, styling
 - `src/lib/ai/CLAUDE.md` — AI integration, providers, prompts, memory
+- `src/lib/game/CLAUDE.md` — game loop engine, state machine, sessions
 - `src/lib/lore/CLAUDE.md` — lore database, RAG chunking, query helpers
 - `src/lib/rules/CLAUDE.md` — rules engine architecture
 - `src/lib/supabase/CLAUDE.md` — client factories, RLS
