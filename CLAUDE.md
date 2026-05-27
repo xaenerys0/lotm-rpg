@@ -22,23 +22,28 @@ src/
 ├── app/                 # Next.js App Router
 │   ├── (auth)/          #   Login, signup (public)
 │   ├── (game)/          #   Game pages (authenticated)
-│   └── auth/callback/   #   OAuth code-exchange handler
-├── components/          # React components (auth/, ui/, game/)
+│   ├── auth/callback/   #   OAuth code-exchange route handler
+│   ├── globals.css      #   Tailwind v4 theme tokens (@theme inline)
+│   ├── layout.tsx       #   Root layout — fonts (Geist Sans/Mono, Lora)
+│   └── page.tsx         #   Landing page (redirects to /login)
+├── components/          # React components
+│   ├── auth/            #   Login & signup forms (client components)
+│   └── game/            #   Game shell — sidebar navigation
 ├── lib/
 │   ├── ai/              # AI integration — providers, prompts, memory, validation
 │   ├── lore/            # Lore database — RAG-ready chunks for AI layer
 │   ├── rules/           # Rules engine — pathways, laws, validation
 │   ├── supabase/        # Client factories (browser, server, middleware)
 │   └── types/           # TypeScript type definitions
-├── proxy.ts             # Middleware — CSP headers + auth session refresh
-└── app/globals.css      # Tailwind v4 theme tokens
+└── proxy.ts             # Middleware — CSP headers + auth session refresh
 supabase/
 ├── config.toml          # Local dev config (ports, auth, runtime)
 ├── migrations/          # SQL migrations (RLS-enabled)
-└── templates/           # Auth email HTML templates
+└── templates/           # Auth email HTML templates (Victorian themed)
 docs/
-├── lotm-lore-summary.md # LOTM universe reference
-└── rules/               # Shared rule files (@-imported by scoped CLAUDE.md)
+├── lotm-lore-summary.md   # LOTM universe reference
+├── lotm-research-outline.txt  # Extended research notes
+└── rules/                 # Shared rule files (@-imported by scoped CLAUDE.md)
 ```
 
 ## Key Conventions
@@ -48,9 +53,12 @@ docs/
 - **Server Components by default**; `"use client"` only when needed.
 - **Supabase Auth** with email/password. RLS on all tables — users access only their own data.
 - **CSP nonces** generated in `src/proxy.ts` with `'strict-dynamic'`.
-- **Prettier**: double quotes, semicolons, trailing commas, 90-char width.
-- **Tests** colocated as `*.test.ts`, run with Vitest.
+- **Prettier**: double quotes, semicolons, trailing commas, 90-char print width. Config in `.prettierrc`.
+- **Tests** colocated as `*.test.ts`, run with Vitest 4.x. Coverage enforced on `src/lib/{rules,lore,ai}/**/*.ts` (excluding index files).
 - **No component libraries** — pure Tailwind utility classes.
+- **PostCSS** via `@tailwindcss/postcss` plugin (config in `postcss.config.mjs`).
+- **Typed routes** enabled in `next.config.ts` (`typedRoutes: true`).
+- **pnpm** as the package manager. Workspace config in `pnpm-workspace.yaml`.
 
 ## Pre-Commit Checklist
 

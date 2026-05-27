@@ -4,9 +4,8 @@
 
 ## Organization
 
-- `auth/` — Authentication forms (login, signup)
-- `ui/` — Shared UI primitives (planned)
-- `game/` — Game shell components (sidebar navigation, sign-out)
+- `auth/` — Authentication forms (`login-form.tsx`, `signup-form.tsx`)
+- `game/` — Game shell components (`game-sidebar.tsx` — sidebar navigation, sign-out)
 
 ## Conventions
 
