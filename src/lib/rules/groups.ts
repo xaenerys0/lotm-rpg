@@ -1,22 +1,22 @@
 import type { PathwayGroup, PathwayGroupId } from "@/lib/types/rules";
 
 export const PATHWAY_GROUPS: Record<PathwayGroupId, PathwayGroup> = {
-  "sefirah-castle": {
-    id: "sefirah-castle",
-    name: "Sefirah Castle",
+  mysteries: {
+    id: "mysteries",
+    name: "Mysteries",
     sefirah: "Sefirah Castle",
-    pathwayIds: [1, 2],
+    pathwayIds: [1],
   },
-  "pillar-of-light": {
-    id: "pillar-of-light",
-    name: "Pillar of Light",
-    sefirah: "Pillar of Light",
-    pathwayIds: [3],
+  "god-almighty": {
+    id: "god-almighty",
+    name: "God Almighty",
+    sefirah: "Chaos Sea",
+    pathwayIds: [2, 3],
   },
-  underworld: {
-    id: "underworld",
-    name: "Underworld",
-    sefirah: "Underworld",
+  "eternal-darkness": {
+    id: "eternal-darkness",
+    name: "Eternal Darkness",
+    sefirah: "River of Eternal Darkness",
     pathwayIds: [4],
   },
 };

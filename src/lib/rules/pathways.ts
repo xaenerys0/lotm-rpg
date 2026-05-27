@@ -118,7 +118,7 @@ const foolSequences: Sequence[] = [
   {
     level: 7,
     name: "Magician",
-    classification: "Low",
+    classification: "Mid",
     abilities: [
       {
         name: "Damage Transfer",
@@ -422,7 +422,7 @@ const visionarySequences: Sequence[] = [
   {
     level: 7,
     name: "Psychiatrist",
-    classification: "Low",
+    classification: "Mid",
     abilities: [
       {
         name: "Deep Mental Probe",
@@ -729,7 +729,7 @@ const sunSequences: Sequence[] = [
   {
     level: 7,
     name: "Solar High Priest",
-    classification: "Low",
+    classification: "Mid",
     abilities: [
       {
         name: "Blazing Radiance",
@@ -1035,7 +1035,7 @@ const deathSequences: Sequence[] = [
   {
     level: 7,
     name: "Spirit Medium",
-    classification: "Low",
+    classification: "Mid",
     abilities: [
       {
         name: "Spirit Channeling",
@@ -1241,35 +1241,35 @@ const deathSequences: Sequence[] = [
 export const FOOL_PATHWAY: Pathway = {
   id: 1,
   name: "Fool",
-  group: "sefirah-castle",
+  group: "mysteries",
   sefirah: "Sefirah Castle",
-  neighboringPathways: [2],
+  neighboringPathways: [],
   sequences: foolSequences,
 };
 
 export const VISIONARY_PATHWAY: Pathway = {
   id: 2,
   name: "Visionary",
-  group: "sefirah-castle",
-  sefirah: "Sefirah Castle",
-  neighboringPathways: [1],
+  group: "god-almighty",
+  sefirah: "Chaos Sea",
+  neighboringPathways: [3],
   sequences: visionarySequences,
 };
 
 export const SUN_PATHWAY: Pathway = {
   id: 3,
   name: "Sun",
-  group: "pillar-of-light",
-  sefirah: "Pillar of Light",
-  neighboringPathways: [],
+  group: "god-almighty",
+  sefirah: "Chaos Sea",
+  neighboringPathways: [2],
   sequences: sunSequences,
 };
 
 export const DEATH_PATHWAY: Pathway = {
   id: 4,
   name: "Death",
-  group: "underworld",
-  sefirah: "Underworld",
+  group: "eternal-darkness",
+  sefirah: "River of Eternal Darkness",
   neighboringPathways: [],
   sequences: deathSequences,
 };

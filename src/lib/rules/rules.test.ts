@@ -92,10 +92,10 @@ describe("pathway definitions", () => {
     }
   });
 
-  it("Seq 9 and 8 are Low classification, Seq 7 is Low, Seq 6 and 5 are Mid", () => {
+  it("Seq 9 and 8 are Low classification, Seq 7 through 5 are Mid", () => {
     for (const pathway of ALL_PATHWAYS) {
       for (const seq of pathway.sequences) {
-        if (seq.level >= 7) {
+        if (seq.level >= 8) {
           expect(seq.classification).toBe("Low");
         } else {
           expect(seq.classification).toBe("Mid");
@@ -130,28 +130,35 @@ describe("pathway groups", () => {
     expect(Object.keys(PATHWAY_GROUPS)).toHaveLength(3);
   });
 
-  it("Fool and Visionary share Sefirah Castle group", () => {
-    expect(areInSameGroup(1, 2)).toBe(true);
+  it("Visionary and Sun share God Almighty group", () => {
+    expect(areInSameGroup(2, 3)).toBe(true);
   });
 
-  it("Fool and Sun are not in the same group", () => {
-    expect(areInSameGroup(1, 3)).toBe(false);
+  it("Fool and Visionary are not in the same group", () => {
+    expect(areInSameGroup(1, 2)).toBe(false);
   });
 
   it("getGroupForPathway returns correct group", () => {
-    expect(getGroupForPathway(1)?.id).toBe("sefirah-castle");
-    expect(getGroupForPathway(3)?.id).toBe("pillar-of-light");
-    expect(getGroupForPathway(4)?.id).toBe("underworld");
+    expect(getGroupForPathway(1)?.id).toBe("mysteries");
+    expect(getGroupForPathway(2)?.id).toBe("god-almighty");
+    expect(getGroupForPathway(3)?.id).toBe("god-almighty");
+    expect(getGroupForPathway(4)?.id).toBe("eternal-darkness");
     expect(getGroupForPathway(999)).toBeUndefined();
   });
 
-  it("Fool and Visionary are neighboring pathways", () => {
-    expect(areNeighboringPathways(1, 2)).toBe(true);
-    expect(areNeighboringPathways(2, 1)).toBe(true);
+  it("Visionary and Sun are neighboring pathways", () => {
+    expect(areNeighboringPathways(2, 3)).toBe(true);
+    expect(areNeighboringPathways(3, 2)).toBe(true);
+  });
+
+  it("Fool has no MVP neighbors (Error/Door not in MVP)", () => {
+    expect(areNeighboringPathways(1, 2)).toBe(false);
+    expect(areNeighboringPathways(1, 3)).toBe(false);
+    expect(areNeighboringPathways(1, 4)).toBe(false);
   });
 
   it("non-neighboring pathways return false", () => {
-    expect(areNeighboringPathways(1, 3)).toBe(false);
+    expect(areNeighboringPathways(1, 4)).toBe(false);
     expect(areNeighboringPathways(3, 4)).toBe(false);
   });
 
@@ -362,9 +369,9 @@ describe("convergence law", () => {
 
   it("detects weak convergence for neighboring-pathway characteristics", () => {
     const check: ConvergenceCheck = {
-      characterPathwayId: 1,
+      characterPathwayId: 2,
       characterSequence: 9,
-      nearbyCharacteristics: [{ pathwayId: 2, sequenceLevel: 9, quantity: 1 }],
+      nearbyCharacteristics: [{ pathwayId: 3, sequenceLevel: 9, quantity: 1 }],
     };
     const result = validateConvergence(check);
     expect(result.strength).toBe("weak");
@@ -375,7 +382,7 @@ describe("convergence law", () => {
     const check: ConvergenceCheck = {
       characterPathwayId: 1,
       characterSequence: 9,
-      nearbyCharacteristics: [{ pathwayId: 3, sequenceLevel: 9, quantity: 1 }],
+      nearbyCharacteristics: [{ pathwayId: 4, sequenceLevel: 9, quantity: 1 }],
     };
     const result = validateConvergence(check);
     expect(result.strength).toBe("none");
@@ -384,19 +391,19 @@ describe("convergence law", () => {
 
   it("filters mixed characteristics, only attracting same/neighboring", () => {
     const check: ConvergenceCheck = {
-      characterPathwayId: 1,
+      characterPathwayId: 2,
       characterSequence: 9,
       nearbyCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 7, quantity: 1 },
-        { pathwayId: 2, sequenceLevel: 9, quantity: 1 },
+        { pathwayId: 2, sequenceLevel: 7, quantity: 1 },
         { pathwayId: 3, sequenceLevel: 9, quantity: 1 },
+        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
         { pathwayId: 4, sequenceLevel: 8, quantity: 1 },
       ],
     };
     const result = validateConvergence(check);
     expect(result.strength).toBe("strong");
     expect(result.attracted).toHaveLength(2);
-    expect(result.attracted.map((c) => c.pathwayId).sort()).toEqual([1, 2]);
+    expect(result.attracted.map((c) => c.pathwayId).sort()).toEqual([2, 3]);
   });
 
   it("returns none when there are no nearby characteristics", () => {

@@ -1,4 +1,4 @@
-export type PathwayGroupId = "sefirah-castle" | "pillar-of-light" | "underworld";
+export type PathwayGroupId = "mysteries" | "god-almighty" | "eternal-darkness";
 
 export interface PathwayGroup {
   id: PathwayGroupId;
