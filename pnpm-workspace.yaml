@@ -1,3 +1,13 @@
+allowBuilds:
+  sharp: true
+  unrs-resolver: true
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver
+
+# Supply-chain guard: minimum age (minutes) since publish before a package
+# is acceptable. Default is 1440 (24h), which blocks legit same-day patches
+# pinned in the lockfile (electron-to-chromium ships nightly, etc.).
+# Set to 0 -- we rely on lockfile review + Renovate/Dependabot to gate
+# upgrades, not on pnpm's age heuristic.
+minimumReleaseAge: 0
