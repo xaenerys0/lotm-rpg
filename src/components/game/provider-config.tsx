@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { ProviderId, ProviderConfig } from "@/lib/ai";
 import { PROVIDER_MODELS, validateProviderConfig } from "@/lib/ai";
 import { PROVIDER_CONFIG_KEY } from "@/lib/game";
@@ -75,11 +75,32 @@ function loadInitialState(): FormState {
   return defaultState;
 }
 
-const subscribe = () => () => {};
+const defaultFormState: FormState = (() => {
+  const defaults = getDefaultModels("anthropic");
+  return {
+    providerId: "anthropic" as ProviderId,
+    apiKey: "",
+    baseUrl: "",
+    routineModel: defaults.routine,
+    premiumModel: defaults.premium,
+    customRoutineModel: "",
+    customPremiumModel: "",
+  };
+})();
+
+const noopSubscribe = () => () => {};
 
 export function ProviderConfig() {
-  const initialState = useSyncExternalStore(subscribe, loadInitialState, () =>
-    loadInitialState(),
+  const cacheRef = useRef<FormState | null>(null);
+  const initialState = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (cacheRef.current === null) {
+        cacheRef.current = loadInitialState();
+      }
+      return cacheRef.current;
+    },
+    () => defaultFormState,
   );
 
   const [form, setForm] = useState<FormState>(initialState);

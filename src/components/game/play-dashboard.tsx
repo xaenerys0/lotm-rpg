@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { ProviderConfig } from "@/lib/ai";
 import type { GameSessionSummary } from "@/lib/game";
@@ -86,28 +86,29 @@ interface InitialData {
   sessions: GameSessionSummary[];
 }
 
-function loadInitialData(): InitialData {
-  if (typeof window === "undefined") {
-    return { hasConfig: false, sessions: [] };
-  }
-  return {
-    hasConfig: loadConfig() !== null,
-    sessions: loadExistingSessions(),
-  };
-}
-
-const subscribe = () => () => {};
+const emptyInitialData: InitialData = { hasConfig: false, sessions: [] };
+const noopSubscribe = () => () => {};
 
 export function PlayDashboard() {
-  const initialData = useSyncExternalStore(subscribe, loadInitialData, () =>
-    loadInitialData(),
+  const cacheRef = useRef<InitialData | null>(null);
+  const initialData = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (cacheRef.current === null) {
+        cacheRef.current = {
+          hasConfig: loadConfig() !== null,
+          sessions: loadExistingSessions(),
+        };
+      }
+      return cacheRef.current;
+    },
+    () => emptyInitialData,
   );
 
   const [view, setView] = useState<DashboardView>("home");
   const [hasConfig] = useState(initialData.hasConfig);
   const [sessions, setSessions] = useState(initialData.sessions);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const loaded = true;
 
   const handleStartNewGame = useCallback((pathwayId: number) => {
     const gameState = createDefaultGameState(pathwayId);
@@ -136,15 +137,6 @@ export function PlayDashboard() {
     setActiveSessionId(null);
     setSessions(loadExistingSessions());
   }, []);
-
-  if (!loaded) {
-    return (
-      <div className="mx-auto max-w-[var(--container-game)] px-6 py-10">
-        <div className="h-10 w-48 rounded bg-border/20 animate-pulse" />
-        <div className="mt-4 h-5 w-72 rounded bg-border/20 animate-pulse" />
-      </div>
-    );
-  }
 
   if (view === "playing" && activeSessionId) {
     return (

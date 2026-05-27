@@ -133,9 +133,15 @@ function buildAICallParams(currentSession: GameSession) {
 const noopSubscribe = () => () => {};
 
 export function GameLoop({ sessionId }: { sessionId: string }) {
+  const sessionCacheRef = useRef<GameSession | null | undefined>(undefined);
   const initialSession = useSyncExternalStore(
     noopSubscribe,
-    () => loadSessionFromStorage(sessionId),
+    () => {
+      if (sessionCacheRef.current === undefined) {
+        sessionCacheRef.current = loadSessionFromStorage(sessionId);
+      }
+      return sessionCacheRef.current;
+    },
     () => null,
   );
   const [session, setSession] = useState<GameSession | null>(initialSession);
