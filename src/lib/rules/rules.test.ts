@@ -288,9 +288,7 @@ describe("conservation law", () => {
       currentPathwayId: 1,
       currentSequence: 9,
       targetSequence: 8,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 9, quantity: 1 }],
       availableItems: [],
       ritualCompleted: true,
     };
@@ -304,17 +302,13 @@ describe("conservation law", () => {
       currentPathwayId: 1,
       currentSequence: 9,
       targetSequence: 7,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 9, quantity: 1 }],
       availableItems: [],
       ritualCompleted: true,
     };
     const result = validateConservation(attempt);
     expect(result.valid).toBe(false);
-    expect(result.violations.some((v) => v.message.includes("skip"))).toBe(
-      true,
-    );
+    expect(result.violations.some((v) => v.message.includes("skip"))).toBe(true);
   });
 
   it("rejects advancement to a higher (weaker) sequence", () => {
@@ -323,17 +317,13 @@ describe("conservation law", () => {
       currentPathwayId: 1,
       currentSequence: 8,
       targetSequence: 9,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 8, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 8, quantity: 1 }],
       availableItems: [],
       ritualCompleted: true,
     };
     const result = validateConservation(attempt);
     expect(result.valid).toBe(false);
-    expect(
-      result.violations.some((v) => v.message.includes("must be lower")),
-    ).toBe(true);
+    expect(result.violations.some((v) => v.message.includes("must be lower"))).toBe(true);
   });
 
   it("rejects advancement without consuming the correct characteristic", () => {
@@ -433,9 +423,7 @@ describe("prerequisite validation", () => {
       currentPathwayId: 1,
       currentSequence: 9,
       targetSequence: 8,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 9, quantity: 1 }],
       availableItems: makeItems(1, 8),
       ritualCompleted: true,
     };
@@ -444,47 +432,39 @@ describe("prerequisite validation", () => {
   });
 
   it("rejects when potion formula is missing", () => {
-    const items = makeItems(1, 8).filter(
-      (i) => i.category !== "potion-formula",
-    );
+    const items = makeItems(1, 8).filter((i) => i.category !== "potion-formula");
     const attempt: AdvancementAttempt = {
       characterId: "player-1",
       currentPathwayId: 1,
       currentSequence: 9,
       targetSequence: 8,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 9, quantity: 1 }],
       availableItems: items,
       ritualCompleted: true,
     };
     const result = validatePrerequisites(attempt);
     expect(result.valid).toBe(false);
-    expect(
-      result.violations.some((v) => v.message.includes("potion formula")),
-    ).toBe(true);
+    expect(result.violations.some((v) => v.message.includes("potion formula"))).toBe(
+      true,
+    );
   });
 
   it("rejects when a main ingredient is missing", () => {
-    const items = makeItems(1, 8).filter(
-      (i) => i.category !== "main-ingredient",
-    );
+    const items = makeItems(1, 8).filter((i) => i.category !== "main-ingredient");
     const attempt: AdvancementAttempt = {
       characterId: "player-1",
       currentPathwayId: 1,
       currentSequence: 9,
       targetSequence: 8,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 9, quantity: 1 }],
       availableItems: items,
       ritualCompleted: true,
     };
     const result = validatePrerequisites(attempt);
     expect(result.valid).toBe(false);
-    expect(
-      result.violations.some((v) => v.message.includes("main ingredient")),
-    ).toBe(true);
+    expect(result.violations.some((v) => v.message.includes("main ingredient"))).toBe(
+      true,
+    );
   });
 
   it("rejects when ritual is not completed for sequences that require it", () => {
@@ -493,17 +473,13 @@ describe("prerequisite validation", () => {
       currentPathwayId: 1,
       currentSequence: 9,
       targetSequence: 8,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 9, quantity: 1 }],
       availableItems: makeItems(1, 8),
       ritualCompleted: false,
     };
     const result = validatePrerequisites(attempt);
     expect(result.valid).toBe(false);
-    expect(
-      result.violations.some((v) => v.message.includes("ritual")),
-    ).toBe(true);
+    expect(result.violations.some((v) => v.message.includes("ritual"))).toBe(true);
   });
 
   it("rejects unknown pathway", () => {
@@ -518,9 +494,9 @@ describe("prerequisite validation", () => {
     };
     const result = validatePrerequisites(attempt);
     expect(result.valid).toBe(false);
-    expect(
-      result.violations.some((v) => v.message.includes("Unknown pathway")),
-    ).toBe(true);
+    expect(result.violations.some((v) => v.message.includes("Unknown pathway"))).toBe(
+      true,
+    );
   });
 
   it("rejects unknown target sequence for a valid pathway", () => {
@@ -529,18 +505,14 @@ describe("prerequisite validation", () => {
       currentPathwayId: 1,
       currentSequence: 5,
       targetSequence: 4,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 5, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 5, quantity: 1 }],
       availableItems: [],
       ritualCompleted: true,
     };
     const result = validatePrerequisites(attempt);
     expect(result.valid).toBe(false);
     expect(
-      result.violations.some((v) =>
-        v.message.includes("Unknown target sequence"),
-      ),
+      result.violations.some((v) => v.message.includes("Unknown target sequence")),
     ).toBe(true);
   });
 });
@@ -563,9 +535,7 @@ describe("validation API", () => {
       currentPathwayId: 1,
       currentSequence: 9,
       targetSequence: 8,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 9, quantity: 1 }],
       availableItems: makeItems(1, 8),
       ritualCompleted: true,
     };
@@ -630,9 +600,7 @@ describe("validation API", () => {
       currentPathwayId: 1,
       currentSequence: 9,
       targetSequence: 8,
-      consumedCharacteristics: [
-        { pathwayId: 1, sequenceLevel: 9, quantity: 1 },
-      ],
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 9, quantity: 1 }],
       availableItems: makeItems(1, 8),
       ritualCompleted: true,
     };
@@ -643,9 +611,7 @@ describe("validation API", () => {
   it("validates all four pathways' Seq 9→8 advancement with correct items", () => {
     for (const pathway of ALL_PATHWAYS) {
       const ledger: WorldCharacteristicLedger = {
-        characteristics: [
-          { pathwayId: pathway.id, sequenceLevel: 9, quantity: 1 },
-        ],
+        characteristics: [{ pathwayId: pathway.id, sequenceLevel: 9, quantity: 1 }],
       };
       const attempt: AdvancementAttempt = {
         characterId: "player-1",

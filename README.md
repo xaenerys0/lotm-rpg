@@ -27,13 +27,13 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `pnpm dev` | Start development server |
-| `pnpm build` | Production build |
-| `pnpm lint` | Run ESLint |
-| `pnpm format` | Format with Prettier |
-| `pnpm typecheck` | TypeScript type check |
+| Command          | Description              |
+| ---------------- | ------------------------ |
+| `pnpm dev`       | Start development server |
+| `pnpm build`     | Production build         |
+| `pnpm lint`      | Run ESLint               |
+| `pnpm format`    | Format with Prettier     |
+| `pnpm typecheck` | TypeScript type check    |
 
 ## Project Structure
 

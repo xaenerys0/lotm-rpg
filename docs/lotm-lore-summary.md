@@ -65,13 +65,13 @@ characteristic's power while deceiving its mental imprint.
 
 ## Sequence Classifications
 
-| Rank    | Classification   | Attributes and Risks                                                     |
-|---------|------------------|--------------------------------------------------------------------------|
-| Seq 9–8 | Low-Sequence     | Marginal supernatural abilities; generally vulnerable to conventional firearms |
-| Seq 7–5 | Mid-Sequence     | Versatile abilities; advancement requires rituals; common period for initial onset of madness |
-| Seq 4–3 | Saint (Demigod)  | Attainment of "godhood"; incomplete Mythical Creature Form; 500-year lifespan |
-| Seq 2–1 | Angel (Demigod)  | Complete Mythical Creature Form; can respond to prayers; require "Anchors" to maintain sanity |
-| Seq 0   | True God         | Singular existence; absolute authority over pathway; capable of rewriting reality |
+| Rank    | Classification  | Attributes and Risks                                                                          |
+| ------- | --------------- | --------------------------------------------------------------------------------------------- |
+| Seq 9–8 | Low-Sequence    | Marginal supernatural abilities; generally vulnerable to conventional firearms                |
+| Seq 7–5 | Mid-Sequence    | Versatile abilities; advancement requires rituals; common period for initial onset of madness |
+| Seq 4–3 | Saint (Demigod) | Attainment of "godhood"; incomplete Mythical Creature Form; 500-year lifespan                 |
+| Seq 2–1 | Angel (Demigod) | Complete Mythical Creature Form; can respond to prayers; require "Anchors" to maintain sanity |
+| Seq 0   | True God        | Singular existence; absolute authority over pathway; capable of rewriting reality             |
 
 **Anchors** (Seq 2+): High-sequence Beyonders risk losing themselves to the
 accumulated mental imprints of characteristics. Anchors are emotional
@@ -90,33 +90,33 @@ allow limited characteristic switching or integration at high sequences.
 
 Authorities of perception, space, and fate.
 
-| Pathway | Seq 9 Name    | Domain                                                |
-|---------|---------------|-------------------------------------------------------|
-| Fool    | Seer          | Divination, marionette control, "fooling" reality     |
-| Error   | Marauder      | Stealing abstract concepts, time, and fate            |
-| Door    | Apprentice    | Spatial travel, sealing, cosmic navigation            |
+| Pathway | Seq 9 Name | Domain                                            |
+| ------- | ---------- | ------------------------------------------------- |
+| Fool    | Seer       | Divination, marionette control, "fooling" reality |
+| Error   | Marauder   | Stealing abstract concepts, time, and fate        |
+| Door    | Apprentice | Spatial travel, sealing, cosmic navigation        |
 
 ### God Almighty Group (Chaos Sea)
 
 Mental authority, light, and elemental storms.
 
-| Pathway    | Seq 9 Name   | Domain                                              |
-|------------|--------------|-----------------------------------------------------|
-| Visionary  | Spectator    | Mind control, imagination, envisioning reality       |
-| Sun        | Bard         | Holy light, purification, healing                    |
-| Tyrant     | Sailor       | Raw elemental storms, maritime destruction           |
-| White Tower| Mystery Pryer| Omniscience, analysis, knowledge                    |
-| Hanged Man | —            | Sacrifice, redemption                               |
+| Pathway     | Seq 9 Name    | Domain                                         |
+| ----------- | ------------- | ---------------------------------------------- |
+| Visionary   | Spectator     | Mind control, imagination, envisioning reality |
+| Sun         | Bard          | Holy light, purification, healing              |
+| Tyrant      | Sailor        | Raw elemental storms, maritime destruction     |
+| White Tower | Mystery Pryer | Omniscience, analysis, knowledge               |
+| Hanged Man  | —             | Sacrifice, redemption                          |
 
 ### Eternal Darkness Group (River of Eternal Darkness)
 
 Night, death, and the waning of all things.
 
-| Pathway        | Seq 9 Name       | Domain                                     |
-|----------------|-------------------|--------------------------------------------|
-| Darkness       | Sleepless         | Concealment, sleep, shadow                 |
-| Death          | Corpse Collector  | Spirit manipulation, undead, the death realm |
-| Twilight Giant | —                 | Combat, physical decay                     |
+| Pathway        | Seq 9 Name       | Domain                                       |
+| -------------- | ---------------- | -------------------------------------------- |
+| Darkness       | Sleepless        | Concealment, sleep, shadow                   |
+| Death          | Corpse Collector | Spirit manipulation, undead, the death realm |
+| Twilight Giant | —                | Combat, physical decay                       |
 
 ### Other Pathways
 
@@ -124,19 +124,19 @@ The following pathways are referenced in the source material with their
 associated churches, organizations, or characters, but their full group
 assignments are not detailed in the research outline.
 
-| Pathway          | Seq 9 Name | Associated With                                    |
-|------------------|------------|----------------------------------------------------|
+| Pathway          | Seq 9 Name | Associated With                                           |
+| ---------------- | ---------- | --------------------------------------------------------- |
 | Demoness         | Assassin   | Rose School of Thought (Indulgence / Temperance factions) |
-| Moon             | —          | Sanguine (vampires); Emlyn White (Tarot Club)      |
-| Planter          | —          | Church of the Earth Mother (Lilith)                |
-| Warrior          | —          | Church of the God of Combat (Feysac Empire)        |
-| Reader           | —          | Church of the God of Knowledge and Wisdom          |
-| Savant           | —          | Church of the God of Steam and Machinery           |
-| Wheel of Fortune | —          | Life School of Thought (Will Auceptin)             |
-| Justiciar        | —          | Xio Derecha (Tarot Club — Judgment)                |
-| Hermit           | —          | Cattleya (Tarot Club — The Hermit)                 |
-| Black Emperor    | —          | Imperial authority; King George III's target Seq 0 |
-| Mother           | —          | Mother Tree of Desire (Outer Deity connection)     |
+| Moon             | —          | Sanguine (vampires); Emlyn White (Tarot Club)             |
+| Planter          | —          | Church of the Earth Mother (Lilith)                       |
+| Warrior          | —          | Church of the God of Combat (Feysac Empire)               |
+| Reader           | —          | Church of the God of Knowledge and Wisdom                 |
+| Savant           | —          | Church of the God of Steam and Machinery                  |
+| Wheel of Fortune | —          | Life School of Thought (Will Auceptin)                    |
+| Justiciar        | —          | Xio Derecha (Tarot Club — Judgment)                       |
+| Hermit           | —          | Cattleya (Tarot Club — The Hermit)                        |
+| Black Emperor    | —          | Imperial authority; King George III's target Seq 0        |
+| Mother           | —          | Mother Tree of Desire (Outer Deity connection)            |
 
 ---
 
@@ -146,28 +146,28 @@ Religious order in the Northern Continent is structured around seven deities
 who maintain order and protect the world from Outer Deity influence. Each
 church fields its own division of Official Beyonders.
 
-| Church                            | Deity                      | Beyonder Division   | Pathway Controlled |
-|-----------------------------------|----------------------------|---------------------|--------------------|
-| Church of the Evernight Goddess   | Evernight Goddess           | Nighthawks          | Sleepless (Darkness) |
-| Church of the Lord of Storms      | Lord of Storms              | Mandated Punishers  | Tyrant             |
-| Church of the God of Steam        | God of Steam and Machinery  | Machinery Hivemind  | Savant             |
-| Church of the Eternal Blazing Sun | Eternal Blazing Sun         | Inquisition         | Sun                |
-| Church of the Earth Mother        | Earth Mother (Lilith)       | Fertility Order     | Planter            |
-| Church of the God of Combat       | God of Combat               | —                   | Warrior            |
-| Church of the God of Knowledge    | God of Knowledge and Wisdom | —                   | Reader             |
+| Church                            | Deity                       | Beyonder Division  | Pathway Controlled   |
+| --------------------------------- | --------------------------- | ------------------ | -------------------- |
+| Church of the Evernight Goddess   | Evernight Goddess           | Nighthawks         | Sleepless (Darkness) |
+| Church of the Lord of Storms      | Lord of Storms              | Mandated Punishers | Tyrant               |
+| Church of the God of Steam        | God of Steam and Machinery  | Machinery Hivemind | Savant               |
+| Church of the Eternal Blazing Sun | Eternal Blazing Sun         | Inquisition        | Sun                  |
+| Church of the Earth Mother        | Earth Mother (Lilith)       | Fertility Order    | Planter              |
+| Church of the God of Combat       | God of Combat               | —                  | Warrior              |
+| Church of the God of Knowledge    | God of Knowledge and Wisdom | —                  | Reader               |
 
 ---
 
 ## Secret Organizations
 
-| Organization            | Leader / Patron                 | Purpose                                                  |
-|-------------------------|---------------------------------|----------------------------------------------------------|
-| Twilight Hermit Order   | Angel of Imagination (Adam)     | Revival of the Ancient Sun God; steers history through "coincidences" |
-| Aurora Order            | The "True Creator"              | Lunatics seeking their god's descent; True Creator and Adam are aspects of the Ancient Sun God |
-| Rose School of Thought  | Split: Indulgence (Mother Tree of Desire) / Temperance (Reinette Tinekerr, Sharron) | Demoness pathway; internal faction war |
-| Life School of Thought  | Will Auceptin                   | Wheel of Fortune pathway; manipulation of luck           |
-| Psychology Alchemists   | (Shadow subsidiary of Twilight Hermit Order) | Visionary pathway research; later revealed as compromised |
-| Tarot Club              | Klein Moretti ("The Fool")      | Secret mutual-aid society organized through Sefirah Castle gatherings |
+| Organization           | Leader / Patron                                                                     | Purpose                                                                                        |
+| ---------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| Twilight Hermit Order  | Angel of Imagination (Adam)                                                         | Revival of the Ancient Sun God; steers history through "coincidences"                          |
+| Aurora Order           | The "True Creator"                                                                  | Lunatics seeking their god's descent; True Creator and Adam are aspects of the Ancient Sun God |
+| Rose School of Thought | Split: Indulgence (Mother Tree of Desire) / Temperance (Reinette Tinekerr, Sharron) | Demoness pathway; internal faction war                                                         |
+| Life School of Thought | Will Auceptin                                                                       | Wheel of Fortune pathway; manipulation of luck                                                 |
+| Psychology Alchemists  | (Shadow subsidiary of Twilight Hermit Order)                                        | Visionary pathway research; later revealed as compromised                                      |
+| Tarot Club             | Klein Moretti ("The Fool")                                                          | Secret mutual-aid society organized through Sefirah Castle gatherings                          |
 
 ---
 
@@ -179,22 +179,22 @@ Major members).
 
 ### Major Arcana
 
-| Seat        | Identity           | Pathway          | Role                                          |
-|-------------|--------------------|------------------|-----------------------------------------------|
-| The Fool    | Klein Moretti       | Fool             | Founder and leader; masquerades as an ancient god |
-| Justice     | Audrey Hall         | Visionary        | High-society investigator; Psychology Alchemists liaison |
-| The Hanged Man | Alger Wilson     | Tyrant           | Maritime intelligence                         |
-| The Sun     | Derrick Berg        | Sun              | City of Silver liaison                        |
-| The Magician| Fors Wall           | Door             | Eventually reaches Seq 2 Angel                |
-| The Moon    | Emlyn White         | Moon             | Sanguine (vampire); Rose School investigator  |
-| The Hermit  | Cattleya            | Hermit           | Admiral of the "Future"; Moses Ascetic Order leader |
-| The Star    | Leonard Mitchell    | Darkness         | Church of Evernight internal intelligence     |
-| Judgment    | Xio Derecha         | Justiciar        | Military plot and Red Priest investigator     |
-| The World   | Gehrman Sparrow     | Fool             | Klein's alternate persona used as an "equal" within the club |
+| Seat           | Identity         | Pathway   | Role                                                         |
+| -------------- | ---------------- | --------- | ------------------------------------------------------------ |
+| The Fool       | Klein Moretti    | Fool      | Founder and leader; masquerades as an ancient god            |
+| Justice        | Audrey Hall      | Visionary | High-society investigator; Psychology Alchemists liaison     |
+| The Hanged Man | Alger Wilson     | Tyrant    | Maritime intelligence                                        |
+| The Sun        | Derrick Berg     | Sun       | City of Silver liaison                                       |
+| The Magician   | Fors Wall        | Door      | Eventually reaches Seq 2 Angel                               |
+| The Moon       | Emlyn White      | Moon      | Sanguine (vampire); Rose School investigator                 |
+| The Hermit     | Cattleya         | Hermit    | Admiral of the "Future"; Moses Ascetic Order leader          |
+| The Star       | Leonard Mitchell | Darkness  | Church of Evernight internal intelligence                    |
+| Judgment       | Xio Derecha      | Justiciar | Military plot and Red Priest investigator                    |
+| The World      | Gehrman Sparrow  | Fool      | Klein's alternate persona used as an "equal" within the club |
 
 ### Minor Arcana (Sequel)
 
-- Lumian Lee (Seven of Wands) — protagonist of *Circle of Inevitability*
+- Lumian Lee (Seven of Wands) — protagonist of _Circle of Inevitability_
 - Jenna (Two of Cups)
 - Anthony Reid (Four of Swords)
 
@@ -251,12 +251,12 @@ and continental shifts.
 
 Center of human civilization. Four major nations:
 
-| Nation             | Real-World Analog  | Notes                          |
-|--------------------|--------------------|--------------------------------|
-| Loen Kingdom       | Victorian Britain  | Primary setting of Book 1      |
-| Intis Republic     | Industrial France  | Dominated by Church of the Eternal Blazing Sun |
-| Feysac Empire      | Imperial Russia    | Church of the God of Combat    |
-| Feynapotter Kingdom| —                  | Fourth major power             |
+| Nation              | Real-World Analog | Notes                                          |
+| ------------------- | ----------------- | ---------------------------------------------- |
+| Loen Kingdom        | Victorian Britain | Primary setting of Book 1                      |
+| Intis Republic      | Industrial France | Dominated by Church of the Eternal Blazing Sun |
+| Feysac Empire       | Imperial Russia   | Church of the God of Combat                    |
+| Feynapotter Kingdom | —                 | Fourth major power                             |
 
 ### Southern Continent (South America)
 
@@ -265,13 +265,13 @@ pathway.
 
 ### The Five Seas
 
-| Sea         | Real-World Analog | Notes                              |
-|-------------|-------------------|------------------------------------|
-| Sonia Sea   | Atlantic Ocean    | Primary maritime setting           |
-| North Sea   | Arctic Ocean      |                                    |
-| Fog Sea     | Pacific Ocean     |                                    |
-| Berserk Sea | Caribbean         |                                    |
-| Polar Sea   | —                 |                                    |
+| Sea         | Real-World Analog | Notes                    |
+| ----------- | ----------------- | ------------------------ |
+| Sonia Sea   | Atlantic Ocean    | Primary maritime setting |
+| North Sea   | Arctic Ocean      |                          |
+| Fog Sea     | Pacific Ocean     |                          |
+| Berserk Sea | Caribbean         |                          |
+| Polar Sea   | —                 |                          |
 
 ### Sealed / Isolated Lands
 
@@ -287,16 +287,16 @@ pathway.
 Zhou Mingrui, a modern transmigrator, awakens in the body of Klein Moretti, a
 history graduate in Tingen City who had recently committed suicide.
 
-| Volume | Title       | Advancement              | Key Events                                                  |
-|--------|-------------|--------------------------|-------------------------------------------------------------|
-| 1      | Clown       | Seq 9 Seer → Seq 8 Clown | Joins Nighthawks; discovers Sefirah Castle; founds Tarot Club; dies and resurrects |
-| 2      | Faceless    | Seq 7 Magician → Seq 6 Faceless | Becomes detective "Sherlock Moriarty" in Backlund; Great Smog; steals Black Emperor Card |
-| 3      | Traveler    | Seq 5 Marionettist       | Sails as "Gehrman Sparrow"; takes over Sea God believers; hunts pirates |
-| 4      | Undying     | Seq 4 Bizarro Sorcerer   | Becomes "Dwayne Dantès"; kills Ince Zangwill; attains Demigod status |
-| 5      | Red Priest  | Seq 3 Scholar of Yore    | Learns transmigrator truth; stops King George III's apotheosis; targeted by Amon |
-| 6      | Lightseeker | —                        | Captured by Amon; escapes to City of Silver; explores Chernobyl ruins; realizes world is post-apocalyptic Earth |
-| 7      | The Hanged Man | Seq 2 Miracle Invoker → Seq 1 Attendant of Mysteries | Becomes a King of Angels; kills Zaratul; creates town of Utopia |
-| 8      | Fool        | —                        | The Fool's Gambit in Sefirah Castle; forces stalemate with Amon; enters slumber battling Celestial Worthy's will |
+| Volume | Title          | Advancement                                          | Key Events                                                                                                       |
+| ------ | -------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 1      | Clown          | Seq 9 Seer → Seq 8 Clown                             | Joins Nighthawks; discovers Sefirah Castle; founds Tarot Club; dies and resurrects                               |
+| 2      | Faceless       | Seq 7 Magician → Seq 6 Faceless                      | Becomes detective "Sherlock Moriarty" in Backlund; Great Smog; steals Black Emperor Card                         |
+| 3      | Traveler       | Seq 5 Marionettist                                   | Sails as "Gehrman Sparrow"; takes over Sea God believers; hunts pirates                                          |
+| 4      | Undying        | Seq 4 Bizarro Sorcerer                               | Becomes "Dwayne Dantès"; kills Ince Zangwill; attains Demigod status                                             |
+| 5      | Red Priest     | Seq 3 Scholar of Yore                                | Learns transmigrator truth; stops King George III's apotheosis; targeted by Amon                                 |
+| 6      | Lightseeker    | —                                                    | Captured by Amon; escapes to City of Silver; explores Chernobyl ruins; realizes world is post-apocalyptic Earth  |
+| 7      | The Hanged Man | Seq 2 Miracle Invoker → Seq 1 Attendant of Mysteries | Becomes a King of Angels; kills Zaratul; creates town of Utopia                                                  |
+| 8      | Fool           | —                                                    | The Fool's Gambit in Sefirah Castle; forces stalemate with Amon; enters slumber battling Celestial Worthy's will |
 
 ---
 
@@ -308,11 +308,11 @@ universe.
 
 ### The Three Pillars
 
-| Pillar                    | Title                                        |
-|---------------------------|----------------------------------------------|
-| God Almighty              | The Omnipotent and Omniscient; oversees the physical and astral worlds |
-| Lord of Mysteries         | King of Space-Time and Beacon of Destiny; oversees the spirit world |
-| Mother Goddess of Depravity | Origin of Evil and Sovereign of the Physical World |
+| Pillar                      | Title                                                                  |
+| --------------------------- | ---------------------------------------------------------------------- |
+| God Almighty                | The Omnipotent and Omniscient; oversees the physical and astral worlds |
+| Lord of Mysteries           | King of Space-Time and Beacon of Destiny; oversees the spirit world    |
+| Mother Goddess of Depravity | Origin of Evil and Sovereign of the Physical World                     |
 
 ### Outer Deities
 
@@ -352,17 +352,17 @@ upcoming cosmic war.
 
 ## Key Terms Glossary
 
-| Term                    | Definition                                                    |
-|-------------------------|---------------------------------------------------------------|
-| Beyonder                | Any being who has consumed a potion and gained supernatural power |
-| Beyonder Characteristic | Indestructible physical entity carrying supernatural power    |
-| Potion                  | Alchemical brew that integrates a characteristic into the drinker |
-| Acting Method           | Psychological technique of behaving as the sequence name dictates |
-| Loss of Control         | Catastrophic failure when a potion overwhelms the drinker's mind |
-| Sefirah (pl. Sefirot)   | Sources of power; cosmic objects that anchor pathway groups   |
-| Anchor                  | Emotional/identity connection that keeps high-seq Beyonders sane |
-| Mythical Creature Form  | A Beyonder's true supernatural form (partial at Seq 4-3, full at Seq 2-1) |
-| Gray Fog / Sefirah Castle | Klein's personal dimension; used for Tarot Club gatherings |
-| Blasphemy Slate          | Ancient tablets recording the potion formulas for all 22 pathways |
-| Outer Deity             | Above-the-Sequence entity from beyond the solar system        |
-| Boon                    | Direct power gift from an Outer Deity; fast but corrupting    |
+| Term                      | Definition                                                                |
+| ------------------------- | ------------------------------------------------------------------------- |
+| Beyonder                  | Any being who has consumed a potion and gained supernatural power         |
+| Beyonder Characteristic   | Indestructible physical entity carrying supernatural power                |
+| Potion                    | Alchemical brew that integrates a characteristic into the drinker         |
+| Acting Method             | Psychological technique of behaving as the sequence name dictates         |
+| Loss of Control           | Catastrophic failure when a potion overwhelms the drinker's mind          |
+| Sefirah (pl. Sefirot)     | Sources of power; cosmic objects that anchor pathway groups               |
+| Anchor                    | Emotional/identity connection that keeps high-seq Beyonders sane          |
+| Mythical Creature Form    | A Beyonder's true supernatural form (partial at Seq 4-3, full at Seq 2-1) |
+| Gray Fog / Sefirah Castle | Klein's personal dimension; used for Tarot Club gatherings                |
+| Blasphemy Slate           | Ancient tablets recording the potion formulas for all 22 pathways         |
+| Outer Deity               | Above-the-Sequence entity from beyond the solar system                    |
+| Boon                      | Direct power gift from an Outer Deity; fast but corrupting                |

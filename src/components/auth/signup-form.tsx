@@ -35,9 +35,7 @@ export function SignupForm() {
     return (
       <div className="rounded border border-amber/30 bg-amber/5 p-4 text-center">
         <p className="text-foreground">Check your email to confirm your account.</p>
-        <p className="mt-1 text-sm text-muted">
-          Then return here to sign in.
-        </p>
+        <p className="mt-1 text-sm text-muted">Then return here to sign in.</p>
       </div>
     );
   }
@@ -73,9 +71,7 @@ export function SignupForm() {
           placeholder="••••••••"
         />
       </div>
-      {error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
       <button
         type="submit"
         disabled={loading}

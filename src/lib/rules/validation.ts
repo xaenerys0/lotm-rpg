@@ -22,8 +22,7 @@ function applyAdvancementToLedger(
   for (const consumed of attempt.consumedCharacteristics) {
     const existing = updated.characteristics.find(
       (c) =>
-        c.pathwayId === consumed.pathwayId &&
-        c.sequenceLevel === consumed.sequenceLevel,
+        c.pathwayId === consumed.pathwayId && c.sequenceLevel === consumed.sequenceLevel,
     );
     if (existing) {
       existing.quantity = Math.max(0, existing.quantity - consumed.quantity);
@@ -36,9 +35,7 @@ function applyAdvancementToLedger(
     quantity: 1,
   };
   const existingNew = updated.characteristics.find(
-    (c) =>
-      c.pathwayId === newChar.pathwayId &&
-      c.sequenceLevel === newChar.sequenceLevel,
+    (c) => c.pathwayId === newChar.pathwayId && c.sequenceLevel === newChar.sequenceLevel,
   );
   if (existingNew) {
     existingNew.quantity += 1;
@@ -63,10 +60,7 @@ export function validateAdvancement(
 
   if (conservation.valid) {
     const ledgerAfter = applyAdvancementToLedger(worldLedger, attempt);
-    const indestructibility = validateIndestructibility(
-      worldLedger,
-      ledgerAfter,
-    );
+    const indestructibility = validateIndestructibility(worldLedger, ledgerAfter);
     allViolations.push(...indestructibility.violations);
   }
 

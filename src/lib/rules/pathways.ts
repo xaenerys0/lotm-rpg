@@ -8,8 +8,7 @@ const foolSequences: Sequence[] = [
     abilities: [
       {
         name: "Spirit Vision",
-        description:
-          "Perceive the spirit world and see lingering spiritual traces",
+        description: "Perceive the spirit world and see lingering spiritual traces",
         type: "active",
       },
       {
@@ -20,8 +19,7 @@ const foolSequences: Sequence[] = [
       },
       {
         name: "Spiritual Intuition",
-        description:
-          "Sense danger and anomalies through subtle spiritual perception",
+        description: "Sense danger and anomalies through subtle spiritual perception",
         type: "passive",
       },
     ],
@@ -38,8 +36,7 @@ const foolSequences: Sequence[] = [
       },
       {
         name: "Dragon Blood Grass",
-        description:
-          "A crimson herb that grows near ancient dragon remains",
+        description: "A crimson herb that grows near ancient dragon remains",
         category: "main-ingredient",
       },
       {
@@ -62,8 +59,7 @@ const foolSequences: Sequence[] = [
     abilities: [
       {
         name: "Distraction",
-        description:
-          "Misdirect attention using performance and sleight of hand",
+        description: "Misdirect attention using performance and sleight of hand",
         type: "active",
       },
       {
@@ -73,14 +69,12 @@ const foolSequences: Sequence[] = [
       },
       {
         name: "Paper Figurine Substitution",
-        description:
-          "Substitute a paper figurine for yourself to escape danger",
+        description: "Substitute a paper figurine for yourself to escape danger",
         type: "active",
       },
       {
         name: "Enhanced Agility",
-        description:
-          "Supernatural nimbleness and acrobatic ability",
+        description: "Supernatural nimbleness and acrobatic ability",
         type: "passive",
       },
     ],
@@ -122,14 +116,12 @@ const foolSequences: Sequence[] = [
     abilities: [
       {
         name: "Damage Transfer",
-        description:
-          "Transfer damage from yourself to a connected object or person",
+        description: "Transfer damage from yourself to a connected object or person",
         type: "active",
       },
       {
         name: "Seal",
-        description:
-          "Create mystical seals to bind or contain supernatural entities",
+        description: "Create mystical seals to bind or contain supernatural entities",
         type: "active",
       },
       {
@@ -157,14 +149,12 @@ const foolSequences: Sequence[] = [
       },
       {
         name: "Thousand-faced Hunter Eye Crystal",
-        description:
-          "A crystallized eye from a Thousand-faced Hunter beast",
+        description: "A crystallized eye from a Thousand-faced Hunter beast",
         category: "main-ingredient",
       },
       {
         name: "Rosemary Essential Oil",
-        description:
-          "Distilled oil from spiritually-charged rosemary plants",
+        description: "Distilled oil from spiritually-charged rosemary plants",
         category: "supplementary-ingredient",
       },
       {
@@ -201,8 +191,7 @@ const foolSequences: Sequence[] = [
       },
       {
         name: "Body Malleability",
-        description:
-          "Reshape your body to squeeze through gaps or resist blunt impacts",
+        description: "Reshape your body to squeeze through gaps or resist blunt impacts",
         type: "passive",
       },
     ],
@@ -219,8 +208,7 @@ const foolSequences: Sequence[] = [
       },
       {
         name: "Thousand-faced Hunter Mutant Pituitary Gland",
-        description:
-          "The shape-governing gland of a mutant Thousand-faced Hunter",
+        description: "The shape-governing gland of a mutant Thousand-faced Hunter",
         category: "main-ingredient",
       },
       {
@@ -269,8 +257,7 @@ const foolSequences: Sequence[] = [
       },
       {
         name: "Enhanced Spiritual Perception",
-        description:
-          "Greatly enhanced ability to detect and read spiritual fluctuations",
+        description: "Greatly enhanced ability to detect and read spiritual fluctuations",
         type: "passive",
       },
     ],
@@ -287,8 +274,7 @@ const foolSequences: Sequence[] = [
       },
       {
         name: "Beyonder Characteristic of a Faceless",
-        description:
-          "The crystallized Beyonder characteristic from a Seq 6 Faceless",
+        description: "The crystallized Beyonder characteristic from a Seq 6 Faceless",
         category: "main-ingredient",
       },
       {
@@ -298,8 +284,7 @@ const foolSequences: Sequence[] = [
       },
       {
         name: "Psychic Puppet Core",
-        description:
-          "An ancient core used in the creation of autonomous puppets",
+        description: "An ancient core used in the creation of autonomous puppets",
         category: "supplementary-ingredient",
       },
     ],
@@ -329,14 +314,12 @@ const visionarySequences: Sequence[] = [
       },
       {
         name: "Psychological Analysis",
-        description:
-          "Quickly analyze a person's psychological state and motivations",
+        description: "Quickly analyze a person's psychological state and motivations",
         type: "active",
       },
       {
         name: "Enhanced Perception",
-        description:
-          "Heightened awareness of subtle social and environmental cues",
+        description: "Heightened awareness of subtle social and environmental cues",
         type: "passive",
       },
     ],
@@ -353,8 +336,7 @@ const visionarySequences: Sequence[] = [
       },
       {
         name: "Placenta of a Beyond-level Demon Cat",
-        description:
-          "The preserved placenta from a spiritually-attuned feline",
+        description: "The preserved placenta from a spiritually-attuned feline",
         category: "main-ingredient",
       },
       {
@@ -372,14 +354,12 @@ const visionarySequences: Sequence[] = [
     abilities: [
       {
         name: "Telepathy",
-        description:
-          "Read surface thoughts and send mental messages to others",
+        description: "Read surface thoughts and send mental messages to others",
         type: "active",
       },
       {
         name: "Mental Shield",
-        description:
-          "Construct a psychic barrier to protect against mental intrusion",
+        description: "Construct a psychic barrier to protect against mental intrusion",
         type: "active",
       },
       {
@@ -426,8 +406,7 @@ const visionarySequences: Sequence[] = [
     abilities: [
       {
         name: "Deep Mental Probe",
-        description:
-          "Dive into a subject's subconscious to uncover hidden memories",
+        description: "Dive into a subject's subconscious to uncover hidden memories",
         type: "active",
       },
       {
@@ -461,8 +440,7 @@ const visionarySequences: Sequence[] = [
       },
       {
         name: "Wraith Dust",
-        description:
-          "Powdered essence of a deceased wraith, attuned to the psyche",
+        description: "Powdered essence of a deceased wraith, attuned to the psyche",
         category: "main-ingredient",
       },
       {
@@ -493,14 +471,12 @@ const visionarySequences: Sequence[] = [
     abilities: [
       {
         name: "Mass Hypnosis",
-        description:
-          "Place multiple targets into a hypnotic trance simultaneously",
+        description: "Place multiple targets into a hypnotic trance simultaneously",
         type: "active",
       },
       {
         name: "Memory Manipulation",
-        description:
-          "Alter, erase, or implant specific memories in a target's mind",
+        description: "Alter, erase, or implant specific memories in a target's mind",
         type: "active",
       },
       {
@@ -511,8 +487,7 @@ const visionarySequences: Sequence[] = [
       },
       {
         name: "Psychic Dominance",
-        description:
-          "Passive aura that makes weaker-willed individuals more suggestible",
+        description: "Passive aura that makes weaker-willed individuals more suggestible",
         type: "passive",
       },
     ],
@@ -529,8 +504,7 @@ const visionarySequences: Sequence[] = [
       },
       {
         name: "Eye of a Dreamweaver Spider",
-        description:
-          "The central eye of a spider that hunts within dreams",
+        description: "The central eye of a spider that hunts within dreams",
         category: "main-ingredient",
       },
       {
@@ -545,8 +519,7 @@ const visionarySequences: Sequence[] = [
       },
     ],
     advancementRitual: {
-      description:
-        "Enter and fully control the dream of a Beyonder-level target",
+      description: "Enter and fully control the dream of a Beyonder-level target",
       requirements: [
         "Identify a Beyonder target of at least Sequence 8",
         "Enter their dream without being detected",
@@ -561,14 +534,12 @@ const visionarySequences: Sequence[] = [
     abilities: [
       {
         name: "Dream World Access",
-        description:
-          "Open a gateway to the dream world and traverse it physically",
+        description: "Open a gateway to the dream world and traverse it physically",
         type: "active",
       },
       {
         name: "Dream Materialization",
-        description:
-          "Pull objects and entities from the dream world into reality",
+        description: "Pull objects and entities from the dream world into reality",
         type: "active",
       },
       {
@@ -597,14 +568,12 @@ const visionarySequences: Sequence[] = [
       },
       {
         name: "Beyonder Characteristic of a Hypnotist",
-        description:
-          "The crystallized Beyonder characteristic from a Seq 6 Hypnotist",
+        description: "The crystallized Beyonder characteristic from a Seq 6 Hypnotist",
         category: "main-ingredient",
       },
       {
         name: "Dream Realm Anchor Shard",
-        description:
-          "A fragment of crystallized dream energy that stabilizes passage",
+        description: "A fragment of crystallized dream energy that stabilizes passage",
         category: "main-ingredient",
       },
       {
@@ -633,8 +602,7 @@ const sunSequences: Sequence[] = [
     abilities: [
       {
         name: "Holy Hymn",
-        description:
-          "Sing hymns that purify minor corruption and bolster morale",
+        description: "Sing hymns that purify minor corruption and bolster morale",
         type: "active",
       },
       {
@@ -684,14 +652,12 @@ const sunSequences: Sequence[] = [
       },
       {
         name: "Healing Touch",
-        description:
-          "Heal moderate wounds and cure minor diseases through touch",
+        description: "Heal moderate wounds and cure minor diseases through touch",
         type: "active",
       },
       {
         name: "Radiant Aura",
-        description:
-          "Emit a soft glow that repels weaker undead and evil spirits",
+        description: "Emit a soft glow that repels weaker undead and evil spirits",
         type: "passive",
       },
     ],
@@ -733,14 +699,12 @@ const sunSequences: Sequence[] = [
     abilities: [
       {
         name: "Blazing Radiance",
-        description:
-          "Release an intense burst of holy light that damages evil entities",
+        description: "Release an intense burst of holy light that damages evil entities",
         type: "active",
       },
       {
         name: "Purification Ritual",
-        description:
-          "Cleanse an area of spiritual corruption through extended prayer",
+        description: "Cleanse an area of spiritual corruption through extended prayer",
         type: "active",
       },
       {
@@ -767,8 +731,7 @@ const sunSequences: Sequence[] = [
       },
       {
         name: "Phoenix Feather Fragment",
-        description:
-          "A shard of a phoenix feather, imbued with regenerative flame",
+        description: "A shard of a phoenix feather, imbued with regenerative flame",
         category: "main-ingredient",
       },
       {
@@ -804,8 +767,7 @@ const sunSequences: Sequence[] = [
       },
       {
         name: "Truth Detection",
-        description:
-          "Compel truth from a target during formal questioning",
+        description: "Compel truth from a target during formal questioning",
         type: "active",
       },
       {
@@ -816,7 +778,8 @@ const sunSequences: Sequence[] = [
       },
       {
         name: "Holy Fire",
-        description: "Summon flames of purification that burn evil but spare the innocent",
+        description:
+          "Summon flames of purification that burn evil but spare the innocent",
         type: "active",
       },
     ],
@@ -848,8 +811,7 @@ const sunSequences: Sequence[] = [
       },
     ],
     advancementRitual: {
-      description:
-        "Adjudicate a dispute between two Beyonders and enforce the outcome",
+      description: "Adjudicate a dispute between two Beyonders and enforce the outcome",
       requirements: [
         "Receive both parties' consent to your arbitration",
         "Issue a judgment backed by your Sacred Contract ability",
@@ -870,8 +832,7 @@ const sunSequences: Sequence[] = [
       },
       {
         name: "Solar Judgment",
-        description:
-          "Call down a pillar of concentrated sunlight to smite a target area",
+        description: "Call down a pillar of concentrated sunlight to smite a target area",
         type: "active",
       },
       {
@@ -900,8 +861,7 @@ const sunSequences: Sequence[] = [
       },
       {
         name: "Beyonder Characteristic of a Notary",
-        description:
-          "The crystallized Beyonder characteristic from a Seq 6 Notary",
+        description: "The crystallized Beyonder characteristic from a Seq 6 Notary",
         category: "main-ingredient",
       },
       {
@@ -911,8 +871,7 @@ const sunSequences: Sequence[] = [
       },
       {
         name: "Holy Water of the Dawn Cathedral",
-        description:
-          "Water blessed at the Dawn Cathedral during the summer solstice",
+        description: "Water blessed at the Dawn Cathedral during the summer solstice",
         category: "supplementary-ingredient",
       },
     ],
@@ -935,20 +894,17 @@ const deathSequences: Sequence[] = [
     abilities: [
       {
         name: "Corpse Communication",
-        description:
-          "Speak with recently deceased to learn their final moments",
+        description: "Speak with recently deceased to learn their final moments",
         type: "active",
       },
       {
         name: "Death Sense",
-        description:
-          "Detect the presence of death, undead, and lingering spirits nearby",
+        description: "Detect the presence of death, undead, and lingering spirits nearby",
         type: "passive",
       },
       {
         name: "Preserve Remains",
-        description:
-          "Slow or halt decomposition of a corpse through spiritual means",
+        description: "Slow or halt decomposition of a corpse through spiritual means",
         type: "active",
       },
     ],
@@ -965,8 +921,7 @@ const deathSequences: Sequence[] = [
       },
       {
         name: "Corpse Grass",
-        description:
-          "A grey grass that grows exclusively on the graves of Beyonders",
+        description: "A grey grass that grows exclusively on the graves of Beyonders",
         category: "main-ingredient",
       },
       {
@@ -995,8 +950,7 @@ const deathSequences: Sequence[] = [
       },
       {
         name: "Death's Endurance",
-        description:
-          "Reduced need for sleep and food; resistance to cold and disease",
+        description: "Reduced need for sleep and food; resistance to cold and disease",
         type: "passive",
       },
     ],
@@ -1018,8 +972,7 @@ const deathSequences: Sequence[] = [
       },
       {
         name: "Graveyard Soil",
-        description:
-          "Soil from a graveyard that has held the dead for over a century",
+        description: "Soil from a graveyard that has held the dead for over a century",
         category: "supplementary-ingredient",
       },
     ],
@@ -1039,8 +992,7 @@ const deathSequences: Sequence[] = [
     abilities: [
       {
         name: "Spirit Channeling",
-        description:
-          "Allow a spirit to temporarily inhabit your body to communicate",
+        description: "Allow a spirit to temporarily inhabit your body to communicate",
         type: "active",
       },
       {
@@ -1084,8 +1036,7 @@ const deathSequences: Sequence[] = [
       },
       {
         name: "Tears of the Bereaved",
-        description:
-          "Tears shed in genuine grief, collected under moonlight",
+        description: "Tears shed in genuine grief, collected under moonlight",
         category: "supplementary-ingredient",
       },
     ],
@@ -1105,14 +1056,12 @@ const deathSequences: Sequence[] = [
     abilities: [
       {
         name: "Death Gate",
-        description:
-          "Open a temporary passage to the realm of the dead",
+        description: "Open a temporary passage to the realm of the dead",
         type: "active",
       },
       {
         name: "Soul Harvest",
-        description:
-          "Extract the soul of a recently deceased being before it dissipates",
+        description: "Extract the soul of a recently deceased being before it dissipates",
         type: "active",
       },
       {
@@ -1123,8 +1072,7 @@ const deathSequences: Sequence[] = [
       },
       {
         name: "Spirit Army",
-        description:
-          "Command a small host of bound spirits to fight on your behalf",
+        description: "Command a small host of bound spirits to fight on your behalf",
         type: "active",
       },
     ],
@@ -1146,20 +1094,17 @@ const deathSequences: Sequence[] = [
       },
       {
         name: "Veil Fragment",
-        description:
-          "A piece of the metaphysical veil between life and death",
+        description: "A piece of the metaphysical veil between life and death",
         category: "supplementary-ingredient",
       },
       {
         name: "Ancient Funeral Ash",
-        description:
-          "Ash from a funeral pyre that burned over five hundred years ago",
+        description: "Ash from a funeral pyre that burned over five hundred years ago",
         category: "supplementary-ingredient",
       },
     ],
     advancementRitual: {
-      description:
-        "Enter the realm of the dead, guide a lost soul, and return alive",
+      description: "Enter the realm of the dead, guide a lost soul, and return alive",
       requirements: [
         "Open a Death Gate to the realm of the dead",
         "Locate a specific lost soul within the death realm",
@@ -1174,8 +1119,7 @@ const deathSequences: Sequence[] = [
     abilities: [
       {
         name: "Resurrection",
-        description:
-          "Revive yourself from death once, reforming your body over time",
+        description: "Revive yourself from death once, reforming your body over time",
         type: "passive",
       },
       {
@@ -1186,8 +1130,7 @@ const deathSequences: Sequence[] = [
       },
       {
         name: "Undead Legion",
-        description:
-          "Raise and command a large force of powerful undead",
+        description: "Raise and command a large force of powerful undead",
         type: "active",
       },
       {
@@ -1210,8 +1153,7 @@ const deathSequences: Sequence[] = [
       },
       {
         name: "Beyonder Characteristic of a Spirit Guide",
-        description:
-          "The crystallized Beyonder characteristic from a Seq 6 Spirit Guide",
+        description: "The crystallized Beyonder characteristic from a Seq 6 Spirit Guide",
         category: "main-ingredient",
       },
       {
@@ -1221,8 +1163,7 @@ const deathSequences: Sequence[] = [
       },
       {
         name: "Essence of the Death Realm",
-        description:
-          "Condensed energy harvested from the depths of the death realm",
+        description: "Condensed energy harvested from the depths of the death realm",
         category: "supplementary-ingredient",
       },
     ],
@@ -1285,10 +1226,7 @@ export function getPathway(id: number): Pathway | undefined {
   return ALL_PATHWAYS.find((p) => p.id === id);
 }
 
-export function getSequence(
-  pathwayId: number,
-  level: number,
-): Sequence | undefined {
+export function getSequence(pathwayId: number, level: number): Sequence | undefined {
   return getPathway(pathwayId)?.sequences.find((s) => s.level === level);
 }
 

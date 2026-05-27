@@ -63,9 +63,7 @@ export function LoginForm() {
           placeholder="••••••••"
         />
       </div>
-      {error && (
-        <p className="text-sm text-red-400">{error}</p>
-      )}
+      {error && <p className="text-sm text-red-400">{error}</p>}
       <button
         type="submit"
         disabled={loading}

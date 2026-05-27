@@ -17,9 +17,7 @@ export default async function LoginPage() {
           <h1 className="font-serif text-3xl font-bold text-amber">
             Lord of the Mysteries
           </h1>
-          <p className="mt-2 text-sm text-muted">
-            Enter the world of Beyonders
-          </p>
+          <p className="mt-2 text-sm text-muted">Enter the world of Beyonders</p>
         </div>
         <LoginForm />
         <p className="text-center text-sm text-muted">

@@ -4,16 +4,16 @@ Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
 
 ## Commands
 
-| Command             | Purpose              |
-|---------------------|----------------------|
-| `pnpm dev`          | Start dev server     |
-| `pnpm build`        | Production build     |
-| `pnpm lint`         | ESLint               |
-| `pnpm format`       | Prettier (write)     |
-| `pnpm format:check` | Prettier (check)     |
-| `pnpm typecheck`    | TypeScript check     |
-| `pnpm test`         | Vitest (single run)  |
-| `pnpm test:watch`   | Vitest (watch mode)  |
+| Command             | Purpose             |
+| ------------------- | ------------------- |
+| `pnpm dev`          | Start dev server    |
+| `pnpm build`        | Production build    |
+| `pnpm lint`         | ESLint              |
+| `pnpm format`       | Prettier (write)    |
+| `pnpm format:check` | Prettier (check)    |
+| `pnpm typecheck`    | TypeScript check    |
+| `pnpm test`         | Vitest (single run) |
+| `pnpm test:watch`   | Vitest (watch mode) |
 
 ## Architecture
 
@@ -54,6 +54,7 @@ docs/
 ## Environment Variables
 
 Copy `.env.example` to `.env.local` and fill in values:
+
 - `NEXT_PUBLIC_SUPABASE_URL` — Supabase project URL (or local `http://127.0.0.1:54321`)
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase publishable key
 - `RESEND_API_KEY` — (optional) for direct email via Resend SDK
@@ -62,6 +63,7 @@ Copy `.env.example` to `.env.local` and fill in values:
 ## Scoped Documentation
 
 Each major directory has its own `CLAUDE.md` with context-specific rules:
+
 - `src/app/CLAUDE.md` — routing, middleware, auth flow
 - `src/components/CLAUDE.md` — component patterns, styling
 - `src/lib/rules/CLAUDE.md` — rules engine architecture
@@ -70,6 +72,7 @@ Each major directory has its own `CLAUDE.md` with context-specific rules:
 - `supabase/CLAUDE.md` — database, migrations, templates
 
 Shared rule files in `docs/rules/` are `@`-imported only where relevant:
+
 - `docs/rules/nextjs.md` — Next.js 16 version-awareness
 - `docs/rules/security.md` — CSP, RLS, env var safety
 - `docs/rules/styling.md` — Tailwind v4 theme tokens and conventions

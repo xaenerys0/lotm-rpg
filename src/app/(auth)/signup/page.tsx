@@ -17,9 +17,7 @@ export default async function SignupPage() {
           <h1 className="font-serif text-3xl font-bold text-amber">
             Lord of the Mysteries
           </h1>
-          <p className="mt-2 text-sm text-muted">
-            Begin your journey as a Beyonder
-          </p>
+          <p className="mt-2 text-sm text-muted">Begin your journey as a Beyonder</p>
         </div>
         <SignupForm />
         <p className="text-center text-sm text-muted">
