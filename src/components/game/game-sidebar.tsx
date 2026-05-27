@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -18,18 +18,31 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && mobileOpen) {
+        setMobileOpen(false);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [mobileOpen]);
+
   async function handleSignOut() {
     setSigningOut(true);
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-    router.refresh();
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+      router.push("/login");
+    } finally {
+      setSigningOut(false);
+    }
   }
 
   return (
     <>
       {/* Mobile top bar */}
-      <header className="fixed inset-x-0 top-0 z-40 flex h-14 items-center justify-between border-b border-border bg-surface px-4 md:hidden">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-surface px-4 md:hidden">
         <span className="font-serif text-lg font-bold text-amber">
           Lord of the Mysteries
         </span>
@@ -37,6 +50,8 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
           onClick={() => setMobileOpen(!mobileOpen)}
           className="flex h-10 w-10 items-center justify-center rounded text-foreground transition-colors hover:bg-amber/10 hover:text-amber"
           aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
+          aria-expanded={mobileOpen}
+          aria-controls="game-sidebar"
         >
           <svg
             width="20"
@@ -72,10 +87,11 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — max-md:invisible hides from a11y tree and focus order on mobile when closed */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-surface transition-transform duration-200 ease-in-out md:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        id="game-sidebar"
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-surface transition-[transform,visibility] duration-200 ease-in-out md:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full max-md:invisible"
         }`}
       >
         <div className="border-b border-border px-6 py-5">
