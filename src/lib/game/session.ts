@@ -89,19 +89,19 @@ export function isValidSessionShape(obj: unknown): boolean {
   const s = obj as Record<string, unknown>;
 
   if (typeof s.id !== "string" || s.id.length === 0) return false;
-  if (typeof s.turnCount !== "number" || s.turnCount < 0) return false;
+  if (!Number.isFinite(s.turnCount) || (s.turnCount as number) < 0) return false;
   if (typeof s.phase !== "string" || !VALID_PHASES.includes(s.phase as GamePhase))
     return false;
-  if (typeof s.createdAt !== "number") return false;
-  if (typeof s.updatedAt !== "number") return false;
+  if (!Number.isFinite(s.createdAt)) return false;
+  if (!Number.isFinite(s.updatedAt)) return false;
 
   if (typeof s.gameState !== "object" || s.gameState === null) return false;
   const gs = s.gameState as Record<string, unknown>;
   if (typeof gs.characterId !== "string") return false;
-  if (typeof gs.pathwayId !== "number") return false;
-  if (typeof gs.sequenceLevel !== "number") return false;
-  if (typeof gs.sanity !== "number") return false;
-  if (typeof gs.maxSanity !== "number") return false;
+  if (!Number.isFinite(gs.pathwayId)) return false;
+  if (!Number.isFinite(gs.sequenceLevel)) return false;
+  if (!Number.isFinite(gs.sanity)) return false;
+  if (!Number.isFinite(gs.maxSanity) || (gs.maxSanity as number) <= 0) return false;
   if (typeof gs.location !== "string") return false;
   if (!Array.isArray(gs.inventory)) return false;
   if (!Array.isArray(gs.activeQuests)) return false;

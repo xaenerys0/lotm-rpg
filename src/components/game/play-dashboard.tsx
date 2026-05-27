@@ -8,14 +8,14 @@ import {
   createSession,
   createDefaultGameState,
   sessionToSummary,
+  serializeSession,
   deserializeSession,
+  SESSION_KEY_PREFIX,
+  SESSION_INDEX_KEY,
+  PROVIDER_CONFIG_KEY,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { GameLoop } from "./game-loop";
-
-const CONFIG_KEY = "lotm-rpg-provider-config";
-const SESSION_KEY_PREFIX = "lotm-rpg-session-";
-const SESSION_INDEX_KEY = "lotm-rpg-session-index";
 
 type DashboardView = "home" | "pathway-select" | "playing";
 
@@ -37,7 +37,7 @@ const PATHWAY_SEFIRA: Record<string, string> = {
 
 function loadConfig(): ProviderConfig | null {
   try {
-    const raw = localStorage.getItem(CONFIG_KEY);
+    const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ProviderConfig;
   } catch {
@@ -114,7 +114,7 @@ export function PlayDashboard() {
     const session = createSession(gameState);
 
     try {
-      localStorage.setItem(SESSION_KEY_PREFIX + session.id, JSON.stringify(session));
+      localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
       const index = loadSessionIndex();
       index.unshift(session.id);
       saveSessionIndex(index);

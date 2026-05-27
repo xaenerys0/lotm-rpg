@@ -18,7 +18,9 @@ export function applyWorldStateChanges(
 
     switch (change.field) {
       case "location":
-        next = { ...next, location: String(change.newValue) };
+        if (typeof change.newValue === "string") {
+          next = { ...next, location: change.newValue };
+        }
         break;
       case "activeQuests":
         if (Array.isArray(change.newValue)) {

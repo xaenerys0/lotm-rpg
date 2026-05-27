@@ -84,6 +84,7 @@ export function transition(
         currentChoices: null,
         selectedChoiceId: null,
         lastResolution: null,
+        activePillar: null,
         updatedAt: now,
       };
     }
@@ -104,6 +105,11 @@ export function transition(
       return {
         ...session,
         phase: "situation",
+        currentNarrative: null,
+        currentChoices: null,
+        selectedChoiceId: null,
+        lastResolution: null,
+        activePillar: null,
         errorMessage: null,
         updatedAt: now,
       };

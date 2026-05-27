@@ -52,7 +52,7 @@ export interface GameSessionSummary {
 }
 
 export const VALID_TRANSITIONS: Record<GamePhase, GamePhase[]> = {
-  idle: ["situation"],
+  idle: ["situation", "error"],
   situation: ["choices", "error"],
   choices: ["resolution", "error"],
   resolution: ["consequences", "error"],

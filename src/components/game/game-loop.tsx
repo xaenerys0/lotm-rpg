@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import type { GameSession } from "@/lib/game";
+import type { GameSession, GameplayPillar } from "@/lib/game";
 import {
   transition,
   applyResolution,
@@ -9,20 +9,18 @@ import {
   deserializeSession,
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
+  SESSION_KEY_PREFIX,
+  PROVIDER_CONFIG_KEY,
 } from "@/lib/game";
-import type { ProviderConfig, Choice } from "@/lib/ai";
-import { generate } from "@/lib/ai";
+import type { ProviderConfig, Choice, InstructionType } from "@/lib/ai";
+import { generate, TOKEN_BUDGET } from "@/lib/ai";
 import { getLoreByPathway, getLoreByCity } from "@/lib/lore";
 import { getPathway, getSequence } from "@/lib/rules";
 import type { LoreEntry } from "@/lib/lore";
 
-const SESSION_KEY_PREFIX = "lotm-rpg-session-";
-const CONFIG_KEY = "lotm-rpg-provider-config";
-const LORE_TOKEN_BUDGET = 2500;
-
 function loadProviderConfig(): ProviderConfig | null {
   try {
-    const raw = localStorage.getItem(CONFIG_KEY);
+    const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ProviderConfig;
   } catch {
@@ -50,10 +48,10 @@ function loadSessionFromStorage(sessionId: string): GameSession | null {
 
 function selectLoreEntries(
   pathwayName: string,
-  city: string,
+  location: string,
 ): { entries: LoreEntry[]; totalTokens: number } {
   const pathwayLore = getLoreByPathway(pathwayName.toLowerCase());
-  const cityLore = getLoreByCity(city);
+  const cityLore = getLoreByCity(location.toLowerCase().split(" ")[0]);
   const combined = [...pathwayLore];
   for (const entry of cityLore) {
     if (!combined.some((e) => e.slug === entry.slug)) {
@@ -61,30 +59,42 @@ function selectLoreEntries(
     }
   }
 
+  const budget = TOKEN_BUDGET.lore;
   let totalTokens = 0;
   const selected: LoreEntry[] = [];
   for (const entry of combined) {
-    if (totalTokens + entry.tokenCount > LORE_TOKEN_BUDGET) break;
+    if (totalTokens + entry.tokenCount > budget) break;
     selected.push(entry);
     totalTokens += entry.tokenCount;
   }
   return { entries: selected, totalTokens };
 }
 
-function getSanityColor(sanity: number, maxSanity: number): string {
-  const ratio = sanity / maxSanity;
-  if (ratio > 0.6) return "bg-sanity-high";
-  if (ratio > 0.3) return "bg-sanity-mid";
-  if (ratio > 0.1) return "bg-sanity-low";
-  return "bg-sanity-critical";
-}
-
-function getSanityGlow(sanity: number, maxSanity: number): string {
-  const ratio = sanity / maxSanity;
-  if (ratio > 0.6) return "shadow-[0_0_8px_var(--color-sanity-high)]";
-  if (ratio > 0.3) return "shadow-[0_0_8px_var(--color-sanity-mid)]";
-  if (ratio > 0.1) return "shadow-[0_0_8px_var(--color-sanity-low)]";
-  return "shadow-[0_0_8px_var(--color-sanity-critical)]";
+function getSanityStyle(sanity: number, maxSanity: number) {
+  const ratio = maxSanity > 0 ? sanity / maxSanity : 0;
+  if (ratio > 0.6)
+    return {
+      color: "bg-sanity-high",
+      glow: "shadow-[0_0_8px_var(--color-sanity-high)]",
+      ratio,
+    };
+  if (ratio > 0.3)
+    return {
+      color: "bg-sanity-mid",
+      glow: "shadow-[0_0_8px_var(--color-sanity-mid)]",
+      ratio,
+    };
+  if (ratio > 0.1)
+    return {
+      color: "bg-sanity-low",
+      glow: "shadow-[0_0_8px_var(--color-sanity-low)]",
+      ratio,
+    };
+  return {
+    color: "bg-sanity-critical",
+    glow: "shadow-[0_0_8px_var(--color-sanity-critical)]",
+    ratio,
+  };
 }
 
 function getChoiceTypeIcon(type: Choice["type"]): string {
@@ -100,6 +110,24 @@ function getChoiceTypeIcon(type: Choice["type"]): string {
   }
 }
 
+function buildAICallParams(currentSession: GameSession) {
+  const pathway = getPathway(currentSession.gameState.pathwayId);
+  const seq = getSequence(
+    currentSession.gameState.pathwayId,
+    currentSession.gameState.sequenceLevel,
+  );
+  return {
+    pathway,
+    seq,
+    abilities: seq?.abilities.map((a) => a.name) ?? [],
+    actingReqs: seq?.actingRequirements ?? [],
+    loreContext: selectLoreEntries(
+      pathway?.name ?? "fool",
+      currentSession.gameState.location,
+    ),
+  };
+}
+
 // ─── Main Component ────────────────────────────────────────────────
 
 const noopSubscribe = () => () => {};
@@ -111,8 +139,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     () => null,
   );
   const [session, setSession] = useState<GameSession | null>(initialSession);
-  const loading = false;
-  const abortRef = useRef<AbortController | null>(null);
+  const generationRef = useRef(0);
 
   const updateSession = useCallback((next: GameSession) => {
     setSession(next);
@@ -120,24 +147,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   }, []);
 
   const generateSituation = useCallback(
-    async (currentSession: GameSession) => {
+    async (currentSession: GameSession, gen: number) => {
       const config = loadProviderConfig();
       if (!config) return;
 
-      const pathway = getPathway(currentSession.gameState.pathwayId);
-      const seq = getSequence(
-        currentSession.gameState.pathwayId,
-        currentSession.gameState.sequenceLevel,
-      );
-      const abilities = seq?.abilities.map((a) => a.name) ?? [];
-      const actingReqs = seq?.actingRequirements ?? [];
+      const { seq, abilities, actingReqs, loreContext } =
+        buildAICallParams(currentSession);
 
-      const loreContext = selectLoreEntries(
-        pathway?.name ?? "fool",
-        currentSession.gameState.location,
-      );
-
-      const instruction = currentSession.activePillar
+      const instruction: InstructionType = currentSession.activePillar
         ? PILLAR_INSTRUCTION_MAP[currentSession.activePillar]
         : "narrative";
 
@@ -157,6 +174,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           abilities,
           actingRequirements: actingReqs,
         });
+
+        if (generationRef.current !== gen) return;
 
         const choices = result.response.choices ?? [
           {
@@ -183,6 +202,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         });
         updateSession(next);
       } catch (err) {
+        if (generationRef.current !== gen) return;
         const message =
           err instanceof Error ? err.message : "Failed to generate situation";
         const errSession = transition(currentSession, {
@@ -196,7 +216,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   );
 
   const resolveChoice = useCallback(
-    async (currentSession: GameSession) => {
+    async (currentSession: GameSession, gen: number) => {
       const config = loadProviderConfig();
       if (!config) return;
 
@@ -205,21 +225,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       );
       if (!selectedChoice) return;
 
-      const pillar = CHOICE_PILLAR_MAP[selectedChoice.type];
+      const pillar: GameplayPillar = CHOICE_PILLAR_MAP[selectedChoice.type];
       const instruction = PILLAR_INSTRUCTION_MAP[pillar];
 
-      const pathway = getPathway(currentSession.gameState.pathwayId);
-      const seq = getSequence(
-        currentSession.gameState.pathwayId,
-        currentSession.gameState.sequenceLevel,
-      );
-      const abilities = seq?.abilities.map((a) => a.name) ?? [];
-      const actingReqs = seq?.actingRequirements ?? [];
-
-      const loreContext = selectLoreEntries(
-        pathway?.name ?? "fool",
-        currentSession.gameState.location,
-      );
+      const { abilities, actingReqs, loreContext } = buildAICallParams(currentSession);
 
       try {
         const result = await generate({
@@ -233,12 +242,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           actingRequirements: actingReqs,
         });
 
+        if (generationRef.current !== gen) return;
+
         const next = transition(currentSession, {
           type: "RESOLUTION_READY",
           result,
         });
         updateSession({ ...next, activePillar: pillar });
       } catch (err) {
+        if (generationRef.current !== gen) return;
         const message = err instanceof Error ? err.message : "Failed to resolve action";
         const errSession = transition(currentSession, {
           type: "ERROR",
@@ -250,29 +262,18 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     [updateSession],
   );
 
-  // Auto-trigger AI generation when entering situation or resolution phases.
-  // The async work runs outside the effect via queueMicrotask to satisfy
-  // React 19's no-setState-in-effect-body rule.
   useEffect(() => {
     if (!session) return;
 
     if (session.phase === "situation") {
-      abortRef.current?.abort();
-      const ctrl = new AbortController();
-      abortRef.current = ctrl;
+      const gen = ++generationRef.current;
       const snap = session;
-      queueMicrotask(() => generateSituation(snap));
+      queueMicrotask(() => generateSituation(snap, gen));
     } else if (session.phase === "resolution") {
-      abortRef.current?.abort();
-      const ctrl = new AbortController();
-      abortRef.current = ctrl;
+      const gen = ++generationRef.current;
       const snap = session;
-      queueMicrotask(() => resolveChoice(snap));
+      queueMicrotask(() => resolveChoice(snap, gen));
     }
-
-    return () => {
-      abortRef.current?.abort();
-    };
   }, [session?.phase, session?.turnCount, session?.selectedChoiceId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleStartSituation = useCallback(() => {
@@ -322,14 +323,6 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   }, [session, updateSession]);
 
   // ─── Render ────────────────────────────────────────────────────
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <LoadingOrb />
-      </div>
-    );
-  }
 
   if (!session) {
     return (
@@ -406,16 +399,14 @@ function LoadingOrb() {
 }
 
 function SanityMeter({ sanity, maxSanity }: { sanity: number; maxSanity: number }) {
-  const ratio = sanity / maxSanity;
-  const barColor = getSanityColor(sanity, maxSanity);
-  const glow = getSanityGlow(sanity, maxSanity);
+  const { color, glow, ratio } = getSanityStyle(sanity, maxSanity);
 
   return (
     <div className="flex items-center gap-2">
       <span className="text-xs text-muted/60">Sanity</span>
       <div className="h-2 w-24 overflow-hidden rounded-full bg-border/40">
         <div
-          className={`h-full rounded-full transition-all duration-700 ${barColor} ${glow}`}
+          className={`h-full rounded-full transition-all duration-700 ${color} ${glow}`}
           style={{ width: `${ratio * 100}%` }}
         />
       </div>
@@ -647,7 +638,7 @@ function ErrorPhase({ message, onRetry }: { message: string; onRetry: () => void
         </span>
       </div>
       <p className="font-serif text-base text-foreground/70">Something went wrong</p>
-      <p className="mt-2 max-w-md mx-auto text-sm text-muted/60">{message}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm text-muted/60">{message}</p>
       <button
         type="button"
         onClick={onRetry}

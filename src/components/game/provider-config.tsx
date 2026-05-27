@@ -3,8 +3,7 @@
 import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 import type { ProviderId, ProviderConfig } from "@/lib/ai";
 import { PROVIDER_MODELS, validateProviderConfig } from "@/lib/ai";
-
-const STORAGE_KEY = "lotm-rpg-provider-config";
+import { PROVIDER_CONFIG_KEY } from "@/lib/game";
 
 const PROVIDERS: { id: ProviderId; label: string; needsBaseUrl: boolean }[] = [
   { id: "anthropic", label: "Anthropic", needsBaseUrl: false },
@@ -33,20 +32,31 @@ function getDefaultBaseUrl(providerId: ProviderId): string {
   return "";
 }
 
+function getDefaultModels(providerId: ProviderId) {
+  const models = PROVIDER_MODELS[providerId];
+  return {
+    routine: models.find((m) => m.tier === "routine")?.id ?? "",
+    premium: models.find((m) => m.tier === "premium")?.id ?? "",
+  };
+}
+
 function loadInitialState(): FormState {
+  const defaults = getDefaultModels("anthropic");
+  const defaultState: FormState = {
+    providerId: "anthropic",
+    apiKey: "",
+    baseUrl: "",
+    routineModel: defaults.routine,
+    premiumModel: defaults.premium,
+    customRoutineModel: "",
+    customPremiumModel: "",
+  };
+
   if (typeof window === "undefined") {
-    return {
-      providerId: "anthropic",
-      apiKey: "",
-      baseUrl: "",
-      routineModel: "",
-      premiumModel: "",
-      customRoutineModel: "",
-      customPremiumModel: "",
-    };
+    return defaultState;
   }
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (raw) {
       const config = JSON.parse(raw) as ProviderConfig;
       return {
@@ -62,15 +72,7 @@ function loadInitialState(): FormState {
   } catch {
     // Corrupt data — start fresh
   }
-  return {
-    providerId: "anthropic",
-    apiKey: "",
-    baseUrl: "",
-    routineModel: "",
-    premiumModel: "",
-    customRoutineModel: "",
-    customPremiumModel: "",
-  };
+  return defaultState;
 }
 
 const subscribe = () => () => {};
@@ -156,7 +158,7 @@ export function ProviderConfig() {
   const handleSave = useCallback(() => {
     setSaveStatus("saving");
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(buildConfig()));
+      localStorage.setItem(PROVIDER_CONFIG_KEY, JSON.stringify(buildConfig()));
       setSaveStatus("saved");
     } catch {
       setSaveStatus("unsaved");

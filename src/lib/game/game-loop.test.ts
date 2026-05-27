@@ -92,8 +92,8 @@ describe("VALID_TRANSITIONS", () => {
     }
   });
 
-  it("idle can only transition to situation", () => {
-    expect(VALID_TRANSITIONS.idle).toEqual(["situation"]);
+  it("idle can transition to situation or error", () => {
+    expect(VALID_TRANSITIONS.idle).toEqual(["situation", "error"]);
   });
 
   it("situation can transition to choices or error", () => {
@@ -167,6 +167,7 @@ describe("CHOICE_PILLAR_MAP", () => {
 describe("isValidTransition", () => {
   it("returns true for valid transitions", () => {
     expect(isValidTransition("idle", "situation")).toBe(true);
+    expect(isValidTransition("idle", "error")).toBe(true);
     expect(isValidTransition("situation", "choices")).toBe(true);
     expect(isValidTransition("choices", "resolution")).toBe(true);
     expect(isValidTransition("resolution", "consequences")).toBe(true);
@@ -179,7 +180,6 @@ describe("isValidTransition", () => {
     expect(isValidTransition("idle", "choices")).toBe(false);
     expect(isValidTransition("idle", "resolution")).toBe(false);
     expect(isValidTransition("idle", "consequences")).toBe(false);
-    expect(isValidTransition("idle", "error")).toBe(false);
     expect(isValidTransition("situation", "idle")).toBe(false);
     expect(isValidTransition("choices", "situation")).toBe(false);
     expect(isValidTransition("consequences", "idle")).toBe(false);
@@ -338,11 +338,12 @@ describe("transition", () => {
   });
 
   describe("APPLY_CONSEQUENCES", () => {
-    it("transitions from consequences to situation and increments turn", () => {
+    it("transitions from consequences to situation, increments turn, clears activePillar", () => {
       const session = makeSession({
         phase: "consequences",
         turnCount: 3,
         lastResolution: makeValidatedResponse(),
+        activePillar: "combat",
       });
       const next = transition(session, { type: "APPLY_CONSEQUENCES" }, NOW);
 
@@ -352,6 +353,7 @@ describe("transition", () => {
       expect(next.currentChoices).toBeNull();
       expect(next.selectedChoiceId).toBeNull();
       expect(next.lastResolution).toBeNull();
+      expect(next.activePillar).toBeNull();
       expect(next.updatedAt).toBe(NOW);
     });
 
@@ -397,15 +399,25 @@ describe("transition", () => {
   });
 
   describe("RETRY", () => {
-    it("transitions from error to situation", () => {
+    it("transitions from error to situation and clears stale fields", () => {
       const session = makeSession({
         phase: "error",
         errorMessage: "AI failed",
+        currentNarrative: "stale narrative",
+        currentChoices: makeChoices(),
+        selectedChoiceId: "c1",
+        lastResolution: makeValidatedResponse(),
+        activePillar: "combat",
       });
       const next = transition(session, { type: "RETRY" }, NOW);
 
       expect(next.phase).toBe("situation");
       expect(next.errorMessage).toBeNull();
+      expect(next.currentNarrative).toBeNull();
+      expect(next.currentChoices).toBeNull();
+      expect(next.selectedChoiceId).toBeNull();
+      expect(next.lastResolution).toBeNull();
+      expect(next.activePillar).toBeNull();
       expect(next.updatedAt).toBe(NOW);
     });
 
@@ -637,6 +649,20 @@ describe("applyWorldStateChanges", () => {
     ];
     const next = applyWorldStateChanges(state, changes);
     expect(next.npcsPresent).toEqual(["npc1"]);
+  });
+
+  it("ignores location change when newValue is not a string", () => {
+    const state = makeGameState({ location: "Tingen City" });
+    const changes: StateChange[] = [
+      {
+        field: "location",
+        oldValue: "Tingen City",
+        newValue: { city: "Backlund" },
+        reason: "Bad data",
+      },
+    ];
+    const next = applyWorldStateChanges(state, changes);
+    expect(next.location).toBe("Tingen City");
   });
 });
 
@@ -1216,5 +1242,49 @@ describe("isValidSessionShape", () => {
     const session = makeSession();
     const invalid = { ...session, updatedAt: "now" };
     expect(isValidSessionShape(invalid)).toBe(false);
+  });
+
+  it("rejects NaN for numeric fields", () => {
+    const session = makeSession();
+    expect(isValidSessionShape({ ...session, turnCount: NaN })).toBe(false);
+    expect(
+      isValidSessionShape({
+        ...session,
+        gameState: { ...session.gameState, maxSanity: NaN },
+      }),
+    ).toBe(false);
+    expect(
+      isValidSessionShape({
+        ...session,
+        gameState: { ...session.gameState, sanity: NaN },
+      }),
+    ).toBe(false);
+    expect(
+      isValidSessionShape({
+        ...session,
+        gameState: { ...session.gameState, pathwayId: NaN },
+      }),
+    ).toBe(false);
+    expect(isValidSessionShape({ ...session, createdAt: NaN })).toBe(false);
+  });
+
+  it("rejects maxSanity of zero", () => {
+    const session = makeSession();
+    expect(
+      isValidSessionShape({
+        ...session,
+        gameState: { ...session.gameState, maxSanity: 0 },
+      }),
+    ).toBe(false);
+  });
+
+  it("rejects Infinity for numeric fields", () => {
+    const session = makeSession();
+    expect(
+      isValidSessionShape({
+        ...session,
+        gameState: { ...session.gameState, sanity: Infinity },
+      }),
+    ).toBe(false);
   });
 });

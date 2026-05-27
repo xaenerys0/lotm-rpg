@@ -25,3 +25,5 @@ export {
   deserializeSession,
   isValidSessionShape,
 } from "./session";
+
+export { SESSION_KEY_PREFIX, SESSION_INDEX_KEY, PROVIDER_CONFIG_KEY } from "./constants";
