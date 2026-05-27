@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Victorian Steampunk Dark Theme */
+@theme inline {
+  /* Core palette */
+  --color-background: #0c0a09;
+  --color-surface: #1c1917;
+  --color-foreground: #e7e5e4;
+  --color-muted: #78716c;
+  --color-border: #292524;
+
+  /* Accent colors */
+  --color-amber: #d97706;
+  --color-gold: #f59e0b;
+  --color-copper: #b45309;
+  --color-fog: #57534e;
+  --color-crimson: #991b1b;
+  --color-occult: #7c3aed;
+  --color-gaslight: #fbbf24;
+
+  /* Semantic colors */
+  --color-sanity-high: #22c55e;
+  --color-sanity-mid: #eab308;
+  --color-sanity-low: #ef4444;
+  --color-sanity-critical: #7f1d1d;
+
+  /* Typography */
+  --font-serif: var(--font-lora), "Georgia", serif;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  /* Spacing / sizing */
+  --container-game: 1200px;
+}
+
+@layer base {
+  body {
+    background: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background-color: var(--color-amber);
+    color: var(--color-background);
+  }
+}
