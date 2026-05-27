@@ -1,0 +1,64 @@
+export type {
+  ProviderId,
+  ModelTier,
+  CallClassification,
+  ProviderConfig,
+  ModelOption,
+  Choice,
+  StateChange,
+  ActingEvaluation,
+  AIResponse,
+  ValidatedAIResponse,
+  InstructionType,
+  GameState,
+  TurnRecord,
+  BulletSummary,
+  SessionFact,
+  MemoryState,
+  PromptLayer,
+  PromptAssembly,
+  LoreContext,
+  PromptInput,
+  ChatMessage,
+  ProviderRequest,
+  ProviderResponse,
+} from "./types";
+
+export { PROVIDER_MODELS } from "./types";
+
+export { AIError, type AIErrorCode } from "./errors";
+
+export { createAdapter, type LLMProviderAdapter } from "./providers";
+
+export {
+  assemblePrompt,
+  promptToMessages,
+  buildSystemPrompt,
+  buildLoreContext,
+  buildGameStatePrompt,
+  buildHistoryPrompt,
+  buildInstructionPrompt,
+  isWithinTokenBudget,
+  TOKEN_BUDGET,
+} from "./prompts";
+
+export {
+  createMemoryState,
+  addTurn,
+  summarizeTurn,
+  extractSessionFacts,
+  estimateMemoryTokens,
+  trimMemoryForBudget,
+  formatMemoryForPrompt,
+  buildTurnRecord,
+} from "./memory";
+
+export { parseAIResponse, validateAIResponse, sanitizeAIResponse } from "./validation";
+
+export {
+  generate,
+  classifyCall,
+  selectModel,
+  validateProviderConfig,
+  type GenerateOptions,
+} from "./client";
