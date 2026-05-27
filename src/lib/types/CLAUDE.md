@@ -1,7 +1,7 @@
 # Type Definitions
 
 - `rules.ts` — Game rules types (pathways, sequences, characteristics, validation results). Source of truth for the rules engine API surface.
-- `database.ts` — Supabase schema types (`Database` interface). Currently defines the `profiles` table.
+- `database.ts` — Supabase schema types (`Database` interface). Defines `profiles` and `lore_entries` tables, plus `LoreCategoryEnum`.
 
 ## Conventions
 

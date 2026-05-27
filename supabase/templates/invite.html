@@ -1,71 +1,203 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark">
-<meta name="supported-color-schemes" content="dark">
-<title>A summons to the Tarot Club</title>
-</head>
-<body style="margin:0;padding:0;background:#0c0a09;color:#e7e5e4;font-family:Georgia,'Times New Roman',serif;-webkit-font-smoothing:antialiased;">
-<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;line-height:0;font-size:0;color:#0c0a09;">
-  A seat above the grey fog has been reserved in your name.
-</div>
-<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:#0c0a09;">
-  <tr>
-    <td align="center" style="padding:32px 16px;">
-      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background:#1c1917;border:1px solid #292524;border-radius:6px;">
-        <tr>
-          <td style="padding:32px 32px 8px;text-align:center;">
-            <p style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:12px;letter-spacing:0.24em;color:#a8a29e;text-transform:uppercase;">Lord of the Mysteries &middot; RPG</p>
-            <hr style="border:0;border-top:1px solid #292524;margin:16px auto 0;width:64px;" aria-hidden="true">
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:16px 32px 0;">
-            <h1 style="margin:0 0 16px;font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.3;color:#f59e0b;font-weight:600;">A summons to the Tarot Club</h1>
-            <p style="margin:0 0 12px;font-size:16px;line-height:1.6;color:#e7e5e4;">
-              Stranger,
-            </p>
-            <p style="margin:0 0 12px;font-size:16px;line-height:1.6;color:#e7e5e4;">
-              A seat has been reserved for you above the grey fog. Accept the summons to claim your name in the ledger and join the table.
-            </p>
-            <p style="margin:0 0 24px;font-size:16px;line-height:1.6;color:#e7e5e4;">
-              The invitation will not survive the dawn.
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:8px 32px 24px;text-align:center;">
-            <a href="{{ .ConfirmationURL }}"
-               style="display:inline-block;background:#d97706;color:#0c0a09;text-decoration:none;font-family:Georgia,'Times New Roman',serif;font-weight:700;font-size:16px;padding:14px 32px;border-radius:4px;border:1px solid #b45309;">
-              Accept the summons
-            </a>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:0 32px 24px;">
-            <p style="margin:0 0 8px;font-size:13px;line-height:1.6;color:#a8a29e;">
-              If the door does not open, copy this address into your browser:
-            </p>
-            <p style="margin:0;font-size:13px;line-height:1.5;word-break:break-all;">
-              <a href="{{ .ConfirmationURL }}" style="color:#f59e0b;text-decoration:underline;">{{ .ConfirmationURL }}</a>
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:16px 32px 32px;border-top:1px solid #292524;">
-            <p style="margin:0;font-size:12px;line-height:1.6;color:#a8a29e;">
-              If this letter has reached you in error, you may discard it. No one will know it arrived.
-            </p>
-          </td>
-        </tr>
-      </table>
-      <p style="max-width:560px;margin:16px auto 0;font-size:11px;line-height:1.6;color:#57534e;text-align:center;font-family:Georgia,'Times New Roman',serif;">
-        <em>&ldquo;Every seat at the table was once an empty chair.&rdquo;</em>
-      </p>
-    </td>
-  </tr>
-</table>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="supported-color-schemes" content="dark" />
+    <title>A summons to the Tarot Club</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #0c0a09;
+      color: #e7e5e4;
+      font-family: Georgia, &quot;Times New Roman&quot;, serif;
+      -webkit-font-smoothing: antialiased;
+    "
+  >
+    <div
+      style="
+        display: none;
+        max-height: 0;
+        overflow: hidden;
+        mso-hide: all;
+        line-height: 0;
+        font-size: 0;
+        color: #0c0a09;
+      "
+    >
+      A seat above the grey fog has been reserved in your name.
+    </div>
+    <table
+      role="presentation"
+      cellpadding="0"
+      cellspacing="0"
+      border="0"
+      width="100%"
+      style="background: #0c0a09"
+    >
+      <tr>
+        <td align="center" style="padding: 32px 16px">
+          <table
+            role="presentation"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            style="
+              max-width: 560px;
+              width: 100%;
+              background: #1c1917;
+              border: 1px solid #292524;
+              border-radius: 6px;
+            "
+          >
+            <tr>
+              <td style="padding: 32px 32px 8px; text-align: center">
+                <p
+                  style="
+                    margin: 0;
+                    font-family: Georgia, &quot;Times New Roman&quot;, serif;
+                    font-size: 12px;
+                    letter-spacing: 0.24em;
+                    color: #a8a29e;
+                    text-transform: uppercase;
+                  "
+                >
+                  Lord of the Mysteries &middot; RPG
+                </p>
+                <hr
+                  style="
+                    border: 0;
+                    border-top: 1px solid #292524;
+                    margin: 16px auto 0;
+                    width: 64px;
+                  "
+                  aria-hidden="true"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 16px 32px 0">
+                <h1
+                  style="
+                    margin: 0 0 16px;
+                    font-family: Georgia, &quot;Times New Roman&quot;, serif;
+                    font-size: 24px;
+                    line-height: 1.3;
+                    color: #f59e0b;
+                    font-weight: 600;
+                  "
+                >
+                  A summons to the Tarot Club
+                </h1>
+                <p
+                  style="
+                    margin: 0 0 12px;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    color: #e7e5e4;
+                  "
+                >
+                  Stranger,
+                </p>
+                <p
+                  style="
+                    margin: 0 0 12px;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    color: #e7e5e4;
+                  "
+                >
+                  A seat has been reserved for you above the grey fog. Accept the summons
+                  to claim your name in the ledger and join the table.
+                </p>
+                <p
+                  style="
+                    margin: 0 0 24px;
+                    font-size: 16px;
+                    line-height: 1.6;
+                    color: #e7e5e4;
+                  "
+                >
+                  The invitation will not survive the dawn.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 8px 32px 24px; text-align: center">
+                <a
+                  href="{{ .ConfirmationURL }}"
+                  style="
+                    display: inline-block;
+                    background: #d97706;
+                    color: #0c0a09;
+                    text-decoration: none;
+                    font-family: Georgia, &quot;Times New Roman&quot;, serif;
+                    font-weight: 700;
+                    font-size: 16px;
+                    padding: 14px 32px;
+                    border-radius: 4px;
+                    border: 1px solid #b45309;
+                  "
+                >
+                  Accept the summons
+                </a>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 0 32px 24px">
+                <p
+                  style="
+                    margin: 0 0 8px;
+                    font-size: 13px;
+                    line-height: 1.6;
+                    color: #a8a29e;
+                  "
+                >
+                  If the door does not open, copy this address into your browser:
+                </p>
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 13px;
+                    line-height: 1.5;
+                    word-break: break-all;
+                  "
+                >
+                  <a
+                    href="{{ .ConfirmationURL }}"
+                    style="color: #f59e0b; text-decoration: underline"
+                    >{{ .ConfirmationURL }}</a
+                  >
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding: 16px 32px 32px; border-top: 1px solid #292524">
+                <p style="margin: 0; font-size: 12px; line-height: 1.6; color: #a8a29e">
+                  If this letter has reached you in error, you may discard it. No one will
+                  know it arrived.
+                </p>
+              </td>
+            </tr>
+          </table>
+          <p
+            style="
+              max-width: 560px;
+              margin: 16px auto 0;
+              font-size: 11px;
+              line-height: 1.6;
+              color: #57534e;
+              text-align: center;
+              font-family: Georgia, &quot;Times New Roman&quot;, serif;
+            "
+          >
+            <em>&ldquo;Every seat at the table was once an empty chair.&rdquo;</em>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
 </html>

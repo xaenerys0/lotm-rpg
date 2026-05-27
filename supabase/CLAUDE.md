@@ -13,6 +13,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 ## Migrations
 
 Migrations live in `migrations/`. Current schema:
+
 - `profiles` — `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
   - RLS: users read/insert/update own rows only
   - Trigger: auto-create profile on signup

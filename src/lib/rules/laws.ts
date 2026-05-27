@@ -10,9 +10,7 @@ import type {
 } from "@/lib/types/rules";
 import { areNeighboringPathways, getPathway, getSequence } from "./pathways";
 
-function totalCharacteristicCount(
-  characteristics: BeyonderCharacteristic[],
-): number {
+function totalCharacteristicCount(characteristics: BeyonderCharacteristic[]): number {
   let total = 0;
   for (const c of characteristics) {
     total += c.quantity;
@@ -26,9 +24,7 @@ export function validateIndestructibility(
 ): ValidationResult {
   const violations: Violation[] = [];
 
-  const weightBefore = totalCharacteristicCount(
-    ledgerBefore.characteristics,
-  );
+  const weightBefore = totalCharacteristicCount(ledgerBefore.characteristics);
   const weightAfter = totalCharacteristicCount(ledgerAfter.characteristics);
 
   if (weightAfter > weightBefore) {
@@ -77,9 +73,7 @@ export function validateCharacteristicTransfer(
   return { valid: violations.length === 0, violations };
 }
 
-export function validateConservation(
-  attempt: AdvancementAttempt,
-): ValidationResult {
+export function validateConservation(attempt: AdvancementAttempt): ValidationResult {
   const violations: Violation[] = [];
 
   if (attempt.targetSequence >= attempt.currentSequence) {
@@ -113,14 +107,11 @@ export function validateConservation(
   return { valid: violations.length === 0, violations };
 }
 
-export function validateConvergence(
-  check: ConvergenceCheck,
-): ConvergenceResult {
+export function validateConvergence(check: ConvergenceCheck): ConvergenceResult {
   const attracted: BeyonderCharacteristic[] = [];
 
   for (const characteristic of check.nearbyCharacteristics) {
-    const isSamePathway =
-      characteristic.pathwayId === check.characterPathwayId;
+    const isSamePathway = characteristic.pathwayId === check.characterPathwayId;
     const isNeighboring = areNeighboringPathways(
       check.characterPathwayId,
       characteristic.pathwayId,
@@ -142,9 +133,7 @@ export function validateConvergence(
   return { attracted, strength };
 }
 
-export function validatePrerequisites(
-  attempt: AdvancementAttempt,
-): ValidationResult {
+export function validatePrerequisites(attempt: AdvancementAttempt): ValidationResult {
   const violations: Violation[] = [];
 
   const pathway = getPathway(attempt.currentPathwayId);
@@ -156,10 +145,7 @@ export function validatePrerequisites(
     return { valid: false, violations };
   }
 
-  const targetSeq = getSequence(
-    attempt.currentPathwayId,
-    attempt.targetSequence,
-  );
+  const targetSeq = getSequence(attempt.currentPathwayId, attempt.targetSequence);
   if (!targetSeq) {
     violations.push({
       law: "prerequisite",
@@ -173,8 +159,7 @@ export function validatePrerequisites(
   );
   if (requiredFormula) {
     const hasFormula = attempt.availableItems.some(
-      (i) =>
-        i.category === "potion-formula" && i.name === requiredFormula.name,
+      (i) => i.category === "potion-formula" && i.name === requiredFormula.name,
     );
     if (!hasFormula) {
       violations.push({
@@ -204,9 +189,7 @@ export function validatePrerequisites(
   );
   for (const ingredient of requiredSupplementary) {
     const has = attempt.availableItems.some(
-      (i) =>
-        i.category === "supplementary-ingredient" &&
-        i.name === ingredient.name,
+      (i) => i.category === "supplementary-ingredient" && i.name === ingredient.name,
     );
     if (!has) {
       violations.push({

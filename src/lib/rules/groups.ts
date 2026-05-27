@@ -21,12 +21,8 @@ export const PATHWAY_GROUPS: Record<PathwayGroupId, PathwayGroup> = {
   },
 };
 
-export function getGroupForPathway(
-  pathwayId: number,
-): PathwayGroup | undefined {
-  return Object.values(PATHWAY_GROUPS).find((g) =>
-    g.pathwayIds.includes(pathwayId),
-  );
+export function getGroupForPathway(pathwayId: number): PathwayGroup | undefined {
+  return Object.values(PATHWAY_GROUPS).find((g) => g.pathwayIds.includes(pathwayId));
 }
 
 export function areInSameGroup(pathwayA: number, pathwayB: number): boolean {
