@@ -10,13 +10,14 @@ function generateNonce(): string {
 export async function proxy(request: NextRequest) {
   const nonce = generateNonce();
 
+  request.headers.set("x-nonce", nonce);
+
   const isDev = process.env.NODE_ENV !== "production";
   const scriptSrc = [
     "script-src",
     "'self'",
     `'nonce-${nonce}'`,
     "'strict-dynamic'",
-    // React uses eval() in development for stack reconstruction.
     isDev ? "'unsafe-eval'" : null,
   ]
     .filter(Boolean)
