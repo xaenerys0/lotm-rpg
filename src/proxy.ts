@@ -7,12 +7,24 @@ function generateNonce(): string {
   return Buffer.from(array).toString("base64");
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nonce = generateNonce();
+
+  const isDev = process.env.NODE_ENV !== "production";
+  const scriptSrc = [
+    "script-src",
+    "'self'",
+    `'nonce-${nonce}'`,
+    "'strict-dynamic'",
+    // React uses eval() in development for stack reconstruction.
+    isDev ? "'unsafe-eval'" : null,
+  ]
+    .filter(Boolean)
+    .join(" ");
 
   const cspDirectives = [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
+    scriptSrc,
     "style-src 'self' 'unsafe-inline'",
     `connect-src 'self' https://*.supabase.co`,
     "img-src 'self' data: blob:",
