@@ -21,10 +21,10 @@ type CreationStep =
   | "first-potion";
 
 const PATHWAY_DESCRIPTIONS: Record<number, string> = {
-  1: "Seer, Clown, Magician — mysteries of fate",
-  2: "Prophet, Oracle, Saint — dreams and prophecy",
-  3: "Redeemer, Purifier, Holy Knight — radiance and healing",
-  4: "Reaper, Sleepless, Spirit Medium — spirits and the beyond",
+  1: "Seer, Clown, Magician — divination and hidden knowledge",
+  2: "Spectator, Telepathist, Psychiatrist — mind and imagination",
+  3: "Bard, Light Suppliant, Solar High Priest — radiance and healing",
+  4: "Corpse Collector, Gravedigger, Spirit Medium — spirits and the dead",
 };
 
 const AI_PATH: CreationStep[] = ["character-setup", "ai-prologue", "first-potion"];
