@@ -9,7 +9,7 @@
   - `game-sidebar.tsx` — Sidebar navigation, sign-out
   - `provider-config.tsx` — AI provider BYOK configuration (provider, API key, models)
   - `play-dashboard.tsx` — Play page dashboard (new game, continue, character creation)
-  - `character-creation.tsx` — Multi-step character creation flow (prologue scenes, pathway recommendation, character sheet initialization, first-potion scene)
+  - `character-creation.tsx` — Multi-step character creation flow. Two paths: (1) AI-driven prologue: 5 AI-generated scenes where the AI silently tracks Beyonder pathway affinity and ends with a pathway-specific chance encounter; (2) Manual path: direct pathway selection + character sheet. Both paths end with the first-potion narrative scene.
   - `game-loop.tsx` — Core game loop UI (situation/choices/resolution/consequences phases)
 
 ## Conventions

@@ -13,6 +13,7 @@ Provider-agnostic LLM interface with tiered prompt architecture. The AI generate
 - `memory.ts` — Tiered memory manager: immediate (last 3-5 turns full), recent (turns 6-20 bullets), session facts. Rule-based summarization (no extra LLM call).
 - `validation.ts` — Parse and validate AI output: JSON parsing with code-block extraction, structural validation (sanity bounds, choice limits, alignment range), `sanitizeAIResponse` for auto-correction.
 - `client.ts` — Main orchestrator: `generate()` assembles prompt, selects model by tier, calls provider with retry, parses/validates response. `classifyCall()` determines routine vs premium. `validateProviderConfig()` checks API key validity.
+- `prologue-client.ts` — AI-driven prologue generation: `generatePrologueScene()` runs a 5-scene interactive prologue using multi-turn conversation. The AI tracks Beyonder pathway affinity and engineers a pathway-specific chance encounter conclusion.
 - `index.ts` — Public exports.
 - `ai.test.ts` — Comprehensive test suite.
 
