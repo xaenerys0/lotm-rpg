@@ -35,18 +35,36 @@ const foolSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Dragon Blood Grass",
-        description: "A crimson herb that grows near ancient dragon remains",
+        name: "Lavos Squid Blood",
+        description:
+          "10 milliliters of blood from a Lavos Squid, a deep-sea supernatural creature",
         category: "main-ingredient",
       },
       {
-        name: "Night Vale Flower",
-        description: "A pale flower that blooms only on full-moon nights",
+        name: "Star Crystal",
+        description: "50 grams of crystallised starlight energy",
+        category: "main-ingredient",
+      },
+      {
+        name: "Night Vanilla",
+        description:
+          "13 drops of liquid from Night Vanilla, which blooms only in darkness",
         category: "supplementary-ingredient",
       },
       {
-        name: "Stellar Aqua Crystal",
-        description: "A translucent crystal that stores starlight",
+        name: "Gold Mint Leaves",
+        description: "7 leaves of Gold Mint, a rare herb associated with clarity of mind",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Poison Hemlock",
+        description: "3 drops of Poison Hemlock juice, carefully measured",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Dragon Blood Grass",
+        description:
+          "9 grams of powdered Dragon Blood Grass, a crimson herb found near ancient remains",
         category: "supplementary-ingredient",
       },
     ],
@@ -1051,50 +1069,55 @@ const deathSequences: Sequence[] = [
   },
   {
     level: 6,
-    name: "Spirit Guide",
+    name: "Ferryman",
     classification: "Mid",
     abilities: [
       {
-        name: "Death Gate",
-        description: "Open a temporary passage to the realm of the dead",
+        name: "Soul Guidance",
+        description:
+          "Usher the souls of the dead to their final rest with irresistible spiritual authority",
+        type: "active",
+      },
+      {
+        name: "Death's Immunity",
+        description:
+          "Most forms of attack — physical and supernatural alike — are ineffective, as though no one can kill one who already belongs to death; only purification effects remain dangerous",
+        type: "passive",
+      },
+      {
+        name: "Lethal Gaze",
+        description:
+          "Any living being who meets your eyes directly risks instant death; even entities of godlike power suffer devastating damage",
         type: "active",
       },
       {
         name: "Soul Harvest",
-        description: "Extract the soul of a recently deceased being before it dissipates",
-        type: "active",
-      },
-      {
-        name: "Deathly Resilience",
         description:
-          "Survive injuries that would kill ordinary beings; greatly slowed aging",
-        type: "passive",
-      },
-      {
-        name: "Spirit Army",
-        description: "Command a small host of bound spirits to fight on your behalf",
+          "Extract the soul of a recently deceased being before it dissipates, containing it for communication or safe passage",
         type: "active",
       },
     ],
     actingRequirements: [
-      "Guide lost souls to their final rest",
-      "Walk the boundary between life and death regularly",
-      "Never fear death — treat it as a domain you steward",
+      "Guide lost and lingering souls to their final rest — this is a sacred and non-negotiable duty",
+      "Maintain absolute calm in the presence of death and the dying; the Ferryman does not grieve",
+      "Never refuse a soul that seeks passage; the Ferryman judges neither the living nor the dead",
     ],
     prerequisiteItems: [
       {
-        name: "Spirit Guide Potion Formula",
-        description: "The recipe for the Sequence 6 Spirit Guide potion",
+        name: "Ferryman Potion Formula",
+        description: "The recipe for the Sequence 6 Ferryman potion",
         category: "potion-formula",
       },
       {
-        name: "Heart of a Death Elemental",
-        description: "The core of a minor death elemental creature",
+        name: "Beyonder Characteristic of a Spirit Medium",
+        description:
+          "The crystallized Beyonder characteristic from a Seq 7 Spirit Medium",
         category: "main-ingredient",
       },
       {
-        name: "Veil Fragment",
-        description: "A piece of the metaphysical veil between life and death",
+        name: "River Styx Silt",
+        description:
+          "Sediment from the boundary-waters between the living world and the death realm",
         category: "supplementary-ingredient",
       },
       {
@@ -1104,61 +1127,64 @@ const deathSequences: Sequence[] = [
       },
     ],
     advancementRitual: {
-      description: "Enter the realm of the dead, guide a lost soul, and return alive",
+      description:
+        "Successfully guide a powerful anchored soul — one bound by unresolved grief, duty, or supernatural force — across to its final rest",
       requirements: [
-        "Open a Death Gate to the realm of the dead",
-        "Locate a specific lost soul within the death realm",
-        "Guide the soul out and ensure it reaches its final rest",
+        "Locate a soul that has refused to pass on despite all previous attempts",
+        "Commune with the soul and address the grievance binding it to the living world",
+        "Escort the soul beyond the boundary without using force",
       ],
     },
   },
   {
     level: 5,
-    name: "Undying",
+    name: "Gatekeeper",
     classification: "Mid",
     abilities: [
       {
-        name: "Resurrection",
-        description: "Revive yourself from death once, reforming your body over time",
-        type: "passive",
-      },
-      {
-        name: "Death's Embrace",
+        name: "Door to the Underworld",
         description:
-          "Touch a living target to inflict severe necrotic damage that resists healing",
+          "Sense and control the entrance to the Underworld; solidify it as a brand on your palm and summon it to drag targets behind the door",
         type: "active",
       },
       {
-        name: "Undead Legion",
-        description: "Raise and command a large force of powerful undead",
+        name: "Internal Underworld",
+        description:
+          "Use your body as a cage to house souls, spirits, and undead — an entrance to an inner death realm opens at the centre of your brow",
         type: "active",
       },
       {
-        name: "Deathless Form",
+        name: "Undead Dominion",
         description:
-          "Body exists partially in the death realm — immune to most physical damage",
+          "Command the undead housed within your Internal Underworld, deploying them through the gate wherever you travel",
+        type: "active",
+      },
+      {
+        name: "Underworld Sense",
+        description:
+          "Perceive all disturbances across a vast area of the death domain; nothing that crosses the boundary between life and death escapes your awareness",
         type: "passive",
       },
     ],
     actingRequirements: [
-      "Embrace the duality of life and death in all things",
-      "Maintain dominion over a territory where the dead outnumber the living",
-      "Never cling to life — accept death and transcend it",
+      "Guard the boundary between the living and the dead as a sacred responsibility",
+      "Maintain and expand your Internal Underworld — ensure those housed within are ordered and contained",
+      "Never allow unauthorized passage through the gate you embody",
     ],
     prerequisiteItems: [
       {
-        name: "Undying Potion Formula",
-        description: "The recipe for the Sequence 5 Undying potion",
+        name: "Gatekeeper Potion Formula",
+        description: "The recipe for the Sequence 5 Gatekeeper potion",
         category: "potion-formula",
       },
       {
-        name: "Beyonder Characteristic of a Spirit Guide",
-        description: "The crystallized Beyonder characteristic from a Seq 6 Spirit Guide",
+        name: "Beyonder Characteristic of a Ferryman",
+        description: "The crystallized Beyonder characteristic from a Seq 6 Ferryman",
         category: "main-ingredient",
       },
       {
-        name: "Lich Bone Fragment",
-        description: "A bone fragment from a lich that achieved partial immortality",
+        name: "Gate Fragment of the Underworld",
+        description: "A shard of the metaphysical boundary-gate between life and death",
         category: "main-ingredient",
       },
       {
@@ -1169,11 +1195,11 @@ const deathSequences: Sequence[] = [
     ],
     advancementRitual: {
       description:
-        "Die and resurrect yourself through sheer force of will and accumulated death energy",
+        "Open the gate within your own body for the first time and house your first souls, proving you can sustain the boundary",
       requirements: [
-        "Prepare a death chamber infused with death realm energy",
-        "Allow yourself to truly die — no half measures",
-        "Reconstitute your body and soul through the ritual's power",
+        "Prepare through extended communion with the death realm",
+        "Open the Internal Underworld gate at your brow",
+        "Successfully house at least three bound souls within your Internal Underworld without losing control",
       ],
     },
   },
