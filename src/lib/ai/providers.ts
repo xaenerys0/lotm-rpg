@@ -372,18 +372,16 @@ export class OllamaAdapter implements LLMProviderAdapter {
   }
 }
 
-// ollama.com exposes an OpenAI-compatible API at /v1/chat/completions.
-// Extend OpenAIAdapter so we inherit the correct endpoint and response parser.
+// ollama.com does not send CORS headers, so direct browser fetches receive a
+// status 0. Route through the server-side proxy at /api/proxy/ollama-cloud so
+// the browser makes a same-origin call; the proxy forwards with the Bearer key.
 export class OllamaCloudAdapter extends OpenAIAdapter {
   readonly name: ProviderId = "ollama-cloud";
 
   getDefaultBaseUrl(): string {
-    return "https://ollama.com/v1";
+    return "/api/proxy/ollama-cloud";
   }
 
-  // ollama.com/v1/models does not serve CORS headers, so a browser preflight
-  // will always be blocked with status 0. Skip the network round-trip and
-  // accept any non-empty key; real connectivity is confirmed on first chat call.
   async validateKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
     if (!apiKey.trim()) {
       return { valid: false, error: "Enter your ollama.com API key." };
