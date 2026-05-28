@@ -5,13 +5,18 @@ import type { ProviderId, ProviderConfig } from "@/lib/ai";
 import { PROVIDER_MODELS, validateProviderConfig } from "@/lib/ai";
 import { PROVIDER_CONFIG_KEY } from "@/lib/game";
 
-const PROVIDERS: { id: ProviderId; label: string; needsBaseUrl: boolean }[] = [
-  { id: "anthropic", label: "Anthropic", needsBaseUrl: false },
-  { id: "openai", label: "OpenAI", needsBaseUrl: false },
-  { id: "openrouter", label: "OpenRouter", needsBaseUrl: false },
-  { id: "ollama", label: "Ollama (local)", needsBaseUrl: true },
-  { id: "ollama-cloud", label: "Ollama Cloud", needsBaseUrl: false },
-  { id: "custom", label: "Custom Provider", needsBaseUrl: true },
+const PROVIDERS: {
+  id: ProviderId;
+  label: string;
+  needsBaseUrl: boolean;
+  requiresAuth: boolean;
+}[] = [
+  { id: "anthropic", label: "Anthropic", needsBaseUrl: false, requiresAuth: true },
+  { id: "openai", label: "OpenAI", needsBaseUrl: false, requiresAuth: true },
+  { id: "openrouter", label: "OpenRouter", needsBaseUrl: false, requiresAuth: true },
+  { id: "ollama", label: "Ollama (local)", needsBaseUrl: true, requiresAuth: false },
+  { id: "ollama-cloud", label: "Ollama Cloud", needsBaseUrl: false, requiresAuth: true },
+  { id: "custom", label: "Custom Provider", needsBaseUrl: true, requiresAuth: true },
 ];
 
 type ConnectionStatus = "idle" | "testing" | "valid" | "invalid";
@@ -121,8 +126,7 @@ export function ProviderConfig() {
     [models],
   );
   const isCustom = form.providerId === "custom";
-  // API key → any provider in cloud/authenticated mode; local Ollama → no key needed.
-  const canTest = !!form.apiKey || form.providerId === "ollama";
+  const canTest = !!form.apiKey || !providerMeta.requiresAuth;
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
@@ -225,9 +229,9 @@ export function ProviderConfig() {
       {/* API Key */}
       <fieldset>
         <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
-          {form.providerId === "ollama" ? "Connection" : "API Key"}
+          {providerMeta.requiresAuth ? "API Key" : "Connection"}
         </legend>
-        {form.providerId !== "ollama" && (
+        {providerMeta.requiresAuth && (
           <div className="relative">
             <input
               type={showKey ? "text" : "password"}
@@ -255,7 +259,7 @@ export function ProviderConfig() {
           </div>
         )}
         <p className="mt-2 text-xs leading-relaxed text-muted/60">
-          {form.providerId === "ollama"
+          {!providerMeta.requiresAuth
             ? "Ollama runs locally — no API key required. Just ensure Ollama is running."
             : form.providerId === "ollama-cloud"
               ? "Your API key from ollama.com. Sign in at ollama.com → Account Settings to generate one."

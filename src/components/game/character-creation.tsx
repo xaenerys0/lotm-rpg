@@ -132,6 +132,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   ]);
 
   const stepNumber = STEP_NUMBER[step];
+  const stepCount = Object.keys(STEP_NUMBER).length;
 
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
@@ -141,7 +142,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           Character Creation
         </span>
         <div className="flex items-center gap-2">
-          {[1, 2, 3, 4, 5].map((n) => (
+          {Array.from({ length: stepCount }, (_, i) => i + 1).map((n) => (
             <div
               key={n}
               className={`rounded-full transition-all duration-300 ${
@@ -154,7 +155,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             />
           ))}
           <span className="ml-1 text-[10px] text-muted/30">
-            {stepNumber}&thinsp;/&thinsp;5
+            {stepNumber}&thinsp;/&thinsp;{stepCount}
           </span>
         </div>
       </div>
