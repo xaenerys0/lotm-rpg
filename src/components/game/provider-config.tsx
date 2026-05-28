@@ -122,6 +122,13 @@ export function ProviderConfig() {
   const isCustom = form.providerId === "custom";
   // API key → any provider in cloud/authenticated mode; Ollama alone → local instance (no key needed).
   const canTest = !!form.apiKey || form.providerId === "ollama";
+  // True when an Ollama cloud key is set but the base URL still points to localhost.
+  const ollamaKeyWithLocalUrl =
+    form.providerId === "ollama" &&
+    !!form.apiKey &&
+    (form.baseUrl === "" ||
+      form.baseUrl.includes("localhost") ||
+      form.baseUrl.includes("127.0.0.1"));
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
@@ -270,11 +277,19 @@ export function ProviderConfig() {
             onChange={(e) => updateField("baseUrl", e.target.value)}
             placeholder={
               form.providerId === "ollama"
-                ? "http://localhost:11434"
+                ? form.apiKey
+                  ? "https://your-ollama-cloud-endpoint.com"
+                  : "http://localhost:11434"
                 : "https://your-endpoint.example.com/v1"
             }
             className="w-full rounded-md border border-border bg-background px-4 py-3 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
           />
+          {ollamaKeyWithLocalUrl && (
+            <p className="mt-2 text-xs leading-relaxed text-amber/80">
+              You have entered an API key but the Base URL still points to a local
+              address. Update it to your remote Ollama endpoint before testing.
+            </p>
+          )}
         </fieldset>
       )}
 
