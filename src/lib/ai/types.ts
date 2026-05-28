@@ -99,6 +99,8 @@ export interface GameState {
   location: string;
   activeQuests: string[];
   npcsPresent: string[];
+  characterName?: string;
+  characterBackground?: string;
 }
 
 export interface TurnRecord {

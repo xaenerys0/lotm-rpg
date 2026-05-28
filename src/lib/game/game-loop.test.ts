@@ -980,6 +980,56 @@ describe("createDefaultGameState", () => {
     expect(createDefaultGameState(3, "c3").pathwayId).toBe(3);
     expect(createDefaultGameState(4, "c4").pathwayId).toBe(4);
   });
+
+  it("stores characterName when provided", () => {
+    const state = createDefaultGameState(1, "c1", "Klein Moretti");
+    expect(state.characterName).toBe("Klein Moretti");
+  });
+
+  it("stores characterBackground when provided", () => {
+    const state = createDefaultGameState(1, "c1", "Klein", "A postal worker.");
+    expect(state.characterBackground).toBe("A postal worker.");
+  });
+
+  it("omits characterName when not provided", () => {
+    const state = createDefaultGameState(1, "c1");
+    expect(state.characterName).toBeUndefined();
+  });
+
+  it("omits characterBackground when not provided", () => {
+    const state = createDefaultGameState(1, "c1");
+    expect(state.characterBackground).toBeUndefined();
+  });
+
+  it("omits characterName when empty string provided", () => {
+    const state = createDefaultGameState(1, "c1", "");
+    expect(state.characterName).toBeUndefined();
+  });
+
+  it("omits characterBackground when empty string provided", () => {
+    const state = createDefaultGameState(1, "c1", "Klein", "");
+    expect(state.characterBackground).toBeUndefined();
+  });
+});
+
+describe("createSession with initialMemory", () => {
+  it("uses provided initialMemory instead of empty memory", () => {
+    const gameState = makeGameState();
+    const customMemory = {
+      immediateTurns: [],
+      recentSummaries: [],
+      sessionFacts: [{ type: "event" as const, description: "test", turnNumber: 0 }],
+    };
+    const session = createSession(gameState, "id", 1000, customMemory);
+    expect(session.memory.sessionFacts).toHaveLength(1);
+    expect(session.memory.sessionFacts[0].description).toBe("test");
+  });
+
+  it("falls back to empty memory when initialMemory is undefined", () => {
+    const gameState = makeGameState();
+    const session = createSession(gameState, "id", 1000, undefined);
+    expect(session.memory.sessionFacts).toHaveLength(0);
+  });
 });
 
 // ─── sessionToSummary ──────────────────────────────────────────────

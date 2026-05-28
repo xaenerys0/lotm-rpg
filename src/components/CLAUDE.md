@@ -8,7 +8,8 @@
 - `game/` — Game shell and gameplay components:
   - `game-sidebar.tsx` — Sidebar navigation, sign-out
   - `provider-config.tsx` — AI provider BYOK configuration (provider, API key, models)
-  - `play-dashboard.tsx` — Play page dashboard (new game, continue, pathway selection)
+  - `play-dashboard.tsx` — Play page dashboard (new game, continue, character creation)
+  - `character-creation.tsx` — Multi-step character creation flow (prologue scenes, pathway recommendation, character sheet initialization, first-potion scene)
   - `game-loop.tsx` — Core game loop UI (situation/choices/resolution/consequences phases)
 
 ## Conventions

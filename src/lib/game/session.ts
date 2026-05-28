@@ -1,4 +1,4 @@
-import type { GameState } from "@/lib/ai";
+import type { GameState, MemoryState } from "@/lib/ai";
 import { createMemoryState } from "@/lib/ai";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
 
@@ -15,11 +15,12 @@ export function createSession(
   gameState: GameState,
   id: string = crypto.randomUUID(),
   now: number = Date.now(),
+  initialMemory?: MemoryState,
 ): GameSession {
   return {
     id,
     gameState,
-    memory: createMemoryState(),
+    memory: initialMemory ?? createMemoryState(),
     turnCount: 0,
     phase: "idle",
     currentNarrative: null,
@@ -36,6 +37,8 @@ export function createSession(
 export function createDefaultGameState(
   pathwayId: number,
   characterId: string = crypto.randomUUID(),
+  characterName?: string,
+  characterBackground?: string,
 ): GameState {
   return {
     characterId,
@@ -47,6 +50,8 @@ export function createDefaultGameState(
     location: "Tingen City",
     activeQuests: [],
     npcsPresent: [],
+    ...(characterName ? { characterName } : {}),
+    ...(characterBackground ? { characterBackground } : {}),
   };
 }
 
