@@ -9,7 +9,8 @@ const PROVIDERS: { id: ProviderId; label: string; needsBaseUrl: boolean }[] = [
   { id: "anthropic", label: "Anthropic", needsBaseUrl: false },
   { id: "openai", label: "OpenAI", needsBaseUrl: false },
   { id: "openrouter", label: "OpenRouter", needsBaseUrl: false },
-  { id: "ollama", label: "Ollama", needsBaseUrl: true },
+  { id: "ollama", label: "Ollama (local)", needsBaseUrl: true },
+  { id: "ollama-cloud", label: "Ollama Cloud", needsBaseUrl: false },
   { id: "custom", label: "Custom Provider", needsBaseUrl: true },
 ];
 
@@ -120,15 +121,8 @@ export function ProviderConfig() {
     [models],
   );
   const isCustom = form.providerId === "custom";
-  // API key → any provider in cloud/authenticated mode; Ollama alone → local instance (no key needed).
+  // API key → any provider in cloud/authenticated mode; local Ollama → no key needed.
   const canTest = !!form.apiKey || form.providerId === "ollama";
-  // True when an Ollama cloud key is set but the base URL still points to localhost.
-  const ollamaKeyWithLocalUrl =
-    form.providerId === "ollama" &&
-    !!form.apiKey &&
-    (form.baseUrl === "" ||
-      form.baseUrl.includes("localhost") ||
-      form.baseUrl.includes("127.0.0.1"));
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
@@ -202,7 +196,7 @@ export function ProviderConfig() {
         <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
           Provider
         </legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {PROVIDERS.map((p) => (
             <button
               key={p.id}
@@ -231,37 +225,41 @@ export function ProviderConfig() {
       {/* API Key */}
       <fieldset>
         <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
-          API Key
+          {form.providerId === "ollama" ? "Connection" : "API Key"}
         </legend>
-        <div className="relative">
-          <input
-            type={showKey ? "text" : "password"}
-            value={form.apiKey}
-            onChange={(e) => updateField("apiKey", e.target.value)}
-            placeholder={
-              form.providerId === "anthropic"
-                ? "sk-ant-..."
-                : form.providerId === "openai"
-                  ? "sk-..."
-                  : form.providerId === "ollama"
-                    ? "Optional — required for Ollama Cloud"
-                    : "Enter your API key"
-            }
-            autoComplete="off"
-            className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
-          />
-          <button
-            type="button"
-            onClick={() => setShowKey(!showKey)}
-            className="absolute top-1/2 right-3 -translate-y-1/2 rounded px-2 py-1 text-xs text-muted transition-colors hover:text-amber"
-          >
-            {showKey ? "Hide" : "Show"}
-          </button>
-        </div>
+        {form.providerId !== "ollama" && (
+          <div className="relative">
+            <input
+              type={showKey ? "text" : "password"}
+              value={form.apiKey}
+              onChange={(e) => updateField("apiKey", e.target.value)}
+              placeholder={
+                form.providerId === "anthropic"
+                  ? "sk-ant-..."
+                  : form.providerId === "openai"
+                    ? "sk-..."
+                    : form.providerId === "ollama-cloud"
+                      ? "Enter your ollama.com API key"
+                      : "Enter your API key"
+              }
+              autoComplete="off"
+              className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey(!showKey)}
+              className="absolute top-1/2 right-3 -translate-y-1/2 rounded px-2 py-1 text-xs text-muted transition-colors hover:text-amber"
+            >
+              {showKey ? "Hide" : "Show"}
+            </button>
+          </div>
+        )}
         <p className="mt-2 text-xs leading-relaxed text-muted/60">
           {form.providerId === "ollama"
-            ? "Leave blank for a local Ollama instance. Enter your API key for Ollama Cloud or a remote endpoint."
-            : "Your key is stored locally in this browser. It is never sent to our servers."}
+            ? "Ollama runs locally — no API key required. Just ensure Ollama is running."
+            : form.providerId === "ollama-cloud"
+              ? "Your API key from ollama.com. Sign in at ollama.com → Account Settings to generate one."
+              : "Your key is stored locally in this browser. It is never sent to our servers."}
         </p>
       </fieldset>
 
@@ -277,19 +275,11 @@ export function ProviderConfig() {
             onChange={(e) => updateField("baseUrl", e.target.value)}
             placeholder={
               form.providerId === "ollama"
-                ? form.apiKey
-                  ? "https://your-ollama-cloud-endpoint.com"
-                  : "http://localhost:11434"
+                ? "http://localhost:11434"
                 : "https://your-endpoint.example.com/v1"
             }
             className="w-full rounded-md border border-border bg-background px-4 py-3 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
           />
-          {ollamaKeyWithLocalUrl && (
-            <p className="mt-2 text-xs leading-relaxed text-amber/80">
-              You have entered an API key but the Base URL still points to a local
-              address. Update it to your remote Ollama endpoint before testing.
-            </p>
-          )}
         </fieldset>
       )}
 

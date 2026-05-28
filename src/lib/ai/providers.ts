@@ -372,6 +372,14 @@ export class OllamaAdapter implements LLMProviderAdapter {
   }
 }
 
+export class OllamaCloudAdapter extends OllamaAdapter {
+  readonly name: ProviderId = "ollama-cloud";
+
+  getDefaultBaseUrl(): string {
+    return "https://ollama.com";
+  }
+}
+
 export class CustomAdapter implements LLMProviderAdapter {
   readonly name: ProviderId = "custom";
   private baseUrl: string;
@@ -439,6 +447,8 @@ export function createAdapter(
       return new OpenRouterAdapter(baseUrl);
     case "ollama":
       return new OllamaAdapter(baseUrl);
+    case "ollama-cloud":
+      return new OllamaCloudAdapter(baseUrl);
     case "custom":
       return new CustomAdapter(baseUrl);
   }

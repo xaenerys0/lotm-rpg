@@ -1,7 +1,13 @@
 import type { Item, ValidationResult } from "@/lib/types/rules";
 import type { LoreEntry } from "@/lib/lore/types";
 
-export type ProviderId = "anthropic" | "openai" | "openrouter" | "ollama" | "custom";
+export type ProviderId =
+  | "anthropic"
+  | "openai"
+  | "openrouter"
+  | "ollama"
+  | "ollama-cloud"
+  | "custom";
 
 export type ModelTier = "routine" | "premium";
 
@@ -45,6 +51,11 @@ export const PROVIDER_MODELS: Record<ProviderId, ModelOption[]> = {
   ollama: [
     { id: "llama3.2", name: "Llama 3.2", tier: "routine" },
     { id: "mistral", name: "Mistral", tier: "routine" },
+    { id: "llama3.1:70b", name: "Llama 3.1 70B", tier: "premium" },
+  ],
+  "ollama-cloud": [
+    { id: "llama3.2", name: "Llama 3.2", tier: "routine" },
+    { id: "llama3.3", name: "Llama 3.3", tier: "routine" },
     { id: "llama3.1:70b", name: "Llama 3.1 70B", tier: "premium" },
   ],
   custom: [],

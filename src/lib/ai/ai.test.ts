@@ -22,6 +22,7 @@ import {
   AnthropicAdapter,
   OpenRouterAdapter,
   OllamaAdapter,
+  OllamaCloudAdapter,
   CustomAdapter,
   createAdapter,
 } from "./providers";
@@ -1033,6 +1034,65 @@ describe("providers", () => {
 
       const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
       expect(headers["Authorization"]).toBe("Bearer cloud-key");
+    });
+  });
+
+  describe("OllamaCloudAdapter", () => {
+    it("name is ollama-cloud", () => {
+      expect(new OllamaCloudAdapter().name).toBe("ollama-cloud");
+    });
+
+    it("default base URL is https://ollama.com", () => {
+      expect(new OllamaCloudAdapter().getDefaultBaseUrl()).toBe("https://ollama.com");
+    });
+
+    it("makeRequest sends Authorization header with key", async () => {
+      const adapter = new OllamaCloudAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ message: { content: "ok" }, model: "llama3.2" }),
+          ),
+      } as Response);
+
+      await adapter.makeRequest(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          model: "llama3.2",
+          temperature: 0.7,
+          maxTokens: 500,
+        },
+        "cloud-key",
+      );
+
+      const init = fetchSpy.mock.calls[0][1]!;
+      expect((init.headers as Record<string, string>)["Authorization"]).toBe(
+        "Bearer cloud-key",
+      );
+      expect(fetchSpy.mock.calls[0][0]).toBe("https://ollama.com/api/chat");
+    });
+
+    it("validateKey hits https://ollama.com/api/tags with Authorization header", async () => {
+      const adapter = new OllamaCloudAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve("{}"),
+      } as Response);
+
+      const result = await adapter.validateKey("cloud-key");
+
+      expect(result.valid).toBe(true);
+      expect(fetchSpy.mock.calls[0][0]).toBe("https://ollama.com/api/tags");
+      expect(
+        (fetchSpy.mock.calls[0][1]!.headers as Record<string, string>)["Authorization"],
+      ).toBe("Bearer cloud-key");
+    });
+
+    it("createAdapter('ollama-cloud') returns OllamaCloudAdapter", () => {
+      expect(createAdapter("ollama-cloud")).toBeInstanceOf(OllamaCloudAdapter);
     });
   });
 
