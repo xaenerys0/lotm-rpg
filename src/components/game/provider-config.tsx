@@ -222,36 +222,36 @@ export function ProviderConfig() {
       {/* API Key */}
       <fieldset>
         <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
-          {form.providerId === "ollama" ? "Connection" : "API Key"}
+          API Key
         </legend>
-        {form.providerId !== "ollama" && (
-          <div className="relative">
-            <input
-              type={showKey ? "text" : "password"}
-              value={form.apiKey}
-              onChange={(e) => updateField("apiKey", e.target.value)}
-              placeholder={
-                form.providerId === "anthropic"
-                  ? "sk-ant-..."
-                  : form.providerId === "openai"
-                    ? "sk-..."
+        <div className="relative">
+          <input
+            type={showKey ? "text" : "password"}
+            value={form.apiKey}
+            onChange={(e) => updateField("apiKey", e.target.value)}
+            placeholder={
+              form.providerId === "anthropic"
+                ? "sk-ant-..."
+                : form.providerId === "openai"
+                  ? "sk-..."
+                  : form.providerId === "ollama"
+                    ? "Optional — required for Ollama Cloud"
                     : "Enter your API key"
-              }
-              autoComplete="off"
-              className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
-            />
-            <button
-              type="button"
-              onClick={() => setShowKey(!showKey)}
-              className="absolute top-1/2 right-3 -translate-y-1/2 rounded px-2 py-1 text-xs text-muted transition-colors hover:text-amber"
-            >
-              {showKey ? "Hide" : "Show"}
-            </button>
-          </div>
-        )}
+            }
+            autoComplete="off"
+            className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+          />
+          <button
+            type="button"
+            onClick={() => setShowKey(!showKey)}
+            className="absolute top-1/2 right-3 -translate-y-1/2 rounded px-2 py-1 text-xs text-muted transition-colors hover:text-amber"
+          >
+            {showKey ? "Hide" : "Show"}
+          </button>
+        </div>
         <p className="mt-2 text-xs leading-relaxed text-muted/60">
           {form.providerId === "ollama"
-            ? "Ollama runs locally. No API key required — just ensure Ollama is running."
+            ? "Leave blank for a local Ollama instance. Enter your API key for Ollama Cloud or a remote endpoint."
             : "Your key is stored locally in this browser. It is never sent to our servers."}
         </p>
       </fieldset>

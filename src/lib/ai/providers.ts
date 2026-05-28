@@ -332,10 +332,11 @@ export class OllamaAdapter implements LLMProviderAdapter {
   }
 
   async makeRequest(request: ProviderRequest, apiKey: string): Promise<ProviderResponse> {
-    void apiKey;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
     const raw = await fetchWithErrorHandling(`${this.baseUrl}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         model: request.model,
         messages: this.formatMessages(request.messages),
@@ -354,10 +355,12 @@ export class OllamaAdapter implements LLMProviderAdapter {
     valid: boolean;
     error?: string;
   }> {
-    void apiKey;
     try {
+      const headers: Record<string, string> = {};
+      if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
       await fetchWithErrorHandling(`${this.baseUrl}/api/tags`, {
         method: "GET",
+        headers,
       });
       return { valid: true };
     } catch (err) {

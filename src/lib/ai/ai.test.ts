@@ -956,6 +956,84 @@ describe("providers", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBeTruthy();
     });
+
+    it("makeRequest omits Authorization header when apiKey is empty", async () => {
+      const adapter = new OllamaAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ message: { content: "ok" }, model: "llama3.2" }),
+          ),
+      } as Response);
+
+      await adapter.makeRequest(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          model: "llama3.2",
+          temperature: 0.7,
+          maxTokens: 500,
+        },
+        "",
+      );
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+
+    it("makeRequest sends Authorization header when apiKey is provided", async () => {
+      const adapter = new OllamaAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ message: { content: "ok" }, model: "llama3.2" }),
+          ),
+      } as Response);
+
+      await adapter.makeRequest(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          model: "llama3.2",
+          temperature: 0.7,
+          maxTokens: 500,
+        },
+        "cloud-key",
+      );
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBe("Bearer cloud-key");
+    });
+
+    it("validateKey omits Authorization header when apiKey is empty", async () => {
+      const adapter = new OllamaAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve("{}"),
+      } as Response);
+
+      await adapter.validateKey("");
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+
+    it("validateKey sends Authorization header when apiKey is provided", async () => {
+      const adapter = new OllamaAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve("{}"),
+      } as Response);
+
+      await adapter.validateKey("cloud-key");
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBe("Bearer cloud-key");
+    });
   });
 
   describe("CustomAdapter", () => {
