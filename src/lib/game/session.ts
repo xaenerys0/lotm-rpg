@@ -29,6 +29,7 @@ export function createSession(
     lastResolution: null,
     activePillar: null,
     errorMessage: null,
+    errorCode: null,
     createdAt: now,
     updatedAt: now,
   };

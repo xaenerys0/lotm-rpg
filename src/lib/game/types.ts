@@ -1,4 +1,5 @@
 import type {
+  AIErrorCode,
   Choice,
   GameState,
   MemoryState,
@@ -28,6 +29,7 @@ export interface GameSession {
   lastResolution: ValidatedAIResponse | null;
   activePillar: GameplayPillar | null;
   errorMessage: string | null;
+  errorCode: AIErrorCode | "CONFIG_MISSING" | null;
   createdAt: number;
   updatedAt: number;
 }
@@ -38,7 +40,7 @@ export type GameLoopAction =
   | { type: "SELECT_CHOICE"; choiceId: string }
   | { type: "RESOLUTION_READY"; result: ValidatedAIResponse }
   | { type: "APPLY_CONSEQUENCES" }
-  | { type: "ERROR"; message: string }
+  | { type: "ERROR"; message: string; errorCode?: AIErrorCode | "CONFIG_MISSING" }
   | { type: "RETRY" };
 
 export interface GameSessionSummary {

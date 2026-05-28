@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { GameSession, GameplayPillar } from "@/lib/game";
 import {
@@ -12,8 +13,8 @@ import {
   SESSION_KEY_PREFIX,
   PROVIDER_CONFIG_KEY,
 } from "@/lib/game";
-import type { ProviderConfig, Choice, InstructionType } from "@/lib/ai";
-import { generate, TOKEN_BUDGET } from "@/lib/ai";
+import type { ProviderConfig, Choice, InstructionType, AIErrorCode } from "@/lib/ai";
+import { generate, TOKEN_BUDGET, AIError } from "@/lib/ai";
 import { getLoreByPathway, getLoreByCity } from "@/lib/lore";
 import { getPathway, getSequence } from "@/lib/rules";
 import type { LoreEntry } from "@/lib/lore";
@@ -160,6 +161,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         const errSession = transition(currentSession, {
           type: "ERROR",
           message: "No AI provider configured. Visit Settings to add your API key.",
+          errorCode: "CONFIG_MISSING",
         });
         updateSession(errSession);
         return;
@@ -219,9 +221,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         if (generationRef.current !== gen) return;
         const message =
           err instanceof Error ? err.message : "Failed to generate situation";
+        const errorCode = err instanceof AIError ? err.code : undefined;
         const errSession = transition(currentSession, {
           type: "ERROR",
           message,
+          errorCode,
         });
         updateSession(errSession);
       }
@@ -237,6 +241,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         const errSession = transition(currentSession, {
           type: "ERROR",
           message: "No AI provider configured. Visit Settings to add your API key.",
+          errorCode: "CONFIG_MISSING",
         });
         updateSession(errSession);
         return;
@@ -274,9 +279,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       } catch (err) {
         if (generationRef.current !== gen) return;
         const message = err instanceof Error ? err.message : "Failed to resolve action";
+        const errorCode = err instanceof AIError ? err.code : undefined;
         const errSession = transition(currentSession, {
           type: "ERROR",
           message,
+          errorCode,
         });
         updateSession(errSession);
       }
@@ -396,6 +403,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       {session.phase === "error" && (
         <ErrorPhase
           message={session.errorMessage ?? "An unknown error occurred."}
+          errorCode={session.errorCode}
           onRetry={handleRetry}
         />
       )}
@@ -651,12 +659,21 @@ function ConsequencesPhase({
   );
 }
 
-function ErrorPhase({ message, onRetry }: { message: string; onRetry: () => void }) {
-  const isKeyError =
-    message.includes("API key") ||
-    message.includes("Settings") ||
-    message.includes("quota") ||
-    message.includes("billing");
+function ErrorPhase({
+  message,
+  errorCode,
+  onRetry,
+}: {
+  message: string;
+  errorCode: AIErrorCode | "CONFIG_MISSING" | null | undefined;
+  onRetry: () => void;
+}) {
+  const showSettings =
+    errorCode === "CONFIG_MISSING" ||
+    errorCode === "AUTH_ERROR" ||
+    errorCode === "QUOTA_EXCEEDED";
+  const showRetry = errorCode !== "CONFIG_MISSING";
+
   return (
     <div className="py-16 text-center animate-fade-in-up">
       <div className="mx-auto mb-4 h-8 w-8 rounded-full border border-crimson/40 bg-crimson/[0.08]">
@@ -667,14 +684,15 @@ function ErrorPhase({ message, onRetry }: { message: string; onRetry: () => void
       <p className="font-serif text-base text-foreground/70">Something went wrong</p>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted/60">{message}</p>
       <div className="mt-6 flex items-center justify-center gap-3">
-        {isKeyError ? (
-          <a
+        {showSettings && (
+          <Link
             href="/settings"
             className="rounded-md border border-amber/40 bg-amber/[0.08] px-5 py-2.5 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/60 hover:bg-amber/[0.14]"
           >
             Go to Settings
-          </a>
-        ) : (
+          </Link>
+        )}
+        {showRetry && (
           <button
             type="button"
             onClick={onRetry}

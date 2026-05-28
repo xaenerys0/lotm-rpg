@@ -48,6 +48,7 @@ function makeSession(overrides: Partial<GameSession> = {}): GameSession {
     lastResolution: null,
     activePillar: null,
     errorMessage: null,
+    errorCode: null,
     createdAt: 1000,
     updatedAt: 1000,
     ...overrides,
@@ -383,18 +384,41 @@ describe("transition", () => {
         );
         expect(next.phase).toBe("error");
         expect(next.errorMessage).toBe("Something broke");
+        expect(next.errorCode).toBeNull();
         expect(next.updatedAt).toBe(NOW);
       }
+    });
+
+    it("stores errorCode when provided", () => {
+      const session = makeSession({ phase: "situation" });
+      const next = transition(
+        session,
+        { type: "ERROR", message: "Invalid key", errorCode: "AUTH_ERROR" },
+        NOW,
+      );
+      expect(next.errorCode).toBe("AUTH_ERROR");
+    });
+
+    it("stores CONFIG_MISSING errorCode", () => {
+      const session = makeSession({ phase: "situation" });
+      const next = transition(
+        session,
+        { type: "ERROR", message: "No config", errorCode: "CONFIG_MISSING" },
+        NOW,
+      );
+      expect(next.errorCode).toBe("CONFIG_MISSING");
     });
 
     it("can transition from error to error", () => {
       const session = makeSession({
         phase: "error",
         errorMessage: "first error",
+        errorCode: "AUTH_ERROR",
       });
       const next = transition(session, { type: "ERROR", message: "second error" }, NOW);
       expect(next.phase).toBe("error");
       expect(next.errorMessage).toBe("second error");
+      expect(next.errorCode).toBeNull();
     });
   });
 
@@ -403,6 +427,7 @@ describe("transition", () => {
       const session = makeSession({
         phase: "error",
         errorMessage: "AI failed",
+        errorCode: "AUTH_ERROR",
         currentNarrative: "stale narrative",
         currentChoices: makeChoices(),
         selectedChoiceId: "c1",
@@ -413,6 +438,7 @@ describe("transition", () => {
 
       expect(next.phase).toBe("situation");
       expect(next.errorMessage).toBeNull();
+      expect(next.errorCode).toBeNull();
       expect(next.currentNarrative).toBeNull();
       expect(next.currentChoices).toBeNull();
       expect(next.selectedChoiceId).toBeNull();
