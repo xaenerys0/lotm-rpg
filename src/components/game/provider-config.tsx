@@ -399,7 +399,7 @@ export function ProviderConfig() {
           {connectionStatus === "valid" && (
             <span className="flex items-center gap-1.5 text-sanity-high">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-sanity-high shadow-[0_0_6px_var(--color-sanity-high)]" />
-              Connected
+              {form.providerId === "ollama-cloud" ? "Key accepted" : "Connected"}
             </span>
           )}
           {connectionStatus === "invalid" && (

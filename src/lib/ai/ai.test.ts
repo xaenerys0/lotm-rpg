@@ -1074,21 +1074,21 @@ describe("providers", () => {
       expect(fetchSpy.mock.calls[0][0]).toBe("https://ollama.com/api/chat");
     });
 
-    it("validateKey hits https://ollama.com/api/tags with Authorization header", async () => {
+    it("validateKey returns valid for non-empty key without network call", async () => {
       const adapter = new OllamaCloudAdapter();
-      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-        ok: true,
-        status: 200,
-        text: () => Promise.resolve("{}"),
-      } as Response);
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
 
       const result = await adapter.validateKey("cloud-key");
 
       expect(result.valid).toBe(true);
-      expect(fetchSpy.mock.calls[0][0]).toBe("https://ollama.com/api/tags");
-      expect(
-        (fetchSpy.mock.calls[0][1]!.headers as Record<string, string>)["Authorization"],
-      ).toBe("Bearer cloud-key");
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("validateKey returns invalid for empty key", async () => {
+      const adapter = new OllamaCloudAdapter();
+      const result = await adapter.validateKey("   ");
+      expect(result.valid).toBe(false);
+      expect(result.error).toBeTruthy();
     });
 
     it("createAdapter('ollama-cloud') returns OllamaCloudAdapter", () => {

@@ -378,6 +378,16 @@ export class OllamaCloudAdapter extends OllamaAdapter {
   getDefaultBaseUrl(): string {
     return "https://ollama.com";
   }
+
+  // ollama.com/api/tags does not serve CORS headers, so a browser preflight
+  // will always be blocked with status 0. Skip the network round-trip and
+  // accept any non-empty key; real connectivity is confirmed on first chat call.
+  async validateKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+    if (!apiKey.trim()) {
+      return { valid: false, error: "Enter your ollama.com API key." };
+    }
+    return { valid: true };
+  }
 }
 
 export class CustomAdapter implements LLMProviderAdapter {
