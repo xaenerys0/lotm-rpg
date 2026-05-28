@@ -1204,12 +1204,19 @@ describe("providers", () => {
 // ── Provider Models ──
 
 describe("PROVIDER_MODELS", () => {
-  it("defines models for all providers except custom", () => {
-    expect(PROVIDER_MODELS.anthropic.length).toBeGreaterThan(0);
-    expect(PROVIDER_MODELS.openai.length).toBeGreaterThan(0);
-    expect(PROVIDER_MODELS.openrouter.length).toBeGreaterThan(0);
-    expect(PROVIDER_MODELS.ollama.length).toBeGreaterThan(0);
-    expect(PROVIDER_MODELS["ollama-cloud"].length).toBeGreaterThan(0);
+  it("each non-custom provider has at least one routine and one premium model", () => {
+    const nonCustom = [
+      "anthropic",
+      "openai",
+      "openrouter",
+      "ollama",
+      "ollama-cloud",
+    ] as const;
+    for (const id of nonCustom) {
+      const models = PROVIDER_MODELS[id];
+      expect(models.some((m) => m.tier === "routine")).toBe(true);
+      expect(models.some((m) => m.tier === "premium")).toBe(true);
+    }
     expect(PROVIDER_MODELS.custom).toEqual([]);
   });
 
