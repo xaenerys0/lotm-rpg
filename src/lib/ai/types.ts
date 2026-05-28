@@ -54,9 +54,9 @@ export const PROVIDER_MODELS: Record<ProviderId, ModelOption[]> = {
     { id: "llama3.1:70b", name: "Llama 3.1 70B", tier: "premium" },
   ],
   "ollama-cloud": [
-    { id: "llama3.2", name: "Llama 3.2", tier: "routine" },
-    { id: "llama3.3", name: "Llama 3.3", tier: "routine" },
-    { id: "llama3.1:70b", name: "Llama 3.1 70B", tier: "premium" },
+    { id: "gpt-oss:20b", name: "GPT-OSS 20B", tier: "routine" },
+    { id: "gpt-oss:120b", name: "GPT-OSS 120B", tier: "premium" },
+    { id: "deepseek-v3.2", name: "DeepSeek V3.2", tier: "premium" },
   ],
   custom: [],
 };

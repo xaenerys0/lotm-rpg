@@ -1209,6 +1209,7 @@ describe("PROVIDER_MODELS", () => {
     expect(PROVIDER_MODELS.openai.length).toBeGreaterThan(0);
     expect(PROVIDER_MODELS.openrouter.length).toBeGreaterThan(0);
     expect(PROVIDER_MODELS.ollama.length).toBeGreaterThan(0);
+    expect(PROVIDER_MODELS["ollama-cloud"].length).toBeGreaterThan(0);
     expect(PROVIDER_MODELS.custom).toEqual([]);
   });
 
