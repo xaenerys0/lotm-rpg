@@ -2,12 +2,11 @@
 
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import type { ProviderConfig } from "@/lib/ai";
-import type { GameSessionSummary, PrologueSelection } from "@/lib/game";
+import type { ProviderConfig, MemoryState } from "@/lib/ai";
+import type { GameSessionSummary } from "@/lib/game";
 import {
   createSession,
   createDefaultGameState,
-  createPrologueMemory,
   sessionToSummary,
   serializeSession,
   deserializeSession,
@@ -101,7 +100,7 @@ export function PlayDashboard() {
       pathwayId: number,
       characterName: string,
       characterBackground: string,
-      prologueSelections: PrologueSelection[],
+      initialMemory: MemoryState,
     ) => {
       const gameState = createDefaultGameState(
         pathwayId,
@@ -109,12 +108,7 @@ export function PlayDashboard() {
         characterName,
         characterBackground,
       );
-      const memory = createPrologueMemory(
-        prologueSelections,
-        characterName,
-        characterBackground,
-      );
-      const session = createSession(gameState, undefined, undefined, memory);
+      const session = createSession(gameState, undefined, undefined, initialMemory);
 
       try {
         localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));

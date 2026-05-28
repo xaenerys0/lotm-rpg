@@ -5,9 +5,10 @@ import {
   POTION_HEADINGS,
   FIRST_POTION_NARRATIVE,
   createPrologueMemory,
+  createAIPrologueMemory,
   PROVIDER_CONFIG_KEY,
 } from "@/lib/game";
-import type { PrologueSelection } from "@/lib/game";
+import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { generatePrologueScene, PROLOGUE_TURN_COUNT } from "@/lib/ai";
 import type { AIPrologueResponse, PrologueTurn, ProviderConfig } from "@/lib/ai";
@@ -41,7 +42,7 @@ interface CharacterCreationProps {
     pathwayId: number,
     characterName: string,
     characterBackground: string,
-    prologueSelections: PrologueSelection[],
+    initialMemory: MemoryState,
   ) => void;
   onBack: () => void;
 }
@@ -134,8 +135,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       setCurrentScene(null);
       void runPrologueScene(
         providerConfig,
-        characterName,
-        characterBackground,
+        characterName.trim(),
+        characterBackground.trim(),
         newHistory,
       );
     },
@@ -157,8 +158,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     if (!providerConfig) return;
     void runPrologueScene(
       providerConfig,
-      characterName,
-      characterBackground,
+      characterName.trim(),
+      characterBackground.trim(),
       prologueHistory,
     );
   }, [
@@ -186,19 +187,31 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   }, [characterName]);
 
   const handleBeginChronicle = useCallback(() => {
-    if (selectedPathwayId !== null) {
-      onComplete(selectedPathwayId, characterName.trim(), characterBackground.trim(), []);
-    }
-  }, [selectedPathwayId, characterName, characterBackground, onComplete]);
+    if (selectedPathwayId === null) return;
+    const name = characterName.trim();
+    const bg = characterBackground.trim();
+    const memory = skipPrologue
+      ? createPrologueMemory([], name, bg)
+      : createAIPrologueMemory(
+          prologueHistory.map((t) => t.selectedChoiceText),
+          name,
+          bg,
+        );
+    onComplete(selectedPathwayId, name, bg, memory);
+  }, [
+    selectedPathwayId,
+    characterName,
+    characterBackground,
+    skipPrologue,
+    prologueHistory,
+    onComplete,
+  ]);
 
   // ── Progress Dots ──
 
   const progress = getProgress(step, skipPrologue);
   const sceneNumber = prologueHistory.length + 1;
   const progressPct = (prologueHistory.length / PROLOGUE_TURN_COUNT) * 100;
-
-  // Suppress unused import warning for createPrologueMemory (used in play-dashboard)
-  void createPrologueMemory;
 
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">

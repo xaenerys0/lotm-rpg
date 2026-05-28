@@ -37,6 +37,7 @@ export {
   recommendPathway,
   createPrologueState,
   createPrologueMemory,
+  createAIPrologueMemory,
 } from "./prologue";
 
 export type {

@@ -1,5 +1,6 @@
 import { createAdapter } from "./providers";
 import { AIError } from "./errors";
+import { executeWithRetry } from "./client";
 import type { ProviderConfig, ChatMessage } from "./types";
 
 export const PROLOGUE_TURN_COUNT = 5;
@@ -77,7 +78,8 @@ export async function generatePrologueScene(
     });
   }
 
-  const providerResponse = await adapter.makeRequest(
+  const providerResponse = await executeWithRetry(
+    adapter,
     {
       messages,
       model: config.routineModel,

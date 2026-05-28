@@ -1047,18 +1047,22 @@ describe("providers", () => {
       expect(new OllamaCloudAdapter().name).toBe("ollama-cloud");
     });
 
-    it("default base URL is https://ollama.com", () => {
-      expect(new OllamaCloudAdapter().getDefaultBaseUrl()).toBe("https://ollama.com");
+    it("default base URL is https://ollama.com/v1", () => {
+      expect(new OllamaCloudAdapter().getDefaultBaseUrl()).toBe("https://ollama.com/v1");
     });
 
-    it("makeRequest sends Authorization header with key", async () => {
+    it("makeRequest sends Authorization header and hits OpenAI-compatible endpoint", async () => {
       const adapter = new OllamaCloudAdapter();
       const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
         ok: true,
         status: 200,
         text: () =>
           Promise.resolve(
-            JSON.stringify({ message: { content: "ok" }, model: "llama3.2" }),
+            JSON.stringify({
+              choices: [{ message: { content: "ok" } }],
+              model: "llama3.2",
+              usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+            }),
           ),
       } as Response);
 
@@ -1076,7 +1080,7 @@ describe("providers", () => {
       expect((init.headers as Record<string, string>)["Authorization"]).toBe(
         "Bearer cloud-key",
       );
-      expect(fetchSpy.mock.calls[0][0]).toBe("https://ollama.com/api/chat");
+      expect(fetchSpy.mock.calls[0][0]).toBe("https://ollama.com/v1/chat/completions");
     });
 
     it("validateKey returns valid for non-empty key without network call", async () => {

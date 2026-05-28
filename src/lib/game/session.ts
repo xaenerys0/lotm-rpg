@@ -84,7 +84,11 @@ export function deserializeSession(json: string): GameSession | null {
     return null;
   }
 
-  return parsed as GameSession;
+  const s = parsed as Record<string, unknown>;
+  return {
+    ...s,
+    errorCode: s.errorCode ?? null,
+  } as GameSession;
 }
 
 export function isValidSessionShape(obj: unknown): boolean {

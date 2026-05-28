@@ -40,7 +40,7 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function executeWithRetry(
+export async function executeWithRetry(
   adapter: LLMProviderAdapter,
   request: Parameters<LLMProviderAdapter["makeRequest"]>[0],
   apiKey: string,

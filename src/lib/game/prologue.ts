@@ -212,6 +212,38 @@ export function recommendPathway(
   };
 }
 
+export function createAIPrologueMemory(
+  selectedChoiceTexts: string[],
+  characterName: string,
+  background: string,
+): MemoryState {
+  const memory = createMemoryState();
+  const facts: SessionFact[] = [
+    {
+      type: "event",
+      description: `Character created: ${characterName}${background ? `. Background: ${background}` : ""}`,
+      turnNumber: 0,
+    },
+    ...(selectedChoiceTexts.length > 0
+      ? [
+          {
+            type: "event" as const,
+            description: `Completed the AI-guided Beyonder prologue across ${selectedChoiceTexts.length} scenes.`,
+            turnNumber: 0,
+          },
+        ]
+      : []),
+    ...selectedChoiceTexts.map(
+      (text, i): SessionFact => ({
+        type: "event",
+        description: `Prologue scene ${i + 1}: ${text}`,
+        turnNumber: 0,
+      }),
+    ),
+  ];
+  return { ...memory, sessionFacts: [...memory.sessionFacts, ...facts] };
+}
+
 export function createPrologueState(): PrologueState {
   return {
     currentScene: 0,

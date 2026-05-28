@@ -65,6 +65,10 @@ function loadInitialState(): FormState {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (raw) {
       const config = JSON.parse(raw) as ProviderConfig;
+      // Reject stale provider IDs that no longer exist in PROVIDERS
+      if (!PROVIDERS.some((p) => p.id === config.providerId)) {
+        return defaultState;
+      }
       return {
         providerId: config.providerId,
         apiKey: config.apiKey,

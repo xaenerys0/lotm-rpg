@@ -153,17 +153,23 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     saveSessionToStorage(next);
   }, []);
 
+  const dispatchMissingConfig = useCallback(
+    (currentSession: GameSession, gen: number) => {
+      const errSession = transition(currentSession, {
+        type: "ERROR",
+        message: "No AI provider configured. Visit Settings to add your API key.",
+        errorCode: "CONFIG_MISSING",
+      });
+      if (generationRef.current === gen) updateSession(errSession);
+    },
+    [updateSession],
+  );
+
   const generateSituation = useCallback(
     async (currentSession: GameSession, gen: number) => {
       const config = loadProviderConfig();
       if (!config) {
-        if (generationRef.current !== gen) return;
-        const errSession = transition(currentSession, {
-          type: "ERROR",
-          message: "No AI provider configured. Visit Settings to add your API key.",
-          errorCode: "CONFIG_MISSING",
-        });
-        updateSession(errSession);
+        dispatchMissingConfig(currentSession, gen);
         return;
       }
 
@@ -230,20 +236,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         updateSession(errSession);
       }
     },
-    [updateSession],
+    [updateSession, dispatchMissingConfig],
   );
 
   const resolveChoice = useCallback(
     async (currentSession: GameSession, gen: number) => {
       const config = loadProviderConfig();
       if (!config) {
-        if (generationRef.current !== gen) return;
-        const errSession = transition(currentSession, {
-          type: "ERROR",
-          message: "No AI provider configured. Visit Settings to add your API key.",
-          errorCode: "CONFIG_MISSING",
-        });
-        updateSession(errSession);
+        dispatchMissingConfig(currentSession, gen);
         return;
       }
 
@@ -288,7 +288,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         updateSession(errSession);
       }
     },
-    [updateSession],
+    [updateSession, dispatchMissingConfig],
   );
 
   useEffect(() => {

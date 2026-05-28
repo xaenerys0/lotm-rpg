@@ -8,6 +8,7 @@ import {
   recommendPathway,
   createPrologueState,
   createPrologueMemory,
+  createAIPrologueMemory,
 } from "./prologue";
 import type { PrologueSelection } from "./prologue";
 
@@ -374,5 +375,55 @@ describe("createPrologueMemory", () => {
   it("appends to existing sessionFacts from createMemoryState rather than overwriting", () => {
     const memory = createPrologueMemory([], "Test", "");
     expect(memory.sessionFacts.length).toBeGreaterThanOrEqual(1);
+  });
+});
+
+// createAIPrologueMemory
+describe("createAIPrologueMemory", () => {
+  it("includes character creation fact with name and background", () => {
+    const memory = createAIPrologueMemory([], "Klein", "A former soldier");
+    const fact = memory.sessionFacts.find((f) => f.description.includes("Klein"));
+    expect(fact).toBeDefined();
+    expect(fact?.description).toContain("A former soldier");
+  });
+
+  it("includes character fact with name only when no background", () => {
+    const memory = createAIPrologueMemory([], "Audrey", "");
+    const fact = memory.sessionFacts.find((f) => f.description.includes("Audrey"));
+    expect(fact).toBeDefined();
+    expect(fact?.description).not.toContain("Background:");
+  });
+
+  it("empty choices produces no completion or scene facts", () => {
+    const memory = createAIPrologueMemory([], "Klein", "");
+    const completionFact = memory.sessionFacts.find((f) =>
+      f.description.includes("prologue"),
+    );
+    expect(completionFact).toBeUndefined();
+  });
+
+  it("non-empty choices includes completion fact with scene count", () => {
+    const choices = ["Investigated the noise", "Stayed silent", "Left the room"];
+    const memory = createAIPrologueMemory(choices, "Klein", "");
+    const completionFact = memory.sessionFacts.find((f) =>
+      f.description.includes("3 scenes"),
+    );
+    expect(completionFact).toBeDefined();
+  });
+
+  it("records each choice text as a scene fact", () => {
+    const choices = ["Investigated the noise", "Stayed silent"];
+    const memory = createAIPrologueMemory(choices, "Klein", "");
+    expect(
+      memory.sessionFacts.some((f) => f.description.includes("Investigated the noise")),
+    ).toBe(true);
+    expect(memory.sessionFacts.some((f) => f.description.includes("Stayed silent"))).toBe(
+      true,
+    );
+  });
+
+  it("all facts have turnNumber 0", () => {
+    const memory = createAIPrologueMemory(["Chose path A"], "Klein", "");
+    expect(memory.sessionFacts.every((f) => f.turnNumber === 0)).toBe(true);
   });
 });
