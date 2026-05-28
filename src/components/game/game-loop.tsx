@@ -155,7 +155,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const generateSituation = useCallback(
     async (currentSession: GameSession, gen: number) => {
       const config = loadProviderConfig();
-      if (!config) return;
+      if (!config) {
+        if (generationRef.current !== gen) return;
+        const errSession = transition(currentSession, {
+          type: "ERROR",
+          message: "No AI provider configured. Visit Settings to add your API key.",
+        });
+        updateSession(errSession);
+        return;
+      }
 
       const { seq, abilities, actingReqs, loreContext } =
         buildAICallParams(currentSession);
@@ -224,7 +232,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const resolveChoice = useCallback(
     async (currentSession: GameSession, gen: number) => {
       const config = loadProviderConfig();
-      if (!config) return;
+      if (!config) {
+        if (generationRef.current !== gen) return;
+        const errSession = transition(currentSession, {
+          type: "ERROR",
+          message: "No AI provider configured. Visit Settings to add your API key.",
+        });
+        updateSession(errSession);
+        return;
+      }
 
       const selectedChoice = currentSession.currentChoices?.find(
         (c) => c.id === currentSession.selectedChoiceId,
@@ -636,6 +652,11 @@ function ConsequencesPhase({
 }
 
 function ErrorPhase({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const isKeyError =
+    message.includes("API key") ||
+    message.includes("Settings") ||
+    message.includes("quota") ||
+    message.includes("billing");
   return (
     <div className="py-16 text-center animate-fade-in-up">
       <div className="mx-auto mb-4 h-8 w-8 rounded-full border border-crimson/40 bg-crimson/[0.08]">
@@ -645,13 +666,24 @@ function ErrorPhase({ message, onRetry }: { message: string; onRetry: () => void
       </div>
       <p className="font-serif text-base text-foreground/70">Something went wrong</p>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted/60">{message}</p>
-      <button
-        type="button"
-        onClick={onRetry}
-        className="mt-6 rounded-md border border-amber/30 bg-amber/[0.06] px-5 py-2.5 text-sm text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1]"
-      >
-        Retry
-      </button>
+      <div className="mt-6 flex items-center justify-center gap-3">
+        {isKeyError ? (
+          <a
+            href="/settings"
+            className="rounded-md border border-amber/40 bg-amber/[0.08] px-5 py-2.5 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/60 hover:bg-amber/[0.14]"
+          >
+            Go to Settings
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-md border border-amber/30 bg-amber/[0.06] px-5 py-2.5 text-sm text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1]"
+          >
+            Retry
+          </button>
+        )}
+      </div>
     </div>
   );
 }
