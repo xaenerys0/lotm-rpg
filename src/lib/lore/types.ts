@@ -14,4 +14,8 @@ export interface LoreEntry {
   sequences: number[];
   tags: string[];
   tokenCount: number;
+  // When undefined or true: the AI uses this for narrator accuracy but should not
+  // treat it as information the player character already possesses. Set to false
+  // only for entries describing genuinely public knowledge (geography, era context).
+  narratorOnly?: boolean;
 }

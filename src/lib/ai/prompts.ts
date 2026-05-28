@@ -50,6 +50,14 @@ Always respond with valid JSON matching this schema:
 - Choices should be meaningful and consequential, typically 2-4 options.
 - World state changes must include a reason explaining why the change occurred.
 
+## Narrator Context vs. Character Knowledge
+Lore entries marked [NARRATOR ONLY] are provided for your accuracy as narrator — they are NOT information the player character already possesses. Do NOT state or imply the character knows:
+- The true Beyonder nature or church affiliation of any organization
+- Specific sequence names, pathway names, or Beyonder terminology they haven't discovered
+- The Beyonder identity, sequence level, or abilities of NPCs they haven't been told about
+- Insider knowledge about any organization's operations, hierarchy, or membership
+This knowledge should emerge through discovery, story, and roleplay — never as prior given fact.
+
 ## Current Abilities
 ${abilities.length > 0 ? abilities.map((a) => `- ${a}`).join("\n") : "None yet"}
 
@@ -64,9 +72,12 @@ export function buildLoreContext(loreContext: LoreContext): PromptLayer {
     return { role: "system", content: "", cacheControl: true };
   }
 
-  const sections = loreContext.entries.map(
-    (entry) => `### ${entry.title} [${entry.category}]\n${entry.content}`,
-  );
+  const sections = loreContext.entries.map((entry) => {
+    // narratorOnly defaults to true — all existing lore contains Beyonder world
+    // knowledge that an ordinary starting character would not possess.
+    const tag = entry.narratorOnly !== false ? " [NARRATOR ONLY]" : "";
+    return `### ${entry.title} [${entry.category}]${tag}\n${entry.content}`;
+  });
 
   const content = `## Lore Context\nUse the following lore as reference for narrative accuracy. Do not contradict this information.\n\n${sections.join("\n\n")}`;
 

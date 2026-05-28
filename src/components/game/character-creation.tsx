@@ -10,7 +10,7 @@ import {
 } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
-import { generatePrologueScene, PROLOGUE_TURN_COUNT } from "@/lib/ai";
+import { generatePrologueScene, MAX_PROLOGUE_SCENES } from "@/lib/ai";
 import type { AIPrologueResponse, PrologueTurn, ProviderConfig } from "@/lib/ai";
 
 type CreationStep =
@@ -211,7 +211,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
 
   const progress = getProgress(step, skipPrologue);
   const sceneNumber = prologueHistory.length + 1;
-  const progressPct = (prologueHistory.length / PROLOGUE_TURN_COUNT) * 100;
+  const progressPct = Math.min((prologueHistory.length / MAX_PROLOGUE_SCENES) * 100, 95);
 
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
@@ -281,8 +281,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   Begin the Prologue
                 </h2>
                 <p className="text-sm leading-relaxed text-muted">
-                  Five AI-generated scenes will shape your character&apos;s fate. Your
-                  choices guide you to the Beyonder pathway that fits your nature.
+                  A series of AI-generated scenes will shape your character&apos;s fate.
+                  Your choices guide you to the Beyonder pathway that fits your nature.
                 </p>
               </button>
             ) : (
@@ -406,9 +406,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               >
                 &larr; Back
               </button>
-              <span className="text-xs text-muted/40">
-                Scene {sceneNumber} of {PROLOGUE_TURN_COUNT}
-              </span>
+              <span className="text-xs text-muted/40">Scene {sceneNumber}</span>
             </div>
             <div className="h-px bg-border relative overflow-hidden rounded-full">
               <div

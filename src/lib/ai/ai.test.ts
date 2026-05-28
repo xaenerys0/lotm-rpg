@@ -59,7 +59,8 @@ import {
 } from "./client";
 import {
   generatePrologueScene,
-  PROLOGUE_TURN_COUNT,
+  MIN_PROLOGUE_SCENES,
+  MAX_PROLOGUE_SCENES,
   type PrologueTurn,
 } from "./prologue-client";
 
@@ -2858,10 +2859,10 @@ describe("generatePrologueScene", () => {
     expect(messages[2]!.content).toBe(history[0]!.rawResponse);
     expect(messages[3]!.role).toBe("user");
     expect(messages[3]!.content).toContain("Choice A");
-    expect(messages[3]!.content).toContain("scene 2 of");
+    expect(messages[3]!.content).toContain("scene 2");
   });
 
-  it("sends final scene message with chance encounter instruction when history.length === PROLOGUE_TURN_COUNT - 1", async () => {
+  it("sends final scene message with chance encounter instruction when history.length === MAX_PROLOGUE_SCENES - 1", async () => {
     const content = makePrologueApiResponse({ isConclusion: true, choices: [] });
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
@@ -2876,9 +2877,9 @@ describe("generatePrologueScene", () => {
         ),
     } as Response);
 
-    // Build history with PROLOGUE_TURN_COUNT - 1 turns (4 turns => scene 5 is final)
+    // Build history with MAX_PROLOGUE_SCENES - 1 turns (11 turns => scene 12 is forced final)
     const history: PrologueTurn[] = Array.from(
-      { length: PROLOGUE_TURN_COUNT - 1 },
+      { length: MAX_PROLOGUE_SCENES - 1 },
       (_, i) => ({
         narrative: `Scene ${i + 1}`,
         choices: [{ id: "1", text: "Some choice" }],
@@ -2895,7 +2896,7 @@ describe("generatePrologueScene", () => {
     // Last user message should be the final scene instruction
     const lastMessage = messages[messages.length - 1]!;
     expect(lastMessage.role).toBe("user");
-    expect(lastMessage.content).toContain("final scene");
+    expect(lastMessage.content).toContain("conclude");
     expect(lastMessage.content).toContain("chance encounter");
     expect(lastMessage.content).toContain("isConclusion");
   });
@@ -3048,7 +3049,8 @@ describe("generatePrologueScene", () => {
     }
   });
 
-  it("exports PROLOGUE_TURN_COUNT as 5", () => {
-    expect(PROLOGUE_TURN_COUNT).toBe(5);
+  it("exports MIN_PROLOGUE_SCENES as 4 and MAX_PROLOGUE_SCENES as 12", () => {
+    expect(MIN_PROLOGUE_SCENES).toBe(4);
+    expect(MAX_PROLOGUE_SCENES).toBe(12);
   });
 });

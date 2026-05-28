@@ -65,7 +65,8 @@ export {
 
 export {
   generatePrologueScene,
-  PROLOGUE_TURN_COUNT,
+  MIN_PROLOGUE_SCENES,
+  MAX_PROLOGUE_SCENES,
   type PrologueTurn,
   type AIPrologueResponse,
 } from "./prologue-client";
