@@ -120,6 +120,8 @@ export function ProviderConfig() {
     [models],
   );
   const isCustom = form.providerId === "custom";
+  // API key → any provider in cloud/authenticated mode; Ollama alone → local instance (no key needed).
+  const canTest = !!form.apiKey || form.providerId === "ollama";
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
@@ -363,10 +365,7 @@ export function ProviderConfig() {
           <button
             type="button"
             onClick={handleTestConnection}
-            disabled={
-              connectionStatus === "testing" ||
-              (!form.apiKey && form.providerId !== "ollama")
-            }
+            disabled={connectionStatus === "testing" || !canTest}
             className="rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-amber/30 disabled:hover:bg-amber/[0.06]"
           >
             {connectionStatus === "testing" ? "Testing..." : "Test Connection"}
