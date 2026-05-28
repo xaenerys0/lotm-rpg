@@ -16,7 +16,6 @@ export async function proxy(request: NextRequest) {
     "'self'",
     `'nonce-${nonce}'`,
     "'strict-dynamic'",
-    // React uses eval() in development for stack reconstruction.
     isDev ? "'unsafe-eval'" : null,
   ]
     .filter(Boolean)

@@ -5,7 +5,12 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.ts"],
     coverage: {
-      include: ["src/lib/rules/**/*.ts", "src/lib/lore/**/*.ts", "src/lib/ai/**/*.ts"],
+      include: [
+        "src/lib/rules/**/*.ts",
+        "src/lib/lore/**/*.ts",
+        "src/lib/ai/**/*.ts",
+        "src/lib/game/**/*.ts",
+      ],
       exclude: ["src/**/*.test.ts", "src/lib/**/index.ts"],
       thresholds: {
         statements: 95,
