@@ -108,13 +108,30 @@ const foolSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Manhal Fish Eyeball",
-        description: "The eye of a Manhal Fish, imbued with spiritual energy",
+        name: "Hornacis Mountain Goat Horn Crystal",
+        description:
+          "A crystal formed from the horn of a matured Hornacis Gray Mountain Goat",
         category: "main-ingredient",
       },
       {
-        name: "Dream Honeydew",
-        description: "Sweet secretion from a dream-realm bee colony",
+        name: "Human-Faced Rose",
+        description:
+          "A complete stalk of a Human-Faced Rose, a supernatural flower with a human visage at its centre",
+        category: "main-ingredient",
+      },
+      {
+        name: "Tornapple Juice",
+        description: "5 drops of juice from a Tornapple (jimsonweed), carefully measured",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Black-Rimmed Sunflower",
+        description: "Powdered petals of a Black-Rimmed Sunflower",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Golden Cloak Grass",
+        description: "Powdered Golden Cloak Grass",
         category: "supplementary-ingredient",
       },
     ],
@@ -166,18 +183,30 @@ const foolSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Thousand-faced Hunter Eye Crystal",
-        description: "A crystallized eye from a Thousand-faced Hunter beast",
+        name: "Fog Tree Person Root",
+        description:
+          "The true root of a Fog Tree Person (Mist Treant), a humanoid tree creature native to fog-shrouded regions",
         category: "main-ingredient",
       },
       {
-        name: "Rosemary Essential Oil",
-        description: "Distilled oil from spiritually-charged rosemary plants",
+        name: "Evil-Patterned Black Panther Spinal Fluid",
+        description:
+          "Spinal fluid from an Evil-Patterned Black Panther, a Beyonder beast with dark-marked hide",
+        category: "main-ingredient",
+      },
+      {
+        name: "Fog Tree Sap",
+        description: "30 ml of sap from a Fog Tree Person",
         category: "supplementary-ingredient",
       },
       {
-        name: "Ghost Shark Blood",
-        description: "Blood drawn from a spectral shark entity",
+        name: "Aqueous Gemstone Powder",
+        description: "3 grams of finely ground aqueous gemstone",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Hallucinogenic Grass Oil",
+        description: "4 drops of essential oil from hallucinogenic grass",
         category: "supplementary-ingredient",
       },
     ],
@@ -225,18 +254,35 @@ const foolSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Thousand-faced Hunter Mutant Pituitary Gland",
-        description: "The shape-governing gland of a mutant Thousand-faced Hunter",
+        name: "Thousand-Faced Hunter Mutant Pituitary Gland",
+        description:
+          "The mutated pituitary gland from a Thousand-Faced Hunter, a shapeshifting Beyonder beast",
         category: "main-ingredient",
       },
       {
-        name: "Hound of Fulgrim Saliva",
-        description: "Saliva from a Hound of Fulgrim, a tracking beast",
+        name: "Characteristic of a Human-Skinned Shadow",
+        description:
+          "The supernatural characteristic of a Human-Skinned Shadow, a creature that wears human skin",
+        category: "main-ingredient",
+      },
+      {
+        name: "Thousand-Faced Hunter Blood",
+        description: "80 ml of blood from a Thousand-Faced Hunter",
         category: "supplementary-ingredient",
       },
       {
-        name: "Three Petals of Spirit World Celandine",
-        description: "Rare petals that exist partly in the spirit world",
+        name: "Black Tornapple Juice",
+        description: "5 drops of juice from Black Tornapple (black jimsonweed)",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Dragon Tooth Grass Powder",
+        description: "10 grams of powdered Dragon Tooth Grass",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Deep-Sea Naga Hair",
+        description: "Three strands of hair from a Deep-Sea Naga",
         category: "supplementary-ingredient",
       },
     ],
@@ -291,19 +337,15 @@ const foolSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Beyonder Characteristic of a Faceless",
-        description: "The crystallized Beyonder characteristic from a Seq 6 Faceless",
+        name: "Dust of Ancient Wraiths",
+        description:
+          "Powdered dust from Ancient Wraiths — spirits of exceptional age and power",
         category: "main-ingredient",
       },
       {
-        name: "Mind Dragon Tendon",
-        description: "A tendon from a Mind Dragon, attuned to mental control",
+        name: "Core Crystal of a Six-Winged Gargoyle",
+        description: "The crystal core left when a Six-Winged Gargoyle is destroyed",
         category: "main-ingredient",
-      },
-      {
-        name: "Psychic Puppet Core",
-        description: "An ancient core used in the creation of autonomous puppets",
-        category: "supplementary-ingredient",
       },
     ],
     advancementRitual: {
@@ -353,13 +395,30 @@ const visionarySequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Placenta of a Beyond-level Demon Cat",
-        description: "The preserved placenta from a spiritually-attuned feline",
+        name: "Phantom Lizard Pituitary Gland",
+        description:
+          "The complete pituitary gland of a Phantom Lizard, a supernatural reptile with perception-warping properties",
         category: "main-ingredient",
       },
       {
-        name: "Tears of a Willow Sprite",
-        description: "Collected tears from a minor nature spirit",
+        name: "Half-Ghost Rabbit Spinal Fluid",
+        description:
+          "10 ml of spinal fluid from a Half-Ghost Rabbit, which exists partially in the spirit world",
+        category: "main-ingredient",
+      },
+      {
+        name: "Chestnut Spores",
+        description: "5 grams of Chestnut Spores",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Dragon Apricot Powder",
+        description: "8 grams of powdered Dragon Apricot",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Fairy Flower Petals",
+        description: "Three pure white petals from a Fairy Flower",
         category: "supplementary-ingredient",
       },
     ],
@@ -398,13 +457,30 @@ const visionarySequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Mirror Hedgehog Spinal Fluid",
-        description: "Spinal fluid from a Mirror Hedgehog, a psychic beast",
+        name: "Fruit of the Tree of Elders",
+        description:
+          "A fruit from the Tree of Elders, an ancient tree associated with accumulated wisdom and perception",
         category: "main-ingredient",
       },
       {
-        name: "Piper Fruit",
-        description: "A fruit that enhances psychic conductivity when consumed",
+        name: "Mirror Dragon Eyes",
+        description:
+          "A pair of eyes from a Mirror Dragon — a creature whose gaze reflects the minds of others",
+        category: "main-ingredient",
+      },
+      {
+        name: "Chestnut Spores",
+        description: "5 grams of Chestnut Spores",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Dragon Tooth Grass Powder",
+        description: "8 grams of powdered Dragon Tooth Grass",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Pure White Elf Flowers",
+        description: "Three petals from Pure White Elf Flowers",
         category: "supplementary-ingredient",
       },
     ],
@@ -457,19 +533,20 @@ const visionarySequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Wraith Dust",
-        description: "Powdered essence of a deceased wraith, attuned to the psyche",
+        name: "Psychic Dragon Pituitary Gland",
+        description: "The complete pituitary gland of an adolescent Psychic Dragon",
         category: "main-ingredient",
       },
       {
-        name: "Moonstone Shard",
-        description: "A fragment of moonstone charged with lunar energy",
-        category: "supplementary-ingredient",
+        name: "Black Monitor Lizard Spinal Fluid",
+        description: "60 ml of spinal fluid from a Black Monitor Lizard",
+        category: "main-ingredient",
       },
       {
-        name: "Calming Lily Extract",
-        description: "An extract that soothes spiritual turbulence",
-        category: "supplementary-ingredient",
+        name: "Hallucinogenic Landscape Tree Fruit",
+        description:
+          "One fruit from a hallucinogenic landscape tree, which distorts perception in its vicinity",
+        category: "main-ingredient",
       },
     ],
     advancementRitual: {
@@ -585,19 +662,14 @@ const visionarySequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Beyonder Characteristic of a Hypnotist",
-        description: "The crystallized Beyonder characteristic from a Seq 6 Hypnotist",
+        name: "Adult Mind Dragon Blood",
+        description: "100 ml of blood from an adult Mind Dragon",
         category: "main-ingredient",
       },
       {
-        name: "Dream Realm Anchor Shard",
-        description: "A fragment of crystallized dream energy that stabilizes passage",
+        name: "Adult Mind Dragon Scales",
+        description: "Three scales from an adult Mind Dragon",
         category: "main-ingredient",
-      },
-      {
-        name: "Essence of Deep Sleep",
-        description: "A distilled liquid from the deepest layer of dreams",
-        category: "supplementary-ingredient",
       },
     ],
     advancementRitual: {
@@ -646,13 +718,31 @@ const sunSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Sunflower Essence",
-        description: "Concentrated extract from spiritually-charged sunflowers",
+        name: "Crystal Sunflower",
+        description:
+          "A crystallised sunflower whose petals have turned to translucent glass through sun exposure over centuries",
         category: "main-ingredient",
       },
       {
-        name: "Golden Honey",
-        description: "Honey produced by bees that nest near sacred sites",
+        name: "Siren Rock",
+        description:
+          "A resonant stone that hums with solar energy — associated with the Sun pathway's music-based power",
+        category: "main-ingredient",
+      },
+      {
+        name: "Midsummer Grass",
+        description: "One blade of Midsummer Grass, harvested at the summer solstice",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "July Wine Juice",
+        description: "5 drops of July Wine juice, a ferment made from sun-ripened grapes",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Elf Dark Leaf",
+        description:
+          "One leaf from an Elf Dark tree, which stores sunlight in its darkened surface",
         category: "supplementary-ingredient",
       },
     ],
@@ -691,13 +781,20 @@ const sunSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Solar Amber Crystal",
-        description: "A crystal formed from concentrated sunlight",
+        name: "Brilliance Rock",
+        description:
+          "A rock that stores and emits light — it glows with a pale radiance even in total darkness",
         category: "main-ingredient",
       },
       {
-        name: "White Dew Grass Juice",
-        description: "Juice from a grass that absorbs moonlight and starlight",
+        name: "Golden-Edged Sunflower",
+        description:
+          "A sunflower with gold-edged petals, found near sites of Sun pathway activity",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Aconite Juice",
+        description: "3 drops of aconite juice, carefully measured",
         category: "supplementary-ingredient",
       },
     ],
@@ -878,19 +975,21 @@ const sunSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Beyonder Characteristic of a Notary",
-        description: "The crystallized Beyonder characteristic from a Seq 6 Notary",
+        name: "Eyes of a Radiant Giant",
+        description:
+          "A pair of eyes from a Radiant Giant — luminous colossus creatures of the Sun pathway",
         category: "main-ingredient",
       },
       {
-        name: "Heart of a Sun Elemental",
-        description: "The core of a minor sun elemental creature",
+        name: "Blood of a Radiant Giant",
+        description: "300 ml of blood from a Radiant Giant",
         category: "main-ingredient",
       },
       {
-        name: "Holy Water of the Dawn Cathedral",
-        description: "Water blessed at the Dawn Cathedral during the summer solstice",
-        category: "supplementary-ingredient",
+        name: "Self-Transcribed Holy Book",
+        description:
+          "A holy book praising the Sun, written in the practitioner's own hand — both ingredient and ritual object",
+        category: "main-ingredient",
       },
     ],
     advancementRitual: {
@@ -984,13 +1083,30 @@ const deathSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Zombie Heart",
-        description: "The still-beating heart of a naturally-risen zombie",
+        name: "Eye of a Death-Telling Crow",
+        description:
+          "The eye of a Death-Telling Crow, a corvid that can sense imminent death",
         category: "main-ingredient",
       },
       {
-        name: "Graveyard Soil",
-        description: "Soil from a graveyard that has held the dead for over a century",
+        name: "Blood Rose",
+        description:
+          "A Blood Rose harvested from a graveyard — a flower that feeds on corpse essence",
+        category: "main-ingredient",
+      },
+      {
+        name: "Death-Telling Crow Feathers",
+        description: "Three feathers from a Death-Telling Crow",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Blood Rose Leaves",
+        description: "Five leaves from a graveyard Blood Rose",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Corpse-Scented Oil",
+        description: "9 drops of essential oil distilled from corpse remains",
         category: "supplementary-ingredient",
       },
     ],
@@ -1043,18 +1159,35 @@ const deathSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Wraith Crystal",
-        description: "A crystal formed from the condensed essence of a wraith",
+        name: "Forepaw of a Ghost Phantom Cat",
+        description:
+          "The forepaw of a Ghost Phantom Cat, a supernatural feline that phases between the living and spirit worlds",
         category: "main-ingredient",
       },
       {
-        name: "Spirit World Incense",
-        description: "Incense that thins the boundary between life and death",
+        name: "Spirit World Crystal",
+        description: "A crystal formed by the condensation of spirit world energy",
+        category: "main-ingredient",
+      },
+      {
+        name: "Ghost Phantom Cat Blood",
+        description: "80 ml of blood from a Ghost Phantom Cat",
         category: "supplementary-ingredient",
       },
       {
-        name: "Tears of the Bereaved",
-        description: "Tears shed in genuine grief, collected under moonlight",
+        name: "Spirit Crystal-Tainted Soil",
+        description: "10 grams of soil contaminated by spirit world crystal dissolution",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Brain Matter of the Spirit-Possessed",
+        description:
+          "5 ml of brain matter from a person who died from evil spirit possession",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Natural Spirit-Blessed Leaf",
+        description: "A leaf that has been blessed by a natural spirit",
         category: "supplementary-ingredient",
       },
     ],
@@ -1069,70 +1202,77 @@ const deathSequences: Sequence[] = [
   },
   {
     level: 6,
-    name: "Ferryman",
+    name: "Spirit Guide",
     classification: "Mid",
     abilities: [
       {
-        name: "Soul Guidance",
+        name: "Gaze of Death",
         description:
-          "Usher the souls of the dead to their final rest with irresistible spiritual authority",
+          "Any living being who makes direct eye contact risks instant death; even entities of godlike power suffer devastating damage from the exchange",
         type: "active",
+      },
+      {
+        name: "Withering Gaze",
+        description:
+          "Targets within your line of sight wither slowly even without direct eye contact, as if crossing the River of Death inch by inch",
+        type: "passive",
       },
       {
         name: "Death's Immunity",
         description:
-          "Most forms of attack — physical and supernatural alike — are ineffective, as though no one can kill one who already belongs to death; only purification effects remain dangerous",
+          "Most physical and supernatural attacks are ineffective — only purification effects remain genuinely dangerous; the body no longer dies of natural causes and gradually transforms",
         type: "passive",
       },
       {
-        name: "Lethal Gaze",
+        name: "Touch of Death and Life",
         description:
-          "Any living being who meets your eyes directly risks instant death; even entities of godlike power suffer devastating damage",
-        type: "active",
-      },
-      {
-        name: "Soul Harvest",
-        description:
-          "Extract the soul of a recently deceased being before it dissipates, containing it for communication or safe passage",
+          "Touch with the left hand inflicts near-irreversible death; a subsequent touch with the right hand reverses the condition and restores life",
         type: "active",
       },
     ],
     actingRequirements: [
-      "Guide lost and lingering souls to their final rest — this is a sacred and non-negotiable duty",
-      "Maintain absolute calm in the presence of death and the dying; the Ferryman does not grieve",
-      "Never refuse a soul that seeks passage; the Ferryman judges neither the living nor the dead",
+      "Walk among the living with your eyes lowered or averted — master the death energy in your gaze so it does not kill indiscriminately",
+      "Guide every soul that approaches you seeking passage; the Spirit Guide does not refuse those who come",
+      "Maintain the detachment of one who has crossed the threshold — neither fear death nor cling to the living world",
     ],
     prerequisiteItems: [
       {
-        name: "Ferryman Potion Formula",
-        description: "The recipe for the Sequence 6 Ferryman potion",
+        name: "Spirit Guide Potion Formula",
+        description: "The recipe for the Sequence 6 Spirit Guide potion",
         category: "potion-formula",
       },
       {
-        name: "Beyonder Characteristic of a Spirit Medium",
+        name: "Shadow of Death",
         description:
-          "The crystallized Beyonder characteristic from a Seq 7 Spirit Medium",
+          "The shadow cast by death itself — an incorporeal entity that inhabits objects",
         category: "main-ingredient",
       },
       {
-        name: "River Styx Silt",
+        name: "Soul Essence of a Pale Lich",
         description:
-          "Sediment from the boundary-waters between the living world and the death realm",
+          "The condensed soul-essence of a Pale Lich, a high-order undead sorcerer",
+        category: "main-ingredient",
+      },
+      {
+        name: "Bone Fragments of a Pale Lich",
+        description:
+          "Ground bones from the same Pale Lich, retaining residual death energy",
         category: "supplementary-ingredient",
       },
       {
-        name: "Ancient Funeral Ash",
-        description: "Ash from a funeral pyre that burned over five hundred years ago",
+        name: "Putrid Essence of the Deceased",
+        description:
+          "100 ml of putrid liquid from a long-deceased body, distilled and concentrated",
         category: "supplementary-ingredient",
       },
     ],
     advancementRitual: {
       description:
-        "Successfully guide a powerful anchored soul — one bound by unresolved grief, duty, or supernatural force — across to its final rest",
+        "Confront the full weight of your transformation: spend three days and nights among the dead without averting your gaze, and survive the withering effect of your own reflection",
       requirements: [
-        "Locate a soul that has refused to pass on despite all previous attempts",
-        "Commune with the soul and address the grievance binding it to the living world",
-        "Escort the soul beyond the boundary without using force",
+        "Remain in a place of the dead for three consecutive days without shielding your eyes",
+        "Witness your own reflection in still water without allowing the sight to kill you",
+        "Demonstrate control of the Touch of Death by reviving with the right hand what the left hand has withered",
       ],
     },
   },
@@ -1144,7 +1284,7 @@ const deathSequences: Sequence[] = [
       {
         name: "Door to the Underworld",
         description:
-          "Sense and control the entrance to the Underworld; solidify it as a brand on your palm and summon it to drag targets behind the door",
+          "Sense and control the entrance to the Underworld; solidify it as a brand on your palm and summon it at critical moments to drag targets behind the door",
         type: "active",
       },
       {
@@ -1156,7 +1296,7 @@ const deathSequences: Sequence[] = [
       {
         name: "Undead Dominion",
         description:
-          "Command the undead housed within your Internal Underworld, deploying them through the gate wherever you travel",
+          "Command the undead housed within your Internal Underworld, deploying them through the gate wherever you travel without drawing outward attention",
         type: "active",
       },
       {
@@ -1168,7 +1308,7 @@ const deathSequences: Sequence[] = [
     ],
     actingRequirements: [
       "Guard the boundary between the living and the dead as a sacred responsibility",
-      "Maintain and expand your Internal Underworld — ensure those housed within are ordered and contained",
+      "Maintain and expand your Internal Underworld — ensure those housed within are ordered and at peace",
       "Never allow unauthorized passage through the gate you embody",
     ],
     prerequisiteItems: [
@@ -1178,24 +1318,42 @@ const deathSequences: Sequence[] = [
         category: "potion-formula",
       },
       {
-        name: "Beyonder Characteristic of a Ferryman",
-        description: "The crystallized Beyonder characteristic from a Seq 6 Ferryman",
+        name: "Skull of an Underworld Wanderer",
+        description:
+          "The skull of an Underworld Wanderer, a creature native to the death realm",
         category: "main-ingredient",
       },
       {
-        name: "Gate Fragment of the Underworld",
-        description: "A shard of the metaphysical boundary-gate between life and death",
+        name: "Crystal Core of a Myriad-Armed Wraith",
+        description:
+          "The crystal core left behind when a Myriad-Armed Wraith is destroyed",
         category: "main-ingredient",
       },
       {
-        name: "Essence of the Death Realm",
-        description: "Condensed energy harvested from the depths of the death realm",
+        name: "Death-Tainted Water",
+        description: "80 ml of water permeated by the aura of the death realm",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Underworld Wanderer Flesh",
+        description: "A piece of rotten flesh from an Underworld Wanderer",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Myriad-Armed Wraith Residue",
+        description:
+          "10 grams of residual powder left after destroying a Myriad-Armed Wraith",
+        category: "supplementary-ingredient",
+      },
+      {
+        name: "Deep Red Amaryllis Oil",
+        description: "10 drops of essential oil from the Deep Red Amaryllis flower",
         category: "supplementary-ingredient",
       },
     ],
     advancementRitual: {
       description:
-        "Open the gate within your own body for the first time and house your first souls, proving you can sustain the boundary",
+        "Open the gate within your own body for the first time and house your first souls, proving you can sustain the Internal Underworld",
       requirements: [
         "Prepare through extended communion with the death realm",
         "Open the Internal Underworld gate at your brow",
