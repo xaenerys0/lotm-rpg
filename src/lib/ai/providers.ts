@@ -332,10 +332,11 @@ export class OllamaAdapter implements LLMProviderAdapter {
   }
 
   async makeRequest(request: ProviderRequest, apiKey: string): Promise<ProviderResponse> {
-    void apiKey;
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
     const raw = await fetchWithErrorHandling(`${this.baseUrl}/api/chat`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers,
       body: JSON.stringify({
         model: request.model,
         messages: this.formatMessages(request.messages),
@@ -354,10 +355,12 @@ export class OllamaAdapter implements LLMProviderAdapter {
     valid: boolean;
     error?: string;
   }> {
-    void apiKey;
     try {
+      const headers: Record<string, string> = {};
+      if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
       await fetchWithErrorHandling(`${this.baseUrl}/api/tags`, {
         method: "GET",
+        headers,
       });
       return { valid: true };
     } catch (err) {
@@ -366,6 +369,24 @@ export class OllamaAdapter implements LLMProviderAdapter {
         error: err instanceof Error ? err.message : "Ollama not reachable",
       };
     }
+  }
+}
+
+// ollama.com does not send CORS headers, so direct browser fetches receive a
+// status 0. Route through the server-side proxy at /api/proxy/ollama-cloud so
+// the browser makes a same-origin call; the proxy forwards with the Bearer key.
+export class OllamaCloudAdapter extends OpenAIAdapter {
+  readonly name: ProviderId = "ollama-cloud";
+
+  getDefaultBaseUrl(): string {
+    return "/api/proxy/ollama-cloud";
+  }
+
+  async validateKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+    if (!apiKey.trim()) {
+      return { valid: false, error: "Enter your ollama.com API key." };
+    }
+    return { valid: true };
   }
 }
 
@@ -436,6 +457,8 @@ export function createAdapter(
       return new OpenRouterAdapter(baseUrl);
     case "ollama":
       return new OllamaAdapter(baseUrl);
+    case "ollama-cloud":
+      return new OllamaCloudAdapter(baseUrl);
     case "custom":
       return new CustomAdapter(baseUrl);
   }

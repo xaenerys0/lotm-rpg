@@ -5,12 +5,18 @@ import type { ProviderId, ProviderConfig } from "@/lib/ai";
 import { PROVIDER_MODELS, validateProviderConfig } from "@/lib/ai";
 import { PROVIDER_CONFIG_KEY } from "@/lib/game";
 
-const PROVIDERS: { id: ProviderId; label: string; needsBaseUrl: boolean }[] = [
-  { id: "anthropic", label: "Anthropic", needsBaseUrl: false },
-  { id: "openai", label: "OpenAI", needsBaseUrl: false },
-  { id: "openrouter", label: "OpenRouter", needsBaseUrl: false },
-  { id: "ollama", label: "Ollama", needsBaseUrl: true },
-  { id: "custom", label: "Custom Provider", needsBaseUrl: true },
+const PROVIDERS: {
+  id: ProviderId;
+  label: string;
+  needsBaseUrl: boolean;
+  requiresAuth: boolean;
+}[] = [
+  { id: "anthropic", label: "Anthropic", needsBaseUrl: false, requiresAuth: true },
+  { id: "openai", label: "OpenAI", needsBaseUrl: false, requiresAuth: true },
+  { id: "openrouter", label: "OpenRouter", needsBaseUrl: false, requiresAuth: true },
+  { id: "ollama", label: "Ollama (local)", needsBaseUrl: true, requiresAuth: false },
+  { id: "ollama-cloud", label: "Ollama Cloud", needsBaseUrl: false, requiresAuth: true },
+  { id: "custom", label: "Custom Provider", needsBaseUrl: true, requiresAuth: true },
 ];
 
 type ConnectionStatus = "idle" | "testing" | "valid" | "invalid";
@@ -59,6 +65,10 @@ function loadInitialState(): FormState {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (raw) {
       const config = JSON.parse(raw) as ProviderConfig;
+      // Reject stale provider IDs that no longer exist in PROVIDERS
+      if (!PROVIDERS.some((p) => p.id === config.providerId)) {
+        return defaultState;
+      }
       return {
         providerId: config.providerId,
         apiKey: config.apiKey,
@@ -120,6 +130,7 @@ export function ProviderConfig() {
     [models],
   );
   const isCustom = form.providerId === "custom";
+  const canTest = !!form.apiKey || !providerMeta.requiresAuth;
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
@@ -193,7 +204,7 @@ export function ProviderConfig() {
         <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
           Provider
         </legend>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {PROVIDERS.map((p) => (
             <button
               key={p.id}
@@ -222,9 +233,9 @@ export function ProviderConfig() {
       {/* API Key */}
       <fieldset>
         <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
-          {form.providerId === "ollama" ? "Connection" : "API Key"}
+          {providerMeta.requiresAuth ? "API Key" : "Connection"}
         </legend>
-        {form.providerId !== "ollama" && (
+        {providerMeta.requiresAuth && (
           <div className="relative">
             <input
               type={showKey ? "text" : "password"}
@@ -235,7 +246,9 @@ export function ProviderConfig() {
                   ? "sk-ant-..."
                   : form.providerId === "openai"
                     ? "sk-..."
-                    : "Enter your API key"
+                    : form.providerId === "ollama-cloud"
+                      ? "Enter your ollama.com API key"
+                      : "Enter your API key"
               }
               autoComplete="off"
               className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
@@ -250,9 +263,11 @@ export function ProviderConfig() {
           </div>
         )}
         <p className="mt-2 text-xs leading-relaxed text-muted/60">
-          {form.providerId === "ollama"
-            ? "Ollama runs locally. No API key required — just ensure Ollama is running."
-            : "Your key is stored locally in this browser. It is never sent to our servers."}
+          {!providerMeta.requiresAuth
+            ? "Ollama runs locally — no API key required. Just ensure Ollama is running."
+            : form.providerId === "ollama-cloud"
+              ? "Your API key from ollama.com. Sign in at ollama.com → Account Settings to generate one."
+              : "Your key is stored locally in this browser. It is never sent to our servers."}
         </p>
       </fieldset>
 
@@ -363,10 +378,7 @@ export function ProviderConfig() {
           <button
             type="button"
             onClick={handleTestConnection}
-            disabled={
-              connectionStatus === "testing" ||
-              (!form.apiKey && form.providerId !== "ollama")
-            }
+            disabled={connectionStatus === "testing" || !canTest}
             className="rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-amber/30 disabled:hover:bg-amber/[0.06]"
           >
             {connectionStatus === "testing" ? "Testing..." : "Test Connection"}
@@ -391,7 +403,7 @@ export function ProviderConfig() {
           {connectionStatus === "valid" && (
             <span className="flex items-center gap-1.5 text-sanity-high">
               <span className="inline-block h-1.5 w-1.5 rounded-full bg-sanity-high shadow-[0_0_6px_var(--color-sanity-high)]" />
-              Connected
+              {form.providerId === "ollama-cloud" ? "Key accepted" : "Connected"}
             </span>
           )}
           {connectionStatus === "invalid" && (

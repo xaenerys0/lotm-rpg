@@ -1,7 +1,13 @@
 import type { Item, ValidationResult } from "@/lib/types/rules";
 import type { LoreEntry } from "@/lib/lore/types";
 
-export type ProviderId = "anthropic" | "openai" | "openrouter" | "ollama" | "custom";
+export type ProviderId =
+  | "anthropic"
+  | "openai"
+  | "openrouter"
+  | "ollama"
+  | "ollama-cloud"
+  | "custom";
 
 export type ModelTier = "routine" | "premium";
 
@@ -46,6 +52,11 @@ export const PROVIDER_MODELS: Record<ProviderId, ModelOption[]> = {
     { id: "llama3.2", name: "Llama 3.2", tier: "routine" },
     { id: "mistral", name: "Mistral", tier: "routine" },
     { id: "llama3.1:70b", name: "Llama 3.1 70B", tier: "premium" },
+  ],
+  "ollama-cloud": [
+    { id: "gpt-oss:20b", name: "GPT-OSS 20B", tier: "routine" },
+    { id: "gpt-oss:120b", name: "GPT-OSS 120B", tier: "premium" },
+    { id: "deepseek-v3.2", name: "DeepSeek V3.2", tier: "premium" },
   ],
   custom: [],
 };
@@ -99,6 +110,8 @@ export interface GameState {
   location: string;
   activeQuests: string[];
   npcsPresent: string[];
+  characterName?: string;
+  characterBackground?: string;
 }
 
 export interface TurnRecord {

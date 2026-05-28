@@ -33,6 +33,7 @@ export function transition(
         selectedChoiceId: null,
         lastResolution: null,
         errorMessage: null,
+        errorCode: null,
         updatedAt: now,
       };
     }
@@ -94,6 +95,7 @@ export function transition(
         ...session,
         phase: "error",
         errorMessage: action.message,
+        errorCode: action.errorCode ?? null,
         updatedAt: now,
       };
     }
@@ -111,6 +113,7 @@ export function transition(
         lastResolution: null,
         activePillar: null,
         errorMessage: null,
+        errorCode: null,
         updatedAt: now,
       };
     }

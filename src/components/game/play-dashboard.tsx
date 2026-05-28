@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import type { ProviderConfig } from "@/lib/ai";
+import type { ProviderConfig, MemoryState } from "@/lib/ai";
 import type { GameSessionSummary } from "@/lib/game";
 import {
   createSession,
@@ -16,24 +16,9 @@ import {
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { GameLoop } from "./game-loop";
+import { CharacterCreation } from "./character-creation";
 
-type DashboardView = "home" | "pathway-select" | "playing";
-
-const PATHWAY_DESCRIPTIONS: Record<string, string> = {
-  Fool: "The path of deception and adaptation. Seer, Clown, Magician — a winding road through the mysteries of fate.",
-  Visionary:
-    "The path of dreams and prophecy. Peer into twisted dreamscapes and reshape the visions of others.",
-  Sun: "The path of radiance and healing. Channel holy light to purify corruption and mend the broken.",
-  Death:
-    "The path of spirits and the beyond. Command the dead, traverse the spirit world, wield cold shadow.",
-};
-
-const PATHWAY_SEFIRA: Record<string, string> = {
-  Fool: "Sefirah Castle",
-  Visionary: "Chaos Sea",
-  Sun: "Chaos Sea",
-  Death: "River of Eternal Darkness",
-};
+type DashboardView = "home" | "character-creation" | "playing";
 
 function loadConfig(): ProviderConfig | null {
   try {
@@ -110,22 +95,35 @@ export function PlayDashboard() {
   const [sessions, setSessions] = useState(initialData.sessions);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 
-  const handleStartNewGame = useCallback((pathwayId: number) => {
-    const gameState = createDefaultGameState(pathwayId);
-    const session = createSession(gameState);
+  const handleStartNewGame = useCallback(
+    (
+      pathwayId: number,
+      characterName: string,
+      characterBackground: string,
+      initialMemory: MemoryState,
+    ) => {
+      const gameState = createDefaultGameState(
+        pathwayId,
+        undefined,
+        characterName,
+        characterBackground,
+      );
+      const session = createSession(gameState, undefined, undefined, initialMemory);
 
-    try {
-      localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
-      const index = loadSessionIndex();
-      index.unshift(session.id);
-      saveSessionIndex(index);
-    } catch {
-      // Storage full
-    }
+      try {
+        localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
+        const index = loadSessionIndex();
+        index.unshift(session.id);
+        saveSessionIndex(index);
+      } catch {
+        // Storage full
+      }
 
-    setActiveSessionId(session.id);
-    setView("playing");
-  }, []);
+      setActiveSessionId(session.id);
+      setView("playing");
+    },
+    [],
+  );
 
   const handleContinue = useCallback((sessionId: string) => {
     setActiveSessionId(sessionId);
@@ -153,68 +151,9 @@ export function PlayDashboard() {
     );
   }
 
-  if (view === "pathway-select") {
+  if (view === "character-creation") {
     return (
-      <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
-        <header className="mb-10">
-          <button
-            type="button"
-            onClick={() => setView("home")}
-            className="mb-4 text-xs text-muted transition-colors hover:text-amber"
-          >
-            &larr; Back
-          </button>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-amber md:text-4xl">
-            Choose Your Pathway
-          </h1>
-          <p className="mt-2 max-w-xl text-muted">
-            Each Beyonder pathway grants unique abilities and demands specific acting
-            requirements. Choose wisely — your path shapes your destiny.
-          </p>
-        </header>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {ALL_PATHWAYS.map((pathway) => {
-            const seq9 = getSequence(pathway.id, 9);
-            return (
-              <button
-                key={pathway.id}
-                type="button"
-                onClick={() => handleStartNewGame(pathway.id)}
-                className="group rounded-lg border border-border bg-surface/50 p-6 text-left transition-all duration-300 hover:border-amber/30 hover:bg-surface hover:shadow-[0_0_24px_rgba(217,119,6,0.05)]"
-              >
-                <div className="flex items-start justify-between">
-                  <h2 className="font-serif text-xl font-semibold text-foreground transition-colors group-hover:text-amber">
-                    {pathway.name}
-                  </h2>
-                  <span className="rounded bg-amber/[0.08] px-2 py-0.5 text-[10px] tracking-wider text-amber/60 uppercase">
-                    {pathway.group}
-                  </span>
-                </div>
-                <p className="mt-1 text-xs text-muted/50">
-                  {PATHWAY_SEFIRA[pathway.name] ?? pathway.sefirah}
-                </p>
-                <p className="mt-3 text-sm leading-relaxed text-muted">
-                  {PATHWAY_DESCRIPTIONS[pathway.name] ?? "A mysterious path."}
-                </p>
-                {seq9 && (
-                  <div className="mt-4 border-t border-border/40 pt-3">
-                    <p className="text-xs text-muted/60">
-                      Starting as:{" "}
-                      <span className="text-foreground/70">
-                        Sequence 9 &mdash; {seq9.name}
-                      </span>
-                    </p>
-                    <p className="mt-1 text-[11px] text-muted/40">
-                      Abilities: {seq9.abilities.map((a) => a.name).join(", ")}
-                    </p>
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <CharacterCreation onComplete={handleStartNewGame} onBack={() => setView("home")} />
     );
   }
 
@@ -262,7 +201,7 @@ export function PlayDashboard() {
             </p>
             <button
               type="button"
-              onClick={() => setView("pathway-select")}
+              onClick={() => setView("character-creation")}
               className="mt-5 rounded bg-amber/90 px-4 py-2 text-sm font-medium text-background transition-all duration-200 hover:bg-amber"
             >
               Begin Journey

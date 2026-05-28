@@ -27,3 +27,24 @@ export {
 } from "./session";
 
 export { SESSION_KEY_PREFIX, SESSION_INDEX_KEY, PROVIDER_CONFIG_KEY } from "./constants";
+
+export {
+  PROLOGUE_SCENES,
+  PATHWAY_JUSTIFICATIONS,
+  POTION_HEADINGS,
+  FIRST_POTION_NARRATIVE,
+  scoreSelections,
+  recommendPathway,
+  createPrologueState,
+  createPrologueMemory,
+  createAIPrologueMemory,
+} from "./prologue";
+
+export type {
+  PrologueChoice,
+  PrologueScene,
+  PrologueSelection,
+  PathwayScore,
+  PrologueRecommendation,
+  PrologueState,
+} from "./prologue";

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import {
   AIError,
@@ -22,6 +22,7 @@ import {
   AnthropicAdapter,
   OpenRouterAdapter,
   OllamaAdapter,
+  OllamaCloudAdapter,
   CustomAdapter,
   createAdapter,
 } from "./providers";
@@ -56,6 +57,12 @@ import {
   RETRY_DELAYS,
   MAX_OUTPUT_TOKENS,
 } from "./client";
+import {
+  generatePrologueScene,
+  MIN_PROLOGUE_SCENES,
+  MAX_PROLOGUE_SCENES,
+  type PrologueTurn,
+} from "./prologue-client";
 
 // ── Test Helpers ──
 
@@ -956,6 +963,149 @@ describe("providers", () => {
       expect(result.valid).toBe(false);
       expect(result.error).toBeTruthy();
     });
+
+    it("makeRequest omits Authorization header when apiKey is empty", async () => {
+      const adapter = new OllamaAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ message: { content: "ok" }, model: "llama3.2" }),
+          ),
+      } as Response);
+
+      await adapter.makeRequest(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          model: "llama3.2",
+          temperature: 0.7,
+          maxTokens: 500,
+        },
+        "",
+      );
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+
+    it("makeRequest sends Authorization header when apiKey is provided", async () => {
+      const adapter = new OllamaAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ message: { content: "ok" }, model: "llama3.2" }),
+          ),
+      } as Response);
+
+      await adapter.makeRequest(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          model: "llama3.2",
+          temperature: 0.7,
+          maxTokens: 500,
+        },
+        "cloud-key",
+      );
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBe("Bearer cloud-key");
+    });
+
+    it("validateKey omits Authorization header when apiKey is empty", async () => {
+      const adapter = new OllamaAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve("{}"),
+      } as Response);
+
+      await adapter.validateKey("");
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBeUndefined();
+    });
+
+    it("validateKey sends Authorization header when apiKey is provided", async () => {
+      const adapter = new OllamaAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve("{}"),
+      } as Response);
+
+      await adapter.validateKey("cloud-key");
+
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBe("Bearer cloud-key");
+    });
+  });
+
+  describe("OllamaCloudAdapter", () => {
+    it("name is ollama-cloud", () => {
+      expect(new OllamaCloudAdapter().name).toBe("ollama-cloud");
+    });
+
+    it("default base URL routes through server-side proxy", () => {
+      expect(new OllamaCloudAdapter().getDefaultBaseUrl()).toBe(
+        "/api/proxy/ollama-cloud",
+      );
+    });
+
+    it("makeRequest sends Authorization header through proxy endpoint", async () => {
+      const adapter = new OllamaCloudAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content: "ok" } }],
+              model: "llama3.2",
+              usage: { prompt_tokens: 5, completion_tokens: 3, total_tokens: 8 },
+            }),
+          ),
+      } as Response);
+
+      await adapter.makeRequest(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          model: "llama3.2",
+          temperature: 0.7,
+          maxTokens: 500,
+        },
+        "cloud-key",
+      );
+
+      const init = fetchSpy.mock.calls[0][1]!;
+      expect((init.headers as Record<string, string>)["Authorization"]).toBe(
+        "Bearer cloud-key",
+      );
+      expect(fetchSpy.mock.calls[0][0]).toBe("/api/proxy/ollama-cloud/chat/completions");
+    });
+
+    it("validateKey returns valid for non-empty key without network call", async () => {
+      const adapter = new OllamaCloudAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+      const result = await adapter.validateKey("cloud-key");
+
+      expect(result.valid).toBe(true);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("validateKey returns invalid for empty key", async () => {
+      const adapter = new OllamaCloudAdapter();
+      const result = await adapter.validateKey("   ");
+      expect(result.valid).toBe(false);
+      expect(result.error).toBeTruthy();
+    });
+
+    it("createAdapter('ollama-cloud') returns OllamaCloudAdapter", () => {
+      expect(createAdapter("ollama-cloud")).toBeInstanceOf(OllamaCloudAdapter);
+    });
   });
 
   describe("CustomAdapter", () => {
@@ -1055,11 +1205,19 @@ describe("providers", () => {
 // ── Provider Models ──
 
 describe("PROVIDER_MODELS", () => {
-  it("defines models for all providers except custom", () => {
-    expect(PROVIDER_MODELS.anthropic.length).toBeGreaterThan(0);
-    expect(PROVIDER_MODELS.openai.length).toBeGreaterThan(0);
-    expect(PROVIDER_MODELS.openrouter.length).toBeGreaterThan(0);
-    expect(PROVIDER_MODELS.ollama.length).toBeGreaterThan(0);
+  it("each non-custom provider has at least one routine and one premium model", () => {
+    const nonCustom = [
+      "anthropic",
+      "openai",
+      "openrouter",
+      "ollama",
+      "ollama-cloud",
+    ] as const;
+    for (const id of nonCustom) {
+      const models = PROVIDER_MODELS[id];
+      expect(models.some((m) => m.tier === "routine")).toBe(true);
+      expect(models.some((m) => m.tier === "premium")).toBe(true);
+    }
     expect(PROVIDER_MODELS.custom).toEqual([]);
   });
 
@@ -2577,5 +2735,322 @@ describe("client", () => {
       const result = await validateProviderConfig(makeProviderConfig());
       expect(result.valid).toBe(false);
     });
+  });
+});
+
+// ── generatePrologueScene Tests ──
+
+describe("generatePrologueScene", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function makePrologueApiResponse(overrides?: Record<string, unknown>): string {
+    const base: Record<string, unknown> = {
+      narrative: "The gaslight flickers as you step out into Tingen's fog-laden streets.",
+      choices: [
+        { id: "1", text: "Investigate the suspicious figure in the alley." },
+        { id: "2", text: "Help the elderly woman struggling with her parcels." },
+        {
+          id: "3",
+          text: "Note the unusual seal on the envelope dropped by the courier.",
+        },
+      ],
+      inferredPathwayId: 1,
+      isConclusion: false,
+      ...overrides,
+    };
+    return JSON.stringify(base);
+  }
+
+  function mockOpenAIFetch(content: string): void {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+          }),
+        ),
+    } as Response);
+  }
+
+  it("sends correct system message and initial user message for first turn (empty history)", async () => {
+    const content = makePrologueApiResponse();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+          }),
+        ),
+    } as Response);
+
+    await generatePrologueScene(
+      makeProviderConfig(),
+      "Klein Moretti",
+      "A discharged soldier.",
+      [],
+    );
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    const messages: ChatMessage[] = body.messages as ChatMessage[];
+
+    expect(messages[0]!.role).toBe("system");
+    expect(messages[0]!.content).toContain("prologue");
+    expect(messages[1]!.role).toBe("user");
+    expect(messages[1]!.content).toContain("Klein Moretti");
+    expect(messages[1]!.content).toContain("A discharged soldier.");
+    expect(messages[1]!.content).toContain("Begin the prologue");
+    // Only system + user — no history
+    expect(messages).toHaveLength(2);
+  });
+
+  it("sends history in assistant/user alternation for subsequent turns", async () => {
+    const content = makePrologueApiResponse();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+          }),
+        ),
+    } as Response);
+
+    const history: PrologueTurn[] = [
+      {
+        narrative: "Scene 1 narrative",
+        choices: [{ id: "1", text: "Choice A" }],
+        selectedChoiceText: "Choice A",
+        rawResponse: makePrologueApiResponse(),
+      },
+    ];
+
+    await generatePrologueScene(
+      makeProviderConfig(),
+      "Klein",
+      "Background here.",
+      history,
+    );
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    const messages: ChatMessage[] = body.messages as ChatMessage[];
+
+    // system, initial user, assistant (turn 0 raw), user (turn 0 choice)
+    expect(messages).toHaveLength(4);
+    expect(messages[0]!.role).toBe("system");
+    expect(messages[1]!.role).toBe("user");
+    expect(messages[2]!.role).toBe("assistant");
+    expect(messages[2]!.content).toBe(history[0]!.rawResponse);
+    expect(messages[3]!.role).toBe("user");
+    expect(messages[3]!.content).toContain("Choice A");
+    expect(messages[3]!.content).toContain("scene 2");
+  });
+
+  it("sends final scene message with chance encounter instruction when history.length === MAX_PROLOGUE_SCENES - 1", async () => {
+    const content = makePrologueApiResponse({ isConclusion: true, choices: [] });
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+          }),
+        ),
+    } as Response);
+
+    // Build history with MAX_PROLOGUE_SCENES - 1 turns (11 turns => scene 12 is forced final)
+    const history: PrologueTurn[] = Array.from(
+      { length: MAX_PROLOGUE_SCENES - 1 },
+      (_, i) => ({
+        narrative: `Scene ${i + 1}`,
+        choices: [{ id: "1", text: "Some choice" }],
+        selectedChoiceText: "Some choice",
+        rawResponse: makePrologueApiResponse(),
+      }),
+    );
+
+    await generatePrologueScene(makeProviderConfig(), "Klein", "", history);
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    const messages: ChatMessage[] = body.messages as ChatMessage[];
+
+    // Last user message should be the final scene instruction
+    const lastMessage = messages[messages.length - 1]!;
+    expect(lastMessage.role).toBe("user");
+    expect(lastMessage.content).toContain("conclude");
+    expect(lastMessage.content).toContain("chance encounter");
+    expect(lastMessage.content).toContain("isConclusion");
+  });
+
+  it("returns narrative, choices, inferredPathwayId, isConclusion, and rawResponse on success", async () => {
+    const rawContent = makePrologueApiResponse({
+      narrative: "The fog thickens around you.",
+      choices: [
+        { id: "1", text: "Follow the stranger." },
+        { id: "2", text: "Turn back." },
+        { id: "3", text: "Call out." },
+      ],
+      inferredPathwayId: 3,
+      isConclusion: false,
+    });
+    mockOpenAIFetch(rawContent);
+
+    const result = await generatePrologueScene(
+      makeProviderConfig(),
+      "Audrey Hall",
+      "",
+      [],
+    );
+
+    expect(result.narrative).toBe("The fog thickens around you.");
+    expect(result.choices).toHaveLength(3);
+    expect(result.choices[0]).toEqual({ id: "1", text: "Follow the stranger." });
+    expect(result.inferredPathwayId).toBe(3);
+    expect(result.isConclusion).toBe(false);
+    expect(result.rawResponse).toBe(rawContent);
+  });
+
+  it("throws AIError with MALFORMED_OUTPUT on invalid JSON response", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content: "this is not json at all" } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+          }),
+        ),
+    } as Response);
+
+    try {
+      await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(AIError);
+      expect((err as AIError).code).toBe("MALFORMED_OUTPUT");
+    }
+  });
+
+  it("defaults inferredPathwayId to 1 when missing from response", async () => {
+    const rawContent = JSON.stringify({
+      narrative: "A scene without pathway.",
+      choices: [{ id: "1", text: "Choice one." }],
+      isConclusion: false,
+      // inferredPathwayId is intentionally missing
+    });
+    mockOpenAIFetch(rawContent);
+
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+    expect(result.inferredPathwayId).toBe(1);
+  });
+
+  it("clamps out-of-range inferredPathwayId to 1", async () => {
+    const rawContent = JSON.stringify({
+      narrative: "A scene.",
+      choices: [{ id: "1", text: "A choice." }],
+      inferredPathwayId: 99,
+      isConclusion: false,
+    });
+    mockOpenAIFetch(rawContent);
+
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+    expect(result.inferredPathwayId).toBe(1);
+  });
+
+  it("defaults isConclusion to false when missing from response", async () => {
+    const rawContent = JSON.stringify({
+      narrative: "The scene unfolds.",
+      choices: [{ id: "1", text: "A choice." }],
+      inferredPathwayId: 2,
+      // isConclusion is intentionally missing
+    });
+    mockOpenAIFetch(rawContent);
+
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+    expect(result.isConclusion).toBe(false);
+  });
+
+  it("uses default background text when characterBackground is empty", async () => {
+    const rawContent = makePrologueApiResponse();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content: rawContent } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+          }),
+        ),
+    } as Response);
+
+    await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    const messages: ChatMessage[] = body.messages as ChatMessage[];
+    expect(messages[1]!.content).toContain("A resident of Tingen City");
+  });
+
+  it("slices choices to max 4", async () => {
+    const rawContent = JSON.stringify({
+      narrative: "Many choices scene.",
+      choices: [
+        { id: "1", text: "One" },
+        { id: "2", text: "Two" },
+        { id: "3", text: "Three" },
+        { id: "4", text: "Four" },
+        { id: "5", text: "Five" },
+      ],
+      inferredPathwayId: 1,
+      isConclusion: false,
+    });
+    mockOpenAIFetch(rawContent);
+
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+    expect(result.choices).toHaveLength(4);
+  });
+
+  it("throws MALFORMED_OUTPUT when narrative is missing", async () => {
+    const rawContent = JSON.stringify({
+      choices: [{ id: "1", text: "A choice." }],
+      inferredPathwayId: 1,
+      isConclusion: false,
+    });
+    mockOpenAIFetch(rawContent);
+
+    try {
+      await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+      expect.unreachable("should have thrown");
+    } catch (err) {
+      expect(err).toBeInstanceOf(AIError);
+      expect((err as AIError).code).toBe("MALFORMED_OUTPUT");
+    }
+  });
+
+  it("exports MIN_PROLOGUE_SCENES as 4 and MAX_PROLOGUE_SCENES as 12", () => {
+    expect(MIN_PROLOGUE_SCENES).toBe(4);
+    expect(MAX_PROLOGUE_SCENES).toBe(12);
   });
 });

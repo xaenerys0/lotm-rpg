@@ -62,3 +62,11 @@ export {
   validateProviderConfig,
   type GenerateOptions,
 } from "./client";
+
+export {
+  generatePrologueScene,
+  MIN_PROLOGUE_SCENES,
+  MAX_PROLOGUE_SCENES,
+  type PrologueTurn,
+  type AIPrologueResponse,
+} from "./prologue-client";

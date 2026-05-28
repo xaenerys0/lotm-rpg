@@ -9,9 +9,11 @@ Pure-function game loop state machine and world state management. The engine han
 - `types.ts` — Game loop type definitions: phases, actions, session, pillars, transition maps.
 - `state-machine.ts` — Pure reducer: `transition(session, action)` produces the next session state. Phase transitions validated against `VALID_TRANSITIONS`. `InvalidTransitionError` for illegal transitions.
 - `world-state.ts` — World state mutation: `applyResolution()` orchestrates sanity, location, inventory, and memory updates from a validated AI response. Only AI-mutable fields (`location`, `activeQuests`, `npcsPresent`) are applied from `worldStateChanges`; pathway/sequence/maxSanity are rules-engine-only.
-- `session.ts` — Session lifecycle: `createSession()`, `createDefaultGameState()`, serialization/deserialization with shape validation. Pure functions — no localStorage dependency.
+- `session.ts` — Session lifecycle: `createSession()`, `createDefaultGameState()`, serialization/deserialization with shape validation. Pure functions — no localStorage dependency. Accepts optional `initialMemory` to pre-populate memory (used for prologue facts).
+- `prologue.ts` — Prologue engine: 4 narrative scenes, pathway affinity scoring, recommendation algorithm, and `createPrologueMemory()` to seed session facts from character creation choices. Exported via `index.ts`.
 - `index.ts` — Public exports.
-- `game-loop.test.ts` — Comprehensive test suite.
+- `game-loop.test.ts` — Comprehensive game loop test suite.
+- `prologue.test.ts` — Prologue data integrity and scoring tests.
 
 ## Game Loop Phases
 
