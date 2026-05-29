@@ -1,13 +1,17 @@
 "use client";
 
-import { useState, useCallback, useRef, useSyncExternalStore } from "react";
+import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from "react";
 import {
   POTION_HEADINGS,
   FIRST_POTION_NARRATIVE,
   createPrologueMemory,
   createAIPrologueMemory,
   PROVIDER_CONFIG_KEY,
+  PROLOGUE_DRAFT_KEY,
+  isValidDraftShape,
+  clearDraft,
 } from "@/lib/game";
+import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
@@ -49,7 +53,7 @@ interface CharacterCreationProps {
 }
 
 export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps) {
-  // Provider config — read once from localStorage using useSyncExternalStore
+  // Provider config — read once from localStorage
   const configCacheRef = useRef<ProviderConfig | null | undefined>(undefined);
   const providerConfig = useSyncExternalStore(
     noopSubscribe,
@@ -67,22 +71,69 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     () => null,
   );
 
-  // Step / flow state
-  const [step, setStep] = useState<CreationStep>("mode-select");
+  // Prologue draft — read once from localStorage (restored on refresh/navigation)
+  const draftCacheRef = useRef<PrologueDraft | null | undefined>(undefined);
+  const savedDraft = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (draftCacheRef.current === undefined) {
+        try {
+          const raw = localStorage.getItem(PROLOGUE_DRAFT_KEY);
+          if (raw) {
+            const parsed: unknown = JSON.parse(raw);
+            draftCacheRef.current = isValidDraftShape(parsed) ? parsed : null;
+          } else {
+            draftCacheRef.current = null;
+          }
+        } catch {
+          draftCacheRef.current = null;
+        }
+      }
+      return draftCacheRef.current ?? null;
+    },
+    () => null,
+  );
+
+  // Step / flow state — restored from draft when available
+  const [step, setStep] = useState<CreationStep>(savedDraft?.step ?? "mode-select");
   const [skipPrologue, setSkipPrologue] = useState(false);
 
-  // Character identity
-  const [characterName, setCharacterName] = useState("");
-  const [characterBackground, setCharacterBackground] = useState("");
+  // Character identity — restored from draft when available
+  const [characterName, setCharacterName] = useState(savedDraft?.characterName ?? "");
+  const [characterBackground, setCharacterBackground] = useState(
+    savedDraft?.characterBackground ?? "",
+  );
 
-  // Pathway selection
-  const [selectedPathwayId, setSelectedPathwayId] = useState<number | null>(null);
+  // Pathway selection — restored from draft when available
+  const [selectedPathwayId, setSelectedPathwayId] = useState<number | null>(
+    savedDraft?.selectedPathwayId ?? null,
+  );
 
-  // AI prologue state
-  const [prologueHistory, setPrologueHistory] = useState<PrologueTurn[]>([]);
+  // AI prologue state — restored from draft when available
+  const [prologueHistory, setPrologueHistory] = useState<PrologueTurn[]>(
+    savedDraft?.prologueHistory ?? [],
+  );
   const [currentScene, setCurrentScene] = useState<AIPrologueResponse | null>(null);
   const [prologueLoading, setPrologueLoading] = useState(false);
   const [prologueError, setPrologueError] = useState<string | null>(null);
+
+  // ── Draft Persistence ──
+  // Save to localStorage whenever prologue-relevant state changes
+  useEffect(() => {
+    if (step !== "ai-prologue" && step !== "first-potion") return;
+    const draft: PrologueDraft = {
+      step,
+      characterName,
+      characterBackground,
+      prologueHistory,
+      selectedPathwayId,
+    };
+    try {
+      localStorage.setItem(PROLOGUE_DRAFT_KEY, JSON.stringify(draft));
+    } catch {
+      // storage full — ignore
+    }
+  }, [step, characterName, characterBackground, prologueHistory, selectedPathwayId]);
 
   // ── AI Prologue Generation ──
 
@@ -196,6 +247,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           name,
           bg,
         );
+    clearDraft();
     onComplete(selectedPathwayId, name, bg, memory);
   }, [
     selectedPathwayId,
@@ -245,7 +297,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
         <div className="animate-fade-in-up">
           <button
             type="button"
-            onClick={onBack}
+            onClick={() => {
+              clearDraft();
+              onBack();
+            }}
             className="mb-6 text-xs text-muted transition-colors hover:text-amber"
           >
             &larr; Back
@@ -439,6 +494,45 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               >
                 Retry
               </button>
+            </div>
+          )}
+
+          {/* Restored from draft — needs resume */}
+          {!prologueLoading && prologueError === null && currentScene === null && (
+            <div className="py-14 flex flex-col items-center text-center animate-fade-in-up">
+              <div className="mb-7 flex flex-col items-center gap-1.5">
+                <div className="w-px h-8 bg-gradient-to-b from-amber/35 to-amber/5" />
+                <div className="h-1 w-1 rounded-full bg-amber/25" />
+              </div>
+              <p className="mb-2 text-[10px] uppercase tracking-[0.3em] text-amber/30">
+                Scene {sceneNumber}
+              </p>
+              <h3 className="font-serif text-2xl tracking-wide text-foreground/50 mb-3">
+                The Fog Held
+              </h3>
+              <p className="mb-10 max-w-[20rem] text-sm leading-relaxed text-muted/40">
+                Your story rests at the threshold, unchanged. The chronicle resumes where
+                the gaslight flickered out.
+              </p>
+              <div className="relative inline-flex">
+                <div
+                  className="absolute -inset-[3px] rounded border border-amber/18 animate-pulse"
+                  style={{ animationDuration: "3s" }}
+                />
+                <button
+                  type="button"
+                  onClick={handleRetryPrologue}
+                  className="relative rounded border border-amber/30 bg-amber/[0.04] px-7 py-2.5 text-sm text-amber/60 transition-all duration-300 hover:border-amber/55 hover:bg-amber/[0.08] hover:text-amber hover:shadow-[0_0_20px_rgba(217,119,6,0.1)]"
+                >
+                  Resume the Chronicle
+                </button>
+              </div>
+              {prologueHistory.length > 0 && (
+                <p className="mt-5 text-[11px] text-muted/25">
+                  {prologueHistory.length}{" "}
+                  {prologueHistory.length === 1 ? "scene" : "scenes"} complete
+                </p>
+              )}
             </div>
           )}
 

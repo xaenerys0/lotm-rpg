@@ -33,6 +33,10 @@ export {
   PROLOGUE_DRAFT_KEY,
 } from "./constants";
 
+export { isValidDraftShape, isActivePrologueDraft, clearDraft } from "./prologue-draft";
+
+export type { PrologueDraft } from "./prologue-draft";
+
 export {
   PROLOGUE_SCENES,
   PATHWAY_JUSTIFICATIONS,
