@@ -25,6 +25,12 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
+  // getSession() uses the stored refresh token to silently reissue an expired
+  // JWT before getUser() validates it server-side. Without this, a cold PWA
+  // start with an expired JWT would return null from getUser() and redirect to
+  // /login even though the refresh token is still valid.
+  await supabase.auth.getSession();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
