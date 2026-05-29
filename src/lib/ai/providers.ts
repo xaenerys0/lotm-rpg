@@ -194,12 +194,18 @@ export class AnthropicAdapter implements LLMProviderAdapter {
       headers: {
         "Content-Type": "application/json",
         "x-api-key": apiKey,
-        "anthropic-version": "2024-06-01",
+        "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true",
       },
       body: JSON.stringify({
         model: request.model,
-        system: [{ type: "text", text: system, cache_control: { type: "ephemeral" } }],
+        ...(system
+          ? {
+              system: [
+                { type: "text", text: system, cache_control: { type: "ephemeral" } },
+              ],
+            }
+          : {}),
         messages,
         temperature: request.temperature,
         max_tokens: request.maxTokens,
@@ -215,7 +221,7 @@ export class AnthropicAdapter implements LLMProviderAdapter {
         headers: {
           "Content-Type": "application/json",
           "x-api-key": apiKey,
-          "anthropic-version": "2024-06-01",
+          "anthropic-version": "2023-06-01",
           "anthropic-dangerous-direct-browser-access": "true",
         },
         body: JSON.stringify({
