@@ -33,6 +33,7 @@ src/
 │   ├── ai/              # AI integration — providers, prompts, memory, validation
 │   ├── game/            # Game loop engine — state machine, world state, sessions
 │   ├── lore/            # Lore database — RAG-ready chunks for AI layer
+│   ├── react/           # Small React utilities (e.g. noopSubscribe)
 │   ├── rules/           # Rules engine — pathways, laws, validation
 │   ├── supabase/        # Client factories (browser, server, middleware)
 │   └── types/           # TypeScript type definitions

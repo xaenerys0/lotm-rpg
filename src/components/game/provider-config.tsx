@@ -4,6 +4,7 @@ import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "re
 import type { ProviderId, ProviderConfig } from "@/lib/ai";
 import { PROVIDER_MODELS, validateProviderConfig } from "@/lib/ai";
 import { PROVIDER_CONFIG_KEY } from "@/lib/game";
+import { noopSubscribe } from "@/lib/react";
 
 const PROVIDERS: {
   id: ProviderId;
@@ -97,8 +98,6 @@ const defaultFormState: FormState = (() => {
     customPremiumModel: "",
   };
 })();
-
-const noopSubscribe = () => () => {};
 
 export function ProviderConfig() {
   const cacheRef = useRef<FormState | null>(null);

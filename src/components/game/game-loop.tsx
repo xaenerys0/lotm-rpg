@@ -17,6 +17,7 @@ import type { ProviderConfig, Choice, InstructionType, AIErrorCode } from "@/lib
 import { generate, TOKEN_BUDGET, AIError } from "@/lib/ai";
 import { getLoreByPathway, getLoreByCity } from "@/lib/lore";
 import { getPathway, getSequence } from "@/lib/rules";
+import { noopSubscribe } from "@/lib/react";
 import type { LoreEntry } from "@/lib/lore";
 
 function loadProviderConfig(): ProviderConfig | null {
@@ -130,8 +131,6 @@ function buildAICallParams(currentSession: GameSession) {
 }
 
 // ─── Main Component ────────────────────────────────────────────────
-
-const noopSubscribe = () => () => {};
 
 export function GameLoop({ sessionId }: { sessionId: string }) {
   const sessionCacheRef = useRef<GameSession | null | undefined>(undefined);
