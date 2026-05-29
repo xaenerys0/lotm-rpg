@@ -5,6 +5,9 @@
 ## Organization
 
 - `auth/` — Authentication forms (`login-form.tsx`, `signup-form.tsx`)
+- `pwa/` — Progressive Web App helpers (mounted globally in the root layout):
+  - `service-worker-registrar.tsx` (`ServiceWorkerRegistrar`) — registers `/sw.js`; renders nothing
+  - `install-prompt.tsx` (`InstallPrompt`) — Android install button (via `beforeinstallprompt`) / iOS "Add to Home Screen" hint; self-hides when already installed
 - `game/` — Game shell and gameplay components:
   - `game-sidebar.tsx` — Sidebar navigation, sign-out
   - `provider-config.tsx` — AI provider BYOK configuration (provider, API key, models)

@@ -17,6 +17,22 @@ Next.js App Router with two route groups:
 2. Calls `updateSession()` from `@/lib/supabase/middleware` to refresh the auth session
 3. Redirects unauthenticated users away from protected routes (`/play`, `/character`, `/journal`, `/settings` -> `/login`)
 
+The matcher excludes static/PWA assets so they bypass the auth session refresh:
+`_next/*`, `favicon.ico`, image extensions, plus `manifest.webmanifest` and `sw.js`.
+CSP includes `manifest-src 'self'` and `worker-src 'self'` for the PWA.
+
+## PWA
+
+The app is installable on Android and iOS ("Add to Home Screen"):
+
+- `manifest.ts` — web app manifest, served at `/manifest.webmanifest` (Next auto-injects the `<link rel="manifest">`).
+- `apple-icon.tsx` — iOS 180×180 touch icon (Next auto-injects `<link rel="apple-touch-icon">`).
+- `icons/[icon]/route.tsx` — Android manifest icons at `/icons/192.png`, `/icons/512.png`, `/icons/512-maskable.png`.
+- `_pwa/icon-art.tsx` — shared, font-free emblem rendered to PNG via `ImageResponse` (no binary icon assets). Used by all of the above.
+- Apple meta tags + `theme-color` + viewport come from the `appleWebApp`/`metadata`/`viewport` exports in `layout.tsx`.
+- `public/sw.js` (minimal, no offline caching) is registered by `ServiceWorkerRegistrar`; `InstallPrompt` shows the Android button / iOS instructions. Both live in `@/components/pwa` and are mounted in `layout.tsx`.
+- `next.config.ts` sets no-cache + `Service-Worker-Allowed: /` headers on `/sw.js`.
+
 ## Auth Flow
 
 1. User signs up at `/signup` -> confirmation email sent
