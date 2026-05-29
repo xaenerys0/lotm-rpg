@@ -16,10 +16,8 @@ export async function proxy(request: NextRequest) {
     "'self'",
     `'nonce-${nonce}'`,
     "'strict-dynamic'",
-    isDev ? "'unsafe-eval'" : null,
-  ]
-    .filter(Boolean)
-    .join(" ");
+    ...(isDev ? ["'unsafe-eval'"] : []),
+  ].join(" ");
 
   const cspDirectives = [
     "default-src 'self'",
@@ -48,7 +46,10 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
-  ],
+  // Run on every route except Next internals and static files — i.e. any path
+  // whose last segment ends in a file extension (favicon, manifest, service
+  // worker, images, …). This generalizes the bypass so new static assets never
+  // need to be added to an explicit exclusion list. App/API routes have no
+  // extension and so still pass through the auth-refresh + CSP middleware.
+  matcher: ["/((?!_next/static|_next/image|.*\\.[\\w]+$).*)"],
 };

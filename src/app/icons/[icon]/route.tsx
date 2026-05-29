@@ -3,7 +3,7 @@ import { PWA_ICONS } from "@/app/_pwa/icons";
 
 // Android manifest icons, served at stable URLs (e.g. `/icons/192.png`).
 // The `.png` suffix also keeps these out of the auth middleware via the
-// existing image-extension exclusion in `src/proxy.ts`.
+// file-extension exclusion in `src/proxy.ts`.
 export function generateStaticParams() {
   return PWA_ICONS.map(({ file }) => ({ icon: file }));
 }

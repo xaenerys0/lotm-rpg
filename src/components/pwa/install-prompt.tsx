@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { PWA_COLORS } from "@/app/_pwa/palette";
+import { noopSubscribe } from "@/lib/react";
 
 // The `beforeinstallprompt` event is non-standard (Chromium only) and not yet
 // in the DOM lib, so we type the bits we use.
@@ -9,8 +10,6 @@ interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   readonly userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 }
-
-const noopSubscribe = () => () => {};
 
 /** True when the app is already running as an installed standalone PWA. */
 function useIsStandalone(): boolean {

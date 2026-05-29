@@ -10,6 +10,7 @@ import {
 } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
+import { noopSubscribe } from "@/lib/react";
 import { generatePrologueScene, MAX_PROLOGUE_SCENES } from "@/lib/ai";
 import type { AIPrologueResponse, PrologueTurn, ProviderConfig } from "@/lib/ai";
 
@@ -46,8 +47,6 @@ interface CharacterCreationProps {
   ) => void;
   onBack: () => void;
 }
-
-const noopSubscribe = () => () => {};
 
 export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps) {
   // Provider config — read once from localStorage using useSyncExternalStore

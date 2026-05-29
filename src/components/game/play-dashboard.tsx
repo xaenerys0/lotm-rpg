@@ -15,6 +15,7 @@ import {
   PROVIDER_CONFIG_KEY,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
+import { noopSubscribe } from "@/lib/react";
 import { GameLoop } from "./game-loop";
 import { CharacterCreation } from "./character-creation";
 
@@ -72,7 +73,6 @@ interface InitialData {
 }
 
 const emptyInitialData: InitialData = { hasConfig: false, sessions: [] };
-const noopSubscribe = () => () => {};
 
 export function PlayDashboard() {
   const cacheRef = useRef<InitialData | null>(null);

@@ -13,8 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "coverage/**",
-    // Service worker runs in its own (non-DOM) global scope.
-    "public/sw.js",
+    // Static assets (e.g. the service worker) are not application source.
+    "public/**",
   ]),
 ]);
 
