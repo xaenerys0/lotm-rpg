@@ -27,6 +27,23 @@ Migrations live in `migrations/`. Three migrations in order:
 
 3. `20260527113655_seed_lore_entries.sql` — Seed data for lore entries (4 pathways, NPCs, locations, organizations)
 
+## Auth Session Persistence
+
+Two settings in `config.toml` control login persistence. **Both must also be set in the hosted Supabase project.** In the Supabase Dashboard → Authentication → Advanced settings:
+
+| Setting                  | config.toml                                    | Dashboard value   |
+| ------------------------ | ---------------------------------------------- | ----------------- |
+| JWT expiry               | `jwt_expiry = 604800`                          | 604800 (7 days)   |
+| Refresh token inactivity | `[auth.sessions] inactivity_timeout = "2160h"` | 7776000 (90 days) |
+
+**Why both are needed:**
+
+- `jwt_expiry`: The JWT in the cookie lasts 7 days. A cold PWA start (e.g. user opens the app the next morning) will have a valid JWT without needing a server refresh call.
+- `inactivity_timeout`: The refresh token (server-side) stays valid for 90 days of inactivity. Users who play once a month won't be logged out.
+- The middleware also calls `getSession()` before `getUser()` to explicitly refresh an expired JWT using the stored refresh token before validating server-side.
+
+Session cookies are set with a 400-day max-age by `@supabase/ssr`, so cookie persistence is never the issue — it is always the server-side token lifetimes.
+
 ## Auth Email Templates
 
 Custom HTML templates in `templates/`: confirmation, recovery, magic_link, invite, reauthentication, email_change. Victorian-themed to match the game UI.

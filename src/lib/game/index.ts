@@ -26,7 +26,16 @@ export {
   isValidSessionShape,
 } from "./session";
 
-export { SESSION_KEY_PREFIX, SESSION_INDEX_KEY, PROVIDER_CONFIG_KEY } from "./constants";
+export {
+  SESSION_KEY_PREFIX,
+  SESSION_INDEX_KEY,
+  PROVIDER_CONFIG_KEY,
+  PROLOGUE_DRAFT_KEY,
+} from "./constants";
+
+export { isValidDraftShape, isActivePrologueDraft, clearDraft } from "./prologue-draft";
+
+export type { PrologueDraft } from "./prologue-draft";
 
 export {
   PROLOGUE_SCENES,

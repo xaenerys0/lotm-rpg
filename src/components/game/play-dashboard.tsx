@@ -13,6 +13,8 @@ import {
   SESSION_KEY_PREFIX,
   SESSION_INDEX_KEY,
   PROVIDER_CONFIG_KEY,
+  PROLOGUE_DRAFT_KEY,
+  isActivePrologueDraft,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
@@ -70,9 +72,14 @@ function loadExistingSessions(): GameSessionSummary[] {
 interface InitialData {
   hasConfig: boolean;
   sessions: GameSessionSummary[];
+  hasPrologueDraft: boolean;
 }
 
-const emptyInitialData: InitialData = { hasConfig: false, sessions: [] };
+const emptyInitialData: InitialData = {
+  hasConfig: false,
+  sessions: [],
+  hasPrologueDraft: false,
+};
 
 export function PlayDashboard() {
   const cacheRef = useRef<InitialData | null>(null);
@@ -80,9 +87,19 @@ export function PlayDashboard() {
     noopSubscribe,
     () => {
       if (cacheRef.current === null) {
+        const hasDraft = (() => {
+          try {
+            const raw = localStorage.getItem(PROLOGUE_DRAFT_KEY);
+            if (!raw) return false;
+            return isActivePrologueDraft(JSON.parse(raw));
+          } catch {
+            return false;
+          }
+        })();
         cacheRef.current = {
           hasConfig: loadConfig() !== null,
           sessions: loadExistingSessions(),
+          hasPrologueDraft: hasDraft,
         };
       }
       return cacheRef.current;
@@ -90,7 +107,9 @@ export function PlayDashboard() {
     () => emptyInitialData,
   );
 
-  const [view, setView] = useState<DashboardView>("home");
+  const [view, setView] = useState<DashboardView>(
+    initialData.hasPrologueDraft ? "character-creation" : "home",
+  );
   const [hasConfig] = useState(initialData.hasConfig);
   const [sessions, setSessions] = useState(initialData.sessions);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);

@@ -640,7 +640,7 @@ describe("providers", () => {
 
       const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
       expect(headers["x-api-key"]).toBe("sk-ant-key");
-      expect(headers["anthropic-version"]).toBe("2024-06-01");
+      expect(headers["anthropic-version"]).toBe("2023-06-01");
       expect(headers["anthropic-dangerous-direct-browser-access"]).toBe("true");
     });
 
@@ -2705,7 +2705,7 @@ describe("client", () => {
 
       const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
       expect(headers["x-api-key"]).toBe("sk-test-key");
-      expect(headers["anthropic-version"]).toBe("2024-06-01");
+      expect(headers["anthropic-version"]).toBe("2023-06-01");
     });
   });
 
