@@ -6,14 +6,22 @@ import type { GameSession, GameplayPillar } from "@/lib/game";
 import {
   transition,
   applyResolution,
+  applyDigestion,
   serializeSession,
   deserializeSession,
+  digestionFeedback,
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
   SESSION_KEY_PREFIX,
   PROVIDER_CONFIG_KEY,
 } from "@/lib/game";
-import type { ProviderConfig, Choice, InstructionType, AIErrorCode } from "@/lib/ai";
+import type {
+  DigestionState,
+  ProviderConfig,
+  Choice,
+  InstructionType,
+  AIErrorCode,
+} from "@/lib/ai";
 import { generate, TOKEN_BUDGET, AIError } from "@/lib/ai";
 import { getLoreByPathway, getLoreByCity } from "@/lib/lore";
 import { getPathway, getSequence } from "@/lib/rules";
@@ -379,10 +387,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           <span className="text-border">|</span>
           <span>Turn {session.turnCount}</span>
         </div>
-        <SanityMeter
-          sanity={session.gameState.sanity}
-          maxSanity={session.gameState.maxSanity}
-        />
+        <div className="flex items-center gap-4">
+          <DigestionMeter digestion={session.gameState.digestion} />
+          <SanityMeter
+            sanity={session.gameState.sanity}
+            maxSanity={session.gameState.maxSanity}
+          />
+        </div>
       </div>
 
       {/* Phase Content */}
@@ -441,6 +452,33 @@ function SanityMeter({ sanity, maxSanity }: { sanity: number; maxSanity: number 
       </div>
       <span className="min-w-[3ch] text-right font-mono text-xs text-muted/80">
         {sanity}
+      </span>
+    </div>
+  );
+}
+
+function DigestionMeter({ digestion }: { digestion?: DigestionState }) {
+  const progress = digestion?.progress ?? 0;
+  const complete = digestion?.complete ?? false;
+
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        className="text-xs text-muted/60"
+        title="Digestion — act in character to assimilate your potion"
+      >
+        Digestion
+      </span>
+      <div className="h-2 w-24 overflow-hidden rounded-full bg-border/40">
+        <div
+          className={`h-full rounded-full bg-occult transition-all duration-700 ${
+            complete ? "shadow-[0_0_8px_var(--color-occult)]" : ""
+          }`}
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+      <span className="min-w-[3ch] text-right font-mono text-xs text-muted/80">
+        {complete ? "✦" : `${progress}%`}
       </span>
     </div>
   );
@@ -568,6 +606,17 @@ function ConsequencesPhase({
     response.sanityImpact !== undefined && response.sanityImpact !== 0;
   const hasActingEval = response.actingEvaluation !== undefined;
 
+  // Preview the digestion change this acting evaluation will apply on Continue.
+  // Reuses applyDigestion (the same engine call applyResolution makes) so the
+  // preview always matches reality, including its re-seed-on-mismatch logic.
+  const digestionPreview = response.actingEvaluation
+    ? applyDigestion(session.gameState, response.actingEvaluation)
+    : null;
+  const digestionState = digestionPreview?.state.digestion;
+  const seq = digestionPreview
+    ? getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel)
+    : null;
+
   return (
     <div className="animate-fade-in-up">
       {/* Resolution Narrative */}
@@ -615,9 +664,28 @@ function ConsequencesPhase({
               <span className="text-gaslight">
                 {Math.round(response.actingEvaluation!.alignment * 100)}% alignment
               </span>
+              {digestionPreview && digestionPreview.delta !== 0 && (
+                <span
+                  className={`ml-2 font-medium ${
+                    digestionPreview.delta > 0 ? "text-occult" : "text-sanity-low"
+                  }`}
+                >
+                  {digestionPreview.delta > 0 ? "+" : ""}
+                  {digestionPreview.delta}% digestion
+                </span>
+              )}
               {response.actingEvaluation!.reasoning && (
                 <p className="mt-1 text-xs italic text-muted/50">
                   {response.actingEvaluation!.reasoning}
+                </p>
+              )}
+              {digestionPreview && digestionState && (
+                <p className="mt-1 text-xs italic text-occult/70">
+                  {digestionFeedback(
+                    seq?.name ?? "Beyonder",
+                    digestionState,
+                    digestionPreview.delta,
+                  )}
                 </p>
               )}
             </div>
@@ -641,6 +709,16 @@ function ConsequencesPhase({
                 </div>
               </div>
             ))}
+        </div>
+      )}
+
+      {/* Digestion complete — advancement available */}
+      {(digestionState?.complete ?? session.gameState.digestion?.complete) && (
+        <div className="mb-6 rounded-md border border-occult/40 bg-occult/[0.06] p-4 text-center">
+          <p className="font-serif text-sm text-occult">
+            ✦ The potion is fully digested. Advancement to the next Sequence is now within
+            reach.
+          </p>
         </div>
       )}
 

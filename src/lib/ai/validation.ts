@@ -24,7 +24,18 @@ export function parseAIResponse(raw: string): AIResponse {
   try {
     parsed = JSON.parse(cleaned);
   } catch {
-    throw createMalformedOutputError(raw);
+    // Forgiving fallback: models sometimes wrap the JSON in a sentence or stray
+    // tokens. Try the outermost {...} span before giving up.
+    const first = cleaned.indexOf("{");
+    const last = cleaned.lastIndexOf("}");
+    if (first === -1 || last <= first) {
+      throw createMalformedOutputError(raw);
+    }
+    try {
+      parsed = JSON.parse(cleaned.slice(first, last + 1));
+    } catch {
+      throw createMalformedOutputError(raw);
+    }
   }
 
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {

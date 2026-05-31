@@ -1,17 +1,26 @@
-import type { ChatMessage, ProviderId, ProviderRequest, ProviderResponse } from "./types";
+import type {
+  ChatMessage,
+  ModelOption,
+  ModelTier,
+  ProviderId,
+  ProviderRequest,
+  ProviderResponse,
+} from "./types";
 import { AIError, classifyHttpError, createNetworkError } from "./errors";
 
 export interface LLMProviderAdapter {
   readonly name: ProviderId;
   makeRequest(request: ProviderRequest, apiKey: string): Promise<ProviderResponse>;
   validateKey(apiKey: string): Promise<{ valid: boolean; error?: string }>;
+  /** Fetch the provider's live model catalog. Throws AIError on failure. */
+  listModels(apiKey: string): Promise<ModelOption[]>;
   formatMessages(messages: ChatMessage[]): unknown;
   parseResponse(raw: unknown): ProviderResponse;
   getDefaultBaseUrl(): string;
 }
 
 interface OpenAIStyleResponse {
-  choices: { message: { content: string } }[];
+  choices: { message: { content: string }; finish_reason?: string }[];
   model: string;
   usage: {
     prompt_tokens: number;
@@ -24,12 +33,48 @@ interface OpenAIStyleResponse {
 interface AnthropicResponse {
   content: { type: string; text: string }[];
   model: string;
+  stop_reason?: string;
   usage: {
     input_tokens: number;
     output_tokens: number;
     cache_creation_input_tokens?: number;
     cache_read_input_tokens?: number;
   };
+}
+
+// OpenAI's /models endpoint lists many non-chat models; exclude them so the
+// dropdown only offers usable chat/completion models.
+const OPENAI_NON_CHAT =
+  /embedding|whisper|tts|dall-e|audio|moderation|realtime|transcribe|image|babbage|davinci|ada|curie/i;
+
+// Best-effort tier guess for dynamically-listed models. Only affects which
+// model is pre-selected as a default — the user can reassign either slot.
+export function inferModelTier(id: string): ModelTier {
+  return /opus|gpt-4o(?!-mini)|gpt-4\.|gpt-4-|o1|o3|o4|sonnet|deepseek|70b|120b|405b|large/i.test(
+    id,
+  )
+    ? "premium"
+    : "routine";
+}
+
+// Build ModelOption[] from an OpenAI-style `{ data: [{ id, ... }] }` payload.
+// `nameKey` selects the human-readable label field (e.g. "name", "display_name");
+// it falls back to the id when absent.
+function parseModelCatalog(raw: unknown, nameKey?: string): ModelOption[] {
+  const data = raw as { data?: Record<string, unknown>[] };
+  return (data.data ?? [])
+    .filter(
+      (m): m is { id: string } & Record<string, unknown> =>
+        typeof m.id === "string" && m.id.length > 0,
+    )
+    .map((m) => {
+      const label = nameKey ? m[nameKey] : undefined;
+      return {
+        id: m.id,
+        name: typeof label === "string" && label.length > 0 ? label : m.id,
+        tier: inferModelTier(m.id),
+      };
+    });
 }
 
 async function fetchWithErrorHandling(url: string, init: RequestInit): Promise<unknown> {
@@ -76,6 +121,7 @@ function parseOpenAIStyleResponse(raw: unknown): ProviderResponse {
       totalTokens: usage.total_tokens,
       cacheHit: (usage.prompt_tokens_details?.cached_tokens ?? 0) > 0,
     },
+    truncated: data.choices?.[0]?.finish_reason === "length",
   };
 }
 
@@ -131,6 +177,16 @@ export class OpenAIAdapter implements LLMProviderAdapter {
       };
     }
   }
+
+  async listModels(apiKey: string): Promise<ModelOption[]> {
+    const raw = await fetchWithErrorHandling(`${this.baseUrl}/models`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    return parseModelCatalog(raw)
+      .filter((m) => !OPENAI_NON_CHAT.test(m.id))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  }
 }
 
 interface AnthropicMessage {
@@ -184,11 +240,19 @@ export class AnthropicAdapter implements LLMProviderAdapter {
         totalTokens: usage.input_tokens + usage.output_tokens,
         cacheHit: cacheRead > 0,
       },
+      truncated: data.stop_reason === "max_tokens",
     };
   }
 
   async makeRequest(request: ProviderRequest, apiKey: string): Promise<ProviderResponse> {
     const { system, messages } = this.formatMessages(request.messages);
+    // Anthropic has no `response_format` JSON mode; instead we prefill the
+    // assistant turn with "{" so the model must continue valid JSON rather
+    // than wrapping it in prose or markdown.
+    const prefillJson = request.responseFormat?.type === "json_object";
+    const requestMessages = prefillJson
+      ? [...messages, { role: "assistant" as const, content: "{" }]
+      : messages;
     const raw = await fetchWithErrorHandling(`${this.baseUrl}/messages`, {
       method: "POST",
       headers: {
@@ -206,12 +270,17 @@ export class AnthropicAdapter implements LLMProviderAdapter {
               ],
             }
           : {}),
-        messages,
+        messages: requestMessages,
         temperature: request.temperature,
         max_tokens: request.maxTokens,
       }),
     });
-    return this.parseResponse(raw);
+    const response = this.parseResponse(raw);
+    // Re-attach the prefilled "{" unless the model already echoed it.
+    if (prefillJson && !response.content.trimStart().startsWith("{")) {
+      response.content = `{${response.content}`;
+    }
+    return response;
   }
 
   async validateKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
@@ -241,6 +310,18 @@ export class AnthropicAdapter implements LLMProviderAdapter {
       }
       return { valid: false, error: message };
     }
+  }
+
+  async listModels(apiKey: string): Promise<ModelOption[]> {
+    const raw = await fetchWithErrorHandling(`${this.baseUrl}/models?limit=100`, {
+      method: "GET",
+      headers: {
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+    });
+    return parseModelCatalog(raw, "display_name");
   }
 }
 
@@ -298,6 +379,14 @@ export class OpenRouterAdapter implements LLMProviderAdapter {
       };
     }
   }
+
+  async listModels(apiKey: string): Promise<ModelOption[]> {
+    const raw = await fetchWithErrorHandling(`${this.baseUrl}/models`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    return parseModelCatalog(raw, "name").sort((a, b) => a.name.localeCompare(b.name));
+  }
 }
 
 export class OllamaAdapter implements LLMProviderAdapter {
@@ -320,6 +409,7 @@ export class OllamaAdapter implements LLMProviderAdapter {
     const data = raw as {
       message?: { content: string };
       model?: string;
+      done_reason?: string;
       prompt_eval_count?: number;
       eval_count?: number;
     };
@@ -334,6 +424,7 @@ export class OllamaAdapter implements LLMProviderAdapter {
         completionTokens,
         totalTokens: promptTokens + completionTokens,
       },
+      truncated: data.done_reason === "length",
     };
   }
 
@@ -375,6 +466,21 @@ export class OllamaAdapter implements LLMProviderAdapter {
         error: err instanceof Error ? err.message : "Ollama not reachable",
       };
     }
+  }
+
+  async listModels(apiKey: string): Promise<ModelOption[]> {
+    const headers: Record<string, string> = {};
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+    const raw = await fetchWithErrorHandling(`${this.baseUrl}/api/tags`, {
+      method: "GET",
+      headers,
+    });
+    const data = raw as { models?: { name?: string }[] };
+    return (data.models ?? [])
+      .map((m) => m.name)
+      .filter((name): name is string => typeof name === "string" && name.length > 0)
+      .sort()
+      .map((id) => ({ id, name: id, tier: inferModelTier(id) }));
   }
 }
 
@@ -447,6 +553,14 @@ export class CustomAdapter implements LLMProviderAdapter {
         error: err instanceof Error ? err.message : "Unknown error",
       };
     }
+  }
+
+  async listModels(apiKey: string): Promise<ModelOption[]> {
+    const raw = await fetchWithErrorHandling(`${this.baseUrl}/models`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${apiKey}` },
+    });
+    return parseModelCatalog(raw).sort((a, b) => a.id.localeCompare(b.id));
   }
 }
 

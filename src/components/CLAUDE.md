@@ -10,10 +10,10 @@
   - `install-prompt.tsx` (`InstallPrompt`) — Android install button (via `beforeinstallprompt`) / iOS "Add to Home Screen" hint; self-hides when already installed
 - `game/` — Game shell and gameplay components:
   - `game-sidebar.tsx` — Sidebar navigation, sign-out
-  - `provider-config.tsx` — AI provider BYOK configuration (provider, API key, models)
+  - `provider-config.tsx` — AI provider BYOK configuration (provider, API key, models). Model dropdowns prefer a live catalog fetched via `listProviderModels()` (cached in localStorage with a TTL, refreshable, auto-fetched after a successful connection test), falling back to the static `PROVIDER_MODELS` map.
   - `play-dashboard.tsx` — Play page dashboard (new game, continue, character creation)
   - `character-creation.tsx` — Multi-step character creation flow. Two paths: (1) AI-driven prologue: 5 AI-generated scenes where the AI silently tracks Beyonder pathway affinity and ends with a pathway-specific chance encounter; (2) Manual path: direct pathway selection + character sheet. Both paths end with the first-potion narrative scene.
-  - `game-loop.tsx` — Core game loop UI (situation/choices/resolution/consequences phases)
+  - `game-loop.tsx` — Core game loop UI (situation/choices/resolution/consequences phases). Status bar shows the sanity and potion-digestion meters; the consequences panel previews the digestion change from the acting evaluation and surfaces a completion event when a potion is fully digested.
 
 ## Conventions
 

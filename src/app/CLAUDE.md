@@ -57,3 +57,4 @@ The app is installable on Android and iOS ("Add to Home Screen"):
 ## API Routes
 
 - `/api/proxy/ollama-cloud/chat/completions` — Server-side proxy for ollama.com. The cloud service does not send CORS headers, so direct browser fetches fail with status 0. This route forwards the OpenAI-compatible request body to `https://ollama.com/v1/chat/completions` with the caller's Bearer key and relays the response. Used exclusively by `OllamaCloudAdapter`.
+- `/api/proxy/ollama-cloud/models` — Companion GET proxy that forwards to `https://ollama.com/v1/models` (same CORS workaround) so `OllamaCloudAdapter.listModels()` can populate the model dropdown.

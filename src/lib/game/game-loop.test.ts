@@ -4,8 +4,10 @@ import {
   applyWorldStateChanges,
   applySanityImpact,
   addDiscoveredItems,
+  applyDigestion,
   applyResolution,
 } from "./world-state";
+import { createDigestionState } from "./digestion";
 import {
   createSession,
   createDefaultGameState,
@@ -13,6 +15,7 @@ import {
   serializeSession,
   deserializeSession,
   isValidSessionShape,
+  isValidDigestionShape,
 } from "./session";
 import { VALID_TRANSITIONS, PILLAR_INSTRUCTION_MAP, CHOICE_PILLAR_MAP } from "./types";
 import type { GameSession, GamePhase, GameplayPillar } from "./types";
@@ -941,6 +944,102 @@ describe("applyResolution", () => {
     const { gameState } = applyResolution(state, memory, result, 0, "Wait");
     expect(gameState.inventory).toEqual([]);
   });
+
+  it("advances digestion from an in-character acting evaluation", () => {
+    const state = makeGameState({ digestion: createDigestionState(1, 9) });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      actingEvaluation: { alignment: 1, reasoning: "Perfectly in character" },
+    });
+
+    const { gameState, digestionDelta } = applyResolution(
+      state,
+      memory,
+      result,
+      0,
+      "Perform a divination",
+    );
+    expect(digestionDelta).toBeGreaterThan(0);
+    expect(gameState.digestion!.progress).toBe(digestionDelta);
+  });
+
+  it("reverses digestion from an out-of-character acting evaluation", () => {
+    const state = makeGameState({
+      digestion: createDigestionState(1, 9),
+    });
+    state.digestion!.progress = 40;
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      actingEvaluation: { alignment: 0, reasoning: "Wholly out of character" },
+    });
+
+    const { gameState, digestionDelta } = applyResolution(
+      state,
+      memory,
+      result,
+      0,
+      "Betray the role",
+    );
+    expect(digestionDelta).toBeLessThan(0);
+    expect(gameState.digestion!.progress).toBeLessThan(40);
+  });
+
+  it("reports zero digestion delta when there is no acting evaluation", () => {
+    const state = makeGameState({ digestion: createDigestionState(1, 9) });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse();
+
+    const { digestionDelta } = applyResolution(state, memory, result, 0, "Wait");
+    expect(digestionDelta).toBe(0);
+  });
+});
+
+// ─── applyDigestion ────────────────────────────────────────────────
+
+describe("applyDigestion", () => {
+  it("seeds digestion when missing on the game state", () => {
+    const state = makeGameState();
+    expect(state.digestion).toBeUndefined();
+
+    const { state: next, delta } = applyDigestion(state, {
+      alignment: 1,
+      reasoning: "",
+    });
+    expect(next.digestion).toBeDefined();
+    expect(next.digestion!.pathwayId).toBe(state.pathwayId);
+    expect(next.digestion!.sequenceLevel).toBe(state.sequenceLevel);
+    expect(delta).toBeGreaterThan(0);
+  });
+
+  it("re-seeds digestion when it no longer matches the current potion", () => {
+    // Stale digestion from a previous sequence still at high progress.
+    const state = makeGameState({
+      sequenceLevel: 8,
+      digestion: { pathwayId: 1, sequenceLevel: 9, progress: 90, complete: false },
+    });
+
+    const { state: next } = applyDigestion(state, { alignment: 1, reasoning: "" });
+    expect(next.digestion!.sequenceLevel).toBe(8);
+    // Re-seeded from zero, so progress is just this turn's gain (not 90+).
+    expect(next.digestion!.progress).toBeLessThan(90);
+  });
+
+  it("continues an existing matching digestion", () => {
+    const state = makeGameState({
+      digestion: { pathwayId: 1, sequenceLevel: 9, progress: 30, complete: false },
+    });
+
+    const { state: next } = applyDigestion(state, { alignment: 1, reasoning: "" });
+    expect(next.digestion!.progress).toBeGreaterThan(30);
+  });
+
+  it("does not mutate the input state", () => {
+    const state = makeGameState({
+      digestion: { pathwayId: 1, sequenceLevel: 9, progress: 30, complete: false },
+    });
+    applyDigestion(state, { alignment: 1, reasoning: "" });
+    expect(state.digestion!.progress).toBe(30);
+  });
 });
 
 // ─── createSession ─────────────────────────────────────────────────
@@ -991,6 +1090,16 @@ describe("createDefaultGameState", () => {
     expect(state.location).toBe("Tingen City");
     expect(state.activeQuests).toEqual([]);
     expect(state.npcsPresent).toEqual([]);
+  });
+
+  it("seeds a fresh digestion state for the starting potion", () => {
+    const state = createDefaultGameState(3, "char-test");
+    expect(state.digestion).toEqual({
+      pathwayId: 3,
+      sequenceLevel: 9,
+      progress: 0,
+      complete: false,
+    });
   });
 
   it("generates a UUID characterId if none provided", () => {
@@ -1099,6 +1208,9 @@ describe("serializeSession", () => {
       phase: "choices",
       currentNarrative: "A foggy night.",
       currentChoices: makeChoices(),
+      gameState: makeGameState({
+        digestion: { pathwayId: 1, sequenceLevel: 9, progress: 0, complete: false },
+      }),
     });
     const json = serializeSession(session);
     const restored = deserializeSession(json);
@@ -1176,6 +1288,40 @@ describe("deserializeSession", () => {
     const json = serializeSession(session);
     const modified = JSON.parse(json);
     modified.id = "";
+    expect(deserializeSession(JSON.stringify(modified))).toBeNull();
+  });
+
+  it("seeds digestion for legacy sessions saved without it", () => {
+    const session = makeSession();
+    const json = serializeSession(session);
+    const modified = JSON.parse(json);
+    expect(modified.gameState.digestion).toBeUndefined();
+
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored).not.toBeNull();
+    expect(restored!.gameState.digestion).toEqual({
+      pathwayId: modified.gameState.pathwayId,
+      sequenceLevel: modified.gameState.sequenceLevel,
+      progress: 0,
+      complete: false,
+    });
+  });
+
+  it("preserves a valid digestion state on round-trip", () => {
+    const session = makeSession({
+      gameState: makeGameState({
+        digestion: { pathwayId: 1, sequenceLevel: 9, progress: 45, complete: false },
+      }),
+    });
+    const restored = deserializeSession(serializeSession(session));
+    expect(restored!.gameState.digestion!.progress).toBe(45);
+  });
+
+  it("returns null for a malformed digestion state", () => {
+    const session = makeSession();
+    const json = serializeSession(session);
+    const modified = JSON.parse(json);
+    modified.gameState.digestion = { pathwayId: 1, sequenceLevel: 9, progress: 150 };
     expect(deserializeSession(JSON.stringify(modified))).toBeNull();
   });
 });
@@ -1362,5 +1508,66 @@ describe("isValidSessionShape", () => {
         gameState: { ...session.gameState, sanity: Infinity },
       }),
     ).toBe(false);
+  });
+
+  it("accepts a session with a valid digestion state", () => {
+    const session = makeSession({
+      gameState: makeGameState({
+        digestion: { pathwayId: 1, sequenceLevel: 9, progress: 50, complete: false },
+      }),
+    });
+    expect(isValidSessionShape(session)).toBe(true);
+  });
+
+  it("rejects a session with a malformed digestion state", () => {
+    const session = makeSession();
+    const invalid = {
+      ...session,
+      gameState: {
+        ...session.gameState,
+        digestion: { pathwayId: 1, sequenceLevel: 9, progress: "half" },
+      },
+    };
+    expect(isValidSessionShape(invalid)).toBe(false);
+  });
+});
+
+// ─── isValidDigestionShape ─────────────────────────────────────────
+
+describe("isValidDigestionShape", () => {
+  const valid = { pathwayId: 1, sequenceLevel: 9, progress: 50, complete: false };
+
+  it("accepts a well-formed digestion state", () => {
+    expect(isValidDigestionShape(valid)).toBe(true);
+  });
+
+  it("rejects non-objects", () => {
+    expect(isValidDigestionShape(null)).toBe(false);
+    expect(isValidDigestionShape([])).toBe(false);
+    expect(isValidDigestionShape("x")).toBe(false);
+  });
+
+  it("rejects a non-numeric pathwayId", () => {
+    expect(isValidDigestionShape({ ...valid, pathwayId: "one" })).toBe(false);
+  });
+
+  it("rejects a non-numeric sequenceLevel", () => {
+    expect(isValidDigestionShape({ ...valid, sequenceLevel: null })).toBe(false);
+  });
+
+  it("rejects a non-numeric progress", () => {
+    expect(isValidDigestionShape({ ...valid, progress: "half" })).toBe(false);
+  });
+
+  it("rejects progress below 0", () => {
+    expect(isValidDigestionShape({ ...valid, progress: -1 })).toBe(false);
+  });
+
+  it("rejects progress above 100", () => {
+    expect(isValidDigestionShape({ ...valid, progress: 101 })).toBe(false);
+  });
+
+  it("rejects a non-boolean complete", () => {
+    expect(isValidDigestionShape({ ...valid, complete: "yes" })).toBe(false);
   });
 });

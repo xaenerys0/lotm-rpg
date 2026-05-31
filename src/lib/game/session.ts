@@ -1,5 +1,6 @@
 import type { GameState, MemoryState } from "@/lib/ai";
 import { createMemoryState } from "@/lib/ai";
+import { createDigestionState } from "./digestion";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
 
 const VALID_PHASES: GamePhase[] = [
@@ -51,6 +52,7 @@ export function createDefaultGameState(
     location: "Tingen City",
     activeQuests: [],
     npcsPresent: [],
+    digestion: createDigestionState(pathwayId, 9),
     ...(characterName ? { characterName } : {}),
     ...(characterBackground ? { characterBackground } : {}),
   };
@@ -85,10 +87,32 @@ export function deserializeSession(json: string): GameSession | null {
   }
 
   const s = parsed as Record<string, unknown>;
+  const gs = s.gameState as Record<string, unknown>;
+  const gameState = {
+    ...gs,
+    // Seed digestion for sessions saved before the Acting Method mechanic.
+    digestion:
+      gs.digestion ??
+      createDigestionState(gs.pathwayId as number, gs.sequenceLevel as number),
+  };
   return {
     ...s,
+    gameState,
     errorCode: s.errorCode ?? null,
   } as GameSession;
+}
+
+export function isValidDigestionShape(obj: unknown): boolean {
+  if (typeof obj !== "object" || obj === null || Array.isArray(obj)) {
+    return false;
+  }
+  const d = obj as Record<string, unknown>;
+  if (!Number.isFinite(d.pathwayId)) return false;
+  if (!Number.isFinite(d.sequenceLevel)) return false;
+  if (!Number.isFinite(d.progress)) return false;
+  if ((d.progress as number) < 0 || (d.progress as number) > 100) return false;
+  if (typeof d.complete !== "boolean") return false;
+  return true;
 }
 
 export function isValidSessionShape(obj: unknown): boolean {
@@ -116,6 +140,9 @@ export function isValidSessionShape(obj: unknown): boolean {
   if (!Array.isArray(gs.inventory)) return false;
   if (!Array.isArray(gs.activeQuests)) return false;
   if (!Array.isArray(gs.npcsPresent)) return false;
+  // Digestion is optional (older sessions predate it) but must be well-shaped
+  // when present; it is seeded with a default on deserialize if missing.
+  if (gs.digestion !== undefined && !isValidDigestionShape(gs.digestion)) return false;
 
   if (typeof s.memory !== "object" || s.memory === null) return false;
   const mem = s.memory as Record<string, unknown>;

@@ -8,11 +8,11 @@ Provider-agnostic LLM interface with tiered prompt architecture. The AI generate
 
 - `types.ts` — All AI-related type definitions: providers, responses, prompts, memory, game state.
 - `errors.ts` — `AIError` class with unified error codes: AUTH_ERROR, RATE_LIMITED, QUOTA_EXCEEDED, PROVIDER_ERROR, MALFORMED_OUTPUT, VALIDATION_FAILED, NETWORK_ERROR, TOKEN_LIMIT_EXCEEDED.
-- `providers.ts` — Provider adapters: Anthropic, OpenAI, OpenRouter, Ollama, Custom. Each implements `LLMProviderAdapter` interface. Factory: `createAdapter(providerId, baseUrl?)`.
+- `providers.ts` — Provider adapters: Anthropic, OpenAI, OpenRouter, Ollama, Custom. Each implements `LLMProviderAdapter` interface (incl. `listModels(apiKey)` for the live model catalog). Factory: `createAdapter(providerId, baseUrl?)`. The Anthropic adapter prefills the assistant turn with `{` to force JSON (no `response_format` support). `parseResponse` sets `truncated` from the provider's stop/finish reason. `inferModelTier(id)` guesses a tier for dynamically-listed models.
 - `prompts.ts` — 5-layer prompt assembly: system prompt, lore context, game state, history, instruction. Token budget enforcement (7,300 total).
 - `memory.ts` — Tiered memory manager: immediate (last 3-5 turns full), recent (turns 6-20 bullets), session facts. Rule-based summarization (no extra LLM call).
-- `validation.ts` — Parse and validate AI output: JSON parsing with code-block extraction, structural validation (sanity bounds, choice limits, alignment range), `sanitizeAIResponse` for auto-correction.
-- `client.ts` — Main orchestrator: `generate()` assembles prompt, selects model by tier, calls provider with retry, parses/validates response. `classifyCall()` determines routine vs premium. `validateProviderConfig()` checks API key validity.
+- `validation.ts` — Parse and validate AI output: JSON parsing with code-block extraction (plus a forgiving first-`{`…last-`}` fallback when prose surrounds the JSON), structural validation (sanity bounds, choice limits, alignment range), `sanitizeAIResponse` for auto-correction.
+- `client.ts` — Main orchestrator: `generate()` assembles prompt, selects model by tier, calls provider with retry, parses/validates response. JSON parsing retries up to `MAX_PARSE_ATTEMPTS` with a corrective prompt (truncation-aware) and lowered temperature. `classifyCall()` determines routine vs premium. `validateProviderConfig()` checks API key validity. `listProviderModels()` fetches the provider's live model catalog.
 - `prologue-client.ts` — AI-driven prologue generation: `generatePrologueScene()` runs a 5-scene interactive prologue using multi-turn conversation. The AI tracks Beyonder pathway affinity and engineers a pathway-specific chance encounter conclusion.
 - `index.ts` — Public exports.
 - `ai.test.ts` — Comprehensive test suite.
@@ -24,6 +24,8 @@ Provider-agnostic LLM interface with tiered prompt architecture. The AI generate
 - **Direct browser-to-provider calls.** No proxy server needed for supported providers.
 - **Model tiering.** Calls classified as `routine` or `premium` based on instruction type. Advancement and combat are premium; everything else is routine.
 - **Token budget enforcement.** History is trimmed if prompt exceeds 7,300 tokens. System prompt and game state are never trimmed.
+- **Robust JSON output.** Output cap is `MAX_OUTPUT_TOKENS` (3072) to avoid mid-JSON truncation; Anthropic uses assistant prefill, OpenAI-style providers use `response_format: json_object`. Malformed/truncated output triggers a corrective retry loop (`MAX_PARSE_ATTEMPTS`).
+- **Live model lists.** `listModels()` reuses each provider's catalog endpoint (`/models`, `/api/tags`); the config UI caches results in localStorage and falls back to the static `PROVIDER_MODELS` map.
 
 ## Conventions
 

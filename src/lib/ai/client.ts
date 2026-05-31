@@ -1,8 +1,10 @@
 import type {
   AIResponse,
   CallClassification,
+  ChatMessage,
   GameState,
   InstructionType,
+  ModelOption,
   ProviderConfig,
   ProviderResponse,
   ValidatedAIResponse,
@@ -15,7 +17,12 @@ import { parseAIResponse, sanitizeAIResponse, validateAIResponse } from "./valid
 
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [2000, 4000, 8000];
-const MAX_OUTPUT_TOKENS = 1500;
+// Sized to comfortably fit a full narrative + choices + state changes; 1500 was
+// prone to truncating mid-JSON, which surfaced as "random" malformed output.
+const MAX_OUTPUT_TOKENS = 3072;
+// Total attempts to obtain parseable JSON: the initial call plus corrective
+// retries that feed the bad output back with an instruction to fix it.
+const MAX_PARSE_ATTEMPTS = 3;
 const ROUTINE_TEMPERATURE = 0.8;
 const PREMIUM_TEMPERATURE = 0.7;
 
@@ -95,50 +102,13 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
 
   const messages = promptToMessages(assembly);
 
-  const providerResponse = await executeWithRetry(
+  let aiResponse = await requestAndParse(
     adapter,
-    {
-      messages,
-      model,
-      temperature,
-      maxTokens: MAX_OUTPUT_TOKENS,
-      responseFormat: { type: "json_object" },
-    },
+    messages,
+    model,
+    temperature,
     options.config.apiKey,
   );
-
-  let aiResponse: AIResponse;
-  try {
-    aiResponse = parseAIResponse(providerResponse.content);
-  } catch (parseError) {
-    if (parseError instanceof AIError && parseError.code === "MALFORMED_OUTPUT") {
-      const retryMessages = [
-        ...messages,
-        { role: "assistant" as const, content: providerResponse.content },
-        {
-          role: "user" as const,
-          content:
-            "Your previous response was not valid JSON. Please respond with ONLY a valid JSON object matching the required schema. No markdown, no code blocks, just the JSON object.",
-        },
-      ];
-
-      const retryResponse = await executeWithRetry(
-        adapter,
-        {
-          messages: retryMessages,
-          model,
-          temperature: temperature * 0.5,
-          maxTokens: MAX_OUTPUT_TOKENS,
-          responseFormat: { type: "json_object" },
-        },
-        options.config.apiKey,
-      );
-
-      aiResponse = parseAIResponse(retryResponse.content);
-    } else {
-      throw parseError;
-    }
-  }
 
   const validation = validateAIResponse(aiResponse);
 
@@ -154,6 +124,62 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
   };
 }
 
+function correctiveMessage(truncated: boolean): string {
+  if (truncated) {
+    return "Your previous response was cut off before the JSON was complete. Respond with a COMPLETE but more concise JSON object matching the required schema — shorten the narrative if needed. Output ONLY the JSON, no markdown or commentary.";
+  }
+  return "Your previous response was not valid JSON. Please respond with ONLY a valid JSON object matching the required schema. No markdown, no code blocks, just the JSON object.";
+}
+
+/**
+ * Request structured output and parse it, retrying with a corrective prompt
+ * when the JSON is malformed or truncated. Each retry lowers temperature and
+ * feeds the bad output back so the model can fix it.
+ */
+async function requestAndParse(
+  adapter: LLMProviderAdapter,
+  baseMessages: ChatMessage[],
+  model: string,
+  temperature: number,
+  apiKey: string,
+): Promise<AIResponse> {
+  let messages = baseMessages;
+
+  for (let attempt = 0; attempt < MAX_PARSE_ATTEMPTS; attempt++) {
+    const providerResponse = await executeWithRetry(
+      adapter,
+      {
+        messages,
+        model,
+        temperature: attempt === 0 ? temperature : temperature * 0.5,
+        maxTokens: MAX_OUTPUT_TOKENS,
+        responseFormat: { type: "json_object" },
+      },
+      apiKey,
+    );
+
+    try {
+      return parseAIResponse(providerResponse.content);
+    } catch (parseError) {
+      if (
+        !(parseError instanceof AIError) ||
+        parseError.code !== "MALFORMED_OUTPUT" ||
+        attempt === MAX_PARSE_ATTEMPTS - 1
+      ) {
+        throw parseError;
+      }
+      messages = [
+        ...baseMessages,
+        { role: "assistant", content: providerResponse.content.slice(0, 4000) },
+        { role: "user", content: correctiveMessage(providerResponse.truncated ?? false) },
+      ];
+    }
+  }
+
+  // Unreachable: the final attempt always returns or rethrows above.
+  throw new AIError("MALFORMED_OUTPUT", "Failed to parse AI response after retries");
+}
+
 export async function validateProviderConfig(
   config: ProviderConfig,
 ): Promise<{ valid: boolean; error?: string }> {
@@ -161,4 +187,10 @@ export async function validateProviderConfig(
   return adapter.validateKey(config.apiKey);
 }
 
-export { MAX_RETRIES, RETRY_DELAYS, MAX_OUTPUT_TOKENS };
+/** Fetch the provider's live model catalog for the given config. */
+export async function listProviderModels(config: ProviderConfig): Promise<ModelOption[]> {
+  const adapter = createAdapter(config.providerId, config.baseUrl);
+  return adapter.listModels(config.apiKey);
+}
+
+export { MAX_RETRIES, RETRY_DELAYS, MAX_OUTPUT_TOKENS, MAX_PARSE_ATTEMPTS };
