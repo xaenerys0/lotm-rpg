@@ -10,11 +10,20 @@ import {
   serializeSession,
   deserializeSession,
   digestionFeedback,
+  classifySanityTier,
+  isLossOfControl,
+  evaluateLossOfControl,
+  DEFAULT_PREFERENCES,
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
   SESSION_KEY_PREFIX,
   PROVIDER_CONFIG_KEY,
+  type GamePreferences,
+  type SanityTier,
+  type LossOfControlSeverity,
 } from "@/lib/game";
+import { SanityEffects } from "./sanity-effects";
+import { loadPreferences } from "./preferences-store";
 import type {
   DigestionState,
   ProviderConfig,
@@ -80,31 +89,29 @@ function selectLoreEntries(
   return { entries: selected, totalTokens };
 }
 
-function getSanityStyle(sanity: number, maxSanity: number) {
-  const ratio = maxSanity > 0 ? sanity / maxSanity : 0;
-  if (ratio > 0.6)
-    return {
-      color: "bg-sanity-high",
-      glow: "shadow-[0_0_8px_var(--color-sanity-high)]",
-      ratio,
-    };
-  if (ratio > 0.3)
-    return {
-      color: "bg-sanity-mid",
-      glow: "shadow-[0_0_8px_var(--color-sanity-mid)]",
-      ratio,
-    };
-  if (ratio > 0.1)
-    return {
-      color: "bg-sanity-low",
-      glow: "shadow-[0_0_8px_var(--color-sanity-low)]",
-      ratio,
-    };
-  return {
+const SANITY_TIER_STYLE: Record<SanityTier, { color: string; glow: string }> = {
+  high: {
+    color: "bg-sanity-high",
+    glow: "shadow-[0_0_8px_var(--color-sanity-high)]",
+  },
+  medium: {
+    color: "bg-sanity-mid",
+    glow: "shadow-[0_0_8px_var(--color-sanity-mid)]",
+  },
+  low: {
+    color: "bg-sanity-low",
+    glow: "shadow-[0_0_8px_var(--color-sanity-low)]",
+  },
+  critical: {
     color: "bg-sanity-critical",
     glow: "shadow-[0_0_8px_var(--color-sanity-critical)]",
-    ratio,
-  };
+  },
+};
+
+function getSanityStyle(sanity: number, maxSanity: number) {
+  const ratio = maxSanity > 0 ? sanity / maxSanity : 0;
+  const tier = classifySanityTier(sanity, maxSanity);
+  return { ...SANITY_TIER_STYLE[tier], ratio };
 }
 
 function getChoiceTypeIcon(type: Choice["type"]): string {
@@ -154,6 +161,18 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   );
   const [session, setSession] = useState<GameSession | null>(initialSession);
   const generationRef = useRef(0);
+
+  const prefsCacheRef = useRef<GamePreferences | null>(null);
+  const preferences = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (prefsCacheRef.current === null) {
+        prefsCacheRef.current = loadPreferences();
+      }
+      return prefsCacheRef.current;
+    },
+    () => DEFAULT_PREFERENCES,
+  );
 
   const updateSession = useCallback((next: GameSession) => {
     setSession(next);
@@ -370,53 +389,106 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
   const pathway = getPathway(session.gameState.pathwayId);
   const seq = getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel);
+  const lostControl = isLossOfControl(session.gameState);
 
   return (
-    <div className="mx-auto max-w-3xl px-4">
-      {/* Status Bar */}
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
-        <div className="flex items-center gap-4 text-xs text-muted">
-          <span className="font-serif text-sm text-foreground/80">
-            {seq?.name ?? "Unknown"}{" "}
-            <span className="text-muted/60">
-              ({pathway?.name ?? "?"} Seq. {session.gameState.sequenceLevel})
+    <SanityEffects
+      sanity={session.gameState.sanity}
+      maxSanity={session.gameState.maxSanity}
+    >
+      <div className="mx-auto max-w-3xl px-4">
+        {/* Status Bar */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
+          <div className="flex items-center gap-4 text-xs text-muted">
+            <span className="font-serif text-sm text-foreground/80">
+              {seq?.name ?? "Unknown"}{" "}
+              <span className="text-muted/60">
+                ({pathway?.name ?? "?"} Seq. {session.gameState.sequenceLevel})
+              </span>
             </span>
-          </span>
-          <span className="text-border">|</span>
-          <span>{session.gameState.location}</span>
-          <span className="text-border">|</span>
-          <span>Turn {session.turnCount}</span>
+            <span className="text-border">|</span>
+            <span>{session.gameState.location}</span>
+            <span className="text-border">|</span>
+            <span>Turn {session.turnCount}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <DigestionMeter digestion={session.gameState.digestion} />
+            {preferences.sanityMeterVisible && (
+              <SanityMeter
+                sanity={session.gameState.sanity}
+                maxSanity={session.gameState.maxSanity}
+              />
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <DigestionMeter digestion={session.gameState.digestion} />
-          <SanityMeter
-            sanity={session.gameState.sanity}
-            maxSanity={session.gameState.maxSanity}
-          />
-        </div>
-      </div>
 
-      {/* Phase Content */}
-      {session.phase === "idle" && <IdlePhase onStart={handleStartSituation} />}
-      {session.phase === "situation" && <SituationPhase />}
-      {session.phase === "choices" && (
-        <ChoicesPhase
-          narrative={session.currentNarrative ?? ""}
-          choices={session.currentChoices ?? []}
-          onSelect={handleSelectChoice}
-        />
-      )}
-      {session.phase === "resolution" && <ResolutionPhase />}
-      {session.phase === "consequences" && (
-        <ConsequencesPhase session={session} onContinue={handleContinue} />
-      )}
-      {session.phase === "error" && (
-        <ErrorPhase
-          message={session.errorMessage ?? "An unknown error occurred."}
-          errorCode={session.errorCode}
-          onRetry={handleRetry}
-        />
-      )}
+        {/* Loss of control — sanity has bottomed out (integrates with #12). */}
+        {lostControl && (
+          <LossOfControlNotice
+            severity={evaluateLossOfControl({
+              sequenceLevel: session.gameState.sequenceLevel,
+              // A fully-digested potion means the character is poised mid-
+              // advancement — a fragile moment that escalates the fallout.
+              highRisk: session.gameState.digestion?.complete ?? false,
+            })}
+          />
+        )}
+
+        {/* Phase Content */}
+        {session.phase === "idle" && <IdlePhase onStart={handleStartSituation} />}
+        {session.phase === "situation" && <SituationPhase />}
+        {session.phase === "choices" && (
+          <ChoicesPhase
+            narrative={session.currentNarrative ?? ""}
+            choices={session.currentChoices ?? []}
+            onSelect={handleSelectChoice}
+          />
+        )}
+        {session.phase === "resolution" && <ResolutionPhase />}
+        {session.phase === "consequences" && (
+          <ConsequencesPhase session={session} onContinue={handleContinue} />
+        )}
+        {session.phase === "error" && (
+          <ErrorPhase
+            message={session.errorMessage ?? "An unknown error occurred."}
+            errorCode={session.errorCode}
+            onRetry={handleRetry}
+          />
+        )}
+      </div>
+    </SanityEffects>
+  );
+}
+
+const LOSS_OF_CONTROL_COPY: Record<
+  LossOfControlSeverity,
+  { title: string; body: string }
+> = {
+  setback: {
+    title: "The world goes dark",
+    body: "Your mind buckles and the gaslight swims away. You will wake elsewhere, missing time and worse for the wear — but you will wake.",
+  },
+  transformation: {
+    title: "Something is changing",
+    body: "Your power slips its leash. Your body answers to it, not to you. Whatever rises from this will not be entirely who you were.",
+  },
+  fatal: {
+    title: "You are lost",
+    body: "There is nothing left to hold the shape of you. The thing that remains is no longer a person — only hunger wearing your name.",
+  },
+};
+
+function LossOfControlNotice({ severity }: { severity: LossOfControlSeverity }) {
+  const copy = LOSS_OF_CONTROL_COPY[severity];
+  return (
+    <div className="mb-6 rounded-md border border-crimson/50 bg-crimson/[0.08] p-5 text-center animate-fade-in">
+      <p className="font-serif text-base font-semibold text-sanity-low">{copy.title}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-foreground/70">
+        {copy.body}
+      </p>
+      <p className="mt-3 text-[10px] tracking-[0.2em] text-muted/40 uppercase">
+        Loss of control &mdash; {severity}
+      </p>
     </div>
   );
 }

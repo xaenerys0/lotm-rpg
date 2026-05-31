@@ -36,12 +36,21 @@ export {
   promptToMessages,
   buildSystemPrompt,
   buildLoreContext,
+  buildSanityDirective,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,
   isWithinTokenBudget,
   TOKEN_BUDGET,
 } from "./prompts";
+
+export {
+  SANITY_TIER_THRESHOLDS,
+  sanityPercent,
+  classifySanityTier,
+  sanityNarrationDirective,
+  type SanityTier,
+} from "./sanity";
 
 export {
   createMemoryState,

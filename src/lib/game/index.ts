@@ -49,7 +49,50 @@ export {
   PROVIDER_CONFIG_KEY,
   PROLOGUE_DRAFT_KEY,
   MODELS_CACHE_KEY,
+  PREFERENCES_KEY,
 } from "./constants";
+
+export {
+  SANITY_MIN,
+  SANITY_TIER_THRESHOLDS,
+  SANITY_EFFECTS,
+  ABILITY_USE_BASE_DRAIN,
+  ABILITY_USE_PER_SEQUENCE,
+  HORROR_BASE_DRAIN,
+  HORROR_PER_GAP,
+  MAX_HORROR_DRAIN,
+  ADVANCEMENT_DRAIN,
+  OUTER_DEITY_DRAIN,
+  ACTING_SUCCESS_RECOVERY,
+  REST_RECOVERY,
+  HUMAN_CONNECTION_RECOVERY,
+  ROUTINE_RECOVERY,
+  ACTING_NEGLECT_DECAY,
+  sanityPercent,
+  classifySanityTier,
+  sanityEffects,
+  sanityDelta,
+  isLossOfControl,
+  evaluateLossOfControl,
+} from "./sanity";
+
+export type {
+  SanityTier,
+  SanityEffectProfile,
+  SanityEvent,
+  LossOfControlSeverity,
+  LossOfControlContext,
+} from "./sanity";
+
+export {
+  DEFAULT_PREFERENCES,
+  isValidPreferencesShape,
+  mergePreferences,
+  serializePreferences,
+  deserializePreferences,
+} from "./preferences";
+
+export type { GamePreferences } from "./preferences";
 
 export { isValidDraftShape, isActivePrologueDraft, clearDraft } from "./prologue-draft";
 
