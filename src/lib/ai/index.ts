@@ -67,8 +67,12 @@ export {
 
 export {
   generatePrologueScene,
+  generatePrologueFinale,
   MIN_PROLOGUE_SCENES,
   MAX_PROLOGUE_SCENES,
+  PROLOGUE_AFFINITY_COUNT,
   type PrologueTurn,
+  type AIPrologueChoice,
   type AIPrologueResponse,
+  type AIPrologueFinale,
 } from "./prologue-client";

@@ -21,7 +21,23 @@ describe("isValidDraftShape", () => {
     ).toBe(true);
   });
 
-  it("accepts non-empty prologueHistory", () => {
+  it("accepts non-empty prologueHistory with affinity-tagged turns", () => {
+    const draft = {
+      ...validDraft,
+      prologueHistory: [
+        {
+          narrative: "You find a letter.",
+          choices: [{ id: "a", text: "Read it", affinities: { 1: 1 } }],
+          selectedChoiceText: "Read it",
+          selectedAffinities: { 1: 1 },
+          rawResponse: "{}",
+        },
+      ],
+    };
+    expect(isValidDraftShape(draft)).toBe(true);
+  });
+
+  it("rejects a turn missing selectedAffinities (stale pre-#53 draft)", () => {
     const draft = {
       ...validDraft,
       prologueHistory: [
@@ -33,7 +49,39 @@ describe("isValidDraftShape", () => {
         },
       ],
     };
-    expect(isValidDraftShape(draft)).toBe(true);
+    expect(isValidDraftShape(draft)).toBe(false);
+  });
+
+  it("rejects a turn whose selectedAffinities has non-numeric values", () => {
+    const draft = {
+      ...validDraft,
+      prologueHistory: [
+        {
+          narrative: "You find a letter.",
+          choices: [{ id: "a", text: "Read it", affinities: { 1: 1 } }],
+          selectedChoiceText: "Read it",
+          selectedAffinities: { 1: "high" },
+          rawResponse: "{}",
+        },
+      ],
+    };
+    expect(isValidDraftShape(draft)).toBe(false);
+  });
+
+  it("rejects a turn whose selectedAffinities is empty", () => {
+    const draft = {
+      ...validDraft,
+      prologueHistory: [
+        {
+          narrative: "You find a letter.",
+          choices: [{ id: "a", text: "Read it", affinities: { 1: 1 } }],
+          selectedChoiceText: "Read it",
+          selectedAffinities: {},
+          rawResponse: "{}",
+        },
+      ],
+    };
+    expect(isValidDraftShape(draft)).toBe(false);
   });
 
   it("rejects null", () => {

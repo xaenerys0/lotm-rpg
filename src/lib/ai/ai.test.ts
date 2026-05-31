@@ -62,8 +62,10 @@ import {
 } from "./client";
 import {
   generatePrologueScene,
+  generatePrologueFinale,
   MIN_PROLOGUE_SCENES,
   MAX_PROLOGUE_SCENES,
+  PROLOGUE_AFFINITY_COUNT,
   type PrologueTurn,
 } from "./prologue-client";
 
@@ -3139,22 +3141,47 @@ describe("generatePrologueScene", () => {
     vi.restoreAllMocks();
   });
 
+  // A well-formed scored scene: exactly 4 choices, one per affinity, shuffled
+  // positions, non-ordinal ids.
   function makePrologueApiResponse(overrides?: Record<string, unknown>): string {
     const base: Record<string, unknown> = {
       narrative: "The gaslight flickers as you step out into Tingen's fog-laden streets.",
       choices: [
-        { id: "1", text: "Investigate the suspicious figure in the alley." },
-        { id: "2", text: "Help the elderly woman struggling with her parcels." },
         {
-          id: "3",
+          id: "a",
+          text: "Help the elderly woman struggling with her parcels.",
+          affinities: { 3: 1 },
+        },
+        {
+          id: "b",
           text: "Note the unusual seal on the envelope dropped by the courier.",
+          affinities: { 1: 1 },
+        },
+        {
+          id: "c",
+          text: "Wonder what became of the man they carried from the alley.",
+          affinities: { 4: 1 },
+        },
+        {
+          id: "d",
+          text: "Read the worry in the constable's tight, careful face.",
+          affinities: { 2: 1 },
         },
       ],
-      inferredPathwayId: 1,
-      isConclusion: false,
+      readyToConclude: false,
       ...overrides,
     };
     return JSON.stringify(base);
+  }
+
+  function makeTurn(): PrologueTurn {
+    return {
+      narrative: "Scene narrative",
+      choices: [{ id: "a", text: "Choice A", affinities: { 1: 1 } }],
+      selectedChoiceText: "Choice A",
+      selectedAffinities: { 1: 1 },
+      rawResponse: makePrologueApiResponse(),
+    };
   }
 
   function mockOpenAIFetch(content: string): void {
@@ -3222,14 +3249,7 @@ describe("generatePrologueScene", () => {
         ),
     } as Response);
 
-    const history: PrologueTurn[] = [
-      {
-        narrative: "Scene 1 narrative",
-        choices: [{ id: "1", text: "Choice A" }],
-        selectedChoiceText: "Choice A",
-        rawResponse: makePrologueApiResponse(),
-      },
-    ];
+    const history: PrologueTurn[] = [makeTurn()];
 
     await generatePrologueScene(
       makeProviderConfig(),
@@ -3252,55 +3272,26 @@ describe("generatePrologueScene", () => {
     expect(messages[3]!.content).toContain("scene 2");
   });
 
-  it("sends final scene message with chance encounter instruction when history.length === MAX_PROLOGUE_SCENES - 1", async () => {
-    const content = makePrologueApiResponse({ isConclusion: true, choices: [] });
-    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
-      ok: true,
-      status: 200,
-      text: () =>
-        Promise.resolve(
-          JSON.stringify({
-            choices: [{ message: { content } }],
-            model: "gpt-4o-mini",
-            usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
-          }),
-        ),
-    } as Response);
+  it("does not instruct the AI to conclude or to judge a pathway", async () => {
+    mockOpenAIFetch(makePrologueApiResponse());
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-    // Build history with MAX_PROLOGUE_SCENES - 1 turns (11 turns => scene 12 is forced final)
-    const history: PrologueTurn[] = Array.from(
-      { length: MAX_PROLOGUE_SCENES - 1 },
-      (_, i) => ({
-        narrative: `Scene ${i + 1}`,
-        choices: [{ id: "1", text: "Some choice" }],
-        selectedChoiceText: "Some choice",
-        rawResponse: makePrologueApiResponse(),
-      }),
-    );
-
-    await generatePrologueScene(makeProviderConfig(), "Klein", "", history);
+    await generatePrologueScene(makeProviderConfig(), "Klein", "", [makeTurn()]);
 
     const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
     const messages: ChatMessage[] = body.messages as ChatMessage[];
-
-    // Last user message should be the final scene instruction
+    // The scene generator never authors a conclusion or names a pathway.
     const lastMessage = messages[messages.length - 1]!;
-    expect(lastMessage.role).toBe("user");
-    expect(lastMessage.content).toContain("conclude");
-    expect(lastMessage.content).toContain("chance encounter");
-    expect(lastMessage.content).toContain("isConclusion");
+    expect(lastMessage.content).toContain("Continue to scene");
+    expect(lastMessage.content).not.toContain("isConclusion");
+    // System prompt forbids the AI from scoring the character.
+    expect(messages[0]!.content).toContain("Do NOT judge or score");
   });
 
-  it("returns narrative, choices, inferredPathwayId, isConclusion, and rawResponse on success", async () => {
+  it("returns narrative, affinity-tagged choices, readyToConclude, and rawResponse on success", async () => {
     const rawContent = makePrologueApiResponse({
       narrative: "The fog thickens around you.",
-      choices: [
-        { id: "1", text: "Follow the stranger." },
-        { id: "2", text: "Turn back." },
-        { id: "3", text: "Call out." },
-      ],
-      inferredPathwayId: 3,
-      isConclusion: false,
+      readyToConclude: true,
     });
     mockOpenAIFetch(rawContent);
 
@@ -3312,10 +3303,11 @@ describe("generatePrologueScene", () => {
     );
 
     expect(result.narrative).toBe("The fog thickens around you.");
-    expect(result.choices).toHaveLength(3);
-    expect(result.choices[0]).toEqual({ id: "1", text: "Follow the stranger." });
-    expect(result.inferredPathwayId).toBe(3);
-    expect(result.isConclusion).toBe(false);
+    expect(result.choices).toHaveLength(PROLOGUE_AFFINITY_COUNT);
+    // Each choice carries an affinities map; the four affinities are all present.
+    const dominants = result.choices.map((c) => Number(Object.keys(c.affinities)[0]));
+    expect(new Set(dominants)).toEqual(new Set([1, 2, 3, 4]));
+    expect(result.readyToConclude).toBe(true);
     expect(result.rawResponse).toBe(rawContent);
   });
 
@@ -3342,43 +3334,22 @@ describe("generatePrologueScene", () => {
     }
   });
 
-  it("defaults inferredPathwayId to 1 when missing from response", async () => {
-    const rawContent = JSON.stringify({
-      narrative: "A scene without pathway.",
-      choices: [{ id: "1", text: "Choice one." }],
-      isConclusion: false,
-      // inferredPathwayId is intentionally missing
-    });
-    mockOpenAIFetch(rawContent);
+  it("defaults readyToConclude to false when missing from response", async () => {
+    const rawContent = makePrologueApiResponse({ readyToConclude: undefined });
+    // Strip the key entirely so it is genuinely missing.
+    const parsed = JSON.parse(rawContent) as Record<string, unknown>;
+    delete parsed["readyToConclude"];
+    mockOpenAIFetch(JSON.stringify(parsed));
 
     const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
-    expect(result.inferredPathwayId).toBe(1);
+    expect(result.readyToConclude).toBe(false);
   });
 
-  it("clamps out-of-range inferredPathwayId to 1", async () => {
-    const rawContent = JSON.stringify({
-      narrative: "A scene.",
-      choices: [{ id: "1", text: "A choice." }],
-      inferredPathwayId: 99,
-      isConclusion: false,
-    });
-    mockOpenAIFetch(rawContent);
+  it("defaults readyToConclude to false when the value is not a boolean", async () => {
+    mockOpenAIFetch(makePrologueApiResponse({ readyToConclude: "yes" }));
 
     const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
-    expect(result.inferredPathwayId).toBe(1);
-  });
-
-  it("defaults isConclusion to false when missing from response", async () => {
-    const rawContent = JSON.stringify({
-      narrative: "The scene unfolds.",
-      choices: [{ id: "1", text: "A choice." }],
-      inferredPathwayId: 2,
-      // isConclusion is intentionally missing
-    });
-    mockOpenAIFetch(rawContent);
-
-    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
-    expect(result.isConclusion).toBe(false);
+    expect(result.readyToConclude).toBe(false);
   });
 
   it("uses default background text when characterBackground is empty", async () => {
@@ -3403,44 +3374,235 @@ describe("generatePrologueScene", () => {
     expect(messages[1]!.content).toContain("A resident of Tingen City");
   });
 
-  it("slices choices to max 4", async () => {
-    const rawContent = JSON.stringify({
-      narrative: "Many choices scene.",
-      choices: [
-        { id: "1", text: "One" },
-        { id: "2", text: "Two" },
-        { id: "3", text: "Three" },
-        { id: "4", text: "Four" },
-        { id: "5", text: "Five" },
-      ],
-      inferredPathwayId: 1,
-      isConclusion: false,
-    });
-    mockOpenAIFetch(rawContent);
+  it("throws MALFORMED_OUTPUT when narrative is missing", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as Record<string, unknown>;
+    delete parsed["narrative"];
+    mockOpenAIFetch(JSON.stringify(parsed));
 
-    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
-    expect(result.choices).toHaveLength(4);
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
   });
 
-  it("throws MALFORMED_OUTPUT when narrative is missing", async () => {
-    const rawContent = JSON.stringify({
-      choices: [{ id: "1", text: "A choice." }],
-      inferredPathwayId: 1,
-      isConclusion: false,
-    });
-    mockOpenAIFetch(rawContent);
+  // ── Strict validation: no silent pathway default ──
 
-    try {
-      await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
-      expect.unreachable("should have thrown");
-    } catch (err) {
-      expect(err).toBeInstanceOf(AIError);
-      expect((err as AIError).code).toBe("MALFORMED_OUTPUT");
-    }
+  it("rejects when there are fewer than four choices", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as {
+      choices: unknown[];
+    };
+    parsed.choices = parsed.choices.slice(0, 3);
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("rejects when a choice lacks an affinities map", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as {
+      choices: Record<string, unknown>[];
+    };
+    delete parsed.choices[0]!["affinities"];
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("rejects when a choice is not an object", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as { choices: unknown[] };
+    parsed.choices[0] = "not an object";
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("rejects when a choice is missing its text", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as {
+      choices: Record<string, unknown>[];
+    };
+    delete parsed.choices[0]!["text"];
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("rejects when a choice has an empty affinities map", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as {
+      choices: { affinities: Record<number, number> }[];
+    };
+    parsed.choices[0]!.affinities = {};
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("rejects when an affinity weight is not positive", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as {
+      choices: { affinities: Record<number, number> }[];
+    };
+    parsed.choices[0]!.affinities = { 3: 0 };
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("rejects when an affinity pathway id is not a positive integer", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as {
+      choices: { affinities: Record<string, number> }[];
+    };
+    parsed.choices[0]!.affinities = { "0": 1 };
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("rejects when the four affinities are not all represented (duplicate dominant)", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as {
+      choices: { affinities: Record<number, number> }[];
+    };
+    // Make two choices dominate the same affinity, dropping one of the four.
+    parsed.choices[0]!.affinities = { 1: 1 };
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("throws AIError with MALFORMED_OUTPUT when the response is a JSON array", async () => {
+    mockOpenAIFetch(JSON.stringify([1, 2, 3]));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
   });
 
   it("exports MIN_PROLOGUE_SCENES as 4 and MAX_PROLOGUE_SCENES as 12", () => {
     expect(MIN_PROLOGUE_SCENES).toBe(4);
     expect(MAX_PROLOGUE_SCENES).toBe(12);
+  });
+
+  it("exports PROLOGUE_AFFINITY_COUNT as 4", () => {
+    expect(PROLOGUE_AFFINITY_COUNT).toBe(4);
+  });
+});
+
+// ── generatePrologueFinale Tests ──
+
+describe("generatePrologueFinale", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  function makeFinaleApiResponse(candidateIds: number[]): string {
+    return JSON.stringify({
+      narrative:
+        "A stranger in a long coat sets three vials on the table and waits, saying nothing.",
+      choices: candidateIds.map((id) => ({
+        id: `p${id}`,
+        text: `A vial that stirs something in you (${id}).`,
+        affinities: { [id]: 1 },
+      })),
+    });
+  }
+
+  function mockOpenAIFetch(content: string): void {
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+          }),
+        ),
+    } as Response);
+  }
+
+  function makeHistory(): PrologueTurn[] {
+    return [
+      {
+        narrative: "Scene 1",
+        choices: [{ id: "a", text: "Observe", affinities: { 1: 1 } }],
+        selectedChoiceText: "Observe",
+        selectedAffinities: { 1: 1 },
+        rawResponse: "{}",
+      },
+    ];
+  }
+
+  it("passes the candidate ids into the prompt and returns one choice per candidate", async () => {
+    mockOpenAIFetch(makeFinaleApiResponse([1, 3]));
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    const result = await generatePrologueFinale(
+      makeProviderConfig(),
+      "Klein",
+      "A fortune-teller.",
+      makeHistory(),
+      [1, 3],
+    );
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    const messages: ChatMessage[] = body.messages as ChatMessage[];
+    const lastMessage = messages[messages.length - 1]!;
+    expect(lastMessage.content).toContain("candidate 1");
+    expect(lastMessage.content).toContain("candidate 3");
+
+    expect(result.narrative.length).toBeGreaterThan(0);
+    expect(result.choices).toHaveLength(2);
+    const ids = result.choices.map((c) => Number(Object.keys(c.affinities)[0]));
+    expect(new Set(ids)).toEqual(new Set([1, 3]));
+  });
+
+  it("throws when called with no candidates", async () => {
+    await expect(
+      generatePrologueFinale(makeProviderConfig(), "Klein", "", makeHistory(), []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("throws when the finale narrative is missing", async () => {
+    mockOpenAIFetch(
+      JSON.stringify({ choices: [{ id: "p1", text: "x", affinities: { 1: 1 } }] }),
+    );
+
+    await expect(
+      generatePrologueFinale(makeProviderConfig(), "Klein", "", makeHistory(), [1]),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("throws when a requested candidate is not covered by any choice", async () => {
+    // Only candidate 1 is returned, but 2 was also requested.
+    mockOpenAIFetch(makeFinaleApiResponse([1]));
+
+    await expect(
+      generatePrologueFinale(makeProviderConfig(), "Klein", "", makeHistory(), [1, 2]),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("throws when choices are missing entirely", async () => {
+    mockOpenAIFetch(JSON.stringify({ narrative: "A scene." }));
+
+    await expect(
+      generatePrologueFinale(makeProviderConfig(), "Klein", "", makeHistory(), [1]),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
   });
 });
