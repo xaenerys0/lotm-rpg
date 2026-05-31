@@ -402,13 +402,17 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           <div className="flex items-center gap-4 text-xs text-muted">
             <span className="font-serif text-sm text-foreground/80">
               {seq?.name ?? "Unknown"}{" "}
-              <span className="text-muted/60">
+              <span className="text-muted">
                 ({pathway?.name ?? "?"} Seq. {session.gameState.sequenceLevel})
               </span>
             </span>
-            <span className="text-border">|</span>
+            <span className="text-border" aria-hidden="true">
+              |
+            </span>
             <span>{session.gameState.location}</span>
-            <span className="text-border">|</span>
+            <span className="text-border" aria-hidden="true">
+              |
+            </span>
             <span>Turn {session.turnCount}</span>
           </div>
           <div className="flex items-center gap-4">
@@ -486,7 +490,7 @@ function LossOfControlNotice({ severity }: { severity: LossOfControlSeverity }) 
       <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-foreground/70">
         {copy.body}
       </p>
-      <p className="mt-3 text-[10px] tracking-[0.2em] text-muted/40 uppercase">
+      <p className="mt-3 text-[10px] tracking-[0.2em] text-muted uppercase">
         Loss of control &mdash; {severity}
       </p>
     </div>
@@ -498,12 +502,12 @@ function LossOfControlNotice({ severity }: { severity: LossOfControlSeverity }) 
 function LoadingOrb() {
   return (
     <div className="flex flex-col items-center gap-4">
-      <div className="relative h-12 w-12">
+      <div className="relative h-12 w-12" aria-hidden="true">
         <div className="absolute inset-0 rounded-full bg-amber/20 animate-ping" />
         <div className="absolute inset-2 rounded-full bg-amber/40 animate-pulse" />
         <div className="absolute inset-4 rounded-full bg-amber/80" />
       </div>
-      <p className="font-serif text-sm italic text-muted/60 animate-pulse">
+      <p className="font-serif text-sm italic text-muted animate-pulse">
         The fog stirs...
       </p>
     </div>
@@ -515,14 +519,24 @@ function SanityMeter({ sanity, maxSanity }: { sanity: number; maxSanity: number 
 
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs text-muted/60">Sanity</span>
-      <div className="h-2 w-24 overflow-hidden rounded-full bg-border/40">
+      <span className="text-xs text-muted" id="sanity-meter-label">
+        Sanity
+      </span>
+      <div
+        role="progressbar"
+        aria-labelledby="sanity-meter-label"
+        aria-valuemin={0}
+        aria-valuemax={maxSanity}
+        aria-valuenow={sanity}
+        aria-valuetext={`${sanity} of ${maxSanity}`}
+        className="h-2 w-24 overflow-hidden rounded-full bg-border/40"
+      >
         <div
           className={`h-full rounded-full transition-all duration-700 ${color} ${glow}`}
           style={{ width: `${ratio * 100}%` }}
         />
       </div>
-      <span className="min-w-[3ch] text-right font-mono text-xs text-muted/80">
+      <span className="min-w-[3ch] text-right font-mono text-xs text-muted">
         {sanity}
       </span>
     </div>
@@ -536,12 +550,21 @@ function DigestionMeter({ digestion }: { digestion?: DigestionState }) {
   return (
     <div className="flex items-center gap-2">
       <span
-        className="text-xs text-muted/60"
+        className="text-xs text-muted"
+        id="digestion-meter-label"
         title="Digestion — act in character to assimilate your potion"
       >
         Digestion
       </span>
-      <div className="h-2 w-24 overflow-hidden rounded-full bg-border/40">
+      <div
+        role="progressbar"
+        aria-labelledby="digestion-meter-label"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress}
+        aria-valuetext={complete ? "Fully digested" : `${progress}%`}
+        className="h-2 w-24 overflow-hidden rounded-full bg-border/40"
+      >
         <div
           className={`h-full rounded-full bg-occult transition-all duration-700 ${
             complete ? "shadow-[0_0_8px_var(--color-occult)]" : ""
@@ -549,8 +572,8 @@ function DigestionMeter({ digestion }: { digestion?: DigestionState }) {
           style={{ width: `${progress}%` }}
         />
       </div>
-      <span className="min-w-[3ch] text-right font-mono text-xs text-muted/80">
-        {complete ? "✦" : `${progress}%`}
+      <span className="min-w-[3ch] text-right font-mono text-xs text-muted">
+        {complete ? <span aria-hidden="true">✦</span> : `${progress}%`}
       </span>
     </div>
   );
@@ -577,9 +600,9 @@ function IdlePhase({ onStart }: { onStart: () => void }) {
 
 function SituationPhase() {
   return (
-    <div className="flex flex-col items-center py-20 animate-fade-in">
+    <div role="status" className="flex flex-col items-center py-20 animate-fade-in">
       <LoadingOrb />
-      <p className="mt-6 max-w-sm text-center font-serif text-sm text-muted/50">
+      <p className="mt-6 max-w-sm text-center font-serif text-sm text-muted">
         Weaving the threads of fate...
       </p>
     </div>
@@ -601,7 +624,7 @@ function ChoicesPhase({
       <div className="mb-8">
         <div className="mx-auto mb-4 flex items-center gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          <span className="text-[10px] tracking-[0.3em] text-muted/30 uppercase">
+          <span className="text-[10px] tracking-[0.3em] text-muted uppercase">
             narrative
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -615,7 +638,7 @@ function ChoicesPhase({
 
       {/* Choices */}
       <div className="space-y-2.5">
-        <p className="mb-3 text-center text-xs tracking-[0.2em] text-muted/40 uppercase">
+        <p className="mb-3 text-center text-xs tracking-[0.2em] text-muted uppercase">
           Choose your path
         </p>
         {choices.map((choice, i) => (
@@ -627,18 +650,24 @@ function ChoicesPhase({
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 shrink-0 text-sm text-amber/50 transition-colors group-hover:text-amber">
+              <span
+                className="mt-0.5 shrink-0 text-sm text-amber/50 transition-colors group-hover:text-amber"
+                aria-hidden="true"
+              >
                 {getChoiceTypeIcon(choice.type)}
               </span>
               <div className="flex-1">
                 <p className="font-serif text-sm leading-relaxed text-foreground/80 transition-colors group-hover:text-foreground">
                   {choice.text}
                 </p>
-                <span className="mt-1 block text-[10px] tracking-wider text-muted/30 uppercase">
+                <span className="mt-1 block text-[10px] tracking-wider text-muted uppercase">
                   {choice.type}
                 </span>
               </div>
-              <span className="mt-1 text-xs text-muted/20 transition-colors group-hover:text-amber/40">
+              <span
+                className="mt-1 text-xs text-muted/20 transition-colors group-hover:text-amber/40"
+                aria-hidden="true"
+              >
                 &rsaquo;
               </span>
             </div>
@@ -651,9 +680,9 @@ function ChoicesPhase({
 
 function ResolutionPhase() {
   return (
-    <div className="flex flex-col items-center py-20 animate-fade-in">
+    <div role="status" className="flex flex-col items-center py-20 animate-fade-in">
       <LoadingOrb />
-      <p className="mt-6 max-w-sm text-center font-serif text-sm text-muted/50">
+      <p className="mt-6 max-w-sm text-center font-serif text-sm text-muted">
         The consequences unfold...
       </p>
     </div>
@@ -695,7 +724,7 @@ function ConsequencesPhase({
       <div className="mb-6">
         <div className="mx-auto mb-4 flex items-center gap-3">
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          <span className="text-[10px] tracking-[0.3em] text-muted/30 uppercase">
+          <span className="text-[10px] tracking-[0.3em] text-muted uppercase">
             resolution
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
@@ -710,13 +739,13 @@ function ConsequencesPhase({
       {/* Consequences Summary */}
       {(hasSanityImpact || hasStateChanges || hasItems || hasActingEval) && (
         <div className="mb-6 space-y-3 rounded-md border border-border/30 bg-background/50 p-4">
-          <p className="text-[10px] tracking-[0.2em] text-muted/40 uppercase">
+          <p className="text-[10px] tracking-[0.2em] text-muted uppercase">
             Consequences
           </p>
 
           {hasSanityImpact && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-muted/60">Sanity</span>
+              <span className="text-muted">Sanity</span>
               <span
                 className={
                   response.sanityImpact! > 0
@@ -732,14 +761,14 @@ function ConsequencesPhase({
 
           {hasActingEval && (
             <div className="text-sm">
-              <span className="text-muted/60">Acting: </span>
+              <span className="text-muted">Acting: </span>
               <span className="text-gaslight">
                 {Math.round(response.actingEvaluation!.alignment * 100)}% alignment
               </span>
               {digestionPreview && digestionPreview.delta !== 0 && (
                 <span
                   className={`ml-2 font-medium ${
-                    digestionPreview.delta > 0 ? "text-occult" : "text-sanity-low"
+                    digestionPreview.delta > 0 ? "text-occult-bright" : "text-sanity-low"
                   }`}
                 >
                   {digestionPreview.delta > 0 ? "+" : ""}
@@ -747,12 +776,12 @@ function ConsequencesPhase({
                 </span>
               )}
               {response.actingEvaluation!.reasoning && (
-                <p className="mt-1 text-xs italic text-muted/50">
+                <p className="mt-1 text-xs italic text-muted">
                   {response.actingEvaluation!.reasoning}
                 </p>
               )}
               {digestionPreview && digestionState && (
-                <p className="mt-1 text-xs italic text-occult/70">
+                <p className="mt-1 text-xs italic text-occult-bright">
                   {digestionFeedback(
                     seq?.name ?? "Beyonder",
                     digestionState,
@@ -766,7 +795,7 @@ function ConsequencesPhase({
           {hasStateChanges &&
             response.worldStateChanges!.map((change, i) => (
               <div key={i} className="text-sm">
-                <span className="text-muted/60">{change.field}: </span>
+                <span className="text-muted">{change.field}: </span>
                 <span className="text-foreground/70">{change.reason}</span>
               </div>
             ))}
@@ -774,10 +803,12 @@ function ConsequencesPhase({
           {hasItems &&
             response.itemsDiscovered!.map((item, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
-                <span className="mt-0.5 text-amber">{"✦"}</span>
+                <span className="mt-0.5 text-amber" aria-hidden="true">
+                  {"✦"}
+                </span>
                 <div>
-                  <span className="font-medium text-amber/80">{item.name}</span>
-                  <span className="ml-1 text-muted/50">{item.description}</span>
+                  <span className="font-medium text-amber">{item.name}</span>
+                  <span className="ml-1 text-muted">{item.description}</span>
                 </div>
               </div>
             ))}
@@ -787,9 +818,9 @@ function ConsequencesPhase({
       {/* Digestion complete — advancement available */}
       {(digestionState?.complete ?? session.gameState.digestion?.complete) && (
         <div className="mb-6 rounded-md border border-occult/40 bg-occult/[0.06] p-4 text-center">
-          <p className="font-serif text-sm text-occult">
-            ✦ The potion is fully digested. Advancement to the next Sequence is now within
-            reach.
+          <p className="font-serif text-sm text-occult-bright">
+            <span aria-hidden="true">✦ </span>The potion is fully digested. Advancement to
+            the next Sequence is now within reach.
           </p>
         </div>
       )}
@@ -824,14 +855,17 @@ function ErrorPhase({
   const showRetry = errorCode !== "CONFIG_MISSING";
 
   return (
-    <div className="py-16 text-center animate-fade-in-up">
-      <div className="mx-auto mb-4 h-8 w-8 rounded-full border border-crimson/40 bg-crimson/[0.08]">
+    <div role="alert" className="py-16 text-center animate-fade-in-up">
+      <div
+        className="mx-auto mb-4 h-8 w-8 rounded-full border border-crimson/40 bg-crimson/[0.08]"
+        aria-hidden="true"
+      >
         <span className="flex h-full w-full items-center justify-center text-sm text-sanity-low">
           !
         </span>
       </div>
       <p className="font-serif text-base text-foreground/70">Something went wrong</p>
-      <p className="mx-auto mt-2 max-w-md text-sm text-muted/60">{message}</p>
+      <p className="mx-auto mt-2 max-w-md text-sm text-muted">{message}</p>
       <div className="mt-6 flex items-center justify-center gap-3">
         {showSettings && (
           <Link

@@ -1,5 +1,8 @@
+import type { Metadata } from "next";
 import { ProviderConfig } from "@/components/game/provider-config";
 import { SanityPreferences } from "@/components/game/sanity-preferences";
+
+export const metadata: Metadata = { title: "Settings" };
 
 export default function SettingsPage() {
   return (

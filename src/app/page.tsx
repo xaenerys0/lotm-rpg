@@ -4,7 +4,11 @@ import Link from "next/link";
 export default async function HomePage() {
   await headers();
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="flex min-h-screen flex-col items-center justify-center px-4"
+    >
       <div className="max-w-2xl space-y-8 text-center">
         <h1 className="font-serif text-5xl font-bold tracking-tight text-amber md:text-6xl">
           Lord of the Mysteries

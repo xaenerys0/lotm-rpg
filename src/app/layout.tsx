@@ -22,7 +22,10 @@ const lora = Lora({
 });
 
 export const metadata: Metadata = {
-  title: "Lord of the Mysteries RPG",
+  title: {
+    default: "Lord of the Mysteries RPG",
+    template: "%s · Lord of the Mysteries RPG",
+  },
   description:
     "A single-player, AI-narrated browser RPG set in the Lord of the Mysteries universe.",
   applicationName: "LOTM RPG",
@@ -52,6 +55,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
+        <a
+          href="#main-content"
+          className="sr-only rounded bg-surface px-4 py-2 text-sm font-medium text-foreground focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:ring-2 focus:ring-gaslight"
+        >
+          Skip to main content
+        </a>
         {children}
         <ServiceWorkerRegistrar />
         <InstallPrompt />

@@ -6,7 +6,9 @@
   --color-background: #0c0a09;
   --color-surface: #1c1917;
   --color-foreground: #e7e5e4;
-  --color-muted: #78716c;
+  /* Lightened from #78716c so body text clears WCAG 2.2 AA (4.5:1) on both
+     the background and the surface. Now ~5.2:1 on background. */
+  --color-muted: #8a8178;
   --color-border: #292524;
 
   /* Accent colors */
@@ -16,6 +18,10 @@
   --color-fog: #57534e;
   --color-crimson: #991b1b;
   --color-occult: #7c3aed;
+  /* A lighter violet for occult-tinted *text*: #7c3aed only reaches ~3.5:1 on
+     the background (fine for bars/glyphs, fails for body text). This clears
+     AA (~7:1) while keeping the supernatural register. */
+  --color-occult-bright: #a78bfa;
   --color-gaslight: #fbbf24;
 
   /* Semantic colors */
@@ -180,6 +186,21 @@
   }
 }
 
+/* ─── Reduced motion (WCAG 2.2 — 2.2.2 / 2.3.3) ───────────────────────
+   Globally neutralise transitions, looping loaders, and entrance animations
+   for users who ask for reduced motion. Static styles (filters, colours,
+   shadows) are preserved so nothing loses meaning. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer base {
   body {
     background:
@@ -212,5 +233,19 @@
   h2,
   h3 {
     text-rendering: optimizeLegibility;
+  }
+
+  /* ─── Visible focus indicator (WCAG 2.2 — 2.4.7 / 2.4.11) ───────────
+     A single, consistent, high-contrast focus ring for every keyboard-
+     focused control. The 2px offset places the ring on the page background
+     (not the control's own fill), so it keeps ≥3:1 contrast even on amber
+     buttons. Mouse clicks (:focus without :focus-visible) stay clean.
+     `!important` is used deliberately so the ring always wins over the
+     `focus:outline-none` utilities the controls carry — every keyboard focus
+     gets one consistent, visible indicator. */
+  :focus-visible {
+    outline: 2px solid var(--color-gaslight) !important;
+    outline-offset: 2px !important;
+    border-radius: 2px;
   }
 }

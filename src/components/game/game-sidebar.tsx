@@ -101,9 +101,11 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
             className="pointer-events-none absolute inset-0 bg-gradient-to-b from-amber/[0.03] to-transparent"
             aria-hidden="true"
           />
-          <h2 className="relative font-serif text-xl font-bold tracking-tight text-amber">
+          {/* Branding, not a document heading — keeping it a non-heading avoids
+              an h2 landing before each page's h1 (heading order, WCAG 1.3.1). */}
+          <p className="relative font-serif text-xl font-bold tracking-tight text-amber">
             Lord of the Mysteries
-          </h2>
+          </p>
           <p className="relative mt-1 text-xs tracking-widest text-muted uppercase">
             Fifth Epoch
           </p>
@@ -148,14 +150,14 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
         </div>
 
         <div className="px-4 py-4">
-          <p className="truncate text-sm text-foreground/60">
+          <p className="truncate text-sm text-foreground/70">
             {userEmail || "Unknown user"}
           </p>
           <button
             type="button"
             onClick={handleSignOut}
             disabled={signingOut}
-            className="mt-2 text-xs text-muted transition-colors hover:text-amber disabled:opacity-50"
+            className="mt-2 inline-flex min-h-[24px] items-center text-xs text-muted transition-colors hover:text-amber disabled:opacity-50"
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>
