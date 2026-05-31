@@ -643,7 +643,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                       className="group w-full cursor-pointer rounded-lg border border-border/60 bg-surface/30 p-4 text-left text-sm leading-relaxed text-muted transition-all duration-200 hover:border-amber/30 hover:bg-surface/70 hover:text-foreground hover:shadow-[0_0_16px_rgba(217,119,6,0.05)]"
                     >
                       <span
-                        className="mr-2 text-amber transition-colors group-hover:text-amber"
+                        className="mr-2 text-amber/40 transition-colors group-hover:text-amber/70"
                         aria-hidden="true"
                       >
                         ›
