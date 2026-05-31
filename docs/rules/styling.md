@@ -44,7 +44,7 @@ The app targets WCAG 2.2 AA. Keep new UI compliant:
   transitions under `prefers-reduced-motion: reduce` globally. New looping/entry
   animations inherit this automatically.
 - **Names & state (4.1.2):** every control needs an accessible name (`<label
-  htmlFor>`, or `aria-label`). Expose toggle/selection state with `aria-pressed`
+htmlFor>`, or `aria-label`). Expose toggle/selection state with `aria-pressed`
   / `aria-checked`, progress bars with `role="progressbar"` + `aria-valuenow`,
   and announce async status/errors with `role="status"` / `role="alert"`.
 - **Target size (2.5.8):** interactive controls should be ≥24×24px (or rely on

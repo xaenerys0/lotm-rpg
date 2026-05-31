@@ -73,6 +73,7 @@ Before every commit, verify **all** of the following pass:
 5. `pnpm format:check` — all files match Prettier style (run `pnpm format` to fix).
 6. **Update scoped CLAUDE.md docs** — if you add, rename, or remove files in a directory that has a `CLAUDE.md`, update that doc to reflect the change. Stale docs mislead future work. Check the list under "Scoped Documentation" below.
 7. **Keep database.ts in sync** — when adding Supabase migrations, update `src/lib/types/database.ts` to match the new schema.
+8. **Accessibility (WCAG 2.2 AA)** — when adding or changing frontend code, follow `docs/rules/accessibility.md` and keep `src/test/a11y.test.tsx` (axe-core) passing; extend it for new screens/interactive components.
 
 ## Environment Variables
 
@@ -102,4 +103,5 @@ Shared rule files in `docs/rules/` are `@`-imported only where relevant:
 - `docs/rules/nextjs.md` — Next.js 16 version-awareness
 - `docs/rules/security.md` — CSP, RLS, env var safety
 - `docs/rules/styling.md` — Tailwind v4 theme tokens and conventions
+- `docs/rules/accessibility.md` — WCAG 2.2 AA requirements for frontend code
 - `docs/rules/testing.md` — Vitest patterns

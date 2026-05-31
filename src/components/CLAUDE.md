@@ -1,4 +1,5 @@
 @../../docs/rules/styling.md
+@../../docs/rules/accessibility.md
 
 # Components
 
@@ -27,3 +28,4 @@
 - No component libraries. Build with Tailwind utility classes using the Victorian steampunk theme tokens.
 - Forms handle loading state, error display, and success redirects internally.
 - Use `useSyncExternalStore` for initial localStorage reads — avoid `setState` inside `useEffect` bodies (React 19 lint rule).
+- **Accessibility is required (WCAG 2.2 AA).** Follow `docs/rules/accessibility.md` for every component: accessible names, ARIA state, `role="status"`/`alert`, decorative `aria-hidden`, no low-opacity meaningful text, and ≥24px targets. Add/extend the axe suite in `src/test/a11y.test.tsx` when adding a screen or significant interactive component.

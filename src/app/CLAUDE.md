@@ -1,5 +1,6 @@
 @../../docs/rules/nextjs.md
 @../../docs/rules/security.md
+@../../docs/rules/accessibility.md
 
 # App Router
 
