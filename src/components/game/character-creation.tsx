@@ -165,58 +165,44 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
 
   // ── AI Prologue Generation ──
 
+  // Shared loading/error envelope for both prologue generators: clear the
+  // prior view, run the work, surface any error, settle loading.
+  const runPrologueRequest = useCallback(async (work: () => Promise<void>) => {
+    setPrologueLoading(true);
+    setPrologueError(null);
+    setCurrentScene(null);
+    setFinale(null);
+    try {
+      await work();
+    } catch (err) {
+      setPrologueError(
+        err instanceof Error ? err.message : "The fog refused to part. Please retry.",
+      );
+    } finally {
+      setPrologueLoading(false);
+    }
+  }, []);
+
   const runPrologueScene = useCallback(
-    async (config: ProviderConfig, name: string, bg: string, history: PrologueTurn[]) => {
-      setPrologueLoading(true);
-      setPrologueError(null);
-      setCurrentScene(null);
-      setFinale(null);
-      try {
-        const scene = await generatePrologueScene(config, name, bg, history);
-        setCurrentScene(scene);
-      } catch (err) {
-        setPrologueError(
-          err instanceof Error ? err.message : "Failed to generate scene. Please retry.",
-        );
-      } finally {
-        setPrologueLoading(false);
-      }
-    },
-    [],
+    (config: ProviderConfig, name: string, bg: string, history: PrologueTurn[]) =>
+      runPrologueRequest(async () => {
+        setCurrentScene(await generatePrologueScene(config, name, bg, history));
+      }),
+    [runPrologueRequest],
   );
 
   // The finale is engine-decided: the cumulative affinity tally narrows the
   // field to a handful of candidate potions; the AI only renders them and the
   // player picks. The candidate set is a deterministic function of history.
   const runFinale = useCallback(
-    async (config: ProviderConfig, name: string, bg: string, history: PrologueTurn[]) => {
-      setPrologueLoading(true);
-      setPrologueError(null);
-      setCurrentScene(null);
-      setFinale(null);
-      try {
+    (config: ProviderConfig, name: string, bg: string, history: PrologueTurn[]) =>
+      runPrologueRequest(async () => {
         const candidates = selectTopCandidates(
           tallyAffinities(history.map((t) => t.selectedAffinities)),
         );
-        const result = await generatePrologueFinale(
-          config,
-          name,
-          bg,
-          history,
-          candidates,
-        );
-        setFinale(result);
-      } catch (err) {
-        setPrologueError(
-          err instanceof Error
-            ? err.message
-            : "Failed to reach the threshold. Please retry.",
-        );
-      } finally {
-        setPrologueLoading(false);
-      }
-    },
-    [],
+        setFinale(await generatePrologueFinale(config, name, bg, history, candidates));
+      }),
+    [runPrologueRequest],
   );
 
   const handleBeginAIPrologue = useCallback(() => {
@@ -661,11 +647,25 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               </div>
             )}
 
-          {/* Finale — engine-narrowed candidate potions; the player decides */}
+          {/* Finale — engine-narrowed candidate potions; the player decides.
+              This is the climactic "threshold of becoming": the cumulative
+              affinity tally has narrowed the field, and the player's pick here
+              sets the pathway. Styled as a ritual moment, not a scene. */}
           {!prologueLoading && prologueError === null && finale !== null && (
-            <div>
+            <div className="animate-fade-in-up">
+              {/* Gaslight threshold marker */}
+              <div className="mb-6 flex flex-col items-center text-center">
+                <div className="mb-3 flex flex-col items-center gap-1.5">
+                  <div className="h-8 w-px bg-gradient-to-b from-transparent via-gold/40 to-gold/10" />
+                  <div className="h-1 w-1 rounded-full bg-gold/40" />
+                </div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-amber/40">
+                  The Threshold of Becoming
+                </p>
+              </div>
+
               {/* Narrative */}
-              <div className="mb-8 border-l-2 border-amber/10 pl-4">
+              <div className="mb-9 border-l-2 border-gold/15 pl-4">
                 {finale.narrative.split("\n\n").map((para, i) => (
                   <p
                     key={i}
@@ -676,21 +676,33 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 ))}
               </div>
 
-              <p className="mb-3 text-[10px] uppercase tracking-wider text-amber/40">
-                Which do you take?
+              {/* The decision that sets the pathway */}
+              <p className="mb-4 text-center text-[10px] uppercase tracking-[0.25em] text-gold/50">
+                One vial. One fate. Choose.
               </p>
-              <div className="space-y-3">
-                {finale.choices.map((choice) => (
+              <div className="relative space-y-3">
+                {/* Atmospheric glow gathering behind the offered vials */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-x-8 -inset-y-4 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.06),transparent_70%)]"
+                />
+                {finale.choices.map((choice, i) => (
                   <button
                     key={choice.id}
                     type="button"
                     onClick={() => handleFinaleSelect(choice)}
-                    className="group w-full cursor-pointer rounded-lg border border-amber/20 bg-amber/[0.04] p-4 text-left text-sm leading-relaxed text-muted transition-all duration-200 hover:border-amber/40 hover:bg-amber/[0.08] hover:text-foreground hover:shadow-[0_0_16px_rgba(217,119,6,0.07)]"
+                    style={{ animationDelay: `${i * 90}ms` }}
+                    className="group relative flex w-full animate-fade-in-up cursor-pointer items-stretch gap-4 overflow-hidden rounded-lg border border-amber/15 bg-gradient-to-br from-surface/50 to-amber/[0.03] p-4 text-left transition-all duration-300 hover:border-gold/45 hover:from-surface/70 hover:to-amber/[0.07] hover:shadow-[0_0_28px_rgba(245,158,11,0.1)]"
                   >
-                    <span className="mr-2 text-amber/40 transition-colors group-hover:text-amber/60">
-                      ›
+                    {/* The vial — a phial of luminous liquid that brightens as
+                        the hand reaches for it */}
+                    <span
+                      aria-hidden
+                      className="w-1.5 shrink-0 rounded-full bg-gradient-to-b from-gaslight/70 via-gold/50 to-copper/30 opacity-70 shadow-[0_0_10px_rgba(245,158,11,0.25)] transition-all duration-300 group-hover:opacity-100 group-hover:shadow-[0_0_16px_rgba(245,158,11,0.5)]"
+                    />
+                    <span className="text-sm leading-relaxed text-muted transition-colors duration-300 group-hover:text-foreground">
+                      {choice.text}
                     </span>
-                    {choice.text}
                   </button>
                 ))}
               </div>

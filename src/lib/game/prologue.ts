@@ -273,9 +273,13 @@ export function selectTopCandidates(
   const selected = ranked.filter((p, i) => i < count || p.score === cutoffScore);
 
   // Floor: fill from the ranked list until we have at least `min` (or run out).
+  const seen = new Set(selected);
   for (const p of ranked) {
     if (selected.length >= min) break;
-    if (!selected.includes(p)) selected.push(p);
+    if (!seen.has(p)) {
+      selected.push(p);
+      seen.add(p);
+    }
   }
 
   return selected.map((p) => p.pathwayId);

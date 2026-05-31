@@ -154,6 +154,30 @@ function requireNarrative(obj: Record<string, unknown>): string {
   return narrative;
 }
 
+// Shared request path for both prologue generators: identical provider config,
+// JSON parse, and narrative requirement. Returns the raw content (for
+// rawResponse), the parsed object, and the validated narrative.
+async function executePrologueRequest(
+  config: ProviderConfig,
+  messages: ChatMessage[],
+): Promise<{ content: string; obj: Record<string, unknown>; narrative: string }> {
+  const adapter = createAdapter(config.providerId, config.baseUrl);
+  const providerResponse = await executeWithRetry(
+    adapter,
+    {
+      messages,
+      model: config.routineModel,
+      temperature: 0.85,
+      maxTokens: 800,
+      responseFormat: { type: "json_object" },
+    },
+    config.apiKey,
+  );
+  const obj = parseObject(providerResponse.content);
+  const narrative = requireNarrative(obj);
+  return { content: providerResponse.content, obj, narrative };
+}
+
 /**
  * Validate and normalize a single AI choice. Requires `id`, `text`, and an
  * `affinities` map whose keys are positive integers with positive weights.
@@ -206,26 +230,11 @@ export async function generatePrologueScene(
   characterBackground: string,
   history: PrologueTurn[],
 ): Promise<AIPrologueResponse> {
-  const adapter = createAdapter(config.providerId, config.baseUrl);
   const messages: ChatMessage[] = [
     ...buildBaseMessages(characterName, characterBackground),
     ...buildHistoryMessages(history),
   ];
-
-  const providerResponse = await executeWithRetry(
-    adapter,
-    {
-      messages,
-      model: config.routineModel,
-      temperature: 0.85,
-      maxTokens: 800,
-      responseFormat: { type: "json_object" },
-    },
-    config.apiKey,
-  );
-
-  const obj = parseObject(providerResponse.content);
-  const narrative = requireNarrative(obj);
+  const { content, obj, narrative } = await executePrologueRequest(config, messages);
 
   const rawChoices = obj["choices"];
   if (!Array.isArray(rawChoices) || rawChoices.length !== PROLOGUE_AFFINITY_COUNT) {
@@ -251,7 +260,7 @@ export async function generatePrologueScene(
   ) {
     throw new AIError(
       "MALFORMED_OUTPUT",
-      "Prologue scene must express each of the four affinities exactly once",
+      `Prologue scene must express each of the ${PROLOGUE_AFFINITY_COUNT} affinities exactly once`,
     );
   }
 
@@ -259,12 +268,7 @@ export async function generatePrologueScene(
   const readyToConclude =
     typeof obj["readyToConclude"] === "boolean" ? obj["readyToConclude"] : false;
 
-  return {
-    narrative,
-    choices,
-    readyToConclude,
-    rawResponse: providerResponse.content,
-  };
+  return { narrative, choices, readyToConclude, rawResponse: content };
 }
 
 /**
@@ -286,7 +290,6 @@ export async function generatePrologueFinale(
     );
   }
 
-  const adapter = createAdapter(config.providerId, config.baseUrl);
   const messages: ChatMessage[] = [
     { role: "system", content: PROLOGUE_FINALE_SYSTEM_PROMPT },
     ...buildBaseMessages(characterName, characterBackground).slice(1),
@@ -298,21 +301,7 @@ export async function generatePrologueFinale(
         .join(", ")}. Describe each potion evocatively without naming any pathway.`,
     },
   ];
-
-  const providerResponse = await executeWithRetry(
-    adapter,
-    {
-      messages,
-      model: config.routineModel,
-      temperature: 0.85,
-      maxTokens: 800,
-      responseFormat: { type: "json_object" },
-    },
-    config.apiKey,
-  );
-
-  const obj = parseObject(providerResponse.content);
-  const narrative = requireNarrative(obj);
+  const { content, obj, narrative } = await executePrologueRequest(config, messages);
 
   const rawChoices = obj["choices"];
   if (!Array.isArray(rawChoices)) {
@@ -337,5 +326,5 @@ export async function generatePrologueFinale(
     }
   }
 
-  return { narrative, choices, rawResponse: providerResponse.content };
+  return { narrative, choices, rawResponse: content };
 }
