@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Character" };
+
 export default function CharacterPage() {
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
@@ -9,7 +13,7 @@ export default function CharacterPage() {
       </header>
 
       <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
-        <p className="font-serif text-lg italic text-foreground/50">
+        <p className="font-serif text-lg italic text-foreground/70">
           &ldquo;The pathways await your choice&rdquo;
         </p>
         <div
@@ -20,7 +24,7 @@ export default function CharacterPage() {
           <span className="text-[10px] text-muted/25">&#9670;</span>
           <div className="h-px w-12 bg-gradient-to-l from-transparent to-border" />
         </div>
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted/70">
+        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted">
           Character creation will be available once the core game loop is ready. Choose
           your Beyonder pathway, track your Sequence progression, and manage your
           abilities.

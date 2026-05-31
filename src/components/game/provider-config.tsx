@@ -308,6 +308,7 @@ export function ProviderConfig() {
               key={p.id}
               type="button"
               onClick={() => handleProviderChange(p.id)}
+              aria-pressed={form.providerId === p.id}
               className={`group relative rounded-md border px-3 py-2.5 text-sm transition-all duration-200 ${
                 form.providerId === p.id
                   ? "border-amber/60 bg-amber/[0.08] text-amber shadow-[inset_0_1px_0_rgba(217,119,6,0.1),0_0_12px_rgba(217,119,6,0.06)]"
@@ -336,6 +337,8 @@ export function ProviderConfig() {
         {providerMeta.requiresAuth && (
           <div className="relative">
             <input
+              id="provider-api-key"
+              aria-label="API key"
               type={showKey ? "text" : "password"}
               value={form.apiKey}
               onChange={(e) => updateField("apiKey", e.target.value)}
@@ -349,18 +352,21 @@ export function ProviderConfig() {
                       : "Enter your API key"
               }
               autoComplete="off"
-              className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+              className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
             />
             <button
               type="button"
               onClick={() => setShowKey(!showKey)}
-              className="absolute top-1/2 right-3 -translate-y-1/2 rounded px-2 py-1 text-xs text-muted transition-colors hover:text-amber"
+              aria-pressed={showKey}
+              aria-controls="provider-api-key"
+              aria-label={showKey ? "Hide API key" : "Show API key"}
+              className="absolute top-1/2 right-3 flex min-h-[24px] -translate-y-1/2 items-center rounded px-2 py-1 text-xs text-muted transition-colors hover:text-amber"
             >
               {showKey ? "Hide" : "Show"}
             </button>
           </div>
         )}
-        <p className="mt-2 text-xs leading-relaxed text-muted/60">
+        <p className="mt-2 text-xs leading-relaxed text-muted">
           {!providerMeta.requiresAuth
             ? "Ollama runs locally — no API key required. Just ensure Ollama is running."
             : form.providerId === "ollama-cloud"
@@ -377,6 +383,7 @@ export function ProviderConfig() {
           </legend>
           <input
             type="url"
+            aria-label="Base URL"
             value={form.baseUrl}
             onChange={(e) => updateField("baseUrl", e.target.value)}
             placeholder={
@@ -384,7 +391,7 @@ export function ProviderConfig() {
                 ? "http://localhost:11434"
                 : "https://your-endpoint.example.com/v1"
             }
-            className="w-full rounded-md border border-border bg-background px-4 py-3 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            className="w-full rounded-md border border-border bg-background px-4 py-3 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
           />
         </fieldset>
       )}
@@ -396,7 +403,7 @@ export function ProviderConfig() {
         </legend>
         {!isCustom && (
           <div className="mb-3 flex items-center justify-between gap-3">
-            <p className="text-xs text-muted/60">
+            <p className="text-xs text-muted">
               {modelsStatus === "error"
                 ? "Couldn't fetch models — showing the built-in list."
                 : availableModels
@@ -416,20 +423,21 @@ export function ProviderConfig() {
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Routine Model */}
           <div>
-            <label className="mb-1.5 block text-xs text-muted">
-              Routine{" "}
-              <span className="text-muted/40">— narration, choices, evaluation</span>
+            <label htmlFor="routine-model" className="mb-1.5 block text-xs text-muted">
+              Routine <span className="text-muted">— narration, choices, evaluation</span>
             </label>
             {isCustom ? (
               <input
+                id="routine-model"
                 type="text"
                 value={form.customRoutineModel}
                 onChange={(e) => updateField("customRoutineModel", e.target.value)}
                 placeholder="e.g. gpt-4o-mini"
-                className="w-full rounded-md border border-border bg-background px-4 py-2.5 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                className="w-full rounded-md border border-border bg-background px-4 py-2.5 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
               />
             ) : (
               <select
+                id="routine-model"
                 value={form.routineModel}
                 onChange={(e) => updateField("routineModel", e.target.value)}
                 className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
@@ -446,19 +454,21 @@ export function ProviderConfig() {
 
           {/* Premium Model */}
           <div>
-            <label className="mb-1.5 block text-xs text-muted">
-              Premium <span className="text-muted/40">— advancement, combat</span>
+            <label htmlFor="premium-model" className="mb-1.5 block text-xs text-muted">
+              Premium <span className="text-muted">— advancement, combat</span>
             </label>
             {isCustom ? (
               <input
+                id="premium-model"
                 type="text"
                 value={form.customPremiumModel}
                 onChange={(e) => updateField("customPremiumModel", e.target.value)}
                 placeholder="e.g. gpt-4o"
-                className="w-full rounded-md border border-border bg-background px-4 py-2.5 font-mono text-sm text-foreground placeholder-muted/40 transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                className="w-full rounded-md border border-border bg-background px-4 py-2.5 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
               />
             ) : (
               <select
+                id="premium-model"
                 value={form.premiumModel}
                 onChange={(e) => updateField("premiumModel", e.target.value)}
                 className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
@@ -502,37 +512,49 @@ export function ProviderConfig() {
         </div>
 
         {/* Status Indicators */}
-        <div className="flex items-center gap-4 text-xs">
+        <div role="status" className="flex items-center gap-4 text-xs">
           {connectionStatus === "valid" && (
             <span className="flex items-center gap-1.5 text-sanity-high">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sanity-high shadow-[0_0_6px_var(--color-sanity-high)]" />
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full bg-sanity-high shadow-[0_0_6px_var(--color-sanity-high)]"
+                aria-hidden="true"
+              />
               {form.providerId === "ollama-cloud" ? "Key accepted" : "Connected"}
             </span>
           )}
           {connectionStatus === "invalid" && (
             <span className="flex items-center gap-1.5 text-sanity-low">
-              <span className="inline-block h-1.5 w-1.5 rounded-full bg-sanity-low shadow-[0_0_6px_var(--color-sanity-low)]" />
+              <span
+                className="inline-block h-1.5 w-1.5 rounded-full bg-sanity-low shadow-[0_0_6px_var(--color-sanity-low)]"
+                aria-hidden="true"
+              />
               Failed
             </span>
           )}
           {connectionStatus === "testing" && (
             <span className="flex items-center gap-1.5 text-gaslight">
-              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-gaslight" />
+              <span
+                className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-gaslight"
+                aria-hidden="true"
+              />
               Testing...
             </span>
           )}
           {saveStatus === "unsaved" && (
-            <span className="text-muted/60 italic">Unsaved changes</span>
+            <span className="text-muted italic">Unsaved changes</span>
           )}
           {saveStatus === "saved" && connectionStatus === "idle" && (
-            <span className="text-muted/40">Configuration saved</span>
+            <span className="text-muted">Configuration saved</span>
           )}
         </div>
       </div>
 
       {/* Error Message */}
       {connectionStatus === "invalid" && connectionError && (
-        <div className="rounded-md border border-crimson/30 bg-crimson/[0.06] px-4 py-3 text-sm text-sanity-low">
+        <div
+          role="alert"
+          className="rounded-md border border-crimson/30 bg-crimson/[0.06] px-4 py-3 text-sm text-sanity-low"
+        >
           {connectionError}
         </div>
       )}

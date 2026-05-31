@@ -233,7 +233,7 @@ export function PlayDashboard() {
               Resume your journey where you left off.
             </p>
             {sessions.length === 0 ? (
-              <p className="mt-5 text-sm text-muted/50">No saved games found.</p>
+              <p className="mt-5 text-sm text-muted">No saved games found.</p>
             ) : (
               <div className="mt-4 space-y-2">
                 {sessions.slice(0, 3).map((s) => (
@@ -249,9 +249,9 @@ export function PlayDashboard() {
                           "Unknown"}{" "}
                         &mdash; Seq. {s.sequenceLevel}
                       </span>
-                      <span className="text-xs text-muted/40">Turn {s.turnCount}</span>
+                      <span className="text-xs text-muted">Turn {s.turnCount}</span>
                     </div>
-                    <p className="mt-0.5 text-xs text-muted/50">{s.location}</p>
+                    <p className="mt-0.5 text-xs text-muted">{s.location}</p>
                   </button>
                 ))}
               </div>
@@ -282,17 +282,17 @@ export function PlayDashboard() {
                 >
                   <p className="font-serif text-sm font-medium text-foreground/80">
                     {seq?.name ?? "Unknown"}{" "}
-                    <span className="text-muted/40">(Seq. {s.sequenceLevel})</span>
+                    <span className="text-muted">(Seq. {s.sequenceLevel})</span>
                   </p>
-                  <p className="text-xs text-muted/60">{pathway?.name ?? "?"} pathway</p>
-                  <p className="mt-2 text-xs text-muted/40">{s.location}</p>
+                  <p className="text-xs text-muted">{pathway?.name ?? "?"} pathway</p>
+                  <p className="mt-2 text-xs text-muted">{s.location}</p>
                 </div>
               );
             })}
           </div>
         ) : (
           <div className="mt-3 rounded-lg border border-dashed border-border/60 p-8 text-center">
-            <p className="font-serif text-sm italic text-muted/60">
+            <p className="font-serif text-sm italic text-muted">
               No character created yet. Start a new game to forge your Beyonder identity.
             </p>
           </div>

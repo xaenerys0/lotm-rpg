@@ -1,3 +1,7 @@
+import type { Metadata } from "next";
+
+export const metadata: Metadata = { title: "Journal" };
+
 export default function JournalPage() {
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
@@ -11,7 +15,7 @@ export default function JournalPage() {
       </header>
 
       <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
-        <p className="font-serif text-lg italic text-foreground/50">
+        <p className="font-serif text-lg italic text-foreground/70">
           &ldquo;The pages are blank&rdquo;
         </p>
         <div
@@ -22,7 +26,7 @@ export default function JournalPage() {
           <span className="text-[10px] text-muted/25">&#9670;</span>
           <div className="h-px w-12 bg-gradient-to-l from-transparent to-border" />
         </div>
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted/70">
+        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted">
           Your story journal will record every choice, encounter, and discovery as your
           narrative unfolds.
         </p>

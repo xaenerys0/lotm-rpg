@@ -32,7 +32,7 @@ export function SanityPreferences() {
     <div className="mt-4 flex items-start justify-between gap-4 rounded border border-border/60 bg-background/40 p-4">
       <div>
         <p className="text-sm font-medium text-foreground/90">Show sanity meter</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted/70">
+        <p className="mt-1 text-xs leading-relaxed text-muted">
           By default your sanity is hidden — you read your state from the world itself, as
           it distorts around you. Reveal the numeric meter for strategic management.
         </p>

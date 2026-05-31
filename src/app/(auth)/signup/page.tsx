@@ -1,6 +1,9 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { SignupForm } from "@/components/auth/signup-form";
+
+export const metadata: Metadata = { title: "Sign Up" };
 
 export default async function SignupPage() {
   const supabase = await createClient();
@@ -11,7 +14,11 @@ export default async function SignupPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-background">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="flex min-h-screen items-center justify-center bg-background"
+    >
       <div className="w-full max-w-md space-y-8 rounded-lg border border-border bg-surface p-8 shadow-lg">
         <div className="text-center">
           <h1 className="font-serif text-3xl font-bold text-amber">
