@@ -14,8 +14,24 @@ export {
   applyWorldStateChanges,
   applySanityImpact,
   addDiscoveredItems,
+  applyDigestion,
   applyResolution,
 } from "./world-state";
+
+export {
+  DIGESTION_MIN,
+  DIGESTION_MAX,
+  NEUTRAL_ALIGNMENT,
+  CONTRADICTION_THRESHOLD,
+  MAX_PROGRESS_PER_EVAL,
+  MAX_REVERSE_PER_EVAL,
+  MIN_PROGRESS_PER_SESSION,
+  createDigestionState,
+  computeProgressDelta,
+  applyDigestionProgress,
+  isDigestionComplete,
+  digestionFeedback,
+} from "./digestion";
 
 export {
   createSession,
@@ -24,6 +40,7 @@ export {
   serializeSession,
   deserializeSession,
   isValidSessionShape,
+  isValidDigestionShape,
 } from "./session";
 
 export {
@@ -31,6 +48,7 @@ export {
   SESSION_INDEX_KEY,
   PROVIDER_CONFIG_KEY,
   PROLOGUE_DRAFT_KEY,
+  MODELS_CACHE_KEY,
 } from "./constants";
 
 export { isValidDraftShape, isActivePrologueDraft, clearDraft } from "./prologue-draft";

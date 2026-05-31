@@ -45,6 +45,7 @@ Always respond with valid JSON matching this schema:
 ## Rules
 - Narrative should be atmospheric, drawing on Victorian steampunk and cosmic horror themes.
 - Acting requirements are central to the Beyonder power system. Evaluate player actions against them.
+- The acting alignment score (0.0-1.0) you return drives "digestion" of the current potion: acting in character (≥0.5) advances it, acting against the role (<0.35) reverses it. Score honestly so the player understands why their action did or did not count. 0.5 is neutral/acceptable acting; reserve scores below 0.35 for actions that clearly betray the role.
 - Sanity impact ranges: routine events (0), unsettling (-1 to -5), horrifying (-6 to -15), mind-breaking (-16 to -20), rest/comfort (+1 to +10).
 - Items discovered must be from the LOTM universe. Do not invent items outside the lore.
 - Choices should be meaningful and consequential, typically 2-4 options.
@@ -91,6 +92,7 @@ export function buildGameStatePrompt(gameState: GameState): PromptLayer {
       pathway: gameState.pathwayId,
       sequence: gameState.sequenceLevel,
       sanity: `${gameState.sanity}/${gameState.maxSanity}`,
+      potionDigestion: gameState.digestion ? `${gameState.digestion.progress}%` : "0%",
       location: gameState.location,
       inventory: gameState.inventory.map((i) => i.name),
       activeQuests: gameState.activeQuests,

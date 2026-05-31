@@ -25,6 +25,7 @@ import {
   OllamaCloudAdapter,
   CustomAdapter,
   createAdapter,
+  inferModelTier,
 } from "./providers";
 import {
   buildSystemPrompt,
@@ -53,9 +54,11 @@ import {
   selectModel,
   generate,
   validateProviderConfig,
+  listProviderModels,
   MAX_RETRIES,
   RETRY_DELAYS,
   MAX_OUTPUT_TOKENS,
+  MAX_PARSE_ATTEMPTS,
 } from "./client";
 import {
   generatePrologueScene,
@@ -1200,6 +1203,260 @@ describe("providers", () => {
       expect(result.valid).toBe(false);
     });
   });
+
+  // ── Truncation detection ──
+  describe("truncation detection", () => {
+    it("OpenAI flags finish_reason 'length' as truncated", () => {
+      const parsed = new OpenAIAdapter().parseResponse({
+        choices: [{ message: { content: "x" }, finish_reason: "length" }],
+        model: "gpt-4o-mini",
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      });
+      expect(parsed.truncated).toBe(true);
+    });
+
+    it("OpenAI is not truncated on finish_reason 'stop'", () => {
+      const parsed = new OpenAIAdapter().parseResponse({
+        choices: [{ message: { content: "x" }, finish_reason: "stop" }],
+        model: "gpt-4o-mini",
+        usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+      });
+      expect(parsed.truncated).toBe(false);
+    });
+
+    it("Anthropic flags stop_reason 'max_tokens' as truncated", () => {
+      const parsed = new AnthropicAdapter().parseResponse({
+        content: [{ type: "text", text: "x" }],
+        model: "claude-sonnet-4-6",
+        stop_reason: "max_tokens",
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+      expect(parsed.truncated).toBe(true);
+    });
+
+    it("Ollama flags done_reason 'length' as truncated", () => {
+      const parsed = new OllamaAdapter().parseResponse({
+        message: { content: "x" },
+        model: "llama3.2",
+        done_reason: "length",
+      });
+      expect(parsed.truncated).toBe(true);
+    });
+  });
+
+  // ── Anthropic JSON prefill ──
+  describe("AnthropicAdapter JSON prefill", () => {
+    function mockOnce(value: unknown) {
+      return vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(JSON.stringify(value)),
+      } as Response);
+    }
+
+    it("prefills the assistant turn with '{' and reattaches it", async () => {
+      const fetchSpy = mockOnce({
+        content: [{ type: "text", text: '"narrative":"hi"}' }],
+        model: "claude-sonnet-4-6",
+        usage: { input_tokens: 10, output_tokens: 5 },
+      });
+      const result = await new AnthropicAdapter().makeRequest(
+        {
+          messages: [{ role: "user", content: "go" }],
+          model: "claude-sonnet-4-6",
+          temperature: 0.7,
+          maxTokens: 100,
+          responseFormat: { type: "json_object" },
+        },
+        "sk-ant",
+      );
+      expect(result.content).toBe('{"narrative":"hi"}');
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body.messages[body.messages.length - 1]).toEqual({
+        role: "assistant",
+        content: "{",
+      });
+    });
+
+    it("does not prefill when responseFormat is absent", async () => {
+      const fetchSpy = mockOnce({
+        content: [{ type: "text", text: '{"narrative":"hi"}' }],
+        model: "claude-sonnet-4-6",
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+      const result = await new AnthropicAdapter().makeRequest(
+        {
+          messages: [{ role: "user", content: "go" }],
+          model: "claude-sonnet-4-6",
+          temperature: 0.7,
+          maxTokens: 100,
+        },
+        "sk-ant",
+      );
+      expect(result.content).toBe('{"narrative":"hi"}');
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body.messages[body.messages.length - 1].role).toBe("user");
+    });
+
+    it("does not double-prepend when the model echoes the opening brace", async () => {
+      mockOnce({
+        content: [{ type: "text", text: '{"narrative":"hi"}' }],
+        model: "claude-sonnet-4-6",
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+      const result = await new AnthropicAdapter().makeRequest(
+        {
+          messages: [{ role: "user", content: "go" }],
+          model: "claude-sonnet-4-6",
+          temperature: 0.7,
+          maxTokens: 100,
+          responseFormat: { type: "json_object" },
+        },
+        "sk-ant",
+      );
+      expect(result.content).toBe('{"narrative":"hi"}');
+    });
+  });
+
+  // ── inferModelTier ──
+  describe("inferModelTier", () => {
+    it("classifies premium-capable models", () => {
+      expect(inferModelTier("claude-opus-4-7")).toBe("premium");
+      expect(inferModelTier("gpt-4o")).toBe("premium");
+      expect(inferModelTier("o3-mini")).toBe("premium");
+      expect(inferModelTier("anthropic/claude-sonnet-4-6")).toBe("premium");
+    });
+
+    it("classifies lightweight models as routine", () => {
+      expect(inferModelTier("gpt-4o-mini")).toBe("routine");
+      expect(inferModelTier("claude-haiku-4-5")).toBe("routine");
+      expect(inferModelTier("llama3.2")).toBe("routine");
+    });
+  });
+
+  // ── listModels ──
+  describe("listModels", () => {
+    function mockOnce(value: unknown) {
+      return vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(JSON.stringify(value)),
+      } as Response);
+    }
+
+    it("OpenAI lists chat models and filters non-chat ones", async () => {
+      mockOnce({
+        data: [
+          { id: "gpt-4o" },
+          { id: "gpt-4o-mini" },
+          { id: "text-embedding-3-small" },
+          { id: "whisper-1" },
+          { id: "dall-e-3" },
+        ],
+      });
+      const ids = (await new OpenAIAdapter().listModels("sk-key")).map((m) => m.id);
+      expect(ids).toContain("gpt-4o");
+      expect(ids).toContain("gpt-4o-mini");
+      expect(ids).not.toContain("text-embedding-3-small");
+      expect(ids).not.toContain("whisper-1");
+      expect(ids).not.toContain("dall-e-3");
+    });
+
+    it("OpenAI ignores entries without a valid id", async () => {
+      mockOnce({ data: [{ id: "gpt-4o" }, {}, { id: "" }] });
+      const ids = (await new OpenAIAdapter().listModels("sk-key")).map((m) => m.id);
+      expect(ids).toEqual(["gpt-4o"]);
+    });
+
+    it("OpenAI handles a missing data array", async () => {
+      mockOnce({});
+      expect(await new OpenAIAdapter().listModels("sk-key")).toEqual([]);
+    });
+
+    it("OpenAI propagates HTTP errors", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: () => Promise.resolve("unauthorized"),
+      } as Response);
+      await expect(new OpenAIAdapter().listModels("bad")).rejects.toThrow(AIError);
+    });
+
+    it("Anthropic lists models with display names and tiers", async () => {
+      mockOnce({
+        data: [
+          { id: "claude-opus-4-7", display_name: "Claude Opus 4.7" },
+          { id: "claude-haiku-4-5" },
+        ],
+      });
+      const models = await new AnthropicAdapter().listModels("sk-ant");
+      expect(models[0]).toEqual({
+        id: "claude-opus-4-7",
+        name: "Claude Opus 4.7",
+        tier: "premium",
+      });
+      expect(models[1].name).toBe("claude-haiku-4-5");
+    });
+
+    it("Anthropic sends the direct-browser-access header", async () => {
+      const fetchSpy = mockOnce({ data: [] });
+      await new AnthropicAdapter().listModels("sk-ant");
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["anthropic-dangerous-direct-browser-access"]).toBe("true");
+    });
+
+    it("OpenRouter lists models sorted by name", async () => {
+      mockOnce({
+        data: [
+          { id: "z/model", name: "Zeta" },
+          { id: "a/model", name: "Alpha" },
+        ],
+      });
+      const names = (await new OpenRouterAdapter().listModels("or-key")).map(
+        (m) => m.name,
+      );
+      expect(names).toEqual(["Alpha", "Zeta"]);
+    });
+
+    it("OpenRouter falls back to id when name is missing", async () => {
+      mockOnce({ data: [{ id: "a/model" }] });
+      const models = await new OpenRouterAdapter().listModels("or-key");
+      expect(models[0].name).toBe("a/model");
+    });
+
+    it("Ollama lists installed model names", async () => {
+      mockOnce({ models: [{ name: "mistral" }, { name: "llama3.2" }] });
+      const ids = (await new OllamaAdapter().listModels("")).map((m) => m.id);
+      expect(ids).toEqual(["llama3.2", "mistral"]);
+    });
+
+    it("Ollama handles a missing models array", async () => {
+      mockOnce({});
+      expect(await new OllamaAdapter().listModels("")).toEqual([]);
+    });
+
+    it("Ollama sends Authorization header when an apiKey is provided", async () => {
+      const fetchSpy = mockOnce({ models: [] });
+      await new OllamaAdapter().listModels("cloud-key");
+      const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
+      expect(headers["Authorization"]).toBe("Bearer cloud-key");
+    });
+
+    it("Custom lists models via the OpenAI format", async () => {
+      mockOnce({ data: [{ id: "my-model" }] });
+      const ids = (await new CustomAdapter("http://x/v1").listModels("key")).map(
+        (m) => m.id,
+      );
+      expect(ids).toEqual(["my-model"]);
+    });
+
+    it("OllamaCloud lists models through the proxy /models route", async () => {
+      const fetchSpy = mockOnce({ data: [{ id: "gpt-oss:20b" }] });
+      const models = await new OllamaCloudAdapter().listModels("cloud-key");
+      expect(fetchSpy.mock.calls[0][0]).toBe("/api/proxy/ollama-cloud/models");
+      expect(models.map((m) => m.id)).toEqual(["gpt-oss:20b"]);
+    });
+  });
 });
 
 // ── Provider Models ──
@@ -1279,6 +1536,23 @@ describe("prompts", () => {
       expect(layer.content).toContain("Tingen City");
       expect(layer.content).toContain("80/100");
       expect(layer.content).toContain("Dunn Smith");
+    });
+  });
+
+  describe("buildGameStatePrompt with digestion", () => {
+    it("includes digestion progress when present", () => {
+      const state = makeGameState({
+        digestion: { pathwayId: 1, sequenceLevel: 9, progress: 42, complete: false },
+      });
+      const layer = buildGameStatePrompt(state);
+      expect(layer.content).toContain("potionDigestion");
+      expect(layer.content).toContain("42%");
+    });
+
+    it("defaults digestion to 0% when absent", () => {
+      const state = makeGameState();
+      const layer = buildGameStatePrompt(state);
+      expect(layer.content).toContain('"potionDigestion": "0%"');
     });
   });
 
@@ -1832,6 +2106,17 @@ describe("validation", () => {
       expect(() => parseAIResponse("not json at all")).toThrow(AIError);
     });
 
+    it("extracts JSON embedded in surrounding prose", () => {
+      const result = parseAIResponse(
+        'Here is the scene: {"narrative":"The fog rolls in."} Enjoy!',
+      );
+      expect(result.narrative).toBe("The fog rolls in.");
+    });
+
+    it("throws when braces are present but the span is not valid JSON", () => {
+      expect(() => parseAIResponse("intro {not: valid json} outro")).toThrow(AIError);
+    });
+
     it("throws on array input", () => {
       expect(() => parseAIResponse("[1,2,3]")).toThrow(AIError);
     });
@@ -2344,7 +2629,11 @@ describe("client", () => {
     });
 
     it("exports MAX_OUTPUT_TOKENS", () => {
-      expect(MAX_OUTPUT_TOKENS).toBe(1500);
+      expect(MAX_OUTPUT_TOKENS).toBe(3072);
+    });
+
+    it("exports MAX_PARSE_ATTEMPTS", () => {
+      expect(MAX_PARSE_ATTEMPTS).toBe(3);
     });
   });
 
@@ -2706,6 +2995,107 @@ describe("client", () => {
       const headers = fetchSpy.mock.calls[0][1]!.headers as Record<string, string>;
       expect(headers["x-api-key"]).toBe("sk-test-key");
       expect(headers["anthropic-version"]).toBe("2023-06-01");
+    });
+
+    function mockOpenAIContent(content: string, extra?: Record<string, unknown>) {
+      return {
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content }, ...extra }],
+              model: "gpt-4o-mini",
+              usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+            }),
+          ),
+      } as Response;
+    }
+
+    it("retries twice on repeated malformed output then succeeds", async () => {
+      const valid = JSON.stringify(makeValidAIResponse());
+      vi.spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(mockOpenAIContent("not json"))
+        .mockResolvedValueOnce(mockOpenAIContent("still not json"))
+        .mockResolvedValueOnce(mockOpenAIContent(valid));
+
+      const result = await generate({
+        config: makeProviderConfig(),
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: makeLoreContext(),
+        instruction: "narrative",
+        playerAction: "test",
+        abilities: [],
+        actingRequirements: [],
+      });
+
+      expect(result.response.narrative).toBeTruthy();
+      expect(fetch).toHaveBeenCalledTimes(3);
+    });
+
+    it("throws MALFORMED_OUTPUT after exhausting parse attempts", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(mockOpenAIContent("never json"));
+
+      await expect(
+        generate({
+          config: makeProviderConfig(),
+          gameState: makeGameState(),
+          memory: makeMemoryState(),
+          loreContext: makeLoreContext(),
+          instruction: "narrative",
+          playerAction: "test",
+          abilities: [],
+          actingRequirements: [],
+        }),
+      ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+      expect(fetch).toHaveBeenCalledTimes(MAX_PARSE_ATTEMPTS);
+    });
+
+    it("sends a truncation-specific corrective message when output was cut off", async () => {
+      const valid = JSON.stringify(makeValidAIResponse());
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(
+          mockOpenAIContent('{"narrative":"cut', { finish_reason: "length" }),
+        )
+        .mockResolvedValueOnce(mockOpenAIContent(valid));
+
+      await generate({
+        config: makeProviderConfig(),
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: makeLoreContext(),
+        instruction: "narrative",
+        playerAction: "test",
+        abilities: [],
+        actingRequirements: [],
+      });
+
+      const retryBody = JSON.parse(fetchSpy.mock.calls[1][1]!.body as string);
+      const lastMessage = retryBody.messages[retryBody.messages.length - 1];
+      expect(lastMessage.role).toBe("user");
+      expect(lastMessage.content).toContain("cut off");
+    });
+  });
+
+  describe("listProviderModels", () => {
+    beforeEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("returns the provider's live model catalog", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ data: [{ id: "gpt-4o" }, { id: "gpt-4o-mini" }] }),
+          ),
+      } as Response);
+
+      const models = await listProviderModels(makeProviderConfig());
+      expect(models.map((m) => m.id)).toEqual(["gpt-4o", "gpt-4o-mini"]);
     });
   });
 

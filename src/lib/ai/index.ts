@@ -11,6 +11,7 @@ export type {
   ValidatedAIResponse,
   InstructionType,
   GameState,
+  DigestionState,
   TurnRecord,
   BulletSummary,
   SessionFact,
@@ -28,7 +29,7 @@ export { PROVIDER_MODELS } from "./types";
 
 export { AIError, type AIErrorCode } from "./errors";
 
-export { createAdapter, type LLMProviderAdapter } from "./providers";
+export { createAdapter, inferModelTier, type LLMProviderAdapter } from "./providers";
 
 export {
   assemblePrompt,
@@ -60,6 +61,7 @@ export {
   classifyCall,
   selectModel,
   validateProviderConfig,
+  listProviderModels,
   type GenerateOptions,
 } from "./client";
 

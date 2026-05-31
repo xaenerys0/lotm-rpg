@@ -100,6 +100,17 @@ export type InstructionType =
   | "advancement"
   | "combat";
 
+export interface DigestionState {
+  /** Pathway of the potion currently being digested. */
+  pathwayId: number;
+  /** Sequence level of the potion currently being digested. */
+  sequenceLevel: number;
+  /** Digestion progress, 0-100. At 100 the potion is fully assimilated. */
+  progress: number;
+  /** True once progress reaches 100 — advancement becomes available. */
+  complete: boolean;
+}
+
 export interface GameState {
   characterId: string;
   pathwayId: number;
@@ -112,6 +123,12 @@ export interface GameState {
   npcsPresent: string[];
   characterName?: string;
   characterBackground?: string;
+  /**
+   * Digestion progress for the potion matching the current pathway/sequence.
+   * Optional for backward compatibility with sessions saved before the Acting
+   * Method mechanic; the game engine seeds a default when it is missing.
+   */
+  digestion?: DigestionState;
 }
 
 export interface TurnRecord {
@@ -186,4 +203,6 @@ export interface ProviderResponse {
     totalTokens: number;
     cacheHit?: boolean;
   };
+  /** True when the provider stopped because the output token cap was hit. */
+  truncated?: boolean;
 }

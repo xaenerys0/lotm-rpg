@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import type { ProviderId, ProviderConfig } from "@/lib/ai";
-import { PROVIDER_MODELS, validateProviderConfig } from "@/lib/ai";
-import { PROVIDER_CONFIG_KEY } from "@/lib/game";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import type { ProviderId, ProviderConfig, ModelOption } from "@/lib/ai";
+import { PROVIDER_MODELS, validateProviderConfig, listProviderModels } from "@/lib/ai";
+import { PROVIDER_CONFIG_KEY, MODELS_CACHE_KEY } from "@/lib/game";
 import { noopSubscribe } from "@/lib/react";
 
 const PROVIDERS: {
@@ -39,12 +39,80 @@ function getDefaultBaseUrl(providerId: ProviderId): string {
   return "";
 }
 
-function getDefaultModels(providerId: ProviderId) {
-  const models = PROVIDER_MODELS[providerId];
+// ─── Live model catalog: caching ───────────────────────────────────
+// Provider /models endpoints are fetched on demand and cached in localStorage
+// with a TTL so the dropdowns stay current without refetching every visit.
+
+const MODELS_TTL_MS = 24 * 60 * 60 * 1000;
+
+interface CachedModels {
+  models: ModelOption[];
+  fetchedAt: number;
+}
+
+// Cache key uses the resolved base URL so local Ollama / custom endpoints don't
+// collide; auth-only providers share one entry ("").
+function effectiveBaseUrl(providerId: ProviderId, baseUrl: string): string {
+  const meta = PROVIDERS.find((p) => p.id === providerId);
+  if (!meta?.needsBaseUrl) return "";
+  return baseUrl || getDefaultBaseUrl(providerId);
+}
+
+function modelCacheKey(providerId: ProviderId, baseUrl: string): string {
+  return `${MODELS_CACHE_KEY}:${providerId}:${effectiveBaseUrl(providerId, baseUrl)}`;
+}
+
+function loadCachedModels(providerId: ProviderId, baseUrl: string): ModelOption[] | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(modelCacheKey(providerId, baseUrl));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedModels;
+    if (!Array.isArray(parsed.models) || Date.now() - parsed.fetchedAt > MODELS_TTL_MS) {
+      return null;
+    }
+    return parsed.models;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedModels(
+  providerId: ProviderId,
+  baseUrl: string,
+  models: ModelOption[],
+): void {
+  try {
+    localStorage.setItem(
+      modelCacheKey(providerId, baseUrl),
+      JSON.stringify({ models, fetchedAt: Date.now() } satisfies CachedModels),
+    );
+  } catch {
+    // Quota or unavailable — non-fatal, dropdowns fall back to the static list.
+  }
+}
+
+// Picks sensible default routine/premium models from a list (live or static),
+// using the inferred tier and falling back to the first/last entry.
+function pickDefaultModels(models: ModelOption[]) {
   return {
-    routine: models.find((m) => m.tier === "routine")?.id ?? "",
-    premium: models.find((m) => m.tier === "premium")?.id ?? "",
+    routine: models.find((m) => m.tier === "routine")?.id ?? models[0]?.id ?? "",
+    premium:
+      models.find((m) => m.tier === "premium")?.id ?? models[models.length - 1]?.id ?? "",
   };
+}
+
+function getDefaultModels(providerId: ProviderId) {
+  return pickDefaultModels(PROVIDER_MODELS[providerId]);
+}
+
+// Ensures a saved selection that isn't in the catalog still appears as an
+// option (so the <select> stays on the user's choice rather than blanking).
+function withSelected(models: ModelOption[], selected: string): ModelOption[] {
+  if (selected && !models.some((m) => m.id === selected)) {
+    return [{ id: selected, name: selected, tier: "routine" }, ...models];
+  }
+  return models;
 }
 
 function loadInitialState(): FormState {
@@ -112,24 +180,38 @@ export function ProviderConfig() {
     () => defaultFormState,
   );
 
+  // Initial cached model catalog, read through the same store pattern as the
+  // form so SSR and the first client paint agree (server snapshot is null).
+  const modelsCacheRef = useRef<ModelOption[] | null | undefined>(undefined);
+  const initialModels = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (modelsCacheRef.current === undefined) {
+        modelsCacheRef.current = loadCachedModels(
+          initialState.providerId,
+          initialState.baseUrl,
+        );
+      }
+      return modelsCacheRef.current;
+    },
+    () => null,
+  );
+
   const [form, setForm] = useState<FormState>(initialState);
   const [showKey, setShowKey] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
   const [connectionError, setConnectionError] = useState("");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("saved");
+  const [availableModels, setAvailableModels] = useState<ModelOption[] | null>(
+    initialModels,
+  );
+  const [modelsStatus, setModelsStatus] = useState<"idle" | "loading" | "error">("idle");
 
   const providerMeta = PROVIDERS.find((p) => p.id === form.providerId)!;
-  const models = PROVIDER_MODELS[form.providerId];
-  const routineModels = useMemo(
-    () => models.filter((m) => m.tier === "routine"),
-    [models],
-  );
-  const premiumModels = useMemo(
-    () => models.filter((m) => m.tier === "premium"),
-    [models],
-  );
   const isCustom = form.providerId === "custom";
   const canTest = !!form.apiKey || !providerMeta.requiresAuth;
+  // Live catalog when available, otherwise the curated built-in list.
+  const displayModels = availableModels ?? PROVIDER_MODELS[form.providerId];
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
@@ -141,16 +223,19 @@ export function ProviderConfig() {
   );
 
   const handleProviderChange = useCallback((newId: ProviderId) => {
-    const newModels = PROVIDER_MODELS[newId];
-    const defaultRoutine = newModels.find((m) => m.tier === "routine")?.id ?? "";
-    const defaultPremium = newModels.find((m) => m.tier === "premium")?.id ?? "";
+    const newBaseUrl = getDefaultBaseUrl(newId);
+    const cached = loadCachedModels(newId, newBaseUrl);
+    const list = cached ?? PROVIDER_MODELS[newId];
+    const defaults = pickDefaultModels(list);
 
+    setAvailableModels(cached);
+    setModelsStatus("idle");
     setForm({
       providerId: newId,
       apiKey: "",
-      baseUrl: getDefaultBaseUrl(newId),
-      routineModel: defaultRoutine,
-      premiumModel: defaultPremium,
+      baseUrl: newBaseUrl,
+      routineModel: defaults.routine,
+      premiumModel: defaults.premium,
       customRoutineModel: "",
       customPremiumModel: "",
     });
@@ -169,6 +254,18 @@ export function ProviderConfig() {
     };
   }, [form, isCustom, providerMeta.needsBaseUrl]);
 
+  const handleRefreshModels = useCallback(async () => {
+    setModelsStatus("loading");
+    try {
+      const models = await listProviderModels(buildConfig());
+      setAvailableModels(models);
+      saveCachedModels(form.providerId, form.baseUrl, models);
+      setModelsStatus("idle");
+    } catch {
+      setModelsStatus("error");
+    }
+  }, [buildConfig, form.providerId, form.baseUrl]);
+
   const handleTestConnection = useCallback(async () => {
     setConnectionStatus("testing");
     setConnectionError("");
@@ -176,6 +273,8 @@ export function ProviderConfig() {
       const result = await validateProviderConfig(buildConfig());
       if (result.valid) {
         setConnectionStatus("valid");
+        // Best-effort: refresh the live model list once the key is known good.
+        if (!isCustom) void handleRefreshModels();
       } else {
         setConnectionStatus("invalid");
         setConnectionError(result.error ?? "Connection failed");
@@ -184,7 +283,7 @@ export function ProviderConfig() {
       setConnectionStatus("invalid");
       setConnectionError(err instanceof Error ? err.message : "Unexpected error");
     }
-  }, [buildConfig]);
+  }, [buildConfig, isCustom, handleRefreshModels]);
 
   const handleSave = useCallback(() => {
     setSaveStatus("saving");
@@ -295,6 +394,25 @@ export function ProviderConfig() {
         <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
           Models
         </legend>
+        {!isCustom && (
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <p className="text-xs text-muted/60">
+              {modelsStatus === "error"
+                ? "Couldn't fetch models — showing the built-in list."
+                : availableModels
+                  ? "Live list from your provider."
+                  : "Built-in list — refresh to fetch the latest."}
+            </p>
+            <button
+              type="button"
+              onClick={handleRefreshModels}
+              disabled={modelsStatus === "loading" || !canTest}
+              className="shrink-0 rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              {modelsStatus === "loading" ? "Refreshing..." : "Refresh list"}
+            </button>
+          </div>
+        )}
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Routine Model */}
           <div>
@@ -316,17 +434,10 @@ export function ProviderConfig() {
                 onChange={(e) => updateField("routineModel", e.target.value)}
                 className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
               >
-                {routineModels.length === 0 && (
-                  <option value="">No routine models</option>
-                )}
-                {routineModels.map((m) => (
+                {displayModels.length === 0 && <option value="">No models found</option>}
+                {withSelected(displayModels, form.routineModel).map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
-                  </option>
-                ))}
-                {premiumModels.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} (premium)
                   </option>
                 ))}
               </select>
@@ -352,17 +463,10 @@ export function ProviderConfig() {
                 onChange={(e) => updateField("premiumModel", e.target.value)}
                 className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
               >
-                {premiumModels.length === 0 && (
-                  <option value="">No premium models</option>
-                )}
-                {premiumModels.map((m) => (
+                {displayModels.length === 0 && <option value="">No models found</option>}
+                {withSelected(displayModels, form.premiumModel).map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
-                  </option>
-                ))}
-                {routineModels.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name} (routine)
                   </option>
                 ))}
               </select>
