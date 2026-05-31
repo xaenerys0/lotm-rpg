@@ -625,10 +625,9 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   ))}
                 </div>
 
-                {/* Choices — exactly one per affinity, position shuffled by the AI */}
-                <p className="mb-3 text-[10px] uppercase tracking-wider text-muted/40">
-                  What do you do?
-                </p>
+                {/* Choices — exactly one per affinity, position shuffled by the
+                    AI. The narrative ends on tension and leads into the choices;
+                    the UI adds no instructional prompt. */}
                 <div className="space-y-3">
                   {currentScene.choices.map((choice) => (
                     <button
@@ -648,24 +647,20 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             )}
 
           {/* Finale — engine-narrowed candidate potions; the player decides.
-              This is the climactic "threshold of becoming": the cumulative
-              affinity tally has narrowed the field, and the player's pick here
-              sets the pathway. Styled as a ritual moment, not a scene. */}
+              The cumulative affinity tally has narrowed the field; the player's
+              pick here sets the pathway. The AI's narrative builds the moment
+              and leads into the choice — the UI adds only atmosphere, never
+              instructional copy. */}
           {!prologueLoading && prologueError === null && finale !== null && (
             <div className="animate-fade-in-up">
-              {/* Gaslight threshold marker */}
-              <div className="mb-6 flex flex-col items-center text-center">
-                <div className="mb-3 flex flex-col items-center gap-1.5">
-                  <div className="h-8 w-px bg-gradient-to-b from-transparent via-gold/40 to-gold/10" />
-                  <div className="h-1 w-1 rounded-full bg-gold/40" />
-                </div>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-amber/40">
-                  The Threshold of Becoming
-                </p>
+              {/* Gaslight marker — a wordless visual shift into the final beat */}
+              <div className="mb-6 flex flex-col items-center gap-1.5">
+                <div className="h-8 w-px bg-gradient-to-b from-transparent via-gold/40 to-gold/10" />
+                <div className="h-1 w-1 rounded-full bg-gold/40" />
               </div>
 
-              {/* Narrative */}
-              <div className="mb-9 border-l-2 border-gold/15 pl-4">
+              {/* Narrative — the AI builds up to the decision */}
+              <div className="mb-8 border-l-2 border-gold/15 pl-4">
                 {finale.narrative.split("\n\n").map((para, i) => (
                   <p
                     key={i}
@@ -676,10 +671,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 ))}
               </div>
 
-              {/* The decision that sets the pathway */}
-              <p className="mb-4 text-center text-[10px] uppercase tracking-[0.25em] text-gold/50">
-                One vial. One fate. Choose.
-              </p>
+              {/* The potions the narrative just set before the character */}
               <div className="relative space-y-3">
                 {/* Atmospheric glow gathering behind the offered vials */}
                 <div
