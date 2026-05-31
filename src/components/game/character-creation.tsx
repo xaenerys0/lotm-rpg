@@ -6,6 +6,9 @@ import {
   FIRST_POTION_NARRATIVE,
   createPrologueMemory,
   createAIPrologueMemory,
+  tallyAffinities,
+  selectTopCandidates,
+  dominantAffinity,
   PROVIDER_CONFIG_KEY,
   PROLOGUE_DRAFT_KEY,
   isValidDraftShape,
@@ -15,8 +18,19 @@ import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
-import { generatePrologueScene, MAX_PROLOGUE_SCENES } from "@/lib/ai";
-import type { AIPrologueResponse, PrologueTurn, ProviderConfig } from "@/lib/ai";
+import {
+  generatePrologueScene,
+  generatePrologueFinale,
+  MIN_PROLOGUE_SCENES,
+  MAX_PROLOGUE_SCENES,
+} from "@/lib/ai";
+import type {
+  AIPrologueResponse,
+  AIPrologueFinale,
+  AIPrologueChoice,
+  PrologueTurn,
+  ProviderConfig,
+} from "@/lib/ai";
 
 type CreationStep =
   | "mode-select"
@@ -114,6 +128,12 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     savedDraft?.prologueHistory ?? [],
   );
   const [currentScene, setCurrentScene] = useState<AIPrologueResponse | null>(null);
+  const [finale, setFinale] = useState<AIPrologueFinale | null>(
+    savedDraft?.finale ?? null,
+  );
+  // Whether the next AI call should produce the finale (vs. another scene).
+  // Used so retry/resume re-runs the correct generator after an error.
+  const [awaitingFinale, setAwaitingFinale] = useState(savedDraft?.finale != null);
   const [prologueLoading, setPrologueLoading] = useState(false);
   const [prologueError, setPrologueError] = useState<string | null>(null);
 
@@ -127,42 +147,71 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       characterBackground,
       prologueHistory,
       selectedPathwayId,
+      finale,
     };
     try {
       localStorage.setItem(PROLOGUE_DRAFT_KEY, JSON.stringify(draft));
     } catch {
       // storage full — ignore
     }
-  }, [step, characterName, characterBackground, prologueHistory, selectedPathwayId]);
+  }, [
+    step,
+    characterName,
+    characterBackground,
+    prologueHistory,
+    selectedPathwayId,
+    finale,
+  ]);
 
   // ── AI Prologue Generation ──
 
+  // Shared loading/error envelope for both prologue generators: clear the
+  // prior view, run the work, surface any error, settle loading.
+  const runPrologueRequest = useCallback(async (work: () => Promise<void>) => {
+    setPrologueLoading(true);
+    setPrologueError(null);
+    setCurrentScene(null);
+    setFinale(null);
+    try {
+      await work();
+    } catch (err) {
+      setPrologueError(
+        err instanceof Error ? err.message : "The fog refused to part. Please retry.",
+      );
+    } finally {
+      setPrologueLoading(false);
+    }
+  }, []);
+
   const runPrologueScene = useCallback(
-    async (config: ProviderConfig, name: string, bg: string, history: PrologueTurn[]) => {
-      setPrologueLoading(true);
-      setPrologueError(null);
-      setCurrentScene(null);
-      try {
-        const scene = await generatePrologueScene(config, name, bg, history);
-        setCurrentScene(scene);
-        if (scene.isConclusion) {
-          setSelectedPathwayId(scene.inferredPathwayId);
-        }
-      } catch (err) {
-        setPrologueError(
-          err instanceof Error ? err.message : "Failed to generate scene. Please retry.",
+    (config: ProviderConfig, name: string, bg: string, history: PrologueTurn[]) =>
+      runPrologueRequest(async () => {
+        setCurrentScene(await generatePrologueScene(config, name, bg, history));
+      }),
+    [runPrologueRequest],
+  );
+
+  // The finale is engine-decided: the cumulative affinity tally narrows the
+  // field to a handful of candidate potions; the AI only renders them and the
+  // player picks. The candidate set is a deterministic function of history.
+  const runFinale = useCallback(
+    (config: ProviderConfig, name: string, bg: string, history: PrologueTurn[]) =>
+      runPrologueRequest(async () => {
+        const candidates = selectTopCandidates(
+          tallyAffinities(history.map((t) => t.selectedAffinities)),
         );
-      } finally {
-        setPrologueLoading(false);
-      }
-    },
-    [],
+        setFinale(await generatePrologueFinale(config, name, bg, history, candidates));
+      }),
+    [runPrologueRequest],
   );
 
   const handleBeginAIPrologue = useCallback(() => {
     if (!characterName.trim() || !providerConfig) return;
     setStep("ai-prologue");
     setPrologueHistory([]);
+    setFinale(null);
+    setAwaitingFinale(false);
+    setSelectedPathwayId(null);
     void runPrologueScene(
       providerConfig,
       characterName.trim(),
@@ -172,23 +221,32 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   }, [characterName, characterBackground, providerConfig, runPrologueScene]);
 
   const handleChoiceSelect = useCallback(
-    (choiceText: string) => {
+    (choice: AIPrologueChoice) => {
       if (!currentScene || !providerConfig) return;
       const newTurn: PrologueTurn = {
         narrative: currentScene.narrative,
         choices: currentScene.choices,
-        selectedChoiceText: choiceText,
+        selectedChoiceText: choice.text,
+        selectedAffinities: choice.affinities,
         rawResponse: currentScene.rawResponse,
       };
       const newHistory = [...prologueHistory, newTurn];
       setPrologueHistory(newHistory);
       setCurrentScene(null);
-      void runPrologueScene(
-        providerConfig,
-        characterName.trim(),
-        characterBackground.trim(),
-        newHistory,
-      );
+
+      // readyToConclude is advisory; the engine enforces MIN/MAX.
+      const concluding =
+        (newHistory.length >= MIN_PROLOGUE_SCENES && currentScene.readyToConclude) ||
+        newHistory.length >= MAX_PROLOGUE_SCENES;
+      setAwaitingFinale(concluding);
+
+      const name = characterName.trim();
+      const bg = characterBackground.trim();
+      if (concluding) {
+        void runFinale(providerConfig, name, bg, newHistory);
+      } else {
+        void runPrologueScene(providerConfig, name, bg, newHistory);
+      }
     },
     [
       currentScene,
@@ -197,27 +255,37 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       characterName,
       characterBackground,
       runPrologueScene,
+      runFinale,
     ],
   );
 
-  const handleContinueToFirstPotion = useCallback(() => {
+  // The finale pick IS the pathway decision — it is NOT fed back into the tally.
+  const handleFinaleSelect = useCallback((choice: AIPrologueChoice) => {
+    setSelectedPathwayId(dominantAffinity(choice.affinities));
     setStep("first-potion");
   }, []);
 
+  // Retry/resume re-runs the correct generator. Candidate selection inside the
+  // finale is deterministic, so a retry reproduces the same shortlist.
   const handleRetryPrologue = useCallback(() => {
     if (!providerConfig) return;
-    void runPrologueScene(
-      providerConfig,
-      characterName.trim(),
-      characterBackground.trim(),
-      prologueHistory,
-    );
+    const name = characterName.trim();
+    const bg = characterBackground.trim();
+    const shouldConclude =
+      awaitingFinale || prologueHistory.length >= MAX_PROLOGUE_SCENES;
+    if (shouldConclude) {
+      void runFinale(providerConfig, name, bg, prologueHistory);
+    } else {
+      void runPrologueScene(providerConfig, name, bg, prologueHistory);
+    }
   }, [
     providerConfig,
     characterName,
     characterBackground,
+    awaitingFinale,
     prologueHistory,
     runPrologueScene,
+    runFinale,
   ]);
 
   // ── Manual Path Handlers ──
@@ -498,50 +566,102 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           )}
 
           {/* Restored from draft — needs resume */}
-          {!prologueLoading && prologueError === null && currentScene === null && (
-            <div className="py-14 flex flex-col items-center text-center animate-fade-in-up">
-              <div className="mb-7 flex flex-col items-center gap-1.5">
-                <div className="w-px h-8 bg-gradient-to-b from-amber/35 to-amber/5" />
-                <div className="h-1 w-1 rounded-full bg-amber/25" />
-              </div>
-              <p className="mb-2 text-[10px] uppercase tracking-[0.3em] text-amber/30">
-                Scene {sceneNumber}
-              </p>
-              <h3 className="font-serif text-2xl tracking-wide text-foreground/50 mb-3">
-                The Fog Held
-              </h3>
-              <p className="mb-10 max-w-[20rem] text-sm leading-relaxed text-muted/40">
-                Your story rests at the threshold, unchanged. The chronicle resumes where
-                the gaslight flickered out.
-              </p>
-              <div className="relative inline-flex">
-                <div
-                  className="absolute -inset-[3px] rounded border border-amber/18 animate-pulse"
-                  style={{ animationDuration: "3s" }}
-                />
-                <button
-                  type="button"
-                  onClick={handleRetryPrologue}
-                  className="relative rounded border border-amber/30 bg-amber/[0.04] px-7 py-2.5 text-sm text-amber/60 transition-all duration-300 hover:border-amber/55 hover:bg-amber/[0.08] hover:text-amber hover:shadow-[0_0_20px_rgba(217,119,6,0.1)]"
-                >
-                  Resume the Chronicle
-                </button>
-              </div>
-              {prologueHistory.length > 0 && (
-                <p className="mt-5 text-[11px] text-muted/25">
-                  {prologueHistory.length}{" "}
-                  {prologueHistory.length === 1 ? "scene" : "scenes"} complete
+          {!prologueLoading &&
+            prologueError === null &&
+            currentScene === null &&
+            finale === null && (
+              <div className="py-14 flex flex-col items-center text-center animate-fade-in-up">
+                <div className="mb-7 flex flex-col items-center gap-1.5">
+                  <div className="w-px h-8 bg-gradient-to-b from-amber/35 to-amber/5" />
+                  <div className="h-1 w-1 rounded-full bg-amber/25" />
+                </div>
+                <p className="mb-2 text-[10px] uppercase tracking-[0.3em] text-amber/30">
+                  Scene {sceneNumber}
                 </p>
-              )}
-            </div>
-          )}
+                <h3 className="font-serif text-2xl tracking-wide text-foreground/50 mb-3">
+                  The Fog Held
+                </h3>
+                <p className="mb-10 max-w-[20rem] text-sm leading-relaxed text-muted/40">
+                  Your story rests at the threshold, unchanged. The chronicle resumes
+                  where the gaslight flickered out.
+                </p>
+                <div className="relative inline-flex">
+                  <div
+                    className="absolute -inset-[3px] rounded border border-amber/18 animate-pulse"
+                    style={{ animationDuration: "3s" }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRetryPrologue}
+                    className="relative rounded border border-amber/30 bg-amber/[0.04] px-7 py-2.5 text-sm text-amber/60 transition-all duration-300 hover:border-amber/55 hover:bg-amber/[0.08] hover:text-amber hover:shadow-[0_0_20px_rgba(217,119,6,0.1)]"
+                  >
+                    Resume the Chronicle
+                  </button>
+                </div>
+                {prologueHistory.length > 0 && (
+                  <p className="mt-5 text-[11px] text-muted/25">
+                    {prologueHistory.length}{" "}
+                    {prologueHistory.length === 1 ? "scene" : "scenes"} complete
+                  </p>
+                )}
+              </div>
+            )}
 
           {/* Scene ready */}
-          {!prologueLoading && prologueError === null && currentScene !== null && (
-            <div>
-              {/* Narrative */}
-              <div className="mb-8 border-l-2 border-amber/10 pl-4">
-                {currentScene.narrative.split("\n\n").map((para, i) => (
+          {!prologueLoading &&
+            prologueError === null &&
+            finale === null &&
+            currentScene !== null && (
+              <div>
+                {/* Narrative */}
+                <div className="mb-8 border-l-2 border-amber/10 pl-4">
+                  {currentScene.narrative.split("\n\n").map((para, i) => (
+                    <p
+                      key={i}
+                      className="mb-3 text-sm leading-relaxed text-muted last:mb-0"
+                    >
+                      {para}
+                    </p>
+                  ))}
+                </div>
+
+                {/* Choices — exactly one per affinity, position shuffled by the
+                    AI. The narrative ends on tension and leads into the choices;
+                    the UI adds no instructional prompt. */}
+                <div className="space-y-3">
+                  {currentScene.choices.map((choice) => (
+                    <button
+                      key={choice.id}
+                      type="button"
+                      onClick={() => handleChoiceSelect(choice)}
+                      className="group w-full cursor-pointer rounded-lg border border-border/60 bg-surface/30 p-4 text-left text-sm leading-relaxed text-muted transition-all duration-200 hover:border-amber/30 hover:bg-surface/70 hover:text-foreground hover:shadow-[0_0_16px_rgba(217,119,6,0.05)]"
+                    >
+                      <span className="mr-2 text-amber/30 transition-colors group-hover:text-amber/50">
+                        ›
+                      </span>
+                      {choice.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          {/* Finale — engine-narrowed candidate potions; the player decides.
+              The cumulative affinity tally has narrowed the field; the player's
+              pick here sets the pathway. The AI's narrative builds the moment
+              and leads into the choice — the UI adds only atmosphere, never
+              instructional copy. */}
+          {!prologueLoading && prologueError === null && finale !== null && (
+            <div className="animate-fade-in-up">
+              {/* Gaslight marker — a wordless visual shift into the final beat */}
+              <div className="mb-6 flex flex-col items-center gap-1.5">
+                <div className="h-8 w-px bg-gradient-to-b from-transparent via-gold/40 to-gold/10" />
+                <div className="h-1 w-1 rounded-full bg-gold/40" />
+              </div>
+
+              {/* Narrative — the AI builds up to the decision */}
+              <div className="mb-8 border-l-2 border-gold/15 pl-4">
+                {finale.narrative.split("\n\n").map((para, i) => (
                   <p
                     key={i}
                     className="mb-3 text-sm leading-relaxed text-muted last:mb-0"
@@ -551,42 +671,33 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 ))}
               </div>
 
-              {/* Choices */}
-              {!currentScene.isConclusion && currentScene.choices.length > 0 && (
-                <>
-                  <p className="mb-3 text-[10px] uppercase tracking-wider text-muted/40">
-                    What do you do?
-                  </p>
-                  <div className="space-y-3">
-                    {currentScene.choices.map((choice) => (
-                      <button
-                        key={choice.id}
-                        type="button"
-                        onClick={() => handleChoiceSelect(choice.text)}
-                        className="group w-full cursor-pointer rounded-lg border border-border/60 bg-surface/30 p-4 text-left text-sm leading-relaxed text-muted transition-all duration-200 hover:border-amber/30 hover:bg-surface/70 hover:text-foreground hover:shadow-[0_0_16px_rgba(217,119,6,0.05)]"
-                      >
-                        <span className="mr-2 text-amber/30 transition-colors group-hover:text-amber/50">
-                          ›
-                        </span>
-                        {choice.text}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-
-              {/* Conclusion */}
-              {currentScene.isConclusion && (
-                <div className="mt-8 text-center">
+              {/* The potions the narrative just set before the character */}
+              <div className="relative space-y-3">
+                {/* Atmospheric glow gathering behind the offered vials */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute -inset-x-8 -inset-y-4 -z-10 bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.06),transparent_70%)]"
+                />
+                {finale.choices.map((choice, i) => (
                   <button
+                    key={choice.id}
                     type="button"
-                    onClick={handleContinueToFirstPotion}
-                    className="rounded bg-amber/90 px-8 py-3 text-sm font-medium text-background transition-all hover:bg-amber hover:shadow-[0_0_24px_rgba(217,119,6,0.2)]"
+                    onClick={() => handleFinaleSelect(choice)}
+                    style={{ animationDelay: `${i * 90}ms` }}
+                    className="group relative flex w-full animate-fade-in-up cursor-pointer items-stretch gap-4 overflow-hidden rounded-lg border border-amber/15 bg-gradient-to-br from-surface/50 to-amber/[0.03] p-4 text-left transition-all duration-300 hover:border-gold/45 hover:from-surface/70 hover:to-amber/[0.07] hover:shadow-[0_0_28px_rgba(245,158,11,0.1)]"
                   >
-                    Continue
+                    {/* The vial — a phial of luminous liquid that brightens as
+                        the hand reaches for it */}
+                    <span
+                      aria-hidden
+                      className="w-1.5 shrink-0 rounded-full bg-gradient-to-b from-gaslight/70 via-gold/50 to-copper/30 opacity-70 shadow-[0_0_10px_rgba(245,158,11,0.25)] transition-all duration-300 group-hover:opacity-100 group-hover:shadow-[0_0_16px_rgba(245,158,11,0.5)]"
+                    />
+                    <span className="text-sm leading-relaxed text-muted transition-colors duration-300 group-hover:text-foreground">
+                      {choice.text}
+                    </span>
                   </button>
-                </div>
-              )}
+                ))}
+              </div>
             </div>
           )}
         </div>

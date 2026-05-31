@@ -198,12 +198,107 @@ export function scoreSelections(selections: PrologueSelection[]): PathwayScore[]
     .sort((a, b) => b.score - a.score);
 }
 
+// ───────────────────────────────────────────────────────────────────────────
+// Generic, deterministic affinity tallying (issue #53)
+//
+// These helpers are generic over ANY set of pathway ids — they never assume
+// "4". They power the live AI-prologue decision: the AI only narrates and tags
+// choices with affinity weights; the engine accumulates those weights here and
+// computes the candidate set the player picks from. Scales unchanged from the 4
+// pathways shipped today to the full 22 later.
+// ───────────────────────────────────────────────────────────────────────────
+
+/**
+ * The pathway id with the greatest weight in a single affinity map (argmax).
+ * Ties break toward the lowest id for determinism. Returns 0 for an empty map.
+ */
+export function dominantAffinity(affinities: Record<number, number>): number {
+  let bestId = 0;
+  let bestWeight = -Infinity;
+  for (const [idStr, weight] of Object.entries(affinities)) {
+    const id = Number(idStr);
+    if (weight > bestWeight || (weight === bestWeight && (bestId === 0 || id < bestId))) {
+      bestWeight = weight;
+      bestId = id;
+    }
+  }
+  return bestId;
+}
+
+/**
+ * Sum per-pathway affinity weights across every picked choice. The result is a
+ * sparse map (only pathways that were actually touched appear). An empty input
+ * yields an empty tally (every pathway implicitly zero).
+ */
+export function tallyAffinities(
+  weightMaps: ReadonlyArray<Record<number, number>>,
+): Record<number, number> {
+  const tally: Record<number, number> = {};
+  for (const map of weightMaps) {
+    for (const [idStr, weight] of Object.entries(map)) {
+      const id = Number(idStr);
+      tally[id] = (tally[id] ?? 0) + weight;
+    }
+  }
+  return tally;
+}
+
+/**
+ * Rank a tally into descending `PathwayScore[]`. Ties break by ascending
+ * pathway id so the ordering is fully deterministic and reproducible.
+ */
+export function rankPathways(tally: Record<number, number>): PathwayScore[] {
+  return Object.entries(tally)
+    .map(([id, score]) => ({ pathwayId: Number(id), score }))
+    .sort((a, b) => b.score - a.score || a.pathwayId - b.pathwayId);
+}
+
+/**
+ * The ranked pathway ids the finale should offer the player. Takes the top
+ * `count` by score, includes every pathway tied at the cutoff score, and
+ * guarantees at least `min` options by filling from the ranked list. Pure and
+ * deterministic — generic over any number of pathways.
+ */
+export function selectTopCandidates(
+  tally: Record<number, number>,
+  opts?: { count?: number; min?: number },
+): number[] {
+  const count = opts?.count ?? 3;
+  const min = opts?.min ?? 2;
+  const ranked = rankPathways(tally);
+  if (ranked.length === 0) return [];
+
+  // Top `count`, plus everything tied at the cutoff score.
+  const cutoffScore = ranked[Math.min(count, ranked.length) - 1]!.score;
+  const selected = ranked.filter((p, i) => i < count || p.score === cutoffScore);
+
+  // Floor: fill from the ranked list until we have at least `min` (or run out).
+  const seen = new Set(selected);
+  for (const p of ranked) {
+    if (selected.length >= min) break;
+    if (!seen.has(p)) {
+      selected.push(p);
+      seen.add(p);
+    }
+  }
+
+  return selected.map((p) => p.pathwayId);
+}
+
 export function recommendPathway(
   selections: PrologueSelection[],
 ): PrologueRecommendation {
-  const scores = scoreSelections(selections);
-  const top = scores[0] ?? { pathwayId: 1, score: 0 };
+  const tally: Record<number, number> = {};
+  for (const { pathwayId, score } of scoreSelections(selections)) {
+    tally[pathwayId] = score;
+  }
+  const top = rankPathways(tally)[0];
   const maxPossible = PROLOGUE_SCENES.length * 2;
+  // De-biased: with no affinity signal at all, refuse to default to a specific
+  // pathway (the old code hardcoded Seer/pathway 1 here). pathwayId 0 == none.
+  if (!top || top.score === 0) {
+    return { pathwayId: 0, score: 0, maxPossible, justification: "" };
+  }
   return {
     pathwayId: top.pathwayId,
     score: top.score,
