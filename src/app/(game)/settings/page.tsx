@@ -1,4 +1,5 @@
 import { ProviderConfig } from "@/components/game/provider-config";
+import { SanityPreferences } from "@/components/game/sanity-preferences";
 
 export default function SettingsPage() {
   return (
@@ -29,11 +30,7 @@ export default function SettingsPage() {
           <p className="mt-2 text-sm leading-relaxed text-muted">
             Game preferences and display options.
           </p>
-          <div className="mt-4 rounded border border-dashed border-border/60 p-4 text-center">
-            <p className="text-xs italic text-muted/50">
-              Preferences &mdash; coming soon
-            </p>
-          </div>
+          <SanityPreferences />
         </section>
       </div>
     </div>

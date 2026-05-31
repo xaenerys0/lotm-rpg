@@ -30,6 +30,7 @@ import {
 import {
   buildSystemPrompt,
   buildLoreContext,
+  buildSanityDirective,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,
@@ -38,6 +39,12 @@ import {
   isWithinTokenBudget,
   TOKEN_BUDGET,
 } from "./prompts";
+import {
+  SANITY_TIER_THRESHOLDS,
+  sanityPercent,
+  classifySanityTier,
+  sanityNarrationDirective,
+} from "./sanity";
 import {
   createMemoryState,
   addTurn,
@@ -1618,7 +1625,64 @@ describe("prompts", () => {
     });
   });
 
+  describe("buildSanityDirective", () => {
+    it("returns empty content at high sanity", () => {
+      const layer = buildSanityDirective(makeGameState({ sanity: 90, maxSanity: 100 }));
+      expect(layer.role).toBe("system");
+      expect(layer.content).toBe("");
+    });
+
+    it("returns a strained directive at medium sanity", () => {
+      const layer = buildSanityDirective(makeGameState({ sanity: 50, maxSanity: 100 }));
+      expect(layer.content).toContain("Strained");
+    });
+
+    it("returns an unreliable directive at low sanity", () => {
+      const layer = buildSanityDirective(makeGameState({ sanity: 25, maxSanity: 100 }));
+      expect(layer.content).toContain("Unreliable");
+      expect(layer.content.toLowerCase()).toContain("irrational");
+    });
+
+    it("returns a shattering directive at critical sanity", () => {
+      const layer = buildSanityDirective(makeGameState({ sanity: 5, maxSanity: 100 }));
+      expect(layer.content).toContain("Shattering");
+      expect(layer.content.toLowerCase()).toContain("false choice");
+    });
+  });
+
   describe("assemblePrompt", () => {
+    it("includes the sanity directive at low sanity", () => {
+      const assembly = assemblePrompt({
+        gameState: makeGameState({ sanity: 20, maxSanity: 100 }),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      const hasDirective = assembly.layers.some((l) =>
+        l.content.includes("Narrator State"),
+      );
+      expect(hasDirective).toBe(true);
+    });
+
+    it("omits the sanity directive at high sanity", () => {
+      const assembly = assemblePrompt({
+        gameState: makeGameState({ sanity: 95, maxSanity: 100 }),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      const hasDirective = assembly.layers.some((l) =>
+        l.content.includes("Narrator State"),
+      );
+      expect(hasDirective).toBe(false);
+    });
+
     it("assembles all layers", () => {
       const input = {
         gameState: makeGameState(),
@@ -1724,6 +1788,51 @@ describe("prompts", () => {
     it("returns true at exact budget", () => {
       const assembly = { layers: [], totalTokenEstimate: TOKEN_BUDGET.total };
       expect(isWithinTokenBudget(assembly)).toBe(true);
+    });
+  });
+});
+
+// ── Sanity Tier Tests ──
+
+describe("sanity tiers", () => {
+  describe("sanityPercent", () => {
+    it("computes a clamped percentage", () => {
+      expect(sanityPercent(40, 100)).toBe(40);
+      expect(sanityPercent(-1, 100)).toBe(0);
+      expect(sanityPercent(200, 100)).toBe(100);
+    });
+
+    it("returns 0 for non-positive max", () => {
+      expect(sanityPercent(50, 0)).toBe(0);
+    });
+  });
+
+  describe("classifySanityTier", () => {
+    it("maps values to the spec tiers", () => {
+      expect(classifySanityTier(75, 100)).toBe("high");
+      expect(classifySanityTier(74, 100)).toBe("medium");
+      expect(classifySanityTier(40, 100)).toBe("medium");
+      expect(classifySanityTier(39, 100)).toBe("low");
+      expect(classifySanityTier(15, 100)).toBe("low");
+      expect(classifySanityTier(14, 100)).toBe("critical");
+    });
+  });
+
+  describe("SANITY_TIER_THRESHOLDS", () => {
+    it("matches the spec boundaries", () => {
+      expect(SANITY_TIER_THRESHOLDS).toEqual({ high: 75, medium: 40, low: 15 });
+    });
+  });
+
+  describe("sanityNarrationDirective", () => {
+    it("is empty for high sanity", () => {
+      expect(sanityNarrationDirective("high")).toBe("");
+    });
+
+    it("escalates instructions as the tier worsens", () => {
+      expect(sanityNarrationDirective("medium")).toContain("Strained");
+      expect(sanityNarrationDirective("low")).toContain("Unreliable");
+      expect(sanityNarrationDirective("critical")).toContain("Shattering");
     });
   });
 });

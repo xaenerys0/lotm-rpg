@@ -51,6 +51,135 @@
   }
 }
 
+/* ─── Sanity-Responsive UI Effects (issue #9) ─────────────────────────
+   The hidden sanity meter communicates state through escalating visual
+   distortion applied to the game surface. Intensity rises as sanity falls. */
+
+.sanity-fx {
+  position: relative;
+  transition: filter 1.2s var(--ease-out-expo);
+}
+
+/* High (75-100%): clean, no distortion. */
+.sanity-fx-high {
+  filter: none;
+}
+
+/* Medium (40-74%): subtle desaturation and a faint, slow flicker. */
+.sanity-fx-medium {
+  filter: saturate(0.92) contrast(1.02);
+  animation: sanity-flicker 9s ease-in-out infinite;
+}
+
+/* Low (15-39%): heavier color shift, slight blur, a restless drift. */
+.sanity-fx-low {
+  filter: saturate(0.8) contrast(1.06) hue-rotate(-8deg) brightness(0.97);
+  animation: sanity-drift 6s ease-in-out infinite;
+}
+
+/* Critical (0-14%): full corruption — strong shift and an unstable glitch. */
+.sanity-fx-critical {
+  filter: saturate(0.62) contrast(1.14) hue-rotate(-16deg) brightness(0.93);
+  animation: sanity-glitch 3.2s steps(1, end) infinite;
+}
+
+@keyframes sanity-flicker {
+  0%,
+  100% {
+    filter: saturate(0.92) contrast(1.02);
+  }
+  92% {
+    filter: saturate(0.92) contrast(1.02);
+  }
+  94% {
+    filter: saturate(0.86) contrast(1.05) brightness(0.98);
+  }
+  96% {
+    filter: saturate(0.92) contrast(1.02);
+  }
+}
+
+@keyframes sanity-drift {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-0.6px);
+  }
+  75% {
+    transform: translateX(0.6px);
+  }
+}
+
+@keyframes sanity-glitch {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    filter: saturate(0.62) contrast(1.14) hue-rotate(-16deg) brightness(0.93);
+  }
+  92% {
+    transform: translate(0, 0);
+  }
+  93% {
+    transform: translate(-1.5px, 0.5px);
+    filter: saturate(0.5) contrast(1.3) hue-rotate(-30deg) brightness(0.88);
+  }
+  94% {
+    transform: translate(1.5px, -0.5px);
+  }
+  95% {
+    transform: translate(0, 0);
+    filter: saturate(0.62) contrast(1.14) hue-rotate(-16deg) brightness(0.93);
+  }
+}
+
+/* Vignette / corruption overlay layered over the game surface. Opacity is
+   set inline from the tier's distortion level; pointer-events stay off. */
+.sanity-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      ellipse 70% 70% at 50% 50%,
+      transparent 40%,
+      rgba(127, 29, 29, 0.18) 100%
+    ),
+    radial-gradient(
+      ellipse 90% 60% at 50% 120%,
+      rgba(124, 58, 237, 0.12) 0%,
+      transparent 60%
+    );
+  mix-blend-mode: multiply;
+  transition: opacity 1.2s var(--ease-out-expo);
+}
+
+.sanity-overlay-critical {
+  animation: sanity-pulse 4s ease-in-out infinite;
+}
+
+@keyframes sanity-pulse {
+  0%,
+  100% {
+    opacity: var(--sanity-overlay-opacity, 1);
+  }
+  50% {
+    opacity: calc(var(--sanity-overlay-opacity, 1) * 0.6);
+  }
+}
+
+/* Honour reduced-motion: keep the static colour shift, drop the animation. */
+@media (prefers-reduced-motion: reduce) {
+  .sanity-fx-medium,
+  .sanity-fx-low,
+  .sanity-fx-critical,
+  .sanity-overlay-critical {
+    animation: none;
+  }
+}
+
 @layer base {
   body {
     background:

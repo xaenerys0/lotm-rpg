@@ -9,6 +9,7 @@ import type {
   PromptLayer,
 } from "./types";
 import { formatMemoryForPrompt, trimMemoryForBudget } from "./memory";
+import { classifySanityTier, sanityNarrationDirective } from "./sanity";
 
 const TOKEN_BUDGET = {
   system: 2500,
@@ -85,6 +86,16 @@ export function buildLoreContext(loreContext: LoreContext): PromptLayer {
   return { role: "system", content, cacheControl: true };
 }
 
+/**
+ * Build the unreliable-narration directive layer for the current sanity tier.
+ * Returns an empty-content layer at high sanity (the assembler drops it) — a
+ * reliable narrator needs no instruction and we save the tokens.
+ */
+export function buildSanityDirective(gameState: GameState): PromptLayer {
+  const tier = classifySanityTier(gameState.sanity, gameState.maxSanity);
+  return { role: "system", content: sanityNarrationDirective(tier) };
+}
+
 export function buildGameStatePrompt(gameState: GameState): PromptLayer {
   const stateJson = JSON.stringify(
     {
@@ -146,6 +157,11 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
 
   const systemLayer = buildSystemPrompt(input.abilities, input.actingRequirements);
   layers.push(systemLayer);
+
+  const sanityLayer = buildSanityDirective(input.gameState);
+  if (sanityLayer.content) {
+    layers.push(sanityLayer);
+  }
 
   const loreLayer = buildLoreContext(input.loreContext);
   if (loreLayer.content) {

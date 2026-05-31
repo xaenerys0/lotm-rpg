@@ -21,3 +21,8 @@ Victorian steampunk dark palette. Key tokens:
 
 - Use theme tokens (`text-foreground`, `bg-surface`) instead of raw Tailwind colors.
 - Keep the dark aesthetic — backgrounds are near-black, text is warm gray, accents are amber/gold.
+
+## Sanity Effects (issue #9)
+
+- `globals.css` defines `.sanity-fx` + `.sanity-fx-{high,medium,low,critical}` (filter/animation per tier) and `.sanity-overlay` (vignette/corruption layer). These are applied by `SanityEffects` from the classes returned by `sanityEffects()` in `@/lib/game` — do not hard-code tier styling elsewhere.
+- Animations honour `prefers-reduced-motion: reduce` (static colour shift retained, motion dropped). Keep any new sanity effects behind that media query too.
