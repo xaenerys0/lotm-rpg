@@ -1,4 +1,5 @@
 import type { Item, ValidationResult } from "@/lib/types/rules";
+import type { Injury } from "@/lib/types/combat";
 import type { LoreEntry } from "@/lib/lore/types";
 
 export type ProviderId =
@@ -129,6 +130,12 @@ export interface GameState {
    * Method mechanic; the game engine seeds a default when it is missing.
    */
   digestion?: DigestionState;
+  /**
+   * Active combat injuries (issue #10). Each heals over turns of normal play.
+   * Optional for backward compatibility with sessions saved before the combat
+   * system; absent means no injuries.
+   */
+  injuries?: Injury[];
 }
 
 export interface TurnRecord {

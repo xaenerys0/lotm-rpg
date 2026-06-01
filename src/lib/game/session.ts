@@ -115,6 +115,21 @@ export function isValidDigestionShape(obj: unknown): boolean {
   return true;
 }
 
+const INJURY_SEVERITIES = ["minor", "major", "grievous"];
+
+export function isValidInjuriesShape(obj: unknown): boolean {
+  if (!Array.isArray(obj)) return false;
+  return obj.every((entry) => {
+    if (typeof entry !== "object" || entry === null) return false;
+    const injury = entry as Record<string, unknown>;
+    if (typeof injury.id !== "string" || injury.id.length === 0) return false;
+    if (typeof injury.description !== "string") return false;
+    if (!INJURY_SEVERITIES.includes(injury.severity as string)) return false;
+    if (!Number.isFinite(injury.recoveryTurns)) return false;
+    return true;
+  });
+}
+
 export function isValidSessionShape(obj: unknown): boolean {
   if (typeof obj !== "object" || obj === null || Array.isArray(obj)) {
     return false;
@@ -143,6 +158,9 @@ export function isValidSessionShape(obj: unknown): boolean {
   // Digestion is optional (older sessions predate it) but must be well-shaped
   // when present; it is seeded with a default on deserialize if missing.
   if (gs.digestion !== undefined && !isValidDigestionShape(gs.digestion)) return false;
+  // Injuries are optional (older sessions predate combat) but must be
+  // well-shaped when present; absent simply means no active injuries.
+  if (gs.injuries !== undefined && !isValidInjuriesShape(gs.injuries)) return false;
 
   if (typeof s.memory !== "object" || s.memory === null) return false;
   const mem = s.memory as Record<string, unknown>;

@@ -3,6 +3,7 @@ import type { Item } from "@/lib/types/rules";
 import type { ActingEvaluation, StateChange } from "@/lib/ai";
 import { addTurn, buildTurnRecord } from "@/lib/ai";
 import { applyDigestionProgress, createDigestionState } from "./digestion";
+import { tickInjuries } from "./combat";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
 
@@ -101,6 +102,9 @@ export function applyResolution(
     updated = digestionResult.state;
     digestionDelta = digestionResult.delta;
   }
+
+  // A turn of normal play heals active combat injuries (issue #10).
+  updated = tickInjuries(updated);
 
   const turn = buildTurnRecord(turnCount, playerAction, response);
   const updatedMemory = addTurn(memory, turn);
