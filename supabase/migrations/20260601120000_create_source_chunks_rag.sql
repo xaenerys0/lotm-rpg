@@ -176,7 +176,7 @@ as $$
              order by ts_rank_cd(f.tsv, query) desc
            )::integer as rank
     from filtered f,
-         websearch_to_tsquery('english', coalesce(p_query_text, '')) as query
+         websearch_to_tsquery('english', p_query_text) as query
     where p_query_text is not null
       and p_query_text <> ''
       and f.tsv @@ query
