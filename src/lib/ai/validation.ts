@@ -12,6 +12,28 @@ const VALID_ITEM_CATEGORIES = [
   "potion-formula",
 ];
 
+/**
+ * Guarantee every choice has a unique, non-empty id. Ids double as React keys —
+ * and, in the game loop, the handle used to recover the selected choice — so an
+ * empty or duplicate id causes key collisions that render blank/omitted choices
+ * or resolve the wrong option. Falls back to a stable index-based id whenever a
+ * model omits or repeats one. Mutates each choice's id in place and returns the
+ * same array. Shared by the main response parser and the prologue parser so both
+ * AI paths get the same guarantee.
+ */
+export function ensureUniqueChoiceIds<T extends { id: string }>(choices: T[]): T[] {
+  const seen = new Set<string>();
+  choices.forEach((choice, i) => {
+    let id = choice.id.trim();
+    if (id === "" || seen.has(id)) {
+      id = `choice-${i}`;
+    }
+    seen.add(id);
+    choice.id = id;
+  });
+  return choices;
+}
+
 export function parseAIResponse(raw: string): AIResponse {
   let cleaned = raw.trim();
 
@@ -56,16 +78,18 @@ export function parseAIResponse(raw: string): AIResponse {
     if (!Array.isArray(obj.choices)) {
       throw createMalformedOutputError(raw);
     }
-    response.choices = obj.choices.map((c: unknown) => {
-      const choice = c as Record<string, unknown>;
-      return {
-        id: String(choice.id ?? ""),
-        text: String(choice.text ?? ""),
-        type: VALID_CHOICE_TYPES.includes(String(choice.type))
-          ? (String(choice.type) as "action" | "dialogue" | "investigation" | "ritual")
-          : "action",
-      };
-    });
+    response.choices = ensureUniqueChoiceIds(
+      obj.choices.map((c: unknown) => {
+        const choice = c as Record<string, unknown>;
+        return {
+          id: String(choice.id ?? ""),
+          text: String(choice.text ?? ""),
+          type: VALID_CHOICE_TYPES.includes(String(choice.type))
+            ? (String(choice.type) as "action" | "dialogue" | "investigation" | "ritual")
+            : "action",
+        };
+      }),
+    );
   }
 
   if (obj.worldStateChanges !== undefined) {
@@ -139,6 +163,17 @@ export function validateAIResponse(response: AIResponse): ValidationResult {
     });
   }
 
+  if (response.choices) {
+    for (const choice of response.choices) {
+      if (!choice.text.trim()) {
+        violations.push({
+          law: "conservation",
+          message: `Choice missing text: id="${choice.id}"`,
+        });
+      }
+    }
+  }
+
   if (response.actingEvaluation) {
     const { alignment } = response.actingEvaluation;
     if (alignment < 0 || alignment > 1) {
@@ -191,8 +226,13 @@ export function sanitizeAIResponse(response: AIResponse): AIResponse {
     );
   }
 
-  if (sanitized.choices && sanitized.choices.length > MAX_CHOICES) {
-    sanitized.choices = sanitized.choices.slice(0, MAX_CHOICES);
+  if (sanitized.choices) {
+    // Drop blank choices — an empty label renders a nameless button (WCAG) and
+    // is the "blank choice" symptom; then cap the count.
+    sanitized.choices = sanitized.choices.filter((c) => c.text.trim() !== "");
+    if (sanitized.choices.length > MAX_CHOICES) {
+      sanitized.choices = sanitized.choices.slice(0, MAX_CHOICES);
+    }
   }
 
   if (sanitized.actingEvaluation) {

@@ -2322,14 +2322,51 @@ describe("validation", () => {
       expect(result.narrative).toBe("test");
     });
 
-    it("handles choice with missing id and text", () => {
+    it("falls back to a stable index-based id when id is missing", () => {
       const json = JSON.stringify({
         narrative: "x",
-        choices: [{}],
+        choices: [{}, {}],
       });
       const result = parseAIResponse(json);
-      expect(result.choices![0].id).toBe("");
+      expect(result.choices![0].id).toBe("choice-0");
+      expect(result.choices![1].id).toBe("choice-1");
       expect(result.choices![0].text).toBe("");
+    });
+
+    it("falls back to a stable id when id is blank/whitespace", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        choices: [{ id: "   ", text: "a" }],
+      });
+      const result = parseAIResponse(json);
+      expect(result.choices![0].id).toBe("choice-0");
+    });
+
+    it("de-duplicates repeated choice ids so keys stay unique", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        choices: [
+          { id: "dup", text: "a" },
+          { id: "dup", text: "b" },
+        ],
+      });
+      const result = parseAIResponse(json);
+      expect(result.choices![0].id).toBe("dup");
+      expect(result.choices![1].id).toBe("choice-1");
+      const ids = result.choices!.map((c) => c.id);
+      expect(new Set(ids).size).toBe(ids.length);
+    });
+
+    it("preserves provided non-empty unique choice ids", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        choices: [
+          { id: "a", text: "1" },
+          { id: "b", text: "2" },
+        ],
+      });
+      const result = parseAIResponse(json);
+      expect(result.choices!.map((c) => c.id)).toEqual(["a", "b"]);
     });
 
     it("handles worldStateChange with missing fields", () => {
@@ -2431,6 +2468,26 @@ describe("validation", () => {
       const result = validateAIResponse(response);
       expect(result.valid).toBe(false);
       expect(result.violations[0].message).toContain("8");
+    });
+
+    it("flags a choice with empty text", () => {
+      const response = makeValidAIResponse();
+      response.choices = [
+        { id: "1", text: "Investigate", type: "investigation" },
+        { id: "2", text: "", type: "action" },
+      ];
+      const result = validateAIResponse(response);
+      expect(result.valid).toBe(false);
+      expect(result.violations.some((v) => v.message.includes("missing text"))).toBe(
+        true,
+      );
+    });
+
+    it("flags a choice whose text is only whitespace", () => {
+      const response = makeValidAIResponse();
+      response.choices = [{ id: "1", text: "   ", type: "action" }];
+      const result = validateAIResponse(response);
+      expect(result.valid).toBe(false);
     });
 
     it("flags acting alignment below 0", () => {
@@ -2603,6 +2660,18 @@ describe("validation", () => {
       }));
       const sanitized = sanitizeAIResponse(response);
       expect(sanitized.choices).toHaveLength(6);
+    });
+
+    it("drops choices with empty or whitespace-only text", () => {
+      const response = makeValidAIResponse();
+      response.choices = [
+        { id: "1", text: "Keep me", type: "action" },
+        { id: "2", text: "", type: "action" },
+        { id: "3", text: "   ", type: "action" },
+      ];
+      const sanitized = sanitizeAIResponse(response);
+      expect(sanitized.choices).toHaveLength(1);
+      expect(sanitized.choices![0].text).toBe("Keep me");
     });
 
     it("clamps acting alignment to [0, 1]", () => {
@@ -3461,6 +3530,26 @@ describe("generatePrologueScene", () => {
     expect(result.readyToConclude).toBe(false);
   });
 
+  it("de-duplicates empty/repeated choice ids so React keys stay unique", async () => {
+    // Affinities stay distinct (so the affinity check passes) but ids collide —
+    // ids do not constrain affinities, and they double as React keys.
+    mockOpenAIFetch(
+      makePrologueApiResponse({
+        choices: [
+          { id: "x", text: "Help the woman.", affinities: { 3: 1 } },
+          { id: "x", text: "Note the seal.", affinities: { 1: 1 } },
+          { id: "", text: "Wonder about the man.", affinities: { 4: 1 } },
+          { id: "x", text: "Read the constable.", affinities: { 2: 1 } },
+        ],
+      }),
+    );
+
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+    const ids = result.choices.map((c) => c.id);
+    expect(ids).toHaveLength(4);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it("uses default background text when characterBackground is empty", async () => {
     const rawContent = makePrologueApiResponse();
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
@@ -3686,6 +3775,29 @@ describe("generatePrologueFinale", () => {
     await expect(
       generatePrologueFinale(makeProviderConfig(), "Klein", "", makeHistory(), []),
     ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("de-duplicates repeated finale choice ids so React keys stay unique", async () => {
+    mockOpenAIFetch(
+      JSON.stringify({
+        narrative: "Two vials, both labelled the same by a careless hand.",
+        choices: [
+          { id: "same", text: "The amber vial.", affinities: { 1: 1 } },
+          { id: "same", text: "The black vial.", affinities: { 3: 1 } },
+        ],
+      }),
+    );
+
+    const result = await generatePrologueFinale(
+      makeProviderConfig(),
+      "Klein",
+      "",
+      makeHistory(),
+      [1, 3],
+    );
+
+    const ids = result.choices.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it("throws when the finale narrative is missing", async () => {
