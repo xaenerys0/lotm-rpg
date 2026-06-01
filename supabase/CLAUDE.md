@@ -39,9 +39,9 @@ Migrations live in `migrations/`. Four migrations in order:
 
 Two settings control login persistence. **Both must be set in the hosted Supabase project** via the Dashboard → Authentication → Advanced settings:
 
-| Setting                  | Source of truth                                | Dashboard value   |
-| ------------------------ | ---------------------------------------------- | ----------------- |
-| JWT expiry               | `config.toml` `jwt_expiry = 604800` + Dashboard | 604800 (7 days)   |
+| Setting                  | Source of truth                                    | Dashboard value   |
+| ------------------------ | -------------------------------------------------- | ----------------- |
+| JWT expiry               | `config.toml` `jwt_expiry = 604800` + Dashboard    | 604800 (7 days)   |
 | Refresh token inactivity | **Dashboard only** (`[auth.sessions]` is Pro-only) | 7776000 (90 days) |
 
 **Why both are needed:**

@@ -10,6 +10,7 @@ export default defineConfig({
         "src/lib/lore/**/*.ts",
         "src/lib/ai/**/*.ts",
         "src/lib/game/**/*.ts",
+        "src/lib/rag/**/*.ts",
       ],
       exclude: ["src/**/*.test.ts", "src/**/*.test.tsx", "src/lib/**/index.ts"],
       thresholds: {
