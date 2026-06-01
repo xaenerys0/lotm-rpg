@@ -1,7 +1,7 @@
 # Type Definitions
 
 - `rules.ts` — Game rules types (pathways, sequences, characteristics, validation results). Source of truth for the rules engine API surface.
-- `database.ts` — Supabase schema types (`Database` interface). Defines `profiles` and `lore_entries` tables, plus `LoreCategoryEnum`.
+- `database.ts` — Supabase schema types (`Database` interface). Defines `profiles`, `lore_entries`, `source_chunks`, and `chunk_embeddings` tables; the `match_source_chunks` RPC under `Functions`; plus `LoreCategoryEnum` and `SourceChunkSourceEnum`. pgvector columns serialize as `string` (see `chunk_embeddings.embedding`).
 
 ## Conventions
 
