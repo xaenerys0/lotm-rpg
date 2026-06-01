@@ -20,5 +20,11 @@ export {
 } from "./types";
 
 export { chunkDocument, chunkDocuments, splitSentences } from "./chunk";
+export {
+  embedChunks,
+  DEFAULT_EMBED_BATCH_SIZE,
+  type ChunkEmbedder,
+  type EmbedChunksOptions,
+} from "./embed";
 export { countTokens } from "./tokenizer";
 export { iterateJsonl, parseJsonl, toJsonl } from "./jsonl";

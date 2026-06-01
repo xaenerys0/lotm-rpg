@@ -21,6 +21,13 @@ retrieval path imports it. Runtime retrieval goes through the
   dependency, kept out of the app bundle). A deterministic sizing heuristic — it
   need not match the embedding model's BPE.
 - `chunk.ts` — The shared chunker: `splitSentences`, `chunkDocument`, `chunkDocuments`.
+- `embed.ts` — The offline embed stage (issue #60): `embedChunks(records, embedder, {batchSize?})`
+  fills each `ChunkRecord.embedding`. Run once **per model** (qwen3-embedding-0.6b, then
+  bge-m3) to build each map; order-preserving and deterministic given a pinned embedder. It
+  takes a minimal local `ChunkEmbedder` contract (`embed(texts)`) — declared here so the core
+  stays decoupled from the runtime AI module; `@/lib/ai`'s `EmbeddingProvider` satisfies it
+  structurally and is wired in the `scripts/rag/embed.ts` driver. Operator-offline batch work,
+  never an always-on service.
 - `jsonl.ts` — `parseJsonl` / `iterateJsonl` / `toJsonl` — the JSONL read/write seam
   shared by every pipeline stage.
 - `index.ts` — Public exports.
@@ -44,9 +51,10 @@ parse → normalize → chunk → embed → load
 ```
 
 Each stage reads and writes JSONL, so any stage re-runs in isolation (e.g. re-embed
-with a new model without re-parsing or re-chunking). The **chunk** stage lives here;
-the driver is `scripts/rag/chunk.ts` (`pnpm rag:chunk`). The other stages land in
-later RAG issues (#3 embed, #4 wiki parse/normalize, #5 novel parse/normalize, load).
+with a new model without re-parsing or re-chunking). The **chunk** stage
+(`scripts/rag/chunk.ts`, `pnpm rag:chunk`) and the **embed** stage
+(`scripts/rag/embed.ts`, `pnpm rag:embed`, issue #60) live here. The remaining stages
+land in later RAG issues (#4 wiki parse/normalize, #5 novel parse/normalize, load).
 
 ## Chunker guarantees
 
