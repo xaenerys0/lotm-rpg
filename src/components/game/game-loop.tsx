@@ -7,6 +7,10 @@ import {
   transition,
   applyResolution,
   applyDigestion,
+  applyCombatResult,
+  createEncounter,
+  deriveEncounterEnemy,
+  isValidEncounterShape,
   serializeSession,
   deserializeSession,
   digestionFeedback,
@@ -21,8 +25,11 @@ import {
   type GamePreferences,
   type SanityTier,
   type LossOfControlSeverity,
+  type CombatEncounter,
+  type CombatResult,
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
+import { CombatEncounterView } from "./combat-encounter";
 import { loadPreferences } from "./preferences-store";
 import type {
   DigestionState,
@@ -31,7 +38,7 @@ import type {
   InstructionType,
   AIErrorCode,
 } from "@/lib/ai";
-import { generate, TOKEN_BUDGET, AIError } from "@/lib/ai";
+import { generate, addTurn, buildTurnRecord, TOKEN_BUDGET, AIError } from "@/lib/ai";
 import { getLoreByPathway, getLoreByCity } from "@/lib/lore";
 import { getPathway, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
@@ -62,6 +69,39 @@ function loadSessionFromStorage(sessionId: string): GameSession | null {
     return deserializeSession(raw);
   } catch {
     return null;
+  }
+}
+
+// Combat encounters live in their own localStorage entry so an in-progress
+// fight survives a reload without touching the persisted session schema.
+const COMBAT_KEY_PREFIX = "lotm:combat:";
+
+function loadCombatFromStorage(sessionId: string): CombatEncounter | null {
+  try {
+    const raw = localStorage.getItem(COMBAT_KEY_PREFIX + sessionId);
+    if (!raw) return null;
+    const parsed: unknown = JSON.parse(raw);
+    // Reject unknown/old-schema blobs rather than coercing them (mirrors
+    // deserializeSession); a malformed encounter would crash the engine/view.
+    return isValidEncounterShape(parsed) ? (parsed as CombatEncounter) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCombatToStorage(sessionId: string, encounter: CombatEncounter): void {
+  try {
+    localStorage.setItem(COMBAT_KEY_PREFIX + sessionId, JSON.stringify(encounter));
+  } catch {
+    // Storage full or unavailable
+  }
+}
+
+function clearCombatFromStorage(sessionId: string): void {
+  try {
+    localStorage.removeItem(COMBAT_KEY_PREFIX + sessionId);
+  } catch {
+    // Storage unavailable
   }
 }
 
@@ -174,10 +214,83 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     () => DEFAULT_PREFERENCES,
   );
 
+  const configCacheRef = useRef<ProviderConfig | null | undefined>(undefined);
+  const providerConfig = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (configCacheRef.current === undefined) {
+        configCacheRef.current = loadProviderConfig();
+      }
+      return configCacheRef.current;
+    },
+    () => null,
+  );
+
+  const combatCacheRef = useRef<CombatEncounter | null | undefined>(undefined);
+  const initialCombat = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (combatCacheRef.current === undefined) {
+        combatCacheRef.current = loadCombatFromStorage(sessionId);
+      }
+      return combatCacheRef.current;
+    },
+    () => null,
+  );
+  const [combat, setCombat] = useState<CombatEncounter | null>(initialCombat ?? null);
+
   const updateSession = useCallback((next: GameSession) => {
     setSession(next);
     saveSessionToStorage(next);
   }, []);
+
+  const startCombat = useCallback(
+    (ambush: boolean) => {
+      if (!session) return;
+      const encounter = createEncounter({
+        id: crypto.randomUUID(),
+        enemy: deriveEncounterEnemy(session.gameState, ambush),
+        playerPathwayId: session.gameState.pathwayId,
+        playerSequence: session.gameState.sequenceLevel,
+        ambush,
+        injuries: session.gameState.injuries ?? [],
+      });
+      setCombat(encounter);
+      saveCombatToStorage(session.id, encounter);
+    },
+    [session],
+  );
+
+  const handleCombatUpdate = useCallback(
+    (next: CombatEncounter) => {
+      if (!session) return;
+      setCombat(next);
+      saveCombatToStorage(session.id, next);
+    },
+    [session],
+  );
+
+  const handleCombatResult = useCallback(
+    (result: CombatResult) => {
+      if (!session || !combat) return;
+      const gameState = applyCombatResult(session.gameState, result);
+      // Record the fight so the narrator remembers it next turn.
+      const turn = buildTurnRecord(session.turnCount, `Combat: ${combat.enemy.name}`, {
+        narrative: result.narrativeSummary,
+      });
+      const memory = addTurn(session.memory, turn);
+      updateSession({ ...session, gameState, memory, updatedAt: Date.now() });
+      clearCombatFromStorage(session.id);
+      setCombat(null);
+    },
+    [session, combat, updateSession],
+  );
+
+  const handleCombatExit = useCallback(() => {
+    if (!session) return;
+    clearCombatFromStorage(session.id);
+    setCombat(null);
+  }, [session]);
 
   const dispatchMissingConfig = useCallback(
     (currentSession: GameSession, gen: number) => {
@@ -390,6 +503,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const pathway = getPathway(session.gameState.pathwayId);
   const seq = getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel);
   const lostControl = isLossOfControl(session.gameState);
+  // Combat only needs ability names — derive them directly rather than running
+  // the full AI-call param bundle (which also scans/selects lore) per render.
+  const combatAbilities = seq?.abilities.map((a) => a.name) ?? [];
 
   return (
     <SanityEffects
@@ -438,26 +554,44 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           />
         )}
 
-        {/* Phase Content */}
-        {session.phase === "idle" && <IdlePhase onStart={handleStartSituation} />}
-        {session.phase === "situation" && <SituationPhase />}
-        {session.phase === "choices" && (
-          <ChoicesPhase
-            narrative={session.currentNarrative ?? ""}
-            choices={session.currentChoices ?? []}
-            onSelect={handleSelectChoice}
+        {/* A combat encounter takes over the surface until it resolves. */}
+        {combat ? (
+          <CombatEncounterView
+            encounter={combat}
+            gameState={session.gameState}
+            abilities={combatAbilities}
+            config={providerConfig}
+            onUpdate={handleCombatUpdate}
+            onApplyResult={handleCombatResult}
+            onExit={handleCombatExit}
           />
-        )}
-        {session.phase === "resolution" && <ResolutionPhase />}
-        {session.phase === "consequences" && (
-          <ConsequencesPhase session={session} onContinue={handleContinue} />
-        )}
-        {session.phase === "error" && (
-          <ErrorPhase
-            message={session.errorMessage ?? "An unknown error occurred."}
-            errorCode={session.errorCode}
-            onRetry={handleRetry}
-          />
+        ) : (
+          <>
+            {/* Phase Content */}
+            {session.phase === "idle" && <IdlePhase onStart={handleStartSituation} />}
+            {session.phase === "situation" && <SituationPhase />}
+            {session.phase === "choices" && (
+              <>
+                <ChoicesPhase
+                  narrative={session.currentNarrative ?? ""}
+                  choices={session.currentChoices ?? []}
+                  onSelect={handleSelectChoice}
+                />
+                <CombatLauncher onStart={startCombat} />
+              </>
+            )}
+            {session.phase === "resolution" && <ResolutionPhase />}
+            {session.phase === "consequences" && (
+              <ConsequencesPhase session={session} onContinue={handleContinue} />
+            )}
+            {session.phase === "error" && (
+              <ErrorPhase
+                message={session.errorMessage ?? "An unknown error occurred."}
+                errorCode={session.errorCode}
+                onRetry={handleRetry}
+              />
+            )}
+          </>
         )}
       </div>
     </SanityEffects>
@@ -685,6 +819,32 @@ function ResolutionPhase() {
       <p className="mt-6 max-w-sm text-center font-serif text-sm text-muted">
         The consequences unfold...
       </p>
+    </div>
+  );
+}
+
+function CombatLauncher({ onStart }: { onStart: (ambush: boolean) => void }) {
+  return (
+    <div className="mt-8 border-t border-border/40 pt-5">
+      <p className="mb-3 text-center text-[10px] tracking-[0.2em] text-muted uppercase">
+        Or steel yourself for violence
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => onStart(false)}
+          className="min-h-[24px] rounded-md border border-crimson/30 bg-crimson/[0.06] px-4 py-2.5 text-sm text-foreground/80 transition-colors hover:border-crimson/50 hover:bg-crimson/[0.1]"
+        >
+          <span aria-hidden="true">⚔ </span>Confront a known threat
+        </button>
+        <button
+          type="button"
+          onClick={() => onStart(true)}
+          className="min-h-[24px] rounded-md border border-border/50 bg-surface/30 px-4 py-2.5 text-sm text-muted transition-colors hover:border-border hover:text-foreground/80"
+        >
+          Brave an ambush
+        </button>
+      </div>
     </div>
   );
 }

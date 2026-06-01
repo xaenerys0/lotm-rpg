@@ -143,7 +143,7 @@ export function buildInstructionPrompt(
     advancement:
       "The player is attempting a Beyonder advancement. Narrate the ritual, evaluate acting alignment, and describe the consequences.",
     combat:
-      "The player is in combat. Narrate the combat round, apply damage/effects, and provide tactical choices.",
+      "The player is in combat. Narrate this combat exchange vividly and in the flavour of their pathway (a Seer divines the enemy's moves, a Spectator reads their intent, a Bard channels searing light, a Death Beyonder commands spirits). The mechanical outcome and the tactical options are decided by the rules engine — do NOT invent the result or new choices; narrate only the moment described in the player action.",
   };
 
   return {

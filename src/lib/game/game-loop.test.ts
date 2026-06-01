@@ -16,6 +16,7 @@ import {
   deserializeSession,
   isValidSessionShape,
   isValidDigestionShape,
+  isValidInjuriesShape,
 } from "./session";
 import { VALID_TRANSITIONS, PILLAR_INSTRUCTION_MAP, CHOICE_PILLAR_MAP } from "./types";
 import type { GameSession, GamePhase, GameplayPillar } from "./types";
@@ -992,6 +993,23 @@ describe("applyResolution", () => {
     const { digestionDelta } = applyResolution(state, memory, result, 0, "Wait");
     expect(digestionDelta).toBe(0);
   });
+
+  it("heals combat injuries by one turn of normal play (issue #10)", () => {
+    const state = makeGameState({
+      injuries: [
+        { id: "a", description: "cut", severity: "minor", recoveryTurns: 1 },
+        { id: "b", description: "wound", severity: "major", recoveryTurns: 4 },
+      ],
+    });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse();
+
+    const { gameState } = applyResolution(state, memory, result, 0, "Rest");
+    // The 1-turn injury fully recovers and is dropped; the other ticks down.
+    expect(gameState.injuries).toEqual([
+      { id: "b", description: "wound", severity: "major", recoveryTurns: 3 },
+    ]);
+  });
 });
 
 // ─── applyDigestion ────────────────────────────────────────────────
@@ -1569,5 +1587,64 @@ describe("isValidDigestionShape", () => {
 
   it("rejects a non-boolean complete", () => {
     expect(isValidDigestionShape({ ...valid, complete: "yes" })).toBe(false);
+  });
+});
+
+describe("isValidInjuriesShape", () => {
+  const valid = { id: "i1", description: "a cut", severity: "minor", recoveryTurns: 3 };
+
+  it("accepts an empty array", () => {
+    expect(isValidInjuriesShape([])).toBe(true);
+  });
+
+  it("accepts an array of well-formed injuries", () => {
+    expect(isValidInjuriesShape([valid])).toBe(true);
+  });
+
+  it("rejects a non-array", () => {
+    expect(isValidInjuriesShape({})).toBe(false);
+    expect(isValidInjuriesShape(null)).toBe(false);
+  });
+
+  it("rejects an entry that is not an object", () => {
+    expect(isValidInjuriesShape(["nope"])).toBe(false);
+  });
+
+  it("rejects a missing or empty id", () => {
+    expect(isValidInjuriesShape([{ ...valid, id: "" }])).toBe(false);
+    expect(isValidInjuriesShape([{ ...valid, id: 5 }])).toBe(false);
+  });
+
+  it("rejects a non-string description", () => {
+    expect(isValidInjuriesShape([{ ...valid, description: 1 }])).toBe(false);
+  });
+
+  it("rejects an unknown severity", () => {
+    expect(isValidInjuriesShape([{ ...valid, severity: "fatal" }])).toBe(false);
+  });
+
+  it("rejects a non-numeric recoveryTurns", () => {
+    expect(isValidInjuriesShape([{ ...valid, recoveryTurns: "soon" }])).toBe(false);
+  });
+});
+
+describe("isValidSessionShape with injuries", () => {
+  it("accepts a session whose game state carries well-formed injuries", () => {
+    const session = makeSession({
+      gameState: makeGameState({
+        injuries: [{ id: "i1", description: "cut", severity: "minor", recoveryTurns: 2 }],
+      }),
+    });
+    expect(isValidSessionShape(session)).toBe(true);
+  });
+
+  it("rejects a session whose injuries are malformed", () => {
+    const session = makeSession({
+      gameState: makeGameState({
+        // @ts-expect-error — intentionally malformed for the test
+        injuries: [{ id: "i1", severity: "fatal" }],
+      }),
+    });
+    expect(isValidSessionShape(session)).toBe(false);
   });
 });

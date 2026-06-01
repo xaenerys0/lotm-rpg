@@ -10,6 +10,7 @@ import { SanityPreferences } from "@/components/game/sanity-preferences";
 import { CharacterCreation } from "@/components/game/character-creation";
 import { GameSidebar } from "@/components/game/game-sidebar";
 import { GameLoop } from "@/components/game/game-loop";
+import { CombatEncounterView } from "@/components/game/combat-encounter";
 import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
 
@@ -18,7 +19,14 @@ import {
   createDefaultGameState,
   serializeSession,
   SESSION_KEY_PREFIX,
+  createEncounter,
+  applyPreparation,
+  chooseOption,
+  isExchangeComplete,
+  resolveEncounter,
+  emptyPreparation,
 } from "@/lib/game";
+import type { GameState } from "@/lib/ai";
 
 // Components reach for the Next router; stub it so they render in isolation.
 vi.mock("next/navigation", () => ({
@@ -79,6 +87,92 @@ describe("accessibility — game loop", () => {
 
   it("session-not-found state has no violations", async () => {
     await expectNoAxeViolations(<GameLoop sessionId="missing" />);
+  });
+});
+
+describe("accessibility — combat", () => {
+  const gameState: GameState = {
+    ...createDefaultGameState(1, "char-1", "Klein"),
+    inventory: [
+      { name: "Corpse Grass", description: "A grave herb.", category: "main-ingredient" },
+      {
+        name: "Sealed Charm",
+        description: "A bound trinket.",
+        category: "supplementary-ingredient",
+      },
+    ],
+  };
+  const abilities = ["Spirit Vision", "Divination"];
+  const noop = () => {};
+
+  function view(encounter: Parameters<typeof CombatEncounterView>[0]["encounter"]) {
+    return (
+      <CombatEncounterView
+        encounter={encounter}
+        gameState={gameState}
+        abilities={abilities}
+        config={null}
+        onUpdate={noop}
+        onApplyResult={noop}
+        onExit={noop}
+      />
+    );
+  }
+
+  it("preparation phase has no violations", async () => {
+    const encounter = createEncounter({
+      id: "a11y-combat",
+      enemy: {
+        name: "a lurking Beyonder",
+        sequenceLevel: 8,
+        isBeyonder: true,
+        pathwayId: 4,
+      },
+      playerPathwayId: 1,
+      playerSequence: 9,
+      randomFactor: 0.5,
+    });
+    await expectNoAxeViolations(view(encounter));
+  });
+
+  it("exchange phase has no violations", async () => {
+    const prepared = applyPreparation(
+      createEncounter({
+        id: "a11y-combat-2",
+        enemy: { name: "a lurking Beyonder", sequenceLevel: 8, isBeyonder: false },
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      emptyPreparation(),
+    );
+    await expectNoAxeViolations(view(prepared));
+  });
+
+  it("resolution phase has no violations", async () => {
+    let encounter = applyPreparation(
+      createEncounter({
+        id: "a11y-combat-3",
+        enemy: {
+          name: "a lurking Beyonder",
+          sequenceLevel: 8,
+          isBeyonder: true,
+          pathwayId: 4,
+        },
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      emptyPreparation(),
+    );
+    while (!isExchangeComplete(encounter)) {
+      encounter = chooseOption(
+        encounter,
+        encounter.decisionPoints[encounter.decisionIndex].options[0].id,
+      );
+    }
+    encounter = resolveEncounter(encounter);
+    await expectNoAxeViolations(view(encounter));
   });
 });
 
