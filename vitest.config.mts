@@ -4,6 +4,16 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    // Give jsdom-environment tests a real (non-opaque) origin instead of the
+    // default about:blank, so origin-gated web APIs behave.
+    environmentOptions: {
+      jsdom: {
+        url: "http://localhost/",
+      },
+    },
+    // Node 26's built-in global localStorage (undefined without
+    // --localstorage-file) shadows jsdom's; install a working polyfill.
+    setupFiles: ["src/test/setup-storage.ts"],
     coverage: {
       include: [
         "src/lib/rules/**/*.ts",
