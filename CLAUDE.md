@@ -14,6 +14,7 @@ Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
 | `pnpm typecheck`    | TypeScript check    |
 | `pnpm test`         | Vitest (single run) |
 | `pnpm test:watch`   | Vitest (watch mode) |
+| `pnpm rag:chunk`    | RAG chunk stage CLI |
 
 ## Architecture
 
@@ -33,11 +34,14 @@ src/
 │   ├── ai/              # AI integration — providers, prompts, memory, validation
 │   ├── game/            # Game loop engine — state machine, world state, sessions
 │   ├── lore/            # Lore database — RAG-ready chunks for AI layer
+│   ├── rag/             # RAG ingestion core — JSONL chunk format + shared chunker
 │   ├── react/           # Small React utilities (e.g. noopSubscribe)
 │   ├── rules/           # Rules engine — pathways, laws, validation
 │   ├── supabase/        # Client factories (browser, server, middleware)
 │   └── types/           # TypeScript type definitions
 └── proxy.ts             # Middleware — CSP headers + auth session refresh
+scripts/
+└── rag/                 # RAG pipeline stage drivers (chunk stage CLI; dev-only, tsx)
 supabase/
 ├── config.toml          # Local dev config (ports, auth, runtime)
 ├── migrations/          # SQL migrations (RLS-enabled)
@@ -56,7 +60,7 @@ docs/
 - **Supabase Auth** with email/password. RLS on all tables — users access only their own data.
 - **CSP nonces** generated in `src/proxy.ts` with `'strict-dynamic'`.
 - **Prettier**: double quotes, semicolons, trailing commas, 90-char print width. Config in `.prettierrc`.
-- **Tests** colocated as `*.test.ts`, run with Vitest 4.x. Coverage enforced on `src/lib/{rules,lore,ai,game}/**/*.ts` (excluding index files).
+- **Tests** colocated as `*.test.ts`, run with Vitest 4.x. Coverage enforced on `src/lib/{rules,lore,ai,game,rag}/**/*.ts` (excluding index files).
 - **No component libraries** — pure Tailwind utility classes.
 - **PostCSS** via `@tailwindcss/postcss` plugin (config in `postcss.config.mjs`).
 - **Typed routes** enabled in `next.config.ts` (`typedRoutes: true`).
@@ -93,9 +97,11 @@ Each major directory has its own `CLAUDE.md` with context-specific rules:
 - `src/lib/ai/CLAUDE.md` — AI integration, providers, prompts, memory
 - `src/lib/game/CLAUDE.md` — game loop engine, state machine, sessions
 - `src/lib/lore/CLAUDE.md` — lore database, RAG chunking, query helpers
+- `src/lib/rag/CLAUDE.md` — RAG ingestion core: JSONL chunk format, stage contract, shared chunker
 - `src/lib/rules/CLAUDE.md` — rules engine architecture
 - `src/lib/supabase/CLAUDE.md` — client factories, RLS
 - `src/lib/types/CLAUDE.md` — type conventions
+- `scripts/rag/CLAUDE.md` — RAG pipeline stage drivers (chunk stage CLI)
 - `supabase/CLAUDE.md` — database, migrations, templates
 
 Shared rule files in `docs/rules/` are `@`-imported only where relevant:
