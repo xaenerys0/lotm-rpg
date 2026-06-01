@@ -122,8 +122,11 @@ export function chunkDocument(
     // Flush only once the floor is met, so chunks land in the [min, max] window.
     if (current.length > 0 && wouldOverflow && currentTokens >= minTokens) {
       chunks.push(current.join(" "));
-      current = takeOverlap(current, overlapTarget, countTokens);
-      currentTokens = current.reduce((sum, s) => sum + countTokens(s), 0);
+      // takeOverlap already tallies the carried tokens — reuse that count
+      // instead of re-tokenizing the overlap sentences.
+      const overlap = takeOverlap(current, overlapTarget, countTokens);
+      current = overlap.sentences;
+      currentTokens = overlap.tokens;
     }
     current.push(unit);
     currentTokens += unitTokens;
@@ -155,17 +158,18 @@ function splitOversizeSentence(
 ): string[] {
   if (countTokens(sentence) <= maxTokens) return [sentence];
 
-  const words = sentence.split(" ");
   const parts: string[] = [];
-  let current: string[] = [];
-  for (const word of words) {
-    current.push(word);
-    if (countTokens(current.join(" ")) >= maxTokens) {
-      parts.push(current.join(" "));
-      current = [];
+  // Accumulate the joined window directly so each word is counted once rather
+  // than re-joining (and re-tokenizing) the whole array on every iteration.
+  let current = "";
+  for (const word of sentence.split(" ")) {
+    current = current === "" ? word : `${current} ${word}`;
+    if (countTokens(current) >= maxTokens) {
+      parts.push(current);
+      current = "";
     }
   }
-  if (current.length > 0) parts.push(current.join(" "));
+  if (current !== "") parts.push(current);
   return parts;
 }
 
@@ -175,16 +179,16 @@ function takeOverlap(
   sentences: readonly string[],
   overlapTarget: number,
   countTokens: TokenCounter,
-): string[] {
-  if (overlapTarget <= 0) return [];
+): { sentences: string[]; tokens: number } {
   const overlap: string[] = [];
   let tokens = 0;
+  if (overlapTarget <= 0) return { sentences: overlap, tokens };
   // Never overlap the entire chunk — leave at least the first sentence behind.
   for (let i = sentences.length - 1; i > 0 && tokens < overlapTarget; i--) {
     overlap.unshift(sentences[i]);
     tokens += countTokens(sentences[i]);
   }
-  return overlap;
+  return { sentences: overlap, tokens };
 }
 
 function buildRecord(
