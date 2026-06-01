@@ -285,10 +285,17 @@ max_frequency = "5s"
 # 4152127777 = "123456"
 
 # Configure logged in session timeouts.
-[auth.sessions]
+# NOTE: [auth.sessions] is a Pro-plan-only feature — applying it on a Free-plan
+# project (e.g. Supabase branching preview environments) fails with HTTP 402
+# ("User sessions can only be configured on Pro Plans and up"), which blocks the
+# Configurations step and halts migrations. It is therefore managed in the hosted
+# project's Dashboard (Authentication → Advanced → Refresh token expiry → 7776000),
+# NOT here. Leaving it unset means no inactivity cap locally, which is harmless —
+# login persistence is driven by jwt_expiry + the @supabase/ssr cookie max-age +
+# the middleware getSession() refresh, none of which depend on this block.
+# [auth.sessions]
 # 90 days of inactivity — keeps mobile/PWA users logged in between play sessions.
-# Must match the hosted Supabase project: Dashboard → Authentication → Advanced → Refresh token expiry.
-inactivity_timeout = "2160h"
+# inactivity_timeout = "2160h"
 # timebox = "24h"  # hard session limit regardless of activity (not set — no forced expiry)
 
 # This hook runs before a new user is created and allows developers to reject the request based on the incoming user object.

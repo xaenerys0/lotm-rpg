@@ -37,18 +37,20 @@ Migrations live in `migrations/`. Four migrations in order:
 
 ## Auth Session Persistence
 
-Two settings in `config.toml` control login persistence. **Both must also be set in the hosted Supabase project.** In the Supabase Dashboard → Authentication → Advanced settings:
+Two settings control login persistence. **Both must be set in the hosted Supabase project** via the Dashboard → Authentication → Advanced settings:
 
-| Setting                  | config.toml                                    | Dashboard value   |
+| Setting                  | Source of truth                                | Dashboard value   |
 | ------------------------ | ---------------------------------------------- | ----------------- |
-| JWT expiry               | `jwt_expiry = 604800`                          | 604800 (7 days)   |
-| Refresh token inactivity | `[auth.sessions] inactivity_timeout = "2160h"` | 7776000 (90 days) |
+| JWT expiry               | `config.toml` `jwt_expiry = 604800` + Dashboard | 604800 (7 days)   |
+| Refresh token inactivity | **Dashboard only** (`[auth.sessions]` is Pro-only) | 7776000 (90 days) |
 
 **Why both are needed:**
 
 - `jwt_expiry`: The JWT in the cookie lasts 7 days. A cold PWA start (e.g. user opens the app the next morning) will have a valid JWT without needing a server refresh call.
-- `inactivity_timeout`: The refresh token (server-side) stays valid for 90 days of inactivity. Users who play once a month won't be logged out.
+- Refresh token inactivity: The refresh token (server-side) stays valid for 90 days of inactivity. Users who play once a month won't be logged out.
 - The middleware also calls `getSession()` before `getUser()` to explicitly refresh an expired JWT using the stored refresh token before validating server-side.
+
+> **`[auth.sessions]` is commented out in `config.toml`.** It is a Pro-plan-only feature — applying it on a Free-plan project (Supabase branching preview environments) fails with HTTP 402 and blocks the Configurations → Migrations pipeline. It is therefore managed exclusively in the hosted project's Dashboard. Removing it from `config.toml` does not weaken persistence: that is driven by `jwt_expiry`, the `@supabase/ssr` 400-day cookie max-age, and the middleware refresh — none of which depend on `[auth.sessions]`.
 
 Session cookies are set with a 400-day max-age by `@supabase/ssr`, so cookie persistence is never the issue — it is always the server-side token lifetimes.
 
