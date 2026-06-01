@@ -21,9 +21,17 @@ model without re-parsing or re-chunking.
   - `pnpm rag:chunk < normalized-docs.jsonl > chunks.jsonl`
   - `pnpm rag:chunk input.jsonl > chunks.jsonl`
   - `pnpm rag:chunk input.jsonl output.jsonl`
+- `embed.ts` (`pnpm rag:embed`) — the **embed** stage (issue #60). Reads `ChunkRecord`
+  JSONL and writes `ChunkRecord` JSONL with `embedding` filled via `embedChunks` + an
+  `EmbeddingProvider`. Run once **per** approved model to build each map.
+  - `pnpm rag:embed --model qwen3-embedding-0.6b < chunks.jsonl > embedded.qwen3.jsonl`
+  - `pnpm rag:embed --model bge-m3 chunks.jsonl embedded.bge.jsonl`
+  - Flags: `--provider ollama|operator` (default `ollama`), `--base-url <url>`, `--batch <n>`.
+  - Offline/occasional operator batch — needs a running embedder (local Ollama or the
+    operator box); it is never part of CI or the app bundle.
 
-Later stages (parse/normalize for wiki #4 and novel #5, embed #3, load) land in
-their own issues and follow the same JSONL-in/JSONL-out shape.
+Later stages (parse/normalize for wiki #4 and novel #5, load) land in their own issues
+and follow the same JSONL-in/JSONL-out shape.
 
 ## Conventions
 

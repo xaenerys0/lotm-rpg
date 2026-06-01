@@ -104,6 +104,23 @@ async function fetchWithErrorHandling(url: string, init: RequestInit): Promise<u
   }
 }
 
+// Ollama's /api/embed returns `{ embeddings: number[][] }` — one row per input,
+// in request order. The operator's always-on box exposes the same route, so a
+// single parser covers both the BYO and operator embedding homes (issue #60).
+function parseEmbeddings(raw: unknown): number[][] {
+  const rows = (raw as { embeddings?: unknown }).embeddings;
+  if (
+    !Array.isArray(rows) ||
+    !rows.every((row) => Array.isArray(row) && row.every((n) => typeof n === "number"))
+  ) {
+    throw new AIError(
+      "MALFORMED_OUTPUT",
+      "Embedding endpoint returned no `embeddings` number array.",
+    );
+  }
+  return rows;
+}
+
 function parseOpenAIStyleResponse(raw: unknown): ProviderResponse {
   const data = raw as OpenAIStyleResponse;
   const content = data.choices?.[0]?.message?.content ?? "";
@@ -481,6 +498,21 @@ export class OllamaAdapter implements LLMProviderAdapter {
       .filter((name): name is string => typeof name === "string" && name.length > 0)
       .sort()
       .map((id) => ({ id, name: id, tier: inferModelTier(id) }));
+  }
+
+  // Embedding seam (issue #60). Ollama serves embeddings on the same daemon via
+  // `/api/embed`, so a player running Ollama can embed queries browser-direct —
+  // mirroring the BYOK chat pattern (optional bearer key). The same method backs
+  // the operator's always-on CPU box and the offline ingestion pass.
+  async embed(model: string, texts: string[], apiKey: string): Promise<number[][]> {
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+    const raw = await fetchWithErrorHandling(`${this.baseUrl}/api/embed`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ model, input: texts }),
+    });
+    return parseEmbeddings(raw);
   }
 }
 

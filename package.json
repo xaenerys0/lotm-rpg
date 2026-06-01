@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "rag:chunk": "tsx scripts/rag/chunk.ts"
+    "rag:chunk": "tsx scripts/rag/chunk.ts",
+    "rag:embed": "tsx scripts/rag/embed.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

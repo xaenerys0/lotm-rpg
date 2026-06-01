@@ -75,6 +75,18 @@ export {
 } from "./client";
 
 export {
+  createEmbeddingProvider,
+  getEmbeddingModel,
+  APPROVED_EMBEDDING_MODELS,
+  DEFAULT_EMBEDDING_MODEL_ID,
+  EMBEDDING_DIMS,
+  type EmbeddingProvider,
+  type EmbeddingProviderId,
+  type EmbeddingModel,
+  type CreateEmbeddingProviderOptions,
+} from "./embeddings";
+
+export {
   generatePrologueScene,
   generatePrologueFinale,
   MIN_PROLOGUE_SCENES,
