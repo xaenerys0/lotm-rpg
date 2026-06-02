@@ -338,23 +338,25 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
         if (generationRef.current !== gen) return;
 
-        const choices = result.response.choices ?? [
-          {
-            id: "default-1",
-            text: "Observe your surroundings carefully",
-            type: "investigation" as const,
-          },
-          {
-            id: "default-2",
-            text: "Approach the nearest person",
-            type: "dialogue" as const,
-          },
-          {
-            id: "default-3",
-            text: "Move on",
-            type: "action" as const,
-          },
-        ];
+        const choices = result.response.choices?.length
+          ? result.response.choices
+          : [
+              {
+                id: "default-1",
+                text: "Observe your surroundings carefully",
+                type: "investigation" as const,
+              },
+              {
+                id: "default-2",
+                text: "Approach the nearest person",
+                type: "dialogue" as const,
+              },
+              {
+                id: "default-3",
+                text: "Move on",
+                type: "action" as const,
+              },
+            ];
 
         const next = transition(currentSession, {
           type: "SITUATION_READY",

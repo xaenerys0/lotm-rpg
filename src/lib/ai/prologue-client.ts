@@ -1,6 +1,7 @@
 import { createAdapter } from "./providers";
 import { AIError } from "./errors";
 import { executeWithRetry } from "./client";
+import { ensureUniqueChoiceIds } from "./validation";
 import type { ProviderConfig, ChatMessage } from "./types";
 
 export const MIN_PROLOGUE_SCENES = 4; // AI may not conclude before this many scenes
@@ -268,6 +269,10 @@ export async function generatePrologueScene(
   const readyToConclude =
     typeof obj["readyToConclude"] === "boolean" ? obj["readyToConclude"] : false;
 
+  // Ids are React keys in the choice list — guarantee they are unique/non-empty
+  // even if the model repeats or omits one. Affinity uniqueness is checked above
+  // but does not constrain ids.
+  ensureUniqueChoiceIds(choices);
   return { narrative, choices, readyToConclude, rawResponse: content };
 }
 
@@ -326,5 +331,7 @@ export async function generatePrologueFinale(
     }
   }
 
+  // Ids are React keys — guarantee uniqueness even if the model repeats one.
+  ensureUniqueChoiceIds(choices);
   return { narrative, choices, rawResponse: content };
 }
