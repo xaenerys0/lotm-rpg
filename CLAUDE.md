@@ -23,14 +23,20 @@ Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
 src/
 ├── app/                 # Next.js App Router
 │   ├── (auth)/          #   Login, signup (public)
-│   ├── (game)/          #   Game pages (authenticated)
+│   ├── (game)/          #   Authenticated pages — play, character, journal, settings (+ layout)
+│   ├── api/proxy/       #   Server-side proxies (e.g. ollama-cloud — CORS workaround for ollama.com)
 │   ├── auth/callback/   #   OAuth code-exchange route handler
+│   ├── icons/[icon]/    #   Dynamic PWA PNG icons (rendered via _pwa/icon-art)
+│   ├── _pwa/            #   PWA icon art + shared icon spec (source of truth for manifest & icon route)
+│   ├── manifest.ts      #   Web app manifest (PWA install metadata)
+│   ├── apple-icon.tsx   #   Apple touch icon
 │   ├── globals.css      #   Tailwind v4 theme tokens (@theme inline)
 │   ├── layout.tsx       #   Root layout — fonts (Geist Sans/Mono, Lora)
 │   └── page.tsx         #   Landing page (redirects to /login)
 ├── components/          # React components
 │   ├── auth/            #   Login & signup forms (client components)
-│   └── game/            #   Game shell, provider config, game loop UI
+│   ├── game/            #   Game shell, provider config, game loop, combat, sanity, dashboard
+│   └── pwa/             #   Install prompt + service-worker registrar (client components)
 ├── lib/
 │   ├── ai/              # AI integration — providers, prompts, memory, validation
 │   ├── game/            # Game loop engine — state machine, world state, sessions
@@ -41,8 +47,10 @@ src/
 │   ├── supabase/        # Client factories (browser, server, middleware)
 │   └── types/           # TypeScript type definitions
 └── proxy.ts             # Middleware — CSP headers + auth session refresh
+public/
+└── sw.js                # Service worker (registered by components/pwa)
 scripts/
-└── rag/                 # RAG pipeline stage drivers (chunk stage CLI; dev-only, tsx)
+└── rag/                 # RAG pipeline stage drivers (chunk + embed CLIs; dev-only, tsx)
 supabase/
 ├── config.toml          # Local dev config (ports, auth, runtime)
 ├── migrations/          # SQL migrations (RLS-enabled)
