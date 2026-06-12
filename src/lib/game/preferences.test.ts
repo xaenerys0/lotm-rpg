@@ -9,8 +9,9 @@ import {
 
 describe("preferences", () => {
   describe("DEFAULT_PREFERENCES", () => {
-    it("hides the sanity meter by default", () => {
+    it("hides the sanity meter and normal contrast by default", () => {
       expect(DEFAULT_PREFERENCES.sanityMeterVisible).toBe(false);
+      expect(DEFAULT_PREFERENCES.highContrast).toBe(false);
     });
   });
 
@@ -30,13 +31,28 @@ describe("preferences", () => {
     it("rejects objects with the wrong field type", () => {
       expect(isValidPreferencesShape({ sanityMeterVisible: "yes" })).toBe(false);
       expect(isValidPreferencesShape({})).toBe(false);
+      expect(
+        isValidPreferencesShape({ sanityMeterVisible: true, highContrast: "x" }),
+      ).toBe(false);
+    });
+
+    it("accepts legacy payloads without highContrast (issue #13)", () => {
+      expect(isValidPreferencesShape({ sanityMeterVisible: true })).toBe(true);
+      expect(
+        isValidPreferencesShape({ sanityMeterVisible: true, highContrast: true }),
+      ).toBe(true);
     });
   });
 
   describe("mergePreferences", () => {
-    it("keeps a provided boolean", () => {
+    it("keeps provided booleans and defaults the rest", () => {
       expect(mergePreferences({ sanityMeterVisible: true })).toEqual({
         sanityMeterVisible: true,
+        highContrast: false,
+      });
+      expect(mergePreferences({ highContrast: true })).toEqual({
+        sanityMeterVisible: false,
+        highContrast: true,
       });
     });
 
@@ -52,7 +68,7 @@ describe("preferences", () => {
 
   describe("serialize / deserialize", () => {
     it("round-trips preferences", () => {
-      const prefs = { sanityMeterVisible: true };
+      const prefs = { sanityMeterVisible: true, highContrast: true };
       expect(deserializePreferences(serializePreferences(prefs))).toEqual(prefs);
     });
 

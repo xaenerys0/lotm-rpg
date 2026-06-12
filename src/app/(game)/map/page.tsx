@@ -1,20 +1,22 @@
 import type { Metadata } from "next";
 
-import { CharacterSheet } from "@/components/game/character-sheet";
+import { MapPanel } from "@/components/game/map-panel";
 
-export const metadata: Metadata = { title: "Character" };
+export const metadata: Metadata = { title: "Map" };
 
-export default function CharacterPage() {
+export default function MapPage() {
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
       <header className="gaslit mb-10">
         <h1 className="font-serif text-3xl font-bold tracking-tight text-amber md:text-4xl">
-          Character
+          Map of Tingen
         </h1>
-        <p className="mt-2 text-muted">Your Beyonder identity and progression.</p>
+        <p className="mt-2 text-muted">
+          The districts of the city, as a walker knows them.
+        </p>
       </header>
 
-      <CharacterSheet />
+      <MapPanel />
     </div>
   );
 }

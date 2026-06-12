@@ -52,6 +52,16 @@ htmlFor>`, or `aria-label`). Expose toggle/selection state with `aria-pressed`
 - Decorative icons/SVGs/symbols carry `aria-hidden="true"`; the `<main>` on every
   page has `id="main-content"` for the root-layout skip link.
 
+## Atmosphere & High Contrast (issue #13)
+
+- `globals.css` defines the gas-lit atmosphere layer: `.parchment`, `.gaslit`,
+  `.fog-overlay` (mounted once on the game layout), and `.candle-flicker`.
+  All decorative; motion inherits the global reduced-motion neutraliser.
+- High-contrast mode: `[data-contrast="high"]` on `<html>` (Settings toggle,
+  persisted in `GamePreferences.highContrast`) brightens `foreground`/`muted`/
+  `border`/`amber` tokens and disables the decorative atmosphere; users with
+  `prefers-contrast: more` get the same overrides automatically.
+
 ## Sanity Effects (issue #9)
 
 - `globals.css` defines `.sanity-fx` + `.sanity-fx-{high,medium,low,critical}` (filter/animation per tier) and `.sanity-overlay` (vignette/corruption layer). These are applied by `SanityEffects` from the classes returned by `sanityEffects()` in `@/lib/game` — do not hard-code tier styling elsewhere.

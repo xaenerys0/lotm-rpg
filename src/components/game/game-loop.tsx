@@ -945,7 +945,7 @@ function LoadingOrb() {
       <div className="relative h-12 w-12" aria-hidden="true">
         <div className="absolute inset-0 rounded-full bg-amber/20 animate-ping" />
         <div className="absolute inset-2 rounded-full bg-amber/40 animate-pulse" />
-        <div className="absolute inset-4 rounded-full bg-amber/80" />
+        <div className="candle-flicker absolute inset-4 rounded-full bg-amber/80" />
       </div>
       <p className="font-serif text-sm italic text-muted animate-pulse">
         The fog stirs...
@@ -1069,7 +1069,7 @@ function ChoicesPhase({
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
         </div>
-        <div className="rounded-lg border border-border/40 bg-surface/50 px-6 py-5 sm:px-8 sm:py-6">
+        <div className="parchment rounded-lg border border-border/40 px-6 py-5 sm:px-8 sm:py-6">
           <p className="font-serif text-base leading-[1.85] text-foreground/90 sm:text-lg">
             {narrative}
           </p>

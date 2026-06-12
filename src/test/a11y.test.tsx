@@ -13,6 +13,7 @@ import { GameLoop } from "@/components/game/game-loop";
 import { CombatEncounterView } from "@/components/game/combat-encounter";
 import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
+import MapPage from "@/app/(game)/map/page";
 
 import {
   buildLegacy,
@@ -207,8 +208,29 @@ describe("accessibility — combat", () => {
 });
 
 describe("accessibility — stub pages", () => {
-  it("character page has no violations", async () => {
+  it("character page (empty state) has no violations", async () => {
     await expectNoAxeViolations(<CharacterPage />);
+  });
+
+  it("character sheet with a recorded Beyonder has no violations", async () => {
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-s", "Klein"),
+      inventory: [
+        {
+          name: "Lavos squid blood",
+          description: "A vial.",
+          category: "main-ingredient",
+        },
+      ],
+    };
+    const session = createSession(gameState, "sheet-1", 1000);
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["sheet-1"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "sheet-1", serializeSession(session));
+    await expectNoAxeViolations(<CharacterPage />);
+  });
+
+  it("map page has no violations", async () => {
+    await expectNoAxeViolations(<MapPage />);
   });
 
   it("journal page has no violations", async () => {
