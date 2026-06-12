@@ -34,6 +34,25 @@ export {
 } from "./digestion";
 
 export {
+  applySetback,
+  buildLegacy,
+  deserializeLegacies,
+  endSession,
+  evaluateFailure,
+  fallbackDescentScene,
+  legaciesToFacts,
+  serializeLegacies,
+  SETBACK_SANITY_RATIO,
+  type CharacterLegacy,
+  type FailureCause,
+  type FailureContext,
+  type FailureOutcome,
+  type FailureVerdict,
+  type LegacyFate,
+  type LegacyRole,
+  type SetbackResult,
+} from "./death";
+export {
   addAnnotation,
   addJournalEntries,
   annotationsFor,
@@ -133,6 +152,7 @@ export {
   MODELS_CACHE_KEY,
   PREFERENCES_KEY,
   JOURNAL_KEY_PREFIX,
+  LEGACIES_KEY,
 } from "./constants";
 
 export {

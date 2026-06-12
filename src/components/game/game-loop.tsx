@@ -36,6 +36,14 @@ import {
   JOURNAL_KEY_PREFIX,
   type JournalEntry,
   type JournalSyncClient,
+  applySetback,
+  buildLegacy,
+  deserializeLegacies,
+  endSession,
+  evaluateFailure,
+  fallbackDescentScene,
+  serializeLegacies,
+  LEGACIES_KEY,
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
@@ -316,10 +324,106 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     },
     [sessionId],
   );
-
   const updateSession = useCallback((next: GameSession) => {
     setSession(next);
     saveSessionToStorage(next);
+  }, []);
+
+  // Death & failure flow (issue #12). The rules engine owns the verdict; the
+  // AI only narrates the descent (best-effort, with a deterministic fallback).
+  const [setbackNotes, setSetbackNotes] = useState<string[] | null>(null);
+  const [facingFate, setFacingFate] = useState(false);
+
+  const handleSetback = useCallback(() => {
+    if (!session) return;
+    const result = applySetback(session.gameState, Math.random, session.turnCount);
+    setSetbackNotes(result.notes);
+    updateSession({
+      ...session,
+      gameState: result.state,
+      memory: {
+        ...session.memory,
+        sessionFacts: [...session.memory.sessionFacts, ...result.facts],
+      },
+      updatedAt: Date.now(),
+    });
+  }, [session, updateSession]);
+
+  const handlePermadeath = useCallback(async () => {
+    if (!session || facingFate) return;
+    setFacingFate(true);
+    const verdict = evaluateFailure({
+      cause: "loss-of-control",
+      sequenceLevel: session.gameState.sequenceLevel,
+      highRisk: session.gameState.digestion?.complete ?? false,
+    });
+    const legacy = buildLegacy(session, verdict.severity);
+
+    // The world remembers: persist the legacy for future characters.
+    try {
+      const raw = localStorage.getItem(LEGACIES_KEY);
+      const legacies = (raw ? deserializeLegacies(raw) : null) ?? [];
+      localStorage.setItem(LEGACIES_KEY, serializeLegacies([...legacies, legacy]));
+    } catch {
+      // Storage unavailable — the session still ends.
+    }
+
+    // AI narrates the descent; the deterministic scene covers any failure.
+    let scene = fallbackDescentScene(verdict.severity, session.gameState);
+    if (providerConfig) {
+      try {
+        const { abilities, actingReqs, loreContext } = buildAICallParams(session);
+        const result = await generate({
+          config: providerConfig,
+          gameState: session.gameState,
+          memory: session.memory,
+          loreContext,
+          instruction: "narrative",
+          playerAction: `Narrate the character's final descent — sanity has collapsed entirely and this is ${
+            verdict.severity === "fatal"
+              ? "their death"
+              : "their irreversible transformation into something monstrous"
+          }. This ends their story: write a closing scene, no choices.`,
+          abilities,
+          actingRequirements: actingReqs,
+        });
+        if (result.response.narrative) scene = result.response.narrative;
+        recordUsage(result.usage);
+      } catch {
+        // Fallback scene already set.
+      }
+    }
+
+    appendJournalEntries(session.id, [
+      {
+        id: crypto.randomUUID(),
+        turnNumber: session.turnCount,
+        createdAt: Date.now(),
+        location: session.gameState.location,
+        eventType: "death",
+        summary: legacy.epitaph,
+        narrative: scene,
+        involvedNpcs: session.gameState.npcsPresent,
+        arc: `Sequence ${session.gameState.sequenceLevel}`,
+        characterId: session.gameState.characterId,
+        ...(session.gameState.characterName
+          ? { characterName: session.gameState.characterName }
+          : {}),
+      },
+    ]);
+
+    updateSession(endSession(session, legacy, scene));
+    setFacingFate(false);
+  }, [session, facingFate, providerConfig, recordUsage, updateSession]);
+
+  const handleFullRestart = useCallback(() => {
+    // Full restart: fresh timeline — the canonical baseline is restored by
+    // wiping the legacy list. Old sessions/journals stay readable as records.
+    try {
+      localStorage.removeItem(LEGACIES_KEY);
+    } catch {
+      // Storage unavailable
+    }
   }, []);
 
   const startCombat = useCallback(
@@ -650,20 +754,49 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           </div>
         </div>
 
-        {/* Loss of control — sanity has bottomed out (integrates with #12). */}
-        {lostControl && (
-          <LossOfControlNotice
+        {/* Setback aftermath — transient consequence report (issue #12). */}
+        {setbackNotes && !lostControl && (
+          <div
+            role="status"
+            className="mb-6 rounded-md border border-amber/40 bg-amber/[0.06] p-5 animate-fade-in"
+          >
+            <p className="font-serif text-sm font-semibold text-amber">
+              You survived — barely.
+            </p>
+            <ul className="mt-2 space-y-1 text-sm leading-relaxed text-foreground/80">
+              {setbackNotes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setSetbackNotes(null)}
+              className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-amber hover:underline"
+            >
+              Carry on
+            </button>
+          </div>
+        )}
+
+        {/* Loss of control — sanity has bottomed out (issue #12). */}
+        {lostControl && !session.ended && (
+          <FailurePanel
             severity={evaluateLossOfControl({
               sequenceLevel: session.gameState.sequenceLevel,
               // A fully-digested potion means the character is poised mid-
               // advancement — a fragile moment that escalates the fallout.
               highRisk: session.gameState.digestion?.complete ?? false,
             })}
+            busy={facingFate}
+            onSetback={handleSetback}
+            onPermadeath={() => void handlePermadeath()}
           />
         )}
 
-        {/* A combat encounter takes over the surface until it resolves. */}
-        {combat ? (
+        {/* Permadeath: the story is over; the record remains (issue #12). */}
+        {session.ended ? (
+          <DeathScreen ended={session.ended} onFullRestart={handleFullRestart} />
+        ) : combat ? (
           <CombatEncounterView
             encounter={combat}
             gameState={session.gameState}
@@ -724,8 +857,19 @@ const LOSS_OF_CONTROL_COPY: Record<
   },
 };
 
-function LossOfControlNotice({ severity }: { severity: LossOfControlSeverity }) {
+function FailurePanel({
+  severity,
+  busy,
+  onSetback,
+  onPermadeath,
+}: {
+  severity: LossOfControlSeverity;
+  busy: boolean;
+  onSetback: () => void;
+  onPermadeath: () => void;
+}) {
   const copy = LOSS_OF_CONTROL_COPY[severity];
+  const isSetback = severity === "setback";
   return (
     <div className="mb-6 rounded-md border border-crimson/50 bg-crimson/[0.08] p-5 text-center animate-fade-in">
       <p className="font-serif text-base font-semibold text-sanity-low">{copy.title}</p>
@@ -734,6 +878,60 @@ function LossOfControlNotice({ severity }: { severity: LossOfControlSeverity }) 
       </p>
       <p className="mt-3 text-[10px] tracking-[0.2em] text-muted uppercase">
         Loss of control &mdash; {severity}
+      </p>
+      <button
+        type="button"
+        onClick={isSetback ? onSetback : onPermadeath}
+        disabled={busy}
+        className="mt-4 rounded-md border border-crimson/50 bg-crimson/[0.12] px-5 py-2.5 text-sm font-medium text-sanity-low transition-all duration-200 hover:bg-crimson/[0.2] disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {busy
+          ? "The dark closes in..."
+          : isSetback
+            ? "Endure the breakdown"
+            : "Face your fate"}
+      </button>
+    </div>
+  );
+}
+
+function DeathScreen({
+  ended,
+  onFullRestart,
+}: {
+  ended: NonNullable<GameSession["ended"]>;
+  onFullRestart: () => void;
+}) {
+  return (
+    <div className="rounded-lg border border-crimson/40 bg-crimson/[0.05] p-8 text-center animate-fade-in">
+      <h2 className="font-serif text-2xl font-bold text-sanity-low">
+        {ended.fate === "dead" ? "The story ends here" : "Something else walks on"}
+      </h2>
+      <p className="mx-auto mt-4 max-w-xl font-serif text-base leading-relaxed whitespace-pre-wrap text-foreground/85">
+        {ended.scene}
+      </p>
+      <p className="mt-6 text-xs leading-relaxed text-muted">
+        This chronicle is closed, but it is not erased — its journal remains readable as a
+        historical record, and the world remembers what happened here.
+      </p>
+      <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <Link
+          href="/play"
+          className="rounded-md bg-amber/90 px-5 py-2.5 text-sm font-medium text-background transition-all duration-200 hover:bg-amber"
+        >
+          Begin anew in this world
+        </Link>
+        <Link
+          href="/play"
+          onClick={onFullRestart}
+          className="rounded-md border border-border px-5 py-2.5 text-sm text-muted transition-all duration-200 hover:border-amber/40 hover:text-foreground"
+        >
+          Restart the timeline completely
+        </Link>
+      </div>
+      <p className="mt-3 text-[11px] text-muted">
+        Beginning anew keeps this timeline — your next character will find traces of this
+        one. A full restart returns the world to its canonical baseline.
       </p>
     </div>
   );

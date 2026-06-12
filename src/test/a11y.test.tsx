@@ -15,6 +15,8 @@ import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
 
 import {
+  buildLegacy,
+  endSession,
   addAnnotation,
   addJournalEntries,
   createJournal,
@@ -89,6 +91,28 @@ describe("accessibility — game loop", () => {
     );
     localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
     await expectNoAxeViolations(<GameLoop sessionId={session.id} />);
+  });
+
+  it("death screen (ended session) has no violations", async () => {
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-d", "Klein"),
+      sanity: 0,
+    };
+    const session = createSession(gameState, "ended-1", 1000);
+    const legacy = buildLegacy(session, "fatal", 2000);
+    const ended = endSession(session, legacy, "The last thread snaps.", 3000);
+    localStorage.setItem(SESSION_KEY_PREFIX + "ended-1", serializeSession(ended));
+    await expectNoAxeViolations(<GameLoop sessionId="ended-1" />);
+  });
+
+  it("failure panel (zero sanity) has no violations", async () => {
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-f", "Klein"),
+      sanity: 0,
+    };
+    const session = createSession(gameState, "fail-1", 1000);
+    localStorage.setItem(SESSION_KEY_PREFIX + "fail-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="fail-1" />);
   });
 
   it("session-not-found state has no violations", async () => {

@@ -44,6 +44,18 @@ export interface GameSession {
   activePillar: GameplayPillar | null;
   errorMessage: string | null;
   errorCode: AIErrorCode | "CONFIG_MISSING" | null;
+  /**
+   * Permadeath marker (issue #12). Set once, never cleared: the session is
+   * preserved as a historical record (inventory, memory, journal stay
+   * readable) but play cannot continue.
+   */
+  ended?: {
+    fate: "transformed" | "dead";
+    severity: "transformation" | "fatal";
+    /** The narrated descent scene shown on the death screen. */
+    scene: string;
+    at: number;
+  };
   createdAt: number;
   updatedAt: number;
 }

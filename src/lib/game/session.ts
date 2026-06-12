@@ -220,6 +220,15 @@ export function isValidSessionShape(obj: unknown): boolean {
     }
   }
 
+  // The permadeath marker (issue #12) is optional but strict when present.
+  if (s.ended !== undefined) {
+    if (typeof s.ended !== "object" || s.ended === null) return false;
+    const ended = s.ended as Record<string, unknown>;
+    if (ended.fate !== "transformed" && ended.fate !== "dead") return false;
+    if (typeof ended.scene !== "string") return false;
+    if (!Number.isFinite(ended.at)) return false;
+  }
+
   if (typeof s.memory !== "object" || s.memory === null) return false;
   const mem = s.memory as Record<string, unknown>;
   if (!Array.isArray(mem.immediateTurns)) return false;

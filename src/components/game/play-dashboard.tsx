@@ -15,6 +15,9 @@ import {
   PROVIDER_CONFIG_KEY,
   PROLOGUE_DRAFT_KEY,
   isActivePrologueDraft,
+  deserializeLegacies,
+  legaciesToFacts,
+  LEGACIES_KEY,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
@@ -81,6 +84,20 @@ const emptyInitialData: InitialData = {
   hasPrologueDraft: false,
 };
 
+function withLegacyFacts(memory: MemoryState): MemoryState {
+  try {
+    const raw = localStorage.getItem(LEGACIES_KEY);
+    const legacies = (raw ? deserializeLegacies(raw) : null) ?? [];
+    if (legacies.length === 0) return memory;
+    return {
+      ...memory,
+      sessionFacts: [...memory.sessionFacts, ...legaciesToFacts(legacies)],
+    };
+  } catch {
+    return memory;
+  }
+}
+
 export function PlayDashboard() {
   const cacheRef = useRef<InitialData | null>(null);
   const initialData = useSyncExternalStore(
@@ -127,7 +144,15 @@ export function PlayDashboard() {
         characterName,
         characterBackground,
       );
-      const session = createSession(gameState, undefined, undefined, initialMemory);
+      // Permadeath legacies (issue #12): a new character in the same timeline
+      // inherits the world's memory of the fallen — the narrator can surface
+      // tangible evidence of previous characters.
+      const session = createSession(
+        gameState,
+        undefined,
+        undefined,
+        withLegacyFacts(initialMemory),
+      );
 
       try {
         localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
