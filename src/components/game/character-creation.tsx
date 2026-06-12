@@ -329,6 +329,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     clearDraft();
     onComplete(selectedPathwayId, name, bg, memory, epoch);
   }, [
+    epoch,
     selectedPathwayId,
     characterName,
     characterBackground,
