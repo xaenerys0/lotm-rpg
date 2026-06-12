@@ -6,12 +6,12 @@ import { describe, expect, it } from "vitest";
 
 import { chunkDocuments } from "./chunk";
 import { parseJsonl } from "./jsonl";
+import { stripHtml } from "./html";
 import {
   normalizeNovelChapters,
   parseEpub,
   parseNovelFiles,
   parseNovelText,
-  stripHtml,
 } from "./novel";
 import { LOTM_NOVEL_ARC_MAP, resolveArc, type NovelArcEntry } from "./novel-arcs";
 import { type SourceDocument } from "./types";

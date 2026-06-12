@@ -42,8 +42,17 @@ model without re-parsing or re-chunking.
   - Flags: `--arc-map <file.json>` — override the default `LOTM_NOVEL_ARC_MAP`
     (approximate chapter boundaries) with a corrected JSON array of `NovelArcEntry`.
 
-Later stages (parse/normalize for wiki #4, load) land in their own issues
-and follow the same JSONL-in/JSONL-out shape.
+- `wiki.ts` (`pnpm rag:wiki`) — the wiki **parse + normalize** stages (issue #61).
+  Streams the Fandom MediaWiki XML export (`pages_current.xml`; extract the .7z
+  first) page-by-page — the dump is never held in memory whole — and writes
+  normalized `SourceDocument` JSONL.
+  - `pnpm rag:wiki pages_current.xml > wiki-docs.jsonl`
+  - `pnpm rag:wiki pages_current.xml wiki-docs.jsonl --concealment-tier 1`
+  - Flags: `--concealment-tier <n>` (default 0), `--base-url <url>` (default the
+    LOTM Fandom wiki), `--min-chars <n>` (stub threshold, default 40).
+
+The remaining **load** stage lands in its own issue and follows the same
+JSONL-in/JSONL-out shape.
 
 ## Conventions
 

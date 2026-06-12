@@ -29,13 +29,25 @@ export {
 export { countTokens } from "./tokenizer";
 export { iterateJsonl, parseJsonl, toJsonl } from "./jsonl";
 
+export { decodeEntities, stripHtml } from "./html";
 export {
   normalizeNovelChapters,
   parseEpub,
   parseNovelFiles,
   parseNovelText,
-  stripHtml,
   type NovelChapter,
   type NovelFile,
 } from "./novel";
 export { LOTM_NOVEL_ARC_MAP, resolveArc, type NovelArcEntry } from "./novel-arcs";
+export {
+  cleanWikitext,
+  createWikiXmlParser,
+  DEFAULT_WIKI_BASE_URL,
+  extractCategories,
+  normalizeWikiPage,
+  normalizeWikiPages,
+  parseWikiXml,
+  type NormalizeWikiOptions,
+  type WikiPage,
+  type WikiXmlParser,
+} from "./wiki";

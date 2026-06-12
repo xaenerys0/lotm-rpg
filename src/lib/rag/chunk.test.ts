@@ -170,6 +170,35 @@ describe("chunkDocument", () => {
     }
   });
 
+  it("splits CJK sentences on fullwidth terminators without needing whitespace", () => {
+    expect(
+      splitSentences("寄生属于窃取的一种。窃取的是生命！它有两种形态？最后一句"),
+    ).toEqual(["寄生属于窃取的一种。", "窃取的是生命！", "它有两种形态？", "最后一句"]);
+  });
+
+  it("keeps fullwidth closing quotes with their sentence", () => {
+    expect(splitSentences("他说：“走。”然后离开了。")).toEqual([
+      "他说：“走。”",
+      "然后离开了。",
+    ]);
+  });
+
+  it("character-windows a spaceless oversize word so no chunk can run unbounded", () => {
+    // One space-free "word" (an untranslated CJK passage shape) at 1 token per
+    // character via a char-count tokenizer.
+    const charCount = (text: string): number => text.length;
+    const spaceless = "字".repeat(95);
+    const chunks = chunkDocument(
+      { source: "wiki", title: "CJK", ref: {}, content: spaceless },
+      { countTokens: charCount, minTokens: 5, maxTokens: 10 },
+    );
+    expect(chunks.length).toBeGreaterThan(1);
+    for (const chunk of chunks) {
+      expect(chunk.tokenCount).toBeLessThanOrEqual(11);
+    }
+    expect(chunks.map((c) => c.content).join("")).toBe(spaceless);
+  });
+
   it("emits a trailing window when a long sentence does not divide evenly", () => {
     // 25 words at maxTokens 10 → windows of 10, 10, then a 5-word remainder.
     const longSentence = `${Array.from({ length: 25 }, (_, i) => `w${i}`).join(" ")}.`;

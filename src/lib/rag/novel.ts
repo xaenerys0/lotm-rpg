@@ -1,5 +1,6 @@
 import { strFromU8, unzipSync } from "fflate";
 
+import { decodeEntities, stripHtml } from "./html";
 import { LOTM_NOVEL_ARC_MAP, resolveArc, type NovelArcEntry } from "./novel-arcs";
 import { DEFAULT_CONCEALMENT_TIER, type SourceDocument } from "./types";
 
@@ -143,28 +144,6 @@ export function parseEpub(
 }
 
 /**
- * Strip HTML/XHTML to plain text with sentence and paragraph boundaries
- * intact: scripts/styles/comments dropped, block boundaries become newlines,
- * entities decoded, whitespace normalized.
- */
-export function stripHtml(html: string): string {
-  const text = html
-    .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(/<(script|style|head)\b[\s\S]*?<\/\1\s*>/gi, " ")
-    .replace(/<(?:br|hr)\b[^>]*\/?>/gi, "\n")
-    .replace(
-      /<\/?(?:p|div|h[1-6]|li|ul|ol|blockquote|section|article|tr)\b[^>]*>/gi,
-      "\n",
-    )
-    .replace(/<[^>]+>/g, " ");
-  return decodeEntities(text)
-    .split("\n")
-    .map((line) => line.replace(/[^\S\n]+/g, " ").trim())
-    .filter((line) => line.length > 0)
-    .join("\n");
-}
-
-/**
  * Normalize parsed chapters into {@link SourceDocument}s: `canon_order` from
  * the chapter index, the remaining chronology signals from the arc map.
  * Chapters are emitted in canon order; duplicate chapter numbers are an input
@@ -280,36 +259,4 @@ function documentTitle(html: string, text: string): string {
     return decodeEntities(fromTag).trim();
   }
   return text.split("\n")[0].slice(0, 80);
-}
-
-const NAMED_ENTITIES: Record<string, string> = {
-  amp: "&",
-  lt: "<",
-  gt: ">",
-  quot: '"',
-  apos: "'",
-  nbsp: " ",
-  mdash: "—",
-  ndash: "–",
-  hellip: "…",
-  lsquo: "‘",
-  rsquo: "’",
-  ldquo: "“",
-  rdquo: "”",
-};
-
-function decodeEntities(text: string): string {
-  return text.replace(
-    /&(?:#x([0-9a-f]+)|#(\d+)|([a-z]+));/gi,
-    (
-      match,
-      hex: string | undefined,
-      dec: string | undefined,
-      named: string | undefined,
-    ) => {
-      if (hex !== undefined) return String.fromCodePoint(parseInt(hex, 16));
-      if (dec !== undefined) return String.fromCodePoint(parseInt(dec, 10));
-      return NAMED_ENTITIES[(named as string).toLowerCase()] ?? match;
-    },
-  );
 }

@@ -17,6 +17,7 @@ Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
 | `pnpm rag:chunk`    | RAG chunk stage CLI |
 | `pnpm rag:embed`    | RAG embed stage CLI |
 | `pnpm rag:novel`    | RAG novel parse CLI |
+| `pnpm rag:wiki`     | RAG wiki parse CLI  |
 
 ## Architecture
 

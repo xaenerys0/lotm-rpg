@@ -63,11 +63,15 @@ export function splitSentences(text: string): string[] {
   let start = 0;
   // A boundary is sentence-ending punctuation, optional closing quotes/brackets,
   // then whitespace.
-  const boundary = /([.!?]+)(["'”’)\]]*)(\s+)/g;
+  // Fullwidth CJK terminators count too — wiki pages carry untranslated
+  // Chinese passages (author Q&A), and CJK boundaries need no whitespace.
+  const boundary = /([.!?]+)(["'”’)\]]*)(\s+)|([。！？]+)(["'”’』」)\]]*)(\s*)/g;
   let match: RegExpExecArray | null;
 
   while ((match = boundary.exec(normalized)) !== null) {
-    const punctEnd = match.index + match[1].length + match[2].length;
+    const punct = match[1] ?? match[4];
+    const quotes = match[2] ?? match[5];
+    const punctEnd = match.index + punct.length + quotes.length;
     const before = normalized.slice(start, match.index);
     const lastWord = (before.match(/(\S+)$/)?.[1] ?? "")
       .toLowerCase()
@@ -77,9 +81,10 @@ export function splitSentences(text: string): string[] {
     const isAbbreviation = ABBREVIATIONS.has(lastWord);
     // Single capital letter immediately before a period, e.g. the "K." in
     // "Klein K. Moretti" — an initial, not a sentence end.
-    const isInitial = match[1] === "." && /(?:^|\s)[A-Z]$/.test(before);
-    // The next chunk of text must look like a sentence opening.
-    const startsNewSentence = nextChar === "" || /[A-Z0-9"'“‘(\[—]/.test(nextChar);
+    const isInitial = punct === "." && /(?:^|\s)[A-Z]$/.test(before);
+    // The next chunk of text must look like a sentence opening (Latin or CJK).
+    const startsNewSentence =
+      nextChar === "" || /[A-Z0-9"'“‘(\[—一-鿿『「]/.test(nextChar);
 
     if (!isAbbreviation && !isInitial && startsNewSentence) {
       sentences.push(normalized.slice(start, punctEnd).trim());
@@ -159,17 +164,45 @@ function splitOversizeSentence(
   if (countTokens(sentence) <= maxTokens) return [sentence];
 
   const parts: string[] = [];
-  // Accumulate the joined window directly so each word is counted once rather
-  // than re-joining (and re-tokenizing) the whole array on every iteration.
+  // Accumulate the joined window directly, checking the ceiling BEFORE
+  // appending so an unusually token-dense word cannot blow a window past it.
   let current = "";
-  for (const word of sentence.split(" ")) {
-    current = current === "" ? word : `${current} ${word}`;
-    if (countTokens(current) >= maxTokens) {
+  for (const word of sentence
+    .split(" ")
+    .flatMap((w) => splitOversizeWord(w, maxTokens, countTokens))) {
+    const candidate = current === "" ? word : `${current} ${word}`;
+    if (current !== "" && countTokens(candidate) > maxTokens) {
       parts.push(current);
-      current = "";
+      current = word;
+    } else {
+      current = candidate;
     }
   }
   if (current !== "") parts.push(current);
+  return parts;
+}
+
+/** Character-window a single space-free "word" that exceeds `maxTokens` — the
+ * spaceless-script escape hatch (e.g. an untranslated CJK passage), without
+ * which word-windowing cannot bound the chunk size at all. */
+function splitOversizeWord(
+  word: string,
+  maxTokens: number,
+  countTokens: TokenCounter,
+): string[] {
+  if (countTokens(word) <= maxTokens) return [word];
+  const parts: string[] = [];
+  let rest = word;
+  while (countTokens(rest) > maxTokens) {
+    // Shrink a candidate cut until the head fits the window.
+    let cut = rest.length;
+    while (cut > 1 && countTokens(rest.slice(0, cut)) > maxTokens) {
+      cut = Math.ceil(cut * 0.8);
+    }
+    parts.push(rest.slice(0, cut));
+    rest = rest.slice(cut);
+  }
+  if (rest !== "") parts.push(rest);
   return parts;
 }
 
@@ -221,7 +254,13 @@ function makeChunkId(doc: SourceDocument, index: number): string {
 
 function refKey(ref: ChunkRef, fallbackTitle: string): string {
   if (ref.chapter !== undefined) return `ch${ref.chapter}`;
-  if (ref.page !== undefined) return slugify(String(ref.page));
+  // A source-assigned id disambiguates long titles that collide once the
+  // slug is truncated (seen in the real wiki dump's "Cuttlefish's WeChat
+  // Post: …" family of pages).
+  if (ref.page !== undefined) {
+    const slug = slugify(String(ref.page));
+    return ref.id !== undefined ? `${slug}-${ref.id}` : slug;
+  }
   if (ref.url !== undefined) return slugify(String(ref.url));
   return slugify(fallbackTitle) || "doc";
 }
