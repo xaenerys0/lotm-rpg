@@ -649,6 +649,60 @@ describe("generateDecisionPoints", () => {
   });
 });
 
+// ─── Pathway Combat Styles (ids 5-9) ─────────────────────────────────
+
+describe("new pathway combat styles", () => {
+  function styleEncounter(pathwayId: number): CombatEncounter {
+    const encounter = createEncounter({
+      id: `style-${pathwayId}`,
+      enemy: makeEnemy(),
+      playerPathwayId: pathwayId,
+      playerSequence: 9,
+      randomFactor: 0.5,
+    });
+    return applyPreparation(encounter, makePrep());
+  }
+
+  it.each([5, 6, 7, 8, 9])(
+    "pathway %i has a distinct, fully-populated combat style",
+    (pathwayId) => {
+      const options = styleEncounter(pathwayId).decisionPoints.flatMap((p) => p.options);
+      // Every kind reached across the points carries a non-fallback label.
+      for (const option of options) {
+        expect(option.label.length).toBeGreaterThan(0);
+        expect(option.description.length).toBeGreaterThan(0);
+        expect(option.label).not.toBe("Press the attack");
+      }
+    },
+  );
+
+  it("each new pathway's options differ from the fallback and each other", () => {
+    const evasiveLabel = (pathwayId: number) =>
+      styleEncounter(pathwayId).decisionPoints[0].options.find(
+        (o) => o.kind === "evasive",
+      )!.label;
+    const fallback = styleEncounter(99).decisionPoints[0].options.find(
+      (o) => o.kind === "evasive",
+    )!.label;
+    const labels = [5, 6, 7, 8, 9].map(evasiveLabel);
+    for (const label of labels) {
+      expect(label).not.toBe(fallback);
+    }
+    // Darkness (5) and Door (7) both signature-evade but with distinct flavour.
+    expect(labels[0]).not.toBe(labels[2]);
+  });
+
+  it("surfaces each new pathway's flavour in the narrative summary", () => {
+    for (const pathwayId of [5, 6, 7, 8, 9]) {
+      const encounter = resolveEncounter({
+        ...styleEncounter(pathwayId),
+        baseAdvantage: 0.5,
+      });
+      expect(encounter.result?.narrativeSummary.length ?? 0).toBeGreaterThan(0);
+    }
+  });
+});
+
 // ─── Choosing Options ────────────────────────────────────────────────
 
 describe("chooseOption", () => {

@@ -47,6 +47,11 @@ const PATHWAY_DESCRIPTIONS: Record<number, string> = {
   2: "Spectator, Telepathist, Psychiatrist — mind and imagination",
   3: "Bard, Light Suppliant, Solar High Priest — radiance and healing",
   4: "Corpse Collector, Gravedigger, Spirit Medium — spirits and the dead",
+  5: "Sleepless, Midnight Poet, Nightmare — night, dreams, and concealment",
+  6: "Sailor, Folk of Rage, Seafarer — sea, storm, and wrath",
+  7: "Apprentice, Trickmaster, Astrologer — travel, doors, and space",
+  8: "Marauder, Swindler, Cryptologist — theft, trickery, and secrets",
+  9: "Secrets Suppliant, Listener, Shadow Ascetic — sacrifice, shadow, and taboo",
 };
 
 const AI_PATH: CreationStep[] = ["character-setup", "ai-prologue", "first-potion"];
@@ -504,7 +509,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               </h2>
               <p className="text-sm leading-relaxed text-muted">
                 Already know your Beyonder pathway? Skip the prologue and select from all
-                four available paths directly.
+                available paths directly.
               </p>
             </button>
           </div>

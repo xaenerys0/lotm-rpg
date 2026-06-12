@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   ALL_LORE_ENTRIES,
+  DARKNESS_PATHWAY_LORE,
   DEATH_PATHWAY_LORE,
+  DOOR_PATHWAY_LORE,
+  ERROR_PATHWAY_LORE,
   FIFTH_EPOCH_LORE,
   FOOL_PATHWAY_LORE,
   getLoreByCategory,
@@ -12,10 +15,12 @@ import {
   getLoreBySequence,
   getLoreBySlug,
   getLoreByTag,
+  HANGED_MAN_PATHWAY_LORE,
   NPC_LORE,
   ORGANIZATION_LORE,
   SUN_PATHWAY_LORE,
   TINGEN_LORE,
+  TYRANT_PATHWAY_LORE,
   VISIONARY_PATHWAY_LORE,
 } from "./index";
 import type { LoreCategory } from "./types";
@@ -104,12 +109,17 @@ describe("Lore content coverage", () => {
     expect(names).toContain("Azik Eggers");
   });
 
-  it("covers all 4 MVP pathways (Seq 9-5)", () => {
+  it("covers all 9 pathways (Seq 9-5)", () => {
     for (const lore of [
       FOOL_PATHWAY_LORE,
       VISIONARY_PATHWAY_LORE,
       SUN_PATHWAY_LORE,
       DEATH_PATHWAY_LORE,
+      DARKNESS_PATHWAY_LORE,
+      TYRANT_PATHWAY_LORE,
+      DOOR_PATHWAY_LORE,
+      ERROR_PATHWAY_LORE,
+      HANGED_MAN_PATHWAY_LORE,
     ]) {
       expect(lore.length).toBeGreaterThanOrEqual(6);
       const seqs = lore.flatMap((e) => e.sequences);
@@ -122,7 +132,17 @@ describe("Lore content coverage", () => {
   });
 
   it("each pathway has an overview entry", () => {
-    for (const pathway of ["fool", "visionary", "sun", "death"]) {
+    for (const pathway of [
+      "fool",
+      "visionary",
+      "sun",
+      "death",
+      "darkness",
+      "tyrant",
+      "door",
+      "error",
+      "hanged-man",
+    ]) {
       const overview = ALL_LORE_ENTRIES.find(
         (e) => e.slug === `${pathway}-pathway-overview`,
       );
@@ -195,7 +215,12 @@ describe("Total lore corpus", () => {
       FOOL_PATHWAY_LORE.length +
       VISIONARY_PATHWAY_LORE.length +
       SUN_PATHWAY_LORE.length +
-      DEATH_PATHWAY_LORE.length;
+      DEATH_PATHWAY_LORE.length +
+      DARKNESS_PATHWAY_LORE.length +
+      TYRANT_PATHWAY_LORE.length +
+      DOOR_PATHWAY_LORE.length +
+      ERROR_PATHWAY_LORE.length +
+      HANGED_MAN_PATHWAY_LORE.length;
     expect(ALL_LORE_ENTRIES.length).toBe(expected);
   });
 

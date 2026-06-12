@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Seven migrations in order:
+Migrations live in `migrations/`. Eight migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -40,7 +40,9 @@ Migrations live in `migrations/`. Seven migrations in order:
    - `journal_annotations` — player-only notes: `id`, `user_id`, `entry_id` (FK cascade), `text`, timestamps. **Never included in AI context.**
    - RLS: owner-only (`auth.uid() = user_id`) for all operations on both tables
 
-6. `20260612230000_create_world_messages.sql` — Shared world messages (issue #17)
+6. `20260612170000_seed_additional_pathways_lore.sql` — Seed lore for the five additional pathways (issue #21): Darkness, Tyrant, Door, Error, Hanged Man (Seq 9-5 + overview, 30 entries). Generated from `src/lib/lore/pathway-{darkness,tyrant,door,error,hanged-man}.ts` (TS remains the canonical source).
+
+7. `20260612230000_create_world_messages.sql` — Shared world messages (issue #17)
    - `world_messages` — template-composed notes: `id`, `user_id`, `location` (indexed), `template_id`, `fills` (jsonb), `text` (CHECK ≤120 chars), `helpful`/`unhelpful` counters
    - `world_message_votes` — PK `(message_id, user_id)`; written only via the RPC
    - RLS: authenticated read ALL messages (shared world), owner insert/delete; votes readable by owner

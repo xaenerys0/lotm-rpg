@@ -26,12 +26,17 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 - `pathway-visionary.ts` — Visionary pathway lore (Seq 9-5).
 - `pathway-sun.ts` — Sun pathway lore (Seq 9-5).
 - `pathway-death.ts` — Death pathway lore (Seq 9-5).
+- `pathway-darkness.ts` — Darkness pathway lore (Seq 9-5).
+- `pathway-tyrant.ts` — Tyrant pathway lore (Seq 9-5).
+- `pathway-door.ts` — Door pathway lore (Seq 9-5).
+- `pathway-error.ts` — Error pathway lore (Seq 9-5).
+- `pathway-hanged-man.ts` — Hanged Man pathway lore (Seq 9-5).
 - `index.ts` — Re-exports and query helpers (`getLoreByCategory`, `getLoreByPathway`, etc.).
 - `lore.test.ts` — Data integrity tests.
 
 ## Database Table
 
-`lore_entries` in Supabase (migration `20260527111842`). Seeded by `20260527113655`.
+`lore_entries` in Supabase (migration `20260527111842`). Seeded by `20260527113655`; the five additional pathways (Darkness, Tyrant, Door, Error, Hanged Man) are seeded by `20260612170000`.
 
 Metadata columns for filtering: `category`, `pathway`, `epoch`, `city`, `npcs`, `sequences`, `tags`.
 `embedding` column (vector 1536) is nullable — populated post-MVP via pgvector.

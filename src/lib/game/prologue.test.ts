@@ -118,7 +118,7 @@ describe("PATHWAY_JUSTIFICATIONS", () => {
 // POTION_HEADINGS
 // ---------------------------------------------------------------------------
 describe("POTION_HEADINGS", () => {
-  it.each([1, 2, 3, 4])("has a non-empty heading for pathway %i", (id) => {
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9])("has a non-empty heading for pathway %i", (id) => {
     expect(typeof POTION_HEADINGS[id]).toBe("string");
     expect((POTION_HEADINGS[id] as string).length).toBeGreaterThan(0);
   });
@@ -134,10 +134,13 @@ describe("POTION_HEADINGS", () => {
 // FIRST_POTION_NARRATIVE
 // ---------------------------------------------------------------------------
 describe("FIRST_POTION_NARRATIVE", () => {
-  it.each([1, 2, 3, 4])("has a non-empty narrative for pathway %i", (id) => {
-    expect(typeof FIRST_POTION_NARRATIVE[id]).toBe("string");
-    expect((FIRST_POTION_NARRATIVE[id] as string).length).toBeGreaterThan(0);
-  });
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9])(
+    "has a non-empty narrative for pathway %i",
+    (id) => {
+      expect(typeof FIRST_POTION_NARRATIVE[id]).toBe("string");
+      expect((FIRST_POTION_NARRATIVE[id] as string).length).toBeGreaterThan(0);
+    },
+  );
 });
 
 // ---------------------------------------------------------------------------

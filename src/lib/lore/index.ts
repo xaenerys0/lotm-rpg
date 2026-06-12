@@ -31,6 +31,11 @@ export { FOOL_PATHWAY_LORE } from "./pathway-fool";
 export { VISIONARY_PATHWAY_LORE } from "./pathway-visionary";
 export { SUN_PATHWAY_LORE } from "./pathway-sun";
 export { DEATH_PATHWAY_LORE } from "./pathway-death";
+export { DARKNESS_PATHWAY_LORE } from "./pathway-darkness";
+export { TYRANT_PATHWAY_LORE } from "./pathway-tyrant";
+export { DOOR_PATHWAY_LORE } from "./pathway-door";
+export { ERROR_PATHWAY_LORE } from "./pathway-error";
+export { HANGED_MAN_PATHWAY_LORE } from "./pathway-hanged-man";
 
 import type { LoreEntry } from "./types";
 import { TINGEN_LORE } from "./tingen";
@@ -41,6 +46,11 @@ import { FOOL_PATHWAY_LORE } from "./pathway-fool";
 import { VISIONARY_PATHWAY_LORE } from "./pathway-visionary";
 import { SUN_PATHWAY_LORE } from "./pathway-sun";
 import { DEATH_PATHWAY_LORE } from "./pathway-death";
+import { DARKNESS_PATHWAY_LORE } from "./pathway-darkness";
+import { TYRANT_PATHWAY_LORE } from "./pathway-tyrant";
+import { DOOR_PATHWAY_LORE } from "./pathway-door";
+import { ERROR_PATHWAY_LORE } from "./pathway-error";
+import { HANGED_MAN_PATHWAY_LORE } from "./pathway-hanged-man";
 
 export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...TINGEN_LORE,
@@ -51,6 +61,11 @@ export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...VISIONARY_PATHWAY_LORE,
   ...SUN_PATHWAY_LORE,
   ...DEATH_PATHWAY_LORE,
+  ...DARKNESS_PATHWAY_LORE,
+  ...TYRANT_PATHWAY_LORE,
+  ...DOOR_PATHWAY_LORE,
+  ...ERROR_PATHWAY_LORE,
+  ...HANGED_MAN_PATHWAY_LORE,
 ];
 
 export function getLoreByCategory(category: LoreEntry["category"]): LoreEntry[] {

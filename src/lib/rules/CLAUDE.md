@@ -6,7 +6,7 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 
 ## Structure
 
-- `pathways.ts` — Pathway and sequence definitions (abilities, ingredients, rituals). ~1,240 lines of game data.
+- `pathways.ts` — Pathway and sequence definitions (abilities, ingredients, rituals) for all 9 playable pathways. Large block of game data.
 - `groups.ts` — Pathway group clustering (mysteries, god-almighty, eternal-darkness) and neighbor relationships.
 - `laws.ts` — Three cosmic laws: indestructibility (conservation of total characteristic weight), conservation (sequential advancement only), convergence (same/neighboring pathway attraction).
 - `validation.ts` — High-level validation API: `validateAdvancement()` and `validateTransfer()`.
@@ -22,7 +22,15 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 
 ## Current Scope
 
-4 pathways implemented (Fool, Visionary, Sun, Death), sequences 9-5 only. 18 more pathways and higher sequences (4-0) are planned.
+9 pathways implemented, sequences 9-5 only:
+
+- **Mysteries** (Sefirah Castle): Fool (1), Door (7), Error (8)
+- **God Almighty** (Chaos Sea): Visionary (2), Sun (3), Tyrant (6), Hanged Man (9)
+- **Eternal Darkness** (River of Eternal Darkness): Death (4), Darkness (5)
+
+13 more pathways and higher sequences (4-0) are planned. The not-yet-implemented
+White Tower (God Almighty) and Twilight Giant (Eternal Darkness) belong to the
+groups above per canon but are not yet in `PATHWAY_GROUPS.pathwayIds`.
 
 ## Conventions
 
