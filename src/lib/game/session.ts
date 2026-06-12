@@ -8,6 +8,7 @@ import {
 import { createDigestionState } from "./digestion";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidSocietyShape } from "./society";
+import { DEFAULT_EPOCH_ID, getEpoch } from "@/lib/lore/epochs";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
 
 const VALID_PHASES: GamePhase[] = [
@@ -66,6 +67,7 @@ export function createDefaultGameState(
   characterId: string = crypto.randomUUID(),
   characterName?: string,
   characterBackground?: string,
+  epoch?: number,
 ): GameState {
   return {
     characterId,
@@ -74,7 +76,8 @@ export function createDefaultGameState(
     sanity: 100,
     maxSanity: 100,
     inventory: [],
-    location: "Tingen City",
+    location: getEpoch(epoch).startingLocation,
+    ...(epoch !== undefined && epoch !== DEFAULT_EPOCH_ID ? { epoch } : {}),
     activeQuests: [],
     npcsPresent: [],
     digestion: createDigestionState(pathwayId, 9),

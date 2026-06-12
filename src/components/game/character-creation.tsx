@@ -15,6 +15,7 @@ import {
   clearDraft,
   TUTORIAL_SCENES,
 } from "@/lib/game";
+import { DEFAULT_EPOCH_ID, EPOCHS } from "@/lib/lore";
 import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
@@ -69,6 +70,7 @@ interface CharacterCreationProps {
     characterName: string,
     characterBackground: string,
     initialMemory: MemoryState,
+    epoch: number,
   ) => void;
   onBack: () => void;
 }
@@ -118,6 +120,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   // Step / flow state — restored from draft when available
   const [step, setStep] = useState<CreationStep>(savedDraft?.step ?? "mode-select");
   const [tutorialIndex, setTutorialIndex] = useState(0);
+  const [epoch, setEpoch] = useState(DEFAULT_EPOCH_ID);
   const [skipPrologue, setSkipPrologue] = useState(false);
 
   // Character identity — restored from draft when available
@@ -324,7 +327,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           bg,
         );
     clearDraft();
-    onComplete(selectedPathwayId, name, bg, memory);
+    onComplete(selectedPathwayId, name, bg, memory, epoch);
   }, [
     selectedPathwayId,
     characterName,
@@ -446,6 +449,28 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             The AI prologue takes ~5 minutes and reveals your Beyonder affinity through
             story.
           </p>
+          {/* Epoch start (issues #26/#29): the Fifth is the classic default. */}
+          <div className="mb-6 max-w-md">
+            <label htmlFor="epoch-select" className="mb-1.5 block text-xs text-muted">
+              Begin in
+            </label>
+            <select
+              id="epoch-select"
+              value={epoch}
+              onChange={(e) => setEpoch(Number(e.target.value))}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            >
+              {EPOCHS.map((era) => (
+                <option key={era.id} value={era.id}>
+                  {era.name} — {era.era}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted">
+              {EPOCHS.find((era) => era.id === epoch)?.summary}
+            </p>
+          </div>
+
           {/* Tutorial gate (issue #14): newcomers get the introduction;
               veterans skip it entirely without missing gameplay content. */}
           <button

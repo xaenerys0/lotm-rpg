@@ -133,6 +133,11 @@ export interface GameState {
   characterName?: string;
   characterBackground?: string;
   /**
+   * Starting epoch (issues #26/#29). Optional — absent means the Fifth.
+   * Set at character creation; rules-engine-only (never AI-mutable).
+   */
+  epoch?: number;
+  /**
    * Funds in pence (issue #16 — the marketplace introduced currency).
    * Optional for saves that predate it; `getFunds` seeds the default.
    */
@@ -214,6 +219,11 @@ export interface PromptInput {
   gameState: GameState;
   memory: MemoryState;
   loreContext: LoreContext;
+  /**
+   * Epoch tone directive (issues #26/#29) — one narrator-facing line from
+   * `epochNarrationDirective`; null/absent for the Fifth-Epoch baseline.
+   */
+  epochContext?: string | null;
   /**
    * Active-persona presentation context (issue #22) — one narrator-facing
    * line from `identityPromptContext`; null/absent when wearing the true face.

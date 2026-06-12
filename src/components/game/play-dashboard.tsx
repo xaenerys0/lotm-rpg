@@ -137,12 +137,14 @@ export function PlayDashboard() {
       characterName: string,
       characterBackground: string,
       initialMemory: MemoryState,
+      epoch: number,
     ) => {
       const gameState = createDefaultGameState(
         pathwayId,
         undefined,
         characterName,
         characterBackground,
+        epoch,
       );
       // Permadeath legacies (issue #12): a new character in the same timeline
       // inherits the world's memory of the fallen — the narrator can surface

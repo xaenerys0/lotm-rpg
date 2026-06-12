@@ -83,6 +83,8 @@ export interface GenerateOptions {
   retrievedChunks?: RetrievedLoreChunk[];
   /** Active-persona context (issue #22), from `identityPromptContext`. */
   identityContext?: string | null;
+  /** Epoch tone directive (issues #26/#29), from `epochNarrationDirective`. */
+  epochContext?: string | null;
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];
@@ -101,6 +103,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     loreContext: options.loreContext,
     retrievedChunks: options.retrievedChunks,
     identityContext: options.identityContext,
+    epochContext: options.epochContext,
     instruction: options.instruction,
     playerAction: options.playerAction,
     abilities: options.abilities,

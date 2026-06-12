@@ -215,6 +215,12 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     layers.push(sanityLayer);
   }
 
+  // Epoch setting (issues #26/#29): tone, vocabulary, and power structures
+  // for non-Fifth starts. The Fifth is the baseline and adds nothing.
+  if (input.epochContext) {
+    layers.push({ role: "system", content: `## Epoch\n${input.epochContext}` });
+  }
+
   // Active persona (issue #22): one presentation-context line so tone and
   // social access track the identity the character is currently wearing.
   if (input.identityContext) {

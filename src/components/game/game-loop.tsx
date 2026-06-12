@@ -86,7 +86,7 @@ import {
   type SessionUsage,
   type TurnUsage,
 } from "@/lib/ai";
-import { selectCuratedLore } from "@/lib/lore";
+import { selectCuratedLore, epochNarrationDirective, epochOpeningBeat } from "@/lib/lore";
 import { createClient } from "@/lib/supabase/client";
 import { SceneArt } from "./scene-art";
 import { WorldMessages } from "./world-messages";
@@ -260,6 +260,8 @@ function buildAICallParams(currentSession: GameSession) {
     identityContext: currentSession.identityState
       ? identityPromptContext(currentSession.identityState)
       : null,
+    // Epoch tone (issues #26/#29): null for the Fifth-Epoch baseline.
+    epochContext: epochNarrationDirective(currentSession.gameState.epoch),
     // Curated guardrail selection lives in @/lib/lore (tested); the component
     // stays a thin caller (issue #63).
     loreContext: selectCuratedLore(
@@ -518,7 +520,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         return;
       }
 
-      const { seq, abilities, actingReqs, loreContext, identityContext } =
+      const { seq, abilities, actingReqs, loreContext, identityContext, epochContext } =
         buildAICallParams(currentSession);
 
       const instruction: InstructionType = currentSession.activePillar
@@ -527,7 +529,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
       const playerAction =
         currentSession.turnCount === 0
-          ? `I begin my journey as a Sequence ${currentSession.gameState.sequenceLevel} ${seq?.name ?? "Beyonder"} in ${currentSession.gameState.location}. Describe the opening scene and give me choices.`
+          ? (epochOpeningBeat(currentSession.gameState.epoch) ??
+            `I begin my journey as a Sequence ${currentSession.gameState.sequenceLevel} ${seq?.name ?? "Beyonder"} in ${currentSession.gameState.location}. Describe the opening scene and give me choices.`)
           : "Continue from the previous scene. Describe what happens next and give me choices.";
 
       try {
@@ -537,6 +540,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           memory: currentSession.memory,
           loreContext,
           identityContext,
+          epochContext,
           instruction,
           playerAction,
           abilities,
@@ -604,7 +608,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       const pillar: GameplayPillar = CHOICE_PILLAR_MAP[selectedChoice.type];
       const instruction = PILLAR_INSTRUCTION_MAP[pillar];
 
-      const { abilities, actingReqs, loreContext, identityContext } =
+      const { abilities, actingReqs, loreContext, identityContext, epochContext } =
         buildAICallParams(currentSession);
 
       try {
@@ -614,6 +618,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           memory: currentSession.memory,
           loreContext,
           identityContext,
+          epochContext,
           instruction,
           playerAction: selectedChoice.text,
           abilities,

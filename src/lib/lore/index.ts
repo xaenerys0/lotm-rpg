@@ -2,6 +2,14 @@ export type { LoreCategory, LoreEntry } from "./types";
 
 export { selectCuratedLore } from "./selection";
 export {
+  epochNarrationDirective,
+  epochOpeningBeat,
+  getEpoch,
+  DEFAULT_EPOCH_ID,
+  EPOCHS,
+  type Epoch,
+} from "./epochs";
+export {
   getGlossaryTerm,
   glossaryForSequence,
   GLOSSARY_CATEGORIES,
