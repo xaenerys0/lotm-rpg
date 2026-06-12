@@ -27,6 +27,15 @@ import {
   type LossOfControlSeverity,
   type CombatEncounter,
   type CombatResult,
+  addJournalEntries,
+  createJournal,
+  deriveJournalEntries,
+  deserializeJournal,
+  serializeJournal,
+  syncEntries,
+  JOURNAL_KEY_PREFIX,
+  type JournalEntry,
+  type JournalSyncClient,
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
@@ -53,6 +62,7 @@ import {
   type TurnUsage,
 } from "@/lib/ai";
 import { selectCuratedLore } from "@/lib/lore";
+import { createClient } from "@/lib/supabase/client";
 import { getPathway, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
 
@@ -136,6 +146,37 @@ function saveUsageToStorage(sessionId: string, usage: SessionUsage): void {
   } catch {
     // Storage full or unavailable
   }
+}
+
+// Story journal capture (issue #11): entries persist locally alongside the
+// session and batch-sync to Supabase best-effort after each turn.
+function appendJournalEntries(sessionId: string, entries: JournalEntry[]): void {
+  if (entries.length === 0) return;
+  try {
+    const raw = localStorage.getItem(JOURNAL_KEY_PREFIX + sessionId);
+    const journal = (raw ? deserializeJournal(raw) : null) ?? createJournal();
+    localStorage.setItem(
+      JOURNAL_KEY_PREFIX + sessionId,
+      serializeJournal(addJournalEntries(journal, entries)),
+    );
+  } catch {
+    // Storage full or unavailable — the turn proceeds regardless.
+  }
+  void (async () => {
+    try {
+      const client = createClient();
+      const { data } = await client.auth.getUser();
+      if (!data.user) return;
+      await syncEntries(
+        client as unknown as JournalSyncClient,
+        data.user.id,
+        sessionId,
+        entries,
+      );
+    } catch {
+      // Offline or unreachable — localStorage already has the entries.
+    }
+  })();
 }
 
 const SANITY_TIER_STYLE: Record<SanityTier, { color: string; glow: string }> = {
@@ -518,6 +559,19 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         resolution,
         session.turnCount,
         playerAction,
+      );
+      // Journal capture (issue #11): the AI's flag plus deterministic
+      // detections from the state delta, recorded before the phase advances.
+      const seq = getSequence(gameState.pathwayId, gameState.sequenceLevel);
+      appendJournalEntries(
+        session.id,
+        deriveJournalEntries({
+          prevState: session.gameState,
+          nextState: gameState,
+          response: resolution.response,
+          turnNumber: session.turnCount,
+          arc: `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
+        }),
       );
       const updated = { ...session, gameState, memory };
       const next = transition(updated, { type: "APPLY_CONSEQUENCES" });

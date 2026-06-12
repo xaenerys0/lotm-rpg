@@ -52,7 +52,7 @@ The app is installable on Android and iOS ("Add to Home Screen"):
 
 - `/play` — Dashboard with pathway selection, new game, continue, and active game loop. Server component wraps `PlayDashboard` client component.
 - `/character` — Character creation and sheet (stub)
-- `/journal` — Story journal (stub)
+- `/journal` — Story journal (issue #11). Server component wraps `JournalPanel` client component.
 - `/settings` — AI provider configuration (BYOK) and preferences. Server component wraps `ProviderConfig` client component.
 
 ## API Routes

@@ -87,6 +87,12 @@ export interface AIResponse {
   actingEvaluation?: ActingEvaluation;
   sanityImpact?: number;
   itemsDiscovered?: Item[];
+  /**
+   * Optional journal-worthy flag (issue #11). Loosely typed at the AI
+   * boundary; `validateJournalFlag` (@/lib/game/journal) is the single
+   * validation point before anything reaches the journal.
+   */
+  journalEntry?: { summary: string; eventType: string };
 }
 
 export interface ValidatedAIResponse {

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { JournalPanel } from "@/components/game/journal-panel";
+
 export const metadata: Metadata = { title: "Journal" };
 
 export default function JournalPage() {
@@ -14,23 +16,7 @@ export default function JournalPage() {
         </p>
       </header>
 
-      <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
-        <p className="font-serif text-lg italic text-foreground/70">
-          &ldquo;The pages are blank&rdquo;
-        </p>
-        <div
-          className="mx-auto my-4 flex items-center justify-center gap-3"
-          aria-hidden="true"
-        >
-          <div className="h-px w-12 bg-gradient-to-r from-transparent to-border" />
-          <span className="text-[10px] text-muted/25">&#9670;</span>
-          <div className="h-px w-12 bg-gradient-to-l from-transparent to-border" />
-        </div>
-        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted">
-          Your story journal will record every choice, encounter, and discovery as your
-          narrative unfolds.
-        </p>
-      </div>
+      <JournalPanel />
     </div>
   );
 }

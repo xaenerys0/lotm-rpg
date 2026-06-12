@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Four migrations in order:
+Migrations live in `migrations/`. Five migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -34,6 +34,11 @@ Migrations live in `migrations/`. Four migrations in order:
    - RLS: **deny `anon` + `authenticated`** on both tables (copyrighted corpus, no direct client query path)
    - `match_source_chunks(...)` — `SECURITY DEFINER` RPC: hybrid FTS ⊕ pgvector (cosine) fused via Reciprocal Rank Fusion, parameterized by `model_id`; applies the timeline (`canon_order <= player_position`) and `concealment_tier` gates server-side. The sole corpus read path; granted to `authenticated` only.
    - Also retypes the reserved `lore_entries.embedding` from `vector(1536)` → `vector(1024)` for consistency (column is unpopulated, so a no-op on data).
+
+5. `20260612160000_create_journal.sql` — Story journal (issue #11)
+   - `journal_entries` — auto-recorded events: `id` (client-supplied uuid), `user_id` (FK `auth.users`), `session_id`, `character_id`/`character_name`, `turn_number`, `event_type` (checked against the seven journal event types), `summary`, `narrative`, `location`, `involved_npcs`, `arc`, `created_at`
+   - `journal_annotations` — player-only notes: `id`, `user_id`, `entry_id` (FK cascade), `text`, timestamps. **Never included in AI context.**
+   - RLS: owner-only (`auth.uid() = user_id`) for all operations on both tables
 
 ## Auth Session Persistence
 

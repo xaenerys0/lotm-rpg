@@ -15,10 +15,16 @@ import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
 
 import {
+  addAnnotation,
+  addJournalEntries,
+  createJournal,
+  serializeJournal,
   createSession,
   createDefaultGameState,
   serializeSession,
   SESSION_KEY_PREFIX,
+  SESSION_INDEX_KEY,
+  JOURNAL_KEY_PREFIX,
   createEncounter,
   applyPreparation,
   chooseOption,
@@ -182,6 +188,39 @@ describe("accessibility — stub pages", () => {
   });
 
   it("journal page has no violations", async () => {
+    await expectNoAxeViolations(<JournalPage />);
+  });
+
+  it("journal panel with recorded entries and notes has no violations", async () => {
+    const session = createSession(
+      createDefaultGameState(1, "char-1", "Klein"),
+      "jrnl-1",
+      1000,
+    );
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["jrnl-1"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "jrnl-1", serializeSession(session));
+    const journal = addAnnotation(
+      addJournalEntries(createJournal(), [
+        {
+          id: "e1",
+          turnNumber: 1,
+          createdAt: 1000,
+          location: "Tingen City",
+          eventType: "discovery",
+          summary: "Found the red chapel.",
+          narrative: "A long account of the chapel.",
+          involvedNpcs: ["Dunn Smith"],
+          arc: "Sequence 9 — Seer",
+          characterId: "char-1",
+          characterName: "Klein",
+        },
+      ]),
+      "e1",
+      "My note.",
+      2000,
+      "a1",
+    );
+    localStorage.setItem(JOURNAL_KEY_PREFIX + "jrnl-1", serializeJournal(journal));
     await expectNoAxeViolations(<JournalPage />);
   });
 });

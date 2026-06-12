@@ -4,3 +4,4 @@ export const PROVIDER_CONFIG_KEY = "lotm-rpg-provider-config";
 export const PROLOGUE_DRAFT_KEY = "lotm-rpg-prologue-draft";
 export const MODELS_CACHE_KEY = "lotm-rpg-models-cache";
 export const PREFERENCES_KEY = "lotm-rpg-preferences";
+export const JOURNAL_KEY_PREFIX = "lotm-rpg-journal-";

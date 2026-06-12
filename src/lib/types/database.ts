@@ -167,6 +167,83 @@ export interface Database {
         };
         Relationships: [];
       };
+      journal_entries: {
+        // Auto-recorded story journal events (issue #11). Owner-only RLS.
+        Row: {
+          id: string;
+          user_id: string;
+          session_id: string;
+          character_id: string;
+          character_name: string | null;
+          turn_number: number;
+          event_type: string;
+          summary: string;
+          narrative: string;
+          location: string;
+          involved_npcs: string[];
+          arc: string;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          user_id: string;
+          session_id: string;
+          character_id: string;
+          character_name?: string | null;
+          turn_number: number;
+          event_type: string;
+          summary: string;
+          narrative?: string;
+          location?: string;
+          involved_npcs?: string[];
+          arc?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          session_id?: string;
+          character_id?: string;
+          character_name?: string | null;
+          turn_number?: number;
+          event_type?: string;
+          summary?: string;
+          narrative?: string;
+          location?: string;
+          involved_npcs?: string[];
+          arc?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      journal_annotations: {
+        // Player-only notes (issue #11). NEVER included in AI context.
+        Row: {
+          id: string;
+          user_id: string;
+          entry_id: string;
+          text: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          user_id: string;
+          entry_id: string;
+          text: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          entry_id?: string;
+          text?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {

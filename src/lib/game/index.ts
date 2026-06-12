@@ -34,6 +34,36 @@ export {
 } from "./digestion";
 
 export {
+  addAnnotation,
+  addJournalEntries,
+  annotationsFor,
+  createJournal,
+  deleteAnnotation,
+  deriveJournalEntries,
+  deserializeJournal,
+  editAnnotation,
+  filterJournal,
+  journalEventLabel,
+  journalToMarkdown,
+  JOURNAL_EVENT_TYPES,
+  serializeJournal,
+  validateJournalFlag,
+  type Journal,
+  type JournalAnnotation,
+  type JournalEntry,
+  type JournalEventType,
+  type JournalFilter,
+} from "./journal";
+export {
+  deleteAnnotationRemote,
+  syncAnnotation,
+  syncEntries,
+  syncJournal,
+  toAnnotationRow,
+  toEntryRow,
+  type JournalSyncClient,
+} from "./journal-sync";
+export {
   advanceCanonPosition,
   createSession,
   createDefaultGameState,
@@ -102,6 +132,7 @@ export {
   PROLOGUE_DRAFT_KEY,
   MODELS_CACHE_KEY,
   PREFERENCES_KEY,
+  JOURNAL_KEY_PREFIX,
 } from "./constants";
 
 export {
