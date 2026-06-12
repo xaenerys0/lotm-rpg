@@ -38,6 +38,8 @@ export {
   buildSystemPrompt,
   buildLoreContext,
   buildSanityDirective,
+  buildDemigodDirective,
+  DEMIGOD_SEQUENCE_THRESHOLD,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,

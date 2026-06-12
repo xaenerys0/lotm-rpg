@@ -55,6 +55,7 @@ docs/
 ├── lotm-lore-summary.md   # LOTM universe reference
 ├── lotm-research-outline.txt  # Extended research notes
 ├── rag-per-turn-budget.md # RAG latency/token/operator-cost budget (issue #64)
+├── anchors-design.md      # Anchors system design (issue #35) — canon + data model
 └── rules/                 # Shared rule files (@-imported by scoped CLAUDE.md)
 ```
 

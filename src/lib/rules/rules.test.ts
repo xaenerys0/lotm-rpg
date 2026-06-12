@@ -59,10 +59,17 @@ describe("pathway definitions", () => {
     expect(pathway.id).toBe(id);
   });
 
-  it("each pathway has sequences 9 through 5", () => {
+  it("each pathway has sequences 9 through 1", () => {
     for (const pathway of ALL_PATHWAYS) {
       const levels = pathway.sequences.map((s) => s.level).sort((a, b) => b - a);
-      expect(levels).toEqual([9, 8, 7, 6, 5]);
+      expect(levels).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
+    }
+  });
+
+  it("every pathway's sequence names are unique", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      const names = pathway.sequences.map((s) => s.name);
+      expect(new Set(names).size).toBe(names.length);
     }
   });
 
@@ -107,13 +114,17 @@ describe("pathway definitions", () => {
     }
   });
 
-  it("Seq 9 and 8 are Low classification, Seq 7 through 5 are Mid", () => {
+  it("classifications scale with sequence: Low (9-8), Mid (7-5), High (4-3), Demigod (2-1)", () => {
     for (const pathway of ALL_PATHWAYS) {
       for (const seq of pathway.sequences) {
         if (seq.level >= 8) {
           expect(seq.classification).toBe("Low");
-        } else {
+        } else if (seq.level >= 5) {
           expect(seq.classification).toBe("Mid");
+        } else if (seq.level >= 3) {
+          expect(seq.classification).toBe("High");
+        } else {
+          expect(seq.classification).toBe("Demigod");
         }
       }
     }
@@ -143,7 +154,7 @@ describe("pathway definitions", () => {
     expect(getSequence(7, 9)?.name).toBe("Apprentice");
     expect(getSequence(8, 9)?.name).toBe("Marauder");
     expect(getSequence(9, 9)?.name).toBe("Secrets Suppliant");
-    expect(getSequence(1, 4)).toBeUndefined();
+    expect(getSequence(1, 0)).toBeUndefined();
   });
 
   it("canon Sequence 5 names for the new pathways", () => {
@@ -152,6 +163,54 @@ describe("pathway definitions", () => {
     expect(getSequence(7, 5)?.name).toBe("Traveler");
     expect(getSequence(8, 5)?.name).toBe("Dream Stealer");
     expect(getSequence(9, 5)?.name).toBe("Shepherd");
+  });
+
+  it("canon Saint (Seq 4) names for every pathway", () => {
+    expect(getSequence(1, 4)?.name).toBe("Bizarro Sorcerer");
+    expect(getSequence(2, 4)?.name).toBe("Manipulator");
+    expect(getSequence(3, 4)?.name).toBe("Unshadowed");
+    expect(getSequence(4, 4)?.name).toBe("Undying");
+    expect(getSequence(5, 4)?.name).toBe("Nightwatcher");
+    expect(getSequence(6, 4)?.name).toBe("Cataclysmic Interrer");
+    expect(getSequence(7, 4)?.name).toBe("Secrets Sorcerer");
+    expect(getSequence(8, 4)?.name).toBe("Parasite");
+    expect(getSequence(9, 4)?.name).toBe("Black Knight");
+  });
+
+  it("canon Sequence 3 names for every pathway", () => {
+    expect(getSequence(1, 3)?.name).toBe("Scholar of Yore");
+    expect(getSequence(2, 3)?.name).toBe("Dream Weaver");
+    expect(getSequence(3, 3)?.name).toBe("Justice Mentor");
+    expect(getSequence(4, 3)?.name).toBe("Ferryman");
+    expect(getSequence(5, 3)?.name).toBe("Horror Bishop");
+    expect(getSequence(6, 3)?.name).toBe("Sea King");
+    expect(getSequence(7, 3)?.name).toBe("Wanderer");
+    expect(getSequence(8, 3)?.name).toBe("Mentor of Deceit");
+    expect(getSequence(9, 3)?.name).toBe("Trinity Templar");
+  });
+
+  it("canon Sequence 2 names for every pathway", () => {
+    expect(getSequence(1, 2)?.name).toBe("Miracle Invoker");
+    expect(getSequence(2, 2)?.name).toBe("Discerner");
+    expect(getSequence(3, 2)?.name).toBe("Lightseeker");
+    expect(getSequence(4, 2)?.name).toBe("Death Consul");
+    expect(getSequence(5, 2)?.name).toBe("Servant of Concealment");
+    expect(getSequence(6, 2)?.name).toBe("Calamity");
+    expect(getSequence(7, 2)?.name).toBe("Planeswalker");
+    expect(getSequence(8, 2)?.name).toBe("Trojan Horse of Destiny");
+    expect(getSequence(9, 2)?.name).toBe("Profane Presbyter");
+  });
+
+  it("canon Angel (Seq 1) names for every pathway", () => {
+    expect(getSequence(1, 1)?.name).toBe("Attendant of Mysteries");
+    expect(getSequence(2, 1)?.name).toBe("Author");
+    expect(getSequence(3, 1)?.name).toBe("White Angel");
+    expect(getSequence(4, 1)?.name).toBe("Pale Emperor");
+    expect(getSequence(5, 1)?.name).toBe("Knight of Misfortune");
+    expect(getSequence(6, 1)?.name).toBe("Thunder God");
+    expect(getSequence(7, 1)?.name).toBe("Key of Stars");
+    expect(getSequence(8, 1)?.name).toBe("Worm of Time");
+    expect(getSequence(9, 1)?.name).toBe("Dark Angel");
   });
 
   it("each sequence has 2-4 abilities mixing active and passive", () => {
@@ -613,9 +672,10 @@ describe("prerequisite validation", () => {
     const attempt: AdvancementAttempt = {
       characterId: "player-1",
       currentPathwayId: 1,
-      currentSequence: 5,
-      targetSequence: 4,
-      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 5, quantity: 1 }],
+      currentSequence: 1,
+      // Sequence 0 (True God) is not yet implemented — an unknown target.
+      targetSequence: 0,
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 1, quantity: 1 }],
       availableItems: [],
       ritualCompleted: true,
     };

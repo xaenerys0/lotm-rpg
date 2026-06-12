@@ -358,6 +358,232 @@ const foolSequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Bizarro Sorcerer",
+    classification: "High",
+    abilities: [
+      {
+        name: "Spirit Worm Gifting",
+        description:
+          "Implant Spirit Worms into marionettes so your puppets wield Beyonder powers of their own, fielding an army of sorcerous thralls",
+        type: "active",
+      },
+      {
+        name: "Extended Marionette Control",
+        description:
+          "Seize and puppet bodies at vastly greater range, threading control across a city without a visible line",
+        type: "active",
+      },
+      {
+        name: "Sorcerer's Concealment",
+        description:
+          "Veil yourself and your strings from divination and ordinary sight, working unseen behind every scene",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Direct every conflict from the shadows through gifted thralls — never expose your own hand",
+      "Treat the powers you bestow as extensions of your will, not gifts freely given",
+      "Master the swelling spirituality of a Saint without letting the Sorcerer's grandeur consume you",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Bizarro Sorcerer Potion Formula",
+        description: "The recipe for the Sequence 4 Bizarro Sorcerer potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Marionettist Characteristic",
+        description:
+          "The Beyonder characteristic distilled from a fallen Marionettist of the Fool pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Crystallised Spirit Worm Brood",
+        description:
+          "A living brood of Spirit Worms preserved in spirit-crystal, the seed of every gifted thrall",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Become a Saint of the Fool: gather your marionettes and gifted thralls into a single congregation and consume the potion as their unquestioned master",
+      requirements: [
+        "Assemble a flock of marionettes and Spirit-Worm-gifted thralls bound wholly to your will",
+        "Consume the Saint's potion at the heart of that gathered congregation",
+        "Hold your own self intact as the Sorcerer's spirituality floods in, refusing to be drowned by the role",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Scholar of Yore",
+    classification: "High",
+    abilities: [
+      {
+        name: "Historical Void Borrowing",
+        description:
+          "Reach into history and borrow the strength, knowledge, and deeds of who you once were, projecting past selves into the present",
+        type: "active",
+      },
+      {
+        name: "History Concealment",
+        description:
+          "Hide a person, place, or event within history itself, erasing it from the present until you choose to restore it",
+        type: "active",
+      },
+      {
+        name: "Mastery of the Past",
+        description:
+          "Perceive the true history layered beneath the present and resist all attempts to rewrite your own",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Treat history as a library to be read, borrowed from, and guarded — never carelessly altered",
+      "Hold your identity across every past self you call upon, lest you lose which one is truly you",
+      "Carry the weight of accumulated yore without letting the Scholar's detachment hollow you out",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Scholar of Yore Potion Formula",
+        description: "The recipe for the Sequence 3 Scholar of Yore potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Bizarro Sorcerer Characteristic",
+        description:
+          "The Beyonder characteristic of a Bizarro Sorcerer, the only true ingredient a Saint's advancement demands",
+        category: "main-ingredient",
+      },
+      {
+        name: "Page Torn From Lost History",
+        description:
+          "A fragment of record so old its events have fallen out of the present world's memory",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Project a true self out of your own history and merge its accumulated yore back into the present as you digest the potion",
+      requirements: [
+        "Borrow a past self across the void of history and make it manifest in the present",
+        "Reconcile its memories and strength with your own without fracturing into many selves",
+        "Consume the potion at the moment of reunion, anchoring the borrowed history to your one identity",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Miracle Invoker",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Invocation of Miracles",
+        description:
+          "Speak miracles into being — alter fortune, bend probability, and accomplish the impossible by the authority of the Fool",
+        type: "active",
+      },
+      {
+        name: "Mysteries Mastery",
+        description:
+          "Command secrets, fog, and concealment on a near-absolute scale, hiding entire truths from the world",
+        type: "active",
+      },
+      {
+        name: "Spirituality Overflow",
+        description:
+          "Your spirituality so exceeds your flesh that ordinary harm cannot touch you — but it strains constantly to overflow into the mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Wield miracles with the restraint of one who knows each invocation tempts the Sequence's mythical character closer",
+      "Anchor your overflowing spirituality before it dissolves you into the symbol of the Fool",
+      "Bear the loneliness of a near-Angel without surrendering the human thread that keeps you yourself",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Miracle Invoker Potion Formula",
+        description: "The recipe for the Sequence 2 Miracle Invoker potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Scholar of Yore Characteristic",
+        description:
+          "The Beyonder characteristic of a Scholar of Yore — of the nine Fool characteristics that may ever exist, one must be free for this advancement",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Invoke a true miracle as the centrepiece of your advancement, proving you can wield the Fool's authority without dissolving into it",
+      requirements: [
+        "Prepare anchors enough to bind the surge of spirituality the potion will unleash",
+        "Invoke a genuine miracle at the climax of the rite, channelling the Fool's authority through yourself",
+        "Withstand the pull of the mythical character as the potion digests, holding to your own name",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Attendant of Mysteries",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Sea of Fog",
+        description:
+          "Generate a vast grey fog that lowers temperature, swallows light, and hides whole districts within its mysteries",
+        type: "active",
+      },
+      {
+        name: "Greater Substitution",
+        description:
+          "Qualitatively upgraded Paper Figurine Substitution — slip death, fate, and catastrophe onto a prepared substitute",
+        type: "active",
+      },
+      {
+        name: "Authority of Secrets and Change",
+        description:
+          "Command secrets, disguise, and transformation at the Angel tier, rewriting how the world perceives a thing",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's overflowing spirituality grants near-immortality, but without anchors it bleeds inexorably toward the mythical form of the Fool",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Sustain your anchors without fail — an unanchored Angel is assimilated by the Sequence's mythical character",
+      "Serve the mysteries as their attendant, neither hoarding nor squandering the Fool's secrets",
+      "Hold the line between attending the Fool and becoming the Fool, every single day",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Attendant of Mysteries Potion Formula",
+        description: "The recipe for the Sequence 1 Attendant of Mysteries potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Miracle Invoker Characteristic",
+        description:
+          "The Beyonder characteristic of a Miracle Invoker, surrendered so an Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Ascend to Angel of the Fool: consecrate your anchors, spread the Sea of Fog over a consecrated place, and digest the potion within it without being unmade",
+      requirements: [
+        "Consecrate the anchors that will bind your Angelic spirituality before drinking",
+        "Raise the Sea of Fog over a place sworn to you and consume the potion at its heart",
+        "Endure the mythical character of the Fool pressing to overwrite you, and emerge still yourself",
+      ],
+    },
+  },
 ];
 
 const visionarySequences: Sequence[] = [
@@ -682,6 +908,238 @@ const visionarySequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Manipulator",
+    classification: "High",
+    abilities: [
+      {
+        name: "Mind Island Invasion",
+        description:
+          "Enter the Sea of Collective Subconscious and seize the Mind Islands of others for mass mind control",
+        type: "active",
+      },
+      {
+        name: "Virtual Personas",
+        description:
+          "Spin off up to thirteen autonomous virtual personalities to think, scheme, and act in parallel",
+        type: "active",
+      },
+      {
+        name: "Mental Plague",
+        description:
+          "Loose a contagious psychic affliction that spreads madness or compulsion from mind to mind",
+        type: "active",
+      },
+      {
+        name: "Mind Storm",
+        description:
+          "Wrack an enemy's psyche with a tempest of intrusive thought and dread",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Steer minds and crowds from behind the veil of the subconscious, never showing your true hand",
+      "Keep your virtual personas accountable to one will — yours — lest a fragment usurp you",
+      "Carry a Saint's swelling spirituality without letting the Manipulator's contempt for free will become your own",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Manipulator Potion Formula",
+        description: "The recipe for the Sequence 4 Manipulator potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Dreamwalker Characteristic",
+        description:
+          "The Beyonder characteristic distilled from a fallen Dreamwalker of the Visionary pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Fragment of the Collective Subconscious",
+        description:
+          "A captured sliver of the Sea of Collective Subconscious, holding the dreams of a multitude",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Descend bodily into the Sea of Collective Subconscious and master a hostile Mind Island as you digest the Saint's potion",
+      requirements: [
+        "Enter the Sea of Collective Subconscious and find the Mind Island of a worthy mind",
+        "Subdue and govern it without your own self being lost among the personas you spawn",
+        "Consume the potion at the heart of the conquered island and surface still singular",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Dream Weaver",
+    classification: "High",
+    abilities: [
+      {
+        name: "Dream Weaving",
+        description:
+          "Weave dream-objects and dream-people so real that what the target believes becomes true for them",
+        type: "active",
+      },
+      {
+        name: "Reality Blurring",
+        description:
+          "Erode the line between dream and waking until a victim cannot tell which world they inhabit",
+        type: "active",
+      },
+      {
+        name: "Belief Made Manifest",
+        description:
+          "Whatever a swayed mind holds as certain takes on weight and consequence in the dream you spin",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Author dreams responsibly — every woven belief you plant becomes a real thing in another's world",
+      "Never lose track of which dreams are your weaving and which is the waking world you stand in",
+      "Hold to your own certainties as a Saint, so no rival weaver can author you",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Dream Weaver Potion Formula",
+        description: "The recipe for the Sequence 3 Dream Weaver potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Manipulator Characteristic",
+        description:
+          "The Beyonder characteristic of a Manipulator, the one true ingredient this Saint's advancement requires",
+        category: "main-ingredient",
+      },
+      {
+        name: "Loom of Sleeping Thought",
+        description:
+          "A mystical loom that spins the raw stuff of dreams into threads a Weaver can work",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Weave a dream indistinguishable from reality around a gathered audience and digest the potion within it",
+      requirements: [
+        "Spin a dream so complete that those caught in it cannot find its edges",
+        "Make a planted belief manifest as a real consequence inside the weave",
+        "Drink the potion within your own dream and wake without leaving part of yourself behind",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Discerner",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Discernment",
+        description:
+          "Perceive the truth, intent, and hidden nature of anything you turn your attention upon, piercing every veil",
+        type: "active",
+      },
+      {
+        name: "Dream Maze",
+        description:
+          "Fuse many Mind Islands into a vast dream-maze that swallows trespassers' minds whole",
+        type: "active",
+      },
+      {
+        name: "Spirituality Overflow",
+        description:
+          "Your spirituality overflows your flesh, granting near-immunity to ordinary harm while straining toward the Visionary's mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Discern truth with restraint — to see all is to risk the Visionary's cold detachment swallowing your heart",
+      "Anchor your overflowing spirituality before the mythical character of the Visionary overtakes you",
+      "Hold the human thread that keeps your discernment kind rather than merely all-seeing",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Discerner Potion Formula",
+        description: "The recipe for the Sequence 2 Discerner potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Dream Weaver Characteristic",
+        description:
+          "The Beyonder characteristic of a Dream Weaver, surrendered so a near-Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Raise a Dream Maze from many bound minds and discern your own true self within it as you digest the potion",
+      requirements: [
+        "Prepare anchors enough to hold your overflowing spirituality through the rite",
+        "Fuse a host of Mind Islands into a single dream-maze and stand at its centre",
+        "Discern and hold to your own true self as the Visionary's mythical character presses to overwrite you",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Author",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Authorship of Fate",
+        description:
+          "Read the deepest fears, past destinies, and causal threads of others, and write new turns into them",
+        type: "active",
+      },
+      {
+        name: "Authority of Imagination",
+        description:
+          "Command imagination and spirit at the Angel tier, making the conceived real within your reach",
+        type: "active",
+      },
+      {
+        name: "Causal Sight",
+        description:
+          "Perceive the chains of cause and consequence binding a person to their destiny",
+        type: "passive",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's overflowing spirituality grants near-immortality, but without anchors it bleeds toward the mythical form of the Visionary",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Sustain your anchors without fail — an unanchored Angel is assimilated by the Visionary's mythical character",
+      "Author the fates of others gravely, knowing each rewrite reshapes a real soul",
+      "Hold the line between authoring the world and being authored by the Visionary within you",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Author Potion Formula",
+        description: "The recipe for the Sequence 1 Author potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Discerner Characteristic",
+        description:
+          "The Beyonder characteristic of a Discerner, surrendered so an Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Ascend to Angel of the Visionary: consecrate your anchors and rewrite a strand of true fate as you digest the potion without being unmade",
+      requirements: [
+        "Consecrate the anchors that will bind your Angelic spirituality before drinking",
+        "Read and rewrite a genuine thread of destiny as proof of your authorship",
+        "Endure the mythical character of the Visionary pressing to overwrite you, and emerge still yourself",
+      ],
+    },
+  },
 ];
 
 const sunSequences: Sequence[] = [
@@ -998,6 +1456,231 @@ const sunSequences: Sequence[] = [
         "Choose a location in need of spiritual protection",
         "Consecrate the location through a day-long ritual",
         "Defend the sanctuary against a supernatural assault",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Unshadowed",
+    classification: "High",
+    abilities: [
+      {
+        name: "Purification",
+        description:
+          "Strip corruption, darkness, and even Beyonder characteristics from a target — enough to drag a Beyonder down a Sequence",
+        type: "active",
+      },
+      {
+        name: "Unshadowed Domain",
+        description:
+          "Fill an area with light so total that no shadow, lie, or concealment can hold within it",
+        type: "active",
+      },
+      {
+        name: "Flaring Sun",
+        description: "Release a blinding solar flare that scours undead and evil to ash",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Burn away corruption and darkness wherever you find it, sparing neither the powerful nor the hidden",
+      "Wield purification as a Saint's duty, not a weapon of pride or vengeance",
+      "Carry the Sun's swelling radiance without letting its zeal harden into cruelty",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Unshadowed Potion Formula",
+        description: "The recipe for the Sequence 4 Unshadowed potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Priest of Light Characteristic",
+        description:
+          "The Beyonder characteristic distilled from a fallen Priest of Light of the Sun pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Vial of Undimmed Noon Light",
+        description:
+          "Captured light of high noon that never dims, the purest reagent of the Sun's purification",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Become a Saint of the Sun: raise an Unshadowed Domain over a corrupted place and purify it utterly as you digest the potion",
+      requirements: [
+        "Choose a place steeped in darkness or corruption and flood it with your Unshadowed Domain",
+        "Purify the corruption completely, sparing nothing that hides from the light",
+        "Hold yourself intact as the Sun's spirituality floods in, refusing the role's all-consuming zeal",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Justice Mentor",
+    classification: "High",
+    abilities: [
+      {
+        name: "Principle of Order",
+        description:
+          "Forge a personal principle of justice and order aligned with the Sun, made real by your authority",
+        type: "active",
+      },
+      {
+        name: "Judgment of Light",
+        description:
+          "Pass binding judgment on the guilty, the light of the Sun enforcing the sentence",
+        type: "active",
+      },
+      {
+        name: "Mantle of Order",
+        description:
+          "Project an aura of lawful authority that steadies allies and unnerves the wicked",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Define and uphold a just order, then bind yourself to it before binding others",
+      "Mentor and judge with the Sun's clarity, never with the tyrant's caprice",
+      "Hold your principles as a Saint without letting the role's certainty blind you to mercy",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Justice Mentor Potion Formula",
+        description: "The recipe for the Sequence 3 Justice Mentor potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Unshadowed Characteristic",
+        description:
+          "The Beyonder characteristic of an Unshadowed, the one true ingredient this Saint's advancement requires",
+        category: "main-ingredient",
+      },
+      {
+        name: "Tablet of First Law",
+        description:
+          "A stone tablet inscribed with an ancient, still-binding principle of order",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Declare a principle of justice and enforce it upon a true wrong as you digest the potion",
+      requirements: [
+        "Forge and proclaim a personal principle of order aligned with the Sun",
+        "Pass and enforce a judgment that the world itself upholds",
+        "Drink the potion as the principle takes root, binding it to yourself without it binding you",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Lightseeker",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Authority of Light",
+        description:
+          "Wield partial authority over the Sun and Light themselves, summoning, bending, and withholding radiance",
+        type: "active",
+      },
+      {
+        name: "Spear of Light",
+        description:
+          "Condense pure light into a hurled spear that pierces darkness and flesh alike",
+        type: "active",
+      },
+      {
+        name: "Spirituality Overflow",
+        description:
+          "Your spirituality overflows your flesh, granting near-immunity to harm while straining toward the Sun's mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Seek and serve the light with restraint, knowing its authority tempts the Sun's mythical character closer",
+      "Anchor your overflowing spirituality before the radiance dissolves your humanity",
+      "Hold the human warmth that keeps your light a comfort rather than a judgment",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Lightseeker Potion Formula",
+        description: "The recipe for the Sequence 2 Lightseeker potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Justice Mentor Characteristic",
+        description:
+          "The Beyonder characteristic of a Justice Mentor, surrendered so a near-Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Seize partial authority over light at high noon and forge a Spear of Light as you digest the potion",
+      requirements: [
+        "Prepare anchors enough to hold your overflowing spirituality through the rite",
+        "Claim authority over the light of the Sun at the height of day",
+        "Condense and hurl a Spear of Light as the mythical character of the Sun presses to overwrite you",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "White Angel",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Authority of Holiness",
+        description:
+          "Wield partial authority over Holiness, Order, and Faith at the Angel tier, sanctifying and commanding",
+        type: "active",
+      },
+      {
+        name: "Incarnation of Order",
+        description:
+          "Draw power from the order and commerce of a city to heal, restore, and mend on a vast scale",
+        type: "active",
+      },
+      {
+        name: "Radiant Judgment",
+        description:
+          "Call down overwhelming holy light to smite the corrupt across a wide field",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's overflowing spirituality grants near-immortality, but without anchors it bleeds toward the mythical form of the Sun",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Sustain your anchors without fail — an unanchored Angel is assimilated by the Sun's mythical character",
+      "Embody holiness and order as their living incarnation, yet remain answerable to mercy",
+      "Hold the line between serving the Sun and becoming the Sun's pitiless radiance",
+    ],
+    prerequisiteItems: [
+      {
+        name: "White Angel Potion Formula",
+        description: "The recipe for the Sequence 1 White Angel potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Lightseeker Characteristic",
+        description:
+          "The Beyonder characteristic of a Lightseeker, surrendered so an Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Ascend to Angel of the Sun: consecrate your anchors and become the Incarnation of Order over a faithful city as you digest the potion",
+      requirements: [
+        "Consecrate the anchors — a congregation of the faithful — that will bind your Angelic spirituality",
+        "Draw upon the order of a city to perform a great work of healing as the rite peaks",
+        "Endure the mythical character of the Sun pressing to overwrite you, and emerge still yourself",
       ],
     },
   },
@@ -1358,6 +2041,238 @@ const deathSequences: Sequence[] = [
         "Prepare through extended communion with the death realm",
         "Open the Internal Underworld gate at your brow",
         "Successfully house at least three bound souls within your Internal Underworld without losing control",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Undying",
+    classification: "High",
+    abilities: [
+      {
+        name: "Death and Resurrection",
+        description:
+          "Die and rise again on a cycle of roughly sixty years; each return resets the flesh, though memory is paid as the price",
+        type: "active",
+      },
+      {
+        name: "Underworld Authority",
+        description:
+          "Command the death realm at will, opening the Door to the Underworld and traversing the spirit world freely",
+        type: "active",
+      },
+      {
+        name: "Death Sealing",
+        description:
+          "Seal a soul, a power, or a calamity away behind the boundary of death",
+        type: "active",
+      },
+      {
+        name: "Deathless Body",
+        description:
+          "Natural death has no hold on you, and most harm only delays the next resurrection",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Treat death as a doorway you keep, passing through it and back without fear or hunger",
+      "Bear the loss of memory each resurrection costs without losing the thread of who you are",
+      "Carry the Death pathway's swelling spirituality as a Saint without growing indifferent to the living",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Undying Potion Formula",
+        description: "The recipe for the Sequence 4 Undying potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Gatekeeper Characteristic",
+        description:
+          "The Beyonder characteristic distilled from a fallen Gatekeeper of the Death pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Ash of a Self Already Died",
+        description:
+          "The funerary ash of one who has passed and returned, carrying the imprint of a survived death",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Become a Saint of Death: pass willingly through your own death and rise again as you digest the potion",
+      requirements: [
+        "Open the Door to the Underworld and step through your own death by choice",
+        "Seal what must be sealed on the far side and turn back toward life",
+        "Rise again with the potion digesting, holding to your self through the memory the death takes",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Ferryman",
+    classification: "High",
+    abilities: [
+      {
+        name: "Hands of Life and Death",
+        description:
+          "The left hand deals near-irreversible death; the right hand restores life — the two authorities held in one body",
+        type: "active",
+      },
+      {
+        name: "Ferrying of Souls",
+        description:
+          "Carry souls across the boundary between life and death, delivering or withholding passage",
+        type: "active",
+      },
+      {
+        name: "Manifest Authority of Death",
+        description:
+          "Make the authority of Death visible and physical, a tide that the living cannot cross uninvited",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Ferry every soul that seeks passage fairly, neither hastening nor refusing the crossing for gain",
+      "Hold life and death in balance in your two hands, mastering both without favouring either",
+      "Carry a Saint's spirituality as the ferry's keeper without becoming as cold as the river you tend",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Ferryman Potion Formula",
+        description: "The recipe for the Sequence 3 Ferryman potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Undying Characteristic",
+        description:
+          "The Beyonder characteristic of an Undying, the one true ingredient this Saint's advancement requires",
+        category: "main-ingredient",
+      },
+      {
+        name: "Oar of the Final Crossing",
+        description:
+          "The oar of a vessel that has carried the dead, steeped in the authority of passage",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Take up the Hands of Life and Death and ferry a soul across the boundary as you digest the potion",
+      requirements: [
+        "Master the left hand of death and the right hand of life as a single authority",
+        "Ferry a true soul across the boundary and return without it clinging to you",
+        "Drink the potion at the far bank, holding your humanity against the river's cold pull",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Death Consul",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Authority of Death",
+        description:
+          "Wield partial authority over Death itself, dealing and staying it across a wide domain",
+        type: "active",
+      },
+      {
+        name: "Nation of the Dead",
+        description:
+          "Raise a city-sized domain that slays the living, raises the dead, and harms even godhood within its bounds",
+        type: "active",
+      },
+      {
+        name: "Spirituality Overflow",
+        description:
+          "Your spirituality overflows your flesh, granting near-immunity to harm while straining toward the Death pathway's mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Rule the dead with restraint, knowing each exercise of Death's authority tempts the mythical character closer",
+      "Anchor your overflowing spirituality before the Nation of the Dead swallows your living heart",
+      "Hold the human warmth that keeps your dominion a keeping rather than a slaughter",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Death Consul Potion Formula",
+        description: "The recipe for the Sequence 2 Death Consul potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Ferryman Characteristic",
+        description:
+          "The Beyonder characteristic of a Ferryman, surrendered so a near-Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Raise a Nation of the Dead and rule it without being claimed by it as you digest the potion",
+      requirements: [
+        "Prepare anchors enough to hold your overflowing spirituality through the rite",
+        "Raise a city-sized Nation of the Dead and take its throne",
+        "Hold to your own life as the mythical character of Death presses to overwrite you",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Pale Emperor",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Authority of Pallor",
+        description:
+          "Wield partial authority over Pallor at the Angel tier, draining colour, warmth, and vitality from the world",
+        type: "active",
+      },
+      {
+        name: "Pale World",
+        description:
+          "Unfurl a colourless realm where Beyonder powers wither and die and the living slowly fade",
+        type: "active",
+      },
+      {
+        name: "Empire of the Dead",
+        description:
+          "Command the undead and the spirits of a vast domain as a single, ordered host",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's overflowing spirituality grants near-immortality, but without anchors it bleeds toward the mythical form of Death",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Sustain your anchors without fail — an unanchored Angel is assimilated by Death's mythical character",
+      "Reign over pallor and the dead as their emperor, yet remember the colour of the living world you came from",
+      "Hold the line between ruling Death and becoming Death's silence",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Pale Emperor Potion Formula",
+        description: "The recipe for the Sequence 1 Pale Emperor potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Death Consul Characteristic",
+        description:
+          "The Beyonder characteristic of a Death Consul, surrendered so an Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Ascend to Angel of Death: consecrate your anchors and unfurl the Pale World as you digest the potion without being unmade",
+      requirements: [
+        "Consecrate the anchors that will bind your Angelic spirituality before drinking",
+        "Unfurl a colourless Pale World and hold dominion over its silence",
+        "Endure the mythical character of Death pressing to overwrite you, and emerge still yourself",
       ],
     },
   },
@@ -1742,6 +2657,238 @@ const darknessSequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Nightwatcher",
+    classification: "High",
+    abilities: [
+      {
+        name: "Night Domain",
+        description:
+          "Unfurl a domain of living night within which darkness, sleep, and concealment answer your will",
+        type: "active",
+      },
+      {
+        name: "Hair Entanglement",
+        description:
+          "Loose binding strands of darkness that ensnare foes and sink them into peaceful, helpless slumber",
+        type: "active",
+      },
+      {
+        name: "Concealment of Night",
+        description:
+          "Hide yourself, others, and whole places within the dark, beyond ordinary sight or divination",
+        type: "active",
+      },
+      {
+        name: "Inherited Bloodline",
+        description:
+          "Carry residual abilities drawn from the true-deity descendant blood used in your advancement",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Keep the watch of the night, guarding rest and concealment rather than wielding the dark for cruelty",
+      "Master the swelling night within you as a Saint without letting it smother your warmth",
+      "Use entanglement and concealment to protect and to bind, never merely to dominate",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Nightwatcher Potion Formula",
+        description: "The recipe for the Sequence 4 Nightwatcher potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Spirit Warlock Characteristic",
+        description:
+          "The Beyonder characteristic distilled from a fallen Spirit Warlock of the Darkness pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Blood of a True-Deity Descendant",
+        description:
+          "Blood carrying the diluted lineage of a true deity, the bloodline reagent of the Nightwatcher",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Become a Saint of Darkness: raise the Night Domain over a sleeping place and keep its watch as you digest the potion",
+      requirements: [
+        "Unfurl the Night Domain over a place given to rest and darkness",
+        "Bind any who would break the night's peace with Hair Entanglement",
+        "Hold yourself intact as the Darkness pathway's spirituality floods in, keeping the watch rather than becoming the night",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Horror Bishop",
+    classification: "High",
+    abilities: [
+      {
+        name: "Sword of Darkness",
+        description:
+          "Forge a bone sword that fuses Repose and Horror, cleaving body and spirit in a single stroke",
+        type: "active",
+      },
+      {
+        name: "Surging Dark Tide",
+        description:
+          "Call up tides of living darkness that drown a battlefield in dread and shadow",
+        type: "active",
+      },
+      {
+        name: "Aura of Horror",
+        description:
+          "Radiate an oppressive terror that unmakes the courage of all who stand against you",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Wield horror and repose together with a bishop's discipline, never indulging cruelty for its own sake",
+      "Hold your purpose as a Saint against the dread your own power radiates",
+      "Bear the surging darkness within without letting it surge past your control",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Horror Bishop Potion Formula",
+        description: "The recipe for the Sequence 3 Horror Bishop potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Nightwatcher Characteristic",
+        description:
+          "The Beyonder characteristic of a Nightwatcher, the one true ingredient this Saint's advancement requires",
+        category: "main-ingredient",
+      },
+      {
+        name: "Bone of a Thing That Knew Repose",
+        description:
+          "A bone steeped in both peace and terror, the raw material of the Sword of Darkness",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Forge the Sword of Darkness from Repose and Horror and master it as you digest the potion",
+      requirements: [
+        "Fuse the authorities of Repose and Horror into a single bone blade",
+        "Loose a surging dark tide and call it back to your hand without it sweeping you away",
+        "Drink the potion as the sword is bound to you, holding to your purpose through the dread",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Servant of Concealment",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Authority of Concealment",
+        description:
+          "Wield partial authority over Concealment, erasing a target from outside perception entirely",
+        type: "active",
+      },
+      {
+        name: "Vanished World",
+        description:
+          "Sink a place or a person wholly out of the world's awareness, hidden until you will otherwise",
+        type: "active",
+      },
+      {
+        name: "Spirituality Overflow",
+        description:
+          "Your spirituality overflows your flesh, granting near-immunity to harm while straining toward the Darkness pathway's mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Conceal with restraint, knowing each erasure tempts the Darkness pathway's mythical character closer",
+      "Anchor your overflowing spirituality before the dark swallows your own visibility to yourself",
+      "Hold the human thread that keeps you findable, lest you vanish even from your own heart",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Servant of Concealment Potion Formula",
+        description: "The recipe for the Sequence 2 Servant of Concealment potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Horror Bishop Characteristic",
+        description:
+          "The Beyonder characteristic of a Horror Bishop, surrendered so a near-Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Erase a true thing from the world's perception and call it back as you digest the potion",
+      requirements: [
+        "Prepare anchors enough to hold your overflowing spirituality through the rite",
+        "Conceal a real person or place wholly from the world's awareness",
+        "Restore it, and yourself, before the mythical character of Darkness overwrites you",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Knight of Misfortune",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Authority of Misfortune",
+        description:
+          "Wield partial authority over Misfortune at the Angel tier, laying ruinous curses upon your enemies",
+        type: "active",
+      },
+      {
+        name: "Archangel's Body",
+        description:
+          "A peerless physical form of darkness and night, fighting at the fore as an Archangel-tier knight",
+        type: "active",
+      },
+      {
+        name: "Cloak of Endless Night",
+        description:
+          "Wrap yourself in concealing night that turns aside sight, divination, and many a blow",
+        type: "passive",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's overflowing spirituality grants near-immortality, but without anchors it bleeds toward the mythical form of Darkness",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Sustain your anchors without fail — an unanchored Angel is assimilated by Darkness's mythical character",
+      "Carry misfortune as a knight carries a blade, turning it on the deserving rather than the helpless",
+      "Hold the line between guarding the night and becoming its curse",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Knight of Misfortune Potion Formula",
+        description: "The recipe for the Sequence 1 Knight of Misfortune potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Servant of Concealment Characteristic",
+        description:
+          "The Beyonder characteristic of a Servant of Concealment, surrendered so an Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Ascend to Angel of Darkness: consecrate your anchors and take up the authority of Misfortune as a knight of night while you digest the potion",
+      requirements: [
+        "Consecrate the anchors that will bind your Angelic spirituality before drinking",
+        "Lay a curse of true misfortune upon a worthy foe as the rite peaks",
+        "Endure the mythical character of Darkness pressing to overwrite you, and emerge still yourself",
+      ],
+    },
+  },
 ];
 
 const tyrantSequences: Sequence[] = [
@@ -2105,6 +3252,231 @@ const tyrantSequences: Sequence[] = [
         "Stand upon the open water and sing the storm into being",
         "Bind its wind, wave, and lightning to your voice",
         "Disperse the storm at your word, proving your mastery over it",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Cataclysmic Interrer",
+    classification: "High",
+    abilities: [
+      {
+        name: "Tornado Calling",
+        description:
+          "Summon and steer tornadoes that tear apart whatever stands in their winding path",
+        type: "active",
+      },
+      {
+        name: "Tsunami Raising",
+        description: "Raise tsunamis of roughly ten metres to drown coasts and fleets",
+        type: "active",
+      },
+      {
+        name: "Earthquake",
+        description:
+          "Split the land and erupt magma, burying the works of others beneath the earth's own fury",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Loose disasters with a tyrant's authority, yet aim your fury at the deserving and not the helpless",
+      "Master the swelling violence of a Saint without letting calamity become your only answer",
+      "Bury what must be buried, then still the disaster — never leave a cataclysm running wild",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Cataclysmic Interrer Potion Formula",
+        description: "The recipe for the Sequence 4 Cataclysmic Interrer potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Ocean Songster Characteristic",
+        description:
+          "The Beyonder characteristic distilled from a fallen Ocean Songster of the Tyrant pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Heart of a Buried Storm",
+        description:
+          "The crystallised core of a disaster spent and interred, still humming with cataclysm",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Become a Saint of the Tyrant: raise a true disaster, then bury it at your command as you digest the potion",
+      requirements: [
+        "Call up a tornado, tsunami, or earthquake of genuine destructive force",
+        "Direct it where you will, then inter it — quelling the calamity by your own authority",
+        "Hold yourself intact as the Tyrant's spirituality floods in, ruling the disaster rather than becoming it",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Sea King",
+    classification: "High",
+    abilities: [
+      {
+        name: "Dominion of the Deep",
+        description:
+          "Rule a controlled expanse of sea — walk the seabed, raise the waters, and bend the currents to your reign",
+        type: "active",
+      },
+      {
+        name: "Marine Command",
+        description:
+          "Command the creatures of the sea, from schooling fish to leviathans, as your subjects",
+        type: "active",
+      },
+      {
+        name: "Tsunami Sovereignty",
+        description:
+          "Dominate tsunamis and storm-surges, raising or stilling them across your waters",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Reign over your waters as a king, answerable to the sea's own order rather than mere whim",
+      "Hold your throne as a Saint without letting the deep's cold pride drown your humanity",
+      "Command the tides and their creatures justly, sparing those who do not defy you",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Sea King Potion Formula",
+        description: "The recipe for the Sequence 3 Sea King potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Cataclysmic Interrer Characteristic",
+        description:
+          "The Beyonder characteristic of a Cataclysmic Interrer, the one true ingredient this Saint's advancement requires",
+        category: "main-ingredient",
+      },
+      {
+        name: "Crown-Coral of a Drowned Throne",
+        description:
+          "Coral grown over a sunken seat of power, carrying the authority of a ruler of the deep",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Claim a stretch of sea as your kingdom and rule its waters and creatures as you digest the potion",
+      requirements: [
+        "Descend to the seabed and lay claim to a domain of the deep",
+        "Bend its tides, currents, and creatures to your reign",
+        "Drink the potion upon your drowned throne, holding your humanity against the sea's cold pride",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Calamity",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Greater Tsunami",
+        description:
+          "Raise tsunamis of forty to fifty metres and lift sea levels across a whole region",
+        type: "active",
+      },
+      {
+        name: "Lightning Disaster",
+        description:
+          "Call down lightning as a natural disaster, scourging a region with the storm's full wrath",
+        type: "active",
+      },
+      {
+        name: "Spirituality Overflow",
+        description:
+          "Your spirituality overflows your flesh, granting near-immunity to harm while straining toward the Tyrant's mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Unleash calamity with restraint, knowing each disaster tempts the Tyrant's mythical character closer",
+      "Anchor your overflowing spirituality before you become nothing but the storm itself",
+      "Hold the human heart that remembers the coasts your calamities would drown",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Calamity Potion Formula",
+        description: "The recipe for the Sequence 2 Calamity potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Sea King Characteristic",
+        description:
+          "The Beyonder characteristic of a Sea King, surrendered so a near-Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Raise a region-spanning calamity and rein it back as you digest the potion",
+      requirements: [
+        "Prepare anchors enough to hold your overflowing spirituality through the rite",
+        "Raise a great tsunami or lightning disaster across a region",
+        "Rein it back before the mythical character of the Tyrant overwrites you",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Thunder God",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Authority of Thunder",
+        description:
+          "Wield partial authority over Thunder, Wind, and Calamities at the Angel tier, ruling the storm itself",
+        type: "active",
+      },
+      {
+        name: "Incarnation of Light",
+        description:
+          "Become a body of near-lightspeed energy, striking and moving as living lightning",
+        type: "active",
+      },
+      {
+        name: "Heavenly Punishment",
+        description:
+          "Call down annihilating bolts of judgment upon any who draw your wrath across a vast field",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's overflowing spirituality grants near-immortality, but without anchors it bleeds toward the mythical form of the Tyrant",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Sustain your anchors without fail — an unanchored Angel is assimilated by the Tyrant's mythical character",
+      "Wield thunder and calamity as a god of the storm, aiming heavenly punishment at the truly defiant",
+      "Hold the line between commanding the storm and becoming the storm's blind wrath",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Thunder God Potion Formula",
+        description: "The recipe for the Sequence 1 Thunder God potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Calamity Characteristic",
+        description:
+          "The Beyonder characteristic of a Calamity, surrendered so an Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Ascend to Angel of the Tyrant: consecrate your anchors and become the Incarnation of Light amid a true storm as you digest the potion",
+      requirements: [
+        "Consecrate the anchors that will bind your Angelic spirituality before drinking",
+        "Become a body of living lightning at the heart of a storm and loose a heavenly punishment",
+        "Endure the mythical character of the Tyrant pressing to overwrite you, and emerge still yourself",
       ],
     },
   },
@@ -2494,6 +3866,232 @@ const doorSequences: Sequence[] = [
         "Establish four distinct, far-flung coordinates deep within the spirit world",
         "Bind them into a single network you can traverse at will",
         "Travel the full circuit and return to your starting point unharmed",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Secrets Sorcerer",
+    classification: "High",
+    abilities: [
+      {
+        name: "Space Concealment",
+        description:
+          "Split a region into a hidden pocket of space reachable only through a door of your making",
+        type: "active",
+      },
+      {
+        name: "Pocket-Dimension Forging",
+        description:
+          "Fold whole rooms and vaults into mystical items, carrying spaces in your pocket",
+        type: "active",
+      },
+      {
+        name: "Door Transfiguration",
+        description:
+          "Transform yourself into a host of doors, scattering through space and reforming at will",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Guard the secret spaces you fold away as a sorcerer guards their library, never spilling them carelessly",
+      "Master the swelling spatial authority of a Saint without losing track of where your own self resides",
+      "Wander and probe space with curiosity, yet always keep a door open back to who you are",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Secrets Sorcerer Potion Formula",
+        description: "The recipe for the Sequence 4 Secrets Sorcerer potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Traveler Characteristic",
+        description:
+          "The Beyonder characteristic distilled from a fallen Traveler of the Door pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Keystone of a Folded Room",
+        description:
+          "The keystone of a space already folded out of the world, the seed of a new pocket dimension",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Become a Saint of the Door: fold a true space into concealment and step through your own door as you digest the potion",
+      requirements: [
+        "Split a region into a hidden pocket of space sealed behind a door of your making",
+        "Fold that space into a mystical item and carry it through the rite",
+        "Hold yourself intact as the Door's spatial spirituality floods in, keeping one door always open to your self",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Wanderer",
+    classification: "High",
+    abilities: [
+      {
+        name: "Astral Wandering",
+        description:
+          "Walk the Astral World and the cosmos, stepping to distant planets across the void",
+        type: "active",
+      },
+      {
+        name: "Space Tearing",
+        description:
+          "Rend space open to strike, sever, or pass through whatever it encloses",
+        type: "active",
+      },
+      {
+        name: "Boundless Stride",
+        description:
+          "No distance, wall, or border can truly contain you; the cosmos itself is your road",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Wander the cosmos with a Saint's curiosity, yet keep a thread that leads home to yourself",
+      "Tear space with care, never carelessly unmaking what holds the world together",
+      "Hold your identity across the far places you walk, lest the void wander off with it",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Wanderer Potion Formula",
+        description: "The recipe for the Sequence 3 Wanderer potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Secrets Sorcerer Characteristic",
+        description:
+          "The Beyonder characteristic of a Secrets Sorcerer, the one true ingredient this Saint's advancement requires",
+        category: "main-ingredient",
+      },
+      {
+        name: "Dust of a Distant World",
+        description:
+          "Soil gathered from a planet across the Astral World, proof of a true crossing",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Cross the Astral World to a distant world and return as you digest the potion",
+      requirements: [
+        "Tear space and step into the Astral World under your own power",
+        "Reach a distant world across the cosmos and set foot upon it",
+        "Drink the potion at the far place and find your way home without leaving your self behind",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Planeswalker",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Symbolization",
+        description:
+          "Reduce space, distance, and barriers to symbols you can rearrange, walking between planes at will",
+        type: "active",
+      },
+      {
+        name: "Plane Folding",
+        description:
+          "Fold whole planes against one another so that far places touch and doors open between worlds",
+        type: "active",
+      },
+      {
+        name: "Spirituality Overflow",
+        description:
+          "Your spirituality overflows your flesh, granting near-immunity to harm while straining toward the Door's mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Walk the planes with restraint, knowing each symbolization tempts the Door's mythical character closer",
+      "Anchor your overflowing spirituality before space itself loses track of where you belong",
+      "Hold the human thread that fixes you to one home among infinite doors",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Planeswalker Potion Formula",
+        description: "The recipe for the Sequence 2 Planeswalker potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Wanderer Characteristic",
+        description:
+          "The Beyonder characteristic of a Wanderer — of the nine Door characteristics that may ever exist, one must be free for this advancement",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Reduce a true span of space to a symbol and walk between planes as you digest the potion",
+      requirements: [
+        "Prepare anchors enough to hold your overflowing spirituality through the rite",
+        "Symbolize a genuine expanse of space and fold two planes into contact",
+        "Walk between them and back before the mythical character of the Door overwrites you",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Key of Stars",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Space Fragmentation",
+        description:
+          "Shatter space itself across a battlefield, scattering matter, light, and motion into fragments",
+        type: "active",
+      },
+      {
+        name: "Stellar Gravity Manipulation",
+        description:
+          "Wield the gravity of stars to bend space, time, and light and to crush what they touch",
+        type: "active",
+      },
+      {
+        name: "Door of the Heavens",
+        description:
+          "Open doors between the stars at the Angel tier, traversing the cosmos in a single step",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's overflowing spirituality grants near-immortality, but without anchors it bleeds toward the mythical form of the Door",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Sustain your anchors without fail — an unanchored Angel is assimilated by the Door's mythical character",
+      "Wield the gravity of stars gravely, knowing a careless fracture can unmake what cannot be remade",
+      "Hold the line between unlocking the cosmos and scattering yourself among its fragments",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Key of Stars Potion Formula",
+        description: "The recipe for the Sequence 1 Key of Stars potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Planeswalker Characteristic",
+        description:
+          "The Beyonder characteristic of a Planeswalker, surrendered so an Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Ascend to Angel of the Door: consecrate your anchors and draw on stellar gravity to fracture and remake space as you digest the potion",
+      requirements: [
+        "Consecrate the anchors that will bind your Angelic spirituality before drinking",
+        "Draw upon the gravity of a star to shatter and then restore a span of space",
+        "Endure the mythical character of the Door pressing to overwrite you, and emerge still yourself",
       ],
     },
   },
@@ -2905,6 +4503,232 @@ const errorSequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Parasite",
+    classification: "High",
+    abilities: [
+      {
+        name: "Spirit Parasitism",
+        description:
+          "Latch onto a target's Spirit Body, lurking concealed or seizing control as you choose",
+        type: "active",
+      },
+      {
+        name: "Theft of Life",
+        description:
+          "Siphon vitality, memory, and power from your host, stealing more the longer you cling",
+        type: "active",
+      },
+      {
+        name: "Emergent Plunder",
+        description:
+          "On leaving a host, carry off a portion of what was theirs as your own",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Take by parasitism and theft rather than by force, leaving your hand unseen until you strike",
+      "Master the swelling spirituality of a Saint without letting your borrowed lives blur whose self is yours",
+      "Steal what you need and move on, never clinging so long that the host's nature overtakes you",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Parasite Potion Formula",
+        description: "The recipe for the Sequence 4 Parasite potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Dream Stealer Characteristic",
+        description:
+          "The Beyonder characteristic distilled from a fallen Dream Stealer of the Error pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Larva of a Spirit-Latching Worm",
+        description:
+          "The larval form of a worm that fastens to spirit bodies, the living seed of parasitism",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Become a Saint of Error: fasten upon a worthy host's spirit, plunder it, and emerge enriched as you digest the potion",
+      requirements: [
+        "Latch onto the Spirit Body of a powerful host without being noticed",
+        "Steal life, memory, and power, then time your emergence to carry off the most",
+        "Hold yourself intact as Error's spirituality floods in, keeping your own self separate from every host you wore",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Mentor of Deceit",
+    classification: "High",
+    abilities: [
+      {
+        name: "Deceit of Concepts",
+        description:
+          "Extend deception to abstract things — rules, categories, and the reality a mind takes for granted",
+        type: "active",
+      },
+      {
+        name: "Lesser Authority of Deceit",
+        description:
+          "Make a lie momentarily true within its bounds, the world briefly mistaking false for fact",
+        type: "active",
+      },
+      {
+        name: "Unreadable Self",
+        description:
+          "Your own nature and intent are wrapped in deceit, beyond the reading of others",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Deceive at the level of concepts and rules, never letting your own lies convince yourself",
+      "Mentor deception with a Saint's discipline, holding to the one truth of who you are",
+      "Bear the swelling authority of Deceit without forgetting which of your faces is real",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Mentor of Deceit Potion Formula",
+        description: "The recipe for the Sequence 3 Mentor of Deceit potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Parasite Characteristic",
+        description:
+          "The Beyonder characteristic of a Parasite, the one true ingredient this Saint's advancement requires",
+        category: "main-ingredient",
+      },
+      {
+        name: "Contract Written in a True Lie",
+        description:
+          "A document whose central falsehood the world briefly upheld, steeped in the authority of Deceit",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Make a lie about a rule of reality briefly true and unmake it again as you digest the potion",
+      requirements: [
+        "Craft a deception that targets a concept or rule rather than a mere fact",
+        "Make it momentarily true within its bounds by your lesser authority of Deceit",
+        "Drink the potion as the lie collapses, holding to your own truth through the deceit",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Trojan Horse of Destiny",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Theft of Fate",
+        description:
+          "Steal the fate and destiny of a target, taking their luck, doom, or appointed end as your own",
+        type: "active",
+      },
+      {
+        name: "Hidden Within Destiny",
+        description:
+          "Conceal yourself inside another's fate, carried past every guard until you choose to emerge",
+        type: "active",
+      },
+      {
+        name: "Spirituality Overflow",
+        description:
+          "Your spirituality overflows your flesh, granting near-immunity to harm while straining toward Error's mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Steal fate with restraint, knowing each theft tempts Error's mythical character closer",
+      "Anchor your overflowing spirituality before the stolen destinies crowd out your own",
+      "Hold the human thread that keeps one fate — yours — unmistakably your own",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Trojan Horse of Destiny Potion Formula",
+        description: "The recipe for the Sequence 2 Trojan Horse of Destiny potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Mentor of Deceit Characteristic",
+        description:
+          "The Beyonder characteristic of a Mentor of Deceit — of the nine Error characteristics that may ever exist, one must be free for this advancement",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Hide within a target's destiny, steal their fate, and emerge as you digest the potion",
+      requirements: [
+        "Prepare anchors enough to hold your overflowing spirituality through the rite",
+        "Conceal yourself within a true fate and ride it past its guardians",
+        "Steal the destiny and emerge before Error's mythical character overwrites you",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Worm of Time",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Theft of Time",
+        description:
+          "Steal time itself — aging, duration, even moments — from those you target, as the loophole in Time",
+        type: "active",
+      },
+      {
+        name: "Anchor Theft",
+        description:
+          "Reach through loopholes to steal a rival Beyonder's anchors, tipping them toward loss of control",
+        type: "active",
+      },
+      {
+        name: "Authority of Theft",
+        description:
+          "Wield partial authority over Theft at the Angel tier, taking the abstract and the impossible alike",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's overflowing spirituality grants near-immortality, but without anchors it bleeds toward the mythical form of Error",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Sustain your anchors without fail — an unanchored Angel is assimilated by Error's mythical character",
+      "Steal time and authority as the loophole in Time, yet never come to believe you are owed all you take",
+      "Hold the line between exploiting every loophole and becoming one yourself",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Worm of Time Potion Formula",
+        description: "The recipe for the Sequence 1 Worm of Time potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Trojan Horse of Destiny Characteristic",
+        description:
+          "The Beyonder characteristic of a Trojan Horse of Destiny, surrendered so an Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Ascend to Angel of Error: consecrate your anchors and steal time itself through a loophole as you digest the potion",
+      requirements: [
+        "Consecrate the anchors that will bind your Angelic spirituality — and guard them, for a rival may try to steal them mid-rite",
+        "Slip into the loophole in Time and steal a true span of it from a worthy target",
+        "Endure the mythical character of Error pressing to overwrite you, and emerge still yourself",
+      ],
+    },
+  },
 ];
 
 const hangedManSequences: Sequence[] = [
@@ -3264,6 +5088,232 @@ const hangedManSequences: Sequence[] = [
         "Draw a number of bound souls and spirits into your keeping",
         "Sustain and shepherd them by grazing and sacrifice rather than mere devouring",
         "Hold your purpose against the depravity the power presses upon you",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Black Knight",
+    classification: "High",
+    abilities: [
+      {
+        name: "Cull of Spiritual Flesh",
+        description:
+          "Forge a Black Greatsword from Degeneration that corrodes flesh and obliterates the souls it cuts",
+        type: "active",
+      },
+      {
+        name: "Black Armor",
+        description:
+          "Clad yourself in armor of solidified depravity that turns aside blows and curses alike",
+        type: "active",
+      },
+      {
+        name: "Shadow of Depravation",
+        description:
+          "Cast a corrupting shadow that degrades and weakens whatever it falls across",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Bear the burden of the cull as a knight bears a vow, sacrificing for the flock rather than for power",
+      "Master the swelling depravity of a Saint without letting the corruption rule your purpose",
+      "Take up suffering and responsibility others refuse, asking nothing in return",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Black Knight Potion Formula",
+        description: "The recipe for the Sequence 4 Black Knight potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Shepherd Characteristic",
+        description:
+          "The Beyonder characteristic distilled from a fallen Shepherd of the Hanged Man pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Iron Quenched in Degeneration",
+        description:
+          "Black iron tempered in the authority of Degeneration, the raw material of the Black Greatsword",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Become a Saint of the Hanged Man: forge the Black Greatsword through genuine sacrifice and master it as you digest the potion",
+      requirements: [
+        "Forge a Black Greatsword from Degeneration at the cost of your own flesh and blood",
+        "Cull a corruption that cannot be ended without true sacrifice",
+        "Hold yourself intact as the Hanged Man's depravity floods in, bearing the burden without becoming it",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Trinity Templar",
+    classification: "High",
+    abilities: [
+      {
+        name: "Trinity Body",
+        description:
+          "Sprout a youthful and an elderly head and split into three bodies that act as one will",
+        type: "active",
+      },
+      {
+        name: "Threefold Grazing",
+        description:
+          "Graze upon as many as three souls at once, devouring their power to fuel your own",
+        type: "active",
+      },
+      {
+        name: "Sacrificial Resilience",
+        description:
+          "What harms one of your three bodies is borne by the trinity together, none easily felled",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Bear the trinity's burdens across all three of your selves without any one of them straying from your vow",
+      "Graze and sacrifice as a templar of the flock, never for mere appetite",
+      "Hold one purpose across three bodies as a Saint, lest the trinity fracture your self",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Trinity Templar Potion Formula",
+        description: "The recipe for the Sequence 3 Trinity Templar potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Black Knight Characteristic",
+        description:
+          "The Beyonder characteristic of a Black Knight, the one true ingredient this Saint's advancement requires",
+        category: "main-ingredient",
+      },
+      {
+        name: "Relic of a Threefold Saint",
+        description:
+          "A relic left by a templar who held one vow across three bodies, steeped in unity-through-sacrifice",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Split into the Trinity Body and hold one will across three selves as you digest the potion",
+      requirements: [
+        "Sprout the youthful and elderly heads and divide into three bodies",
+        "Graze three souls at once without any one body straying from your shared purpose",
+        "Drink the potion as the trinity acts as one, holding your single self against the split",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Profane Presbyter",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Profane Language",
+        description:
+          "Speak words of Degeneration and Corruption that rot, debase, and unmake whatever they name",
+        type: "active",
+      },
+      {
+        name: "Turned Words",
+        description:
+          "Seize a target's own words and turn their meaning into a weapon against them",
+        type: "active",
+      },
+      {
+        name: "Spirituality Overflow",
+        description:
+          "Your spirituality overflows your flesh, granting near-immunity to harm while straining toward the Hanged Man's mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Speak the profane tongue with restraint, knowing each curse tempts the mythical character closer",
+      "Anchor your overflowing spirituality before the authority of Corruption hollows you out",
+      "Hold the human thread that keeps your words a burden borne rather than a poison spread",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Profane Presbyter Potion Formula",
+        description: "The recipe for the Sequence 2 Profane Presbyter potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Trinity Templar Characteristic",
+        description:
+          "The Beyonder characteristic of a Trinity Templar, surrendered so a near-Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Speak a true word of Profane Language and bear its corruption without being consumed as you digest the potion",
+      requirements: [
+        "Prepare anchors enough to hold your overflowing spirituality through the rite",
+        "Speak the Profane Language to degrade a worthy target and turn their own words against them",
+        "Bear the corruption you wield as the mythical character of the Hanged Man presses to overwrite you",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Dark Angel",
+    classification: "Demigod",
+    abilities: [
+      {
+        name: "Shadow World Command",
+        description:
+          "Reach into and reshape the Shadow World at the Angel tier, drawing on it as your domain",
+        type: "active",
+      },
+      {
+        name: "Shadow Immunity",
+        description:
+          "Shadow-based abilities turn harmlessly aside; the dark cannot be used to harm one who rules it",
+        type: "passive",
+      },
+      {
+        name: "Authority of Corruption",
+        description:
+          "Wield partial authority over Corruption and Degeneration, debasing flesh, spirit, and matter alike",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's overflowing spirituality grants near-immortality, but without anchors it bleeds toward the mythical form of the Hanged Man",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Sustain your anchors without fail — an unanchored Angel is assimilated by the Hanged Man's mythical character",
+      "Rule the Shadow World as its angel, bearing its corruption as a duty rather than indulging it",
+      "Hold the line between commanding depravity and becoming its willing servant",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Dark Angel Potion Formula",
+        description: "The recipe for the Sequence 1 Dark Angel potion",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Profane Presbyter Characteristic",
+        description:
+          "The Beyonder characteristic of a Profane Presbyter, surrendered so an Angel may rise",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Ascend to Angel of the Hanged Man: consecrate your anchors and lay claim to the Shadow World as you digest the potion without being unmade",
+      requirements: [
+        "Consecrate the anchors that will bind your Angelic spirituality before drinking",
+        "Reach into the Shadow World and bend a portion of it to your command",
+        "Endure the mythical character of the Hanged Man pressing to overwrite you, and emerge still yourself",
       ],
     },
   },

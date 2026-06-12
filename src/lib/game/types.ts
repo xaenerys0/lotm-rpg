@@ -54,6 +54,13 @@ export interface GameSession {
    */
   societyState?: import("./society").SocietyState;
   /**
+   * Anchors (issues #35, #25). The tier-gated stabilising resource that opposes
+   * a high-Sequence Beyonder's godhood pressure. Absent on sessions that have
+   * never consecrated an anchor (a Seq 9 starter needs none); strictly validated
+   * when present — exactly like `identityState`.
+   */
+  anchorState?: import("./anchors").AnchorState;
+  /**
    * Permadeath marker (issue #12). Set once, never cleared: the session is
    * preserved as a historical record (inventory, memory, journal stay
    * readable) but play cannot continue.

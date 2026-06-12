@@ -5,6 +5,7 @@ import {
   APPROVED_EMBEDDING_MODELS,
   DEFAULT_EMBEDDING_MODEL_ID,
 } from "@/lib/ai";
+import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidSocietyShape } from "./society";
@@ -232,6 +233,11 @@ export function isValidSessionShape(obj: unknown): boolean {
 
   // Society state (issue #32) is optional but strict when present.
   if (s.societyState !== undefined && !isValidSocietyShape(s.societyState)) {
+    return false;
+  }
+
+  // Anchor state (issues #35, #25) is optional but strict when present.
+  if (s.anchorState !== undefined && !isValidAnchorStateShape(s.anchorState)) {
     return false;
   }
 

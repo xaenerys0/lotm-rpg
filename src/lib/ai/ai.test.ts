@@ -32,6 +32,7 @@ import {
   buildLoreContext,
   selectRetrievedForBudget,
   buildSanityDirective,
+  buildDemigodDirective,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,
@@ -1728,7 +1729,39 @@ describe("prompts", () => {
     });
   });
 
+  describe("buildDemigodDirective", () => {
+    it("returns empty content below the demigod tier (Seq > 4)", () => {
+      expect(buildDemigodDirective(makeGameState({ sequenceLevel: 9 })).content).toBe("");
+      expect(buildDemigodDirective(makeGameState({ sequenceLevel: 5 })).content).toBe("");
+    });
+
+    it("returns a demigod-stakes directive at Seq 4 (Saint) and above", () => {
+      for (const sequenceLevel of [4, 2, 1]) {
+        const layer = buildDemigodDirective(makeGameState({ sequenceLevel }));
+        expect(layer.role).toBe("system");
+        expect(layer.content).toContain("Demigod Stakes");
+        expect(layer.content.toLowerCase()).toContain("cosmic");
+        expect(layer.content.toLowerCase()).toContain("church");
+      }
+    });
+  });
+
   describe("assemblePrompt", () => {
+    it("includes the demigod directive at Seq 4 and omits it below", () => {
+      const hasDemigod = (sequenceLevel: number) =>
+        assemblePrompt({
+          gameState: makeGameState({ sequenceLevel }),
+          memory: makeMemoryState(),
+          loreContext: { entries: [], totalTokens: 0 },
+          instruction: "narrative" as const,
+          playerAction: "I look around",
+          abilities: [],
+          actingRequirements: [],
+        }).layers.some((l) => l.content.includes("Demigod Stakes"));
+      expect(hasDemigod(4)).toBe(true);
+      expect(hasDemigod(9)).toBe(false);
+    });
+
     it("includes the sanity directive at low sanity", () => {
       const assembly = assemblePrompt({
         gameState: makeGameState({ sanity: 20, maxSanity: 100 }),

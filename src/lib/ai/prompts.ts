@@ -148,6 +148,27 @@ export function buildSanityDirective(gameState: GameState): PromptLayer {
   return { role: "system", content: sanityNarrationDirective(tier) };
 }
 
+/** Sequence at or below which a character has reached the demigod (Saint+) tier. */
+export const DEMIGOD_SEQUENCE_THRESHOLD = 4;
+
+/**
+ * Build the demigod-stakes narration directive (issues #25, #35). When the
+ * character is Sequence 4 or above (numerically ≤ 4 — Saint, Angel, King of
+ * Angels), the narrator scales to demigod stakes. Returns an empty-content
+ * layer below that tier (the assembler drops it) — a mortal Beyonder needs no
+ * such instruction and we save the tokens. Mirrors `buildSanityDirective`.
+ */
+export function buildDemigodDirective(gameState: GameState): PromptLayer {
+  if (gameState.sequenceLevel > DEMIGOD_SEQUENCE_THRESHOLD) {
+    return { role: "system", content: "" };
+  }
+  return {
+    role: "system",
+    content:
+      "## Demigod Stakes\nThis character has crossed into the demigod tier (Saint and above). Scale the narration accordingly: consequences are cosmic, not merely personal; churches, official Beyonder organizations, and rival deities take notice of and react to their movements; their power warps the world around them and divine politics shadow every choice. They carry an overflowing, godlike spirituality that strains toward their Sequence's mythical form — render their presence as awe-inspiring and dangerous, to others and to themselves.",
+  };
+}
+
 export function buildGameStatePrompt(gameState: GameState): PromptLayer {
   const stateJson = JSON.stringify(
     {
@@ -219,6 +240,13 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
   // for non-Fifth starts. The Fifth is the baseline and adds nothing.
   if (input.epochContext) {
     layers.push({ role: "system", content: `## Epoch\n${input.epochContext}` });
+  }
+
+  // Demigod stakes (issues #25, #35): at Sequence ≤ 4 the narration scales to
+  // cosmic consequences and divine politics. Empty below the tier, so dropped.
+  const demigodLayer = buildDemigodDirective(input.gameState);
+  if (demigodLayer.content) {
+    layers.push(demigodLayer);
   }
 
   // Active persona (issue #22): one presentation-context line so tone and
