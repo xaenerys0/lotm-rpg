@@ -9,6 +9,7 @@ import { ProviderConfig } from "@/components/game/provider-config";
 import { SanityPreferences } from "@/components/game/sanity-preferences";
 import { CharacterCreation } from "@/components/game/character-creation";
 import { GameSidebar } from "@/components/game/game-sidebar";
+import { MobileNav } from "@/components/game/mobile-nav";
 import { GameLoop } from "@/components/game/game-loop";
 import { CombatEncounterView } from "@/components/game/combat-encounter";
 import CharacterPage from "@/app/(game)/character/page";
@@ -70,6 +71,10 @@ describe("accessibility — auth", () => {
 });
 
 describe("accessibility — game shell", () => {
+  it("mobile bottom navigation has no violations", async () => {
+    await expectNoAxeViolations(<MobileNav />);
+  });
+
   it("sidebar has no violations", async () => {
     await expectNoAxeViolations(<GameSidebar userEmail="beyonder@tingen.city" />);
   });

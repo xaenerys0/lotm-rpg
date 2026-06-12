@@ -324,6 +324,19 @@
   }
 }
 
+/* Small screens (issue #27): the critical-tier sanity glitch uses the
+   costliest filter stack — soften it so low-power mobile GPUs keep frame
+   rate; every other effect is cheap (opacity/hue shifts). */
+@media (max-width: 640px) {
+  .sanity-fx-critical {
+    animation-duration: 6s;
+  }
+  .fog-overlay::before,
+  .fog-overlay::after {
+    animation: none;
+  }
+}
+
 /* ─── Reduced motion (WCAG 2.2 — 2.2.2 / 2.3.3) ───────────────────────
    Globally neutralise transitions, looping loaders, and entrance animations
    for users who ask for reduced motion. Static styles (filters, colours,
