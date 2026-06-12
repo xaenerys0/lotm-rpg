@@ -34,6 +34,16 @@ export {
 } from "./digestion";
 
 export {
+  composeDeduction,
+  composeDialogueAction,
+  composeRitualAction,
+  detectInputMode,
+  gatherClues,
+  INPUT_MODE_LABELS,
+  RITUAL_STEPS,
+  type InputMode,
+} from "./input-modes";
+export {
   divergenceScore,
   evaluateAchievements,
   getAchievement,

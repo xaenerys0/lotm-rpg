@@ -53,11 +53,19 @@ import {
   identityPromptContext,
   recordIdentityUse,
   validateJournalFlag,
+  composeDeduction,
+  composeDialogueAction,
+  composeRitualAction,
+  detectInputMode,
+  gatherClues,
+  INPUT_MODE_LABELS,
+  RITUAL_STEPS,
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
 import { loadPreferences } from "./preferences-store";
 import type {
+  GameState,
   DigestionState,
   ProviderConfig,
   Choice,
@@ -902,6 +910,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 <ChoicesPhase
                   narrative={session.currentNarrative ?? ""}
                   choices={session.currentChoices ?? []}
+                  gameState={session.gameState}
                   onSelect={handleSelectChoice}
                   onFreeText={handleFreeText}
                   freeTextNotice={freeTextNotice}
@@ -1031,6 +1040,207 @@ function DeathScreen({
   );
 }
 
+// ─── Mode assist (issue #24) ───────────────────────────────────────
+
+function ModeAssist({
+  mode,
+  gameState,
+  onCompose,
+}: {
+  mode: ReturnType<typeof detectInputMode>;
+  gameState: GameState;
+  onCompose: (action: string) => void;
+}) {
+  const [materials, setMaterials] = useState<string[]>([]);
+  const [intent, setIntent] = useState("");
+  const [npc, setNpc] = useState("");
+  const [topic, setTopic] = useState("");
+  const [clueA, setClueA] = useState("");
+  const [clueB, setClueB] = useState("");
+
+  if (mode === "ritual") {
+    return (
+      <div className="mt-6 rounded-md border border-occult/25 bg-occult/[0.04] p-4">
+        <p className="text-xs font-semibold tracking-wide text-occult-bright uppercase">
+          Guided ritual
+        </p>
+        <ol className="mt-2 list-inside list-decimal space-y-1 text-xs text-muted">
+          {RITUAL_STEPS.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+        {gameState.inventory.length > 0 && (
+          <fieldset className="mt-3">
+            <legend className="mb-1 text-xs text-muted">Materials to lay out</legend>
+            <div className="flex flex-wrap gap-2">
+              {gameState.inventory.map((item, index) => {
+                const checked = materials.includes(item.name);
+                return (
+                  <label
+                    key={`${item.name}-${index}`}
+                    className={`min-h-[24px] cursor-pointer rounded-md border px-2.5 py-1 text-xs ${
+                      checked
+                        ? "border-occult/50 bg-occult/15 text-occult-bright"
+                        : "border-border text-muted hover:border-occult/30"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() =>
+                        setMaterials((prev) =>
+                          checked
+                            ? prev.filter((name) => name !== item.name)
+                            : [...prev, item.name],
+                        )
+                      }
+                      className="sr-only"
+                    />
+                    {item.name}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
+        <div className="mt-3 flex items-end gap-2">
+          <div className="flex-1">
+            <label htmlFor="ritual-intent" className="mb-1 block text-xs text-muted">
+              The petition
+            </label>
+            <input
+              id="ritual-intent"
+              type="text"
+              value={intent}
+              onChange={(e) => setIntent(e.target.value)}
+              placeholder="Show me the face of the thief…"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 font-serif text-sm text-foreground placeholder-muted focus:border-occult/50 focus:outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            disabled={intent.trim() === ""}
+            onClick={() => {
+              onCompose(composeRitualAction(materials, intent));
+              setIntent("");
+              setMaterials([]);
+            }}
+            className="rounded-md border border-occult/40 bg-occult/[0.08] px-3 py-2 text-xs font-medium text-occult-bright hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            Enact the ritual
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "dialogue" && gameState.npcsPresent.length > 0) {
+    return (
+      <div className="mt-6 flex flex-wrap items-end gap-2 rounded-md border border-border/60 bg-surface/40 p-4">
+        <div>
+          <label htmlFor="dialogue-npc" className="mb-1 block text-xs text-muted">
+            Speak with
+          </label>
+          <select
+            id="dialogue-npc"
+            value={npc}
+            onChange={(e) => setNpc(e.target.value)}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+          >
+            <option value="">choose…</option>
+            {gameState.npcsPresent.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1">
+          <label htmlFor="dialogue-topic" className="mb-1 block text-xs text-muted">
+            Ask about
+          </label>
+          <input
+            id="dialogue-topic"
+            type="text"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="the missing sailor…"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 font-serif text-sm text-foreground placeholder-muted focus:border-amber/50 focus:outline-none"
+          />
+        </div>
+        <button
+          type="button"
+          disabled={!npc || topic.trim() === ""}
+          onClick={() => {
+            onCompose(composeDialogueAction(npc, topic));
+            setTopic("");
+          }}
+          className="rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-2 text-xs font-medium text-amber hover:border-amber/50 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          Ask
+        </button>
+      </div>
+    );
+  }
+
+  if (mode === "investigation") {
+    const clues = gatherClues(gameState);
+    if (clues.length < 2) return null;
+    return (
+      <div className="mt-6 flex flex-wrap items-end gap-2 rounded-md border border-border/60 bg-surface/40 p-4">
+        <div>
+          <label htmlFor="clue-a" className="mb-1 block text-xs text-muted">
+            First clue
+          </label>
+          <select
+            id="clue-a"
+            value={clueA}
+            onChange={(e) => setClueA(e.target.value)}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+          >
+            <option value="">choose…</option>
+            {clues.map((clue) => (
+              <option key={clue} value={clue}>
+                {clue}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="clue-b" className="mb-1 block text-xs text-muted">
+            Second clue
+          </label>
+          <select
+            id="clue-b"
+            value={clueB}
+            onChange={(e) => setClueB(e.target.value)}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+          >
+            <option value="">choose…</option>
+            {clues
+              .filter((clue) => clue !== clueA)
+              .map((clue) => (
+                <option key={clue} value={clue}>
+                  {clue}
+                </option>
+              ))}
+          </select>
+        </div>
+        <button
+          type="button"
+          disabled={!clueA || !clueB}
+          onClick={() => onCompose(composeDeduction(clueA, clueB))}
+          className="rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-2 text-xs font-medium text-amber hover:border-amber/50 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          Weigh the clues
+        </button>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 // ─── Sub-Components ──────────────────────────────────────────────
 
 function LoadingOrb() {
@@ -1146,17 +1356,21 @@ function SituationPhase() {
 function ChoicesPhase({
   narrative,
   choices,
+  gameState,
   onSelect,
   onFreeText,
   freeTextNotice,
 }: {
   narrative: string;
   choices: Choice[];
+  gameState: GameState;
   onSelect: (id: string) => void;
   onFreeText: (input: string) => void;
   freeTextNotice: string | null;
 }) {
   const [freeText, setFreeText] = useState("");
+  // Context-dependent input mode (issue #24): inferred from the scene itself.
+  const mode = detectInputMode(choices, narrative);
   return (
     <div className="animate-fade-in-up">
       {/* Narrative */}
@@ -1178,7 +1392,7 @@ function ChoicesPhase({
       {/* Choices */}
       <div className="space-y-2.5">
         <p className="mb-3 text-center text-xs tracking-[0.2em] text-muted uppercase">
-          Choose your path
+          {INPUT_MODE_LABELS[mode]}
         </p>
         {choices.map((choice, i) => (
           <button
@@ -1212,6 +1426,10 @@ function ChoicesPhase({
             </div>
           </button>
         ))}
+        {/* Mode-specific guided input (issue #24) — composes through the
+          validated free-text pipeline, so one resolution path serves all. */}
+        <ModeAssist mode={mode} gameState={gameState} onCompose={onFreeText} />
+
         {/* Free text (issue #19): optional — choosers can ignore it entirely. */}
         <form
           className="mt-6"
