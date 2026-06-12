@@ -44,6 +44,10 @@ import {
   fallbackDescentScene,
   serializeLegacies,
   LEGACIES_KEY,
+  deserializeArtifacts,
+  mintArtifact,
+  serializeArtifacts,
+  ECHOES_KEY,
   freeTextRejection,
   freeTextToChoice,
   validateFreeText,
@@ -394,6 +398,19 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // Storage unavailable — the session still ends.
     }
 
+    // Timeline echoes (issue #31): the fall also mints a physical artifact a
+    // future character — in this epoch or later — may discover.
+    try {
+      const rawEchoes = localStorage.getItem(ECHOES_KEY);
+      const artifacts = (rawEchoes ? deserializeArtifacts(rawEchoes) : null) ?? [];
+      localStorage.setItem(
+        ECHOES_KEY,
+        serializeArtifacts([...artifacts, mintArtifact(session, legacy)]),
+      );
+    } catch {
+      // Storage unavailable — the echo is lost to the fog.
+    }
+
     // AI narrates the descent; the deterministic scene covers any failure.
     let scene = fallbackDescentScene(verdict.severity, session.gameState);
     if (providerConfig) {
@@ -444,9 +461,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
   const handleFullRestart = useCallback(() => {
     // Full restart: fresh timeline — the canonical baseline is restored by
-    // wiping the legacy list. Old sessions/journals stay readable as records.
+    // wiping the legacy list and its artifact echoes. Old sessions/journals
+    // stay readable as records.
     try {
       localStorage.removeItem(LEGACIES_KEY);
+      localStorage.removeItem(ECHOES_KEY);
     } catch {
       // Storage unavailable
     }

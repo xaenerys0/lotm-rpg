@@ -174,6 +174,16 @@ export {
   type SetbackResult,
 } from "./death";
 export {
+  artifactToItem,
+  deserializeArtifacts,
+  discoverableArtifacts,
+  echoFacts,
+  mintArtifact,
+  pickStartingEcho,
+  serializeArtifacts,
+  type TimelineArtifact,
+} from "./echoes";
+export {
   addAnnotation,
   addJournalEntries,
   annotationsFor,
@@ -274,6 +284,7 @@ export {
   PREFERENCES_KEY,
   JOURNAL_KEY_PREFIX,
   LEGACIES_KEY,
+  ECHOES_KEY,
 } from "./constants";
 
 export {

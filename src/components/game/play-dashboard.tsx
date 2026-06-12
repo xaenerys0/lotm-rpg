@@ -18,6 +18,12 @@ import {
   deserializeLegacies,
   legaciesToFacts,
   LEGACIES_KEY,
+  artifactToItem,
+  deserializeArtifacts,
+  discoverableArtifacts,
+  echoFacts,
+  pickStartingEcho,
+  ECHOES_KEY,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
@@ -84,6 +90,21 @@ const emptyInitialData: InitialData = {
   hasPrologueDraft: false,
 };
 
+// Timeline echoes (issue #31): artifacts minted when past characters fell.
+// Only echoes from this epoch or earlier may surface (the paradox guard);
+// roughly half of new chronicles begin carrying one.
+function loadTimelineEchoes(epoch: number) {
+  try {
+    const raw = localStorage.getItem(ECHOES_KEY);
+    const artifacts = (raw ? deserializeArtifacts(raw) : null) ?? [];
+    const discoverable = discoverableArtifacts(artifacts, epoch);
+    const carried = pickStartingEcho(artifacts, epoch);
+    return { facts: echoFacts(discoverable, carried), carried };
+  } catch {
+    return { facts: [], carried: null };
+  }
+}
+
 function withLegacyFacts(memory: MemoryState): MemoryState {
   try {
     const raw = localStorage.getItem(LEGACIES_KEY);
@@ -146,15 +167,24 @@ export function PlayDashboard() {
         characterBackground,
         epoch,
       );
+      // Cross-epoch echoes (issue #31): a fallen predecessor's artifact may
+      // begin the chronicle in this character's possession, and the narrator
+      // learns which traces are out there to foreshadow.
+      const echoes = loadTimelineEchoes(epoch);
+      const seededState = echoes.carried
+        ? {
+            ...gameState,
+            inventory: [...gameState.inventory, artifactToItem(echoes.carried)],
+          }
+        : gameState;
       // Permadeath legacies (issue #12): a new character in the same timeline
       // inherits the world's memory of the fallen — the narrator can surface
       // tangible evidence of previous characters.
-      const session = createSession(
-        gameState,
-        undefined,
-        undefined,
-        withLegacyFacts(initialMemory),
-      );
+      const memory = withLegacyFacts(initialMemory);
+      const session = createSession(seededState, undefined, undefined, {
+        ...memory,
+        sessionFacts: [...memory.sessionFacts, ...echoes.facts],
+      });
 
       try {
         localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
