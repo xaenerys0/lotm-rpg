@@ -34,6 +34,15 @@ export {
 } from "./digestion";
 
 export {
+  FREE_TEXT_CHOICE_ID,
+  FREE_TEXT_MAX_LENGTH,
+  freeTextRejection,
+  freeTextToChoice,
+  validateFreeText,
+  type FreeTextRejection,
+  type FreeTextValidation,
+} from "./free-text";
+export {
   TUTORIAL_REQUIRED_TOPICS,
   TUTORIAL_SCENES,
   type TutorialScene,

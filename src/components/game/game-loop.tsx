@@ -44,6 +44,10 @@ import {
   fallbackDescentScene,
   serializeLegacies,
   LEGACIES_KEY,
+  freeTextRejection,
+  freeTextToChoice,
+  validateFreeText,
+  FREE_TEXT_MAX_LENGTH,
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
@@ -648,6 +652,34 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     [session, updateSession],
   );
 
+  // Free-text action (issue #19): validated by the rules engine, then wrapped
+  // as a synthetic choice so the normal resolution machinery (sanity, acting,
+  // journal) runs unchanged. Rejections are narrated, never errored.
+  const [freeTextNotice, setFreeTextNotice] = useState<string | null>(null);
+
+  const handleFreeText = useCallback(
+    (input: string) => {
+      if (!session) return;
+      const validation = validateFreeText(input);
+      if (!validation.ok) {
+        setFreeTextNotice(freeTextRejection(validation.reason));
+        return;
+      }
+      setFreeTextNotice(null);
+      const choice = freeTextToChoice(validation.text);
+      const withChoice = {
+        ...session,
+        currentChoices: [...(session.currentChoices ?? []), choice],
+      };
+      const next = transition(withChoice, {
+        type: "SELECT_CHOICE",
+        choiceId: choice.id,
+      });
+      updateSession(next);
+    },
+    [session, updateSession],
+  );
+
   const handleContinue = useCallback(() => {
     if (!session) return;
     const selectedChoice = session.currentChoices?.find(
@@ -817,6 +849,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   narrative={session.currentNarrative ?? ""}
                   choices={session.currentChoices ?? []}
                   onSelect={handleSelectChoice}
+                  onFreeText={handleFreeText}
+                  freeTextNotice={freeTextNotice}
                 />
                 <CombatLauncher onStart={startCombat} />
               </>
@@ -1053,11 +1087,16 @@ function ChoicesPhase({
   narrative,
   choices,
   onSelect,
+  onFreeText,
+  freeTextNotice,
 }: {
   narrative: string;
   choices: Choice[];
   onSelect: (id: string) => void;
+  onFreeText: (input: string) => void;
+  freeTextNotice: string | null;
 }) {
+  const [freeText, setFreeText] = useState("");
   return (
     <div className="animate-fade-in-up">
       {/* Narrative */}
@@ -1113,6 +1152,45 @@ function ChoicesPhase({
             </div>
           </button>
         ))}
+        {/* Free text (issue #19): optional — choosers can ignore it entirely. */}
+        <form
+          className="mt-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onFreeText(freeText);
+            setFreeText("");
+          }}
+        >
+          <label htmlFor="free-text-action" className="mb-1.5 block text-xs text-muted">
+            Or act on your own
+          </label>
+          <div className="flex items-end gap-2">
+            <input
+              id="free-text-action"
+              type="text"
+              value={freeText}
+              onChange={(e) => setFreeText(e.target.value)}
+              maxLength={FREE_TEXT_MAX_LENGTH}
+              placeholder="I follow the sound of the bells…"
+              className="w-full rounded-md border border-border bg-background px-4 py-3 font-serif text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            />
+            <button
+              type="submit"
+              disabled={freeText.trim() === ""}
+              className="shrink-0 rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-3 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              Act
+            </button>
+          </div>
+          {freeTextNotice && (
+            <p
+              role="status"
+              className="mt-3 font-serif text-sm italic text-foreground/70"
+            >
+              {freeTextNotice}
+            </p>
+          )}
+        </form>
       </div>
     </div>
   );

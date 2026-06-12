@@ -107,6 +107,21 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="ended-1" />);
   });
 
+  it("choices phase with free-text input has no violations", async () => {
+    const gameState: GameState = createDefaultGameState(1, "char-c", "Klein");
+    const session = {
+      ...createSession(gameState, "choices-1", 1000),
+      phase: "choices" as const,
+      currentNarrative: "The fog parts around a narrow door.",
+      currentChoices: [
+        { id: "c1", text: "Knock twice", type: "action" as const },
+        { id: "c2", text: "Listen first", type: "investigation" as const },
+      ],
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "choices-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="choices-1" />);
+  });
+
   it("failure panel (zero sanity) has no violations", async () => {
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-f", "Klein"),
