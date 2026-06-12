@@ -184,10 +184,29 @@ export interface LoreContext {
   totalTokens: number;
 }
 
+/**
+ * A retrieved corpus chunk as the prompt assembler consumes it (issue #64) — a
+ * structural slice of `RetrievedChunk` from `@/lib/lore/retrieval`, declared
+ * here so the AI layer does not depend on the retrieval module.
+ */
+export interface RetrievedLoreChunk {
+  id: string;
+  title: string;
+  content: string;
+  source: string;
+  token_count: number;
+}
+
 export interface PromptInput {
   gameState: GameState;
   memory: MemoryState;
   loreContext: LoreContext;
+  /**
+   * Gated chunks from `retrieveChunks` (issue #64), in retrieval-rank order.
+   * They fill whatever lore budget the curated entries leave — authored lore
+   * is never crowded out.
+   */
+  retrievedChunks?: RetrievedLoreChunk[];
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];

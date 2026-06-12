@@ -29,6 +29,18 @@ export {
 export { countTokens } from "./tokenizer";
 export { iterateJsonl, parseJsonl, toJsonl } from "./jsonl";
 
+export {
+  createLexicalRetriever,
+  DEFAULT_EVAL_K,
+  evalLeakage,
+  evalRecallAtK,
+  formatEvalReport,
+  type EvalCase,
+  type EvalChunk,
+  type EvalRetriever,
+  type LeakageReport,
+  type RecallReport,
+} from "./eval";
 export { decodeEntities, stripHtml } from "./html";
 export {
   normalizeNovelChapters,

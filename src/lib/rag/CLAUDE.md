@@ -51,19 +51,27 @@ retrieval path imports it. Runtime retrieval goes through the
   `canon_order: null` (world knowledge, not story position), so spoiler control
   rides on `concealment_tier` (operator flag) and the curated-first budget (#64).
   Validated against the real 13k-page Fandom dump (1,509 articles kept).
+- `eval.ts` — The evaluation + leakage harness (issue #64): `evalRecallAtK` and
+  `evalLeakage` over a labeled `EvalCase` set (query → expected chunk ids +
+  simulated player position/tier), retriever-agnostic (`EvalRetriever`), with
+  `createLexicalRetriever` as the deterministic offline path (term overlap +
+  the same gates as the RPC — no DB, no embedder). **Advisory** metrics
+  (`pnpm rag:eval` exits 0 unless `--strict`); the leakage check is the
+  timeline gate's safety net — any violation is a bug.
 - `html.ts` — `stripHtml` / `decodeEntities`, the shared final cleaning pass used
   by both the novel and wiki pipelines.
 - `jsonl.ts` — `parseJsonl` / `iterateJsonl` / `toJsonl` — the JSONL read/write seam
   shared by every pipeline stage.
 - `index.ts` — Public exports.
 - `chunk.test.ts` / `tokenizer.test.ts` / `jsonl.test.ts` / `novel.test.ts` /
-  `wiki.test.ts` — colocated tests.
+  `wiki.test.ts` / `eval.test.ts` — colocated tests.
 - `__fixtures__/` — Golden fixtures: `normalized-docs.jsonl` (input) →
   `chunks.expected.jsonl` (expected chunker output); `novel-chapters.txt`
   (synthetic 3-chapter novel; **original prose, not the copyrighted novel**) →
   `novel-docs.expected.jsonl` (expected parse+normalize output); `wiki-pages.xml`
-  (synthetic MediaWiki export) → `wiki-docs.expected.jsonl`. Regenerate an
-  expected file via its stage CLI if the stage changes intentionally.
+  (synthetic MediaWiki export) → `wiki-docs.expected.jsonl`; `eval-cases.jsonl`
+  (labeled query → expected-chunk eval set over the fixture corpus). Regenerate
+  an expected file via its stage CLI if the stage changes intentionally.
 
 ## The canonical artifact (JSONL)
 

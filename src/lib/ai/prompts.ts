@@ -7,17 +7,21 @@ import type {
   PromptAssembly,
   PromptInput,
   PromptLayer,
+  RetrievedLoreChunk,
 } from "./types";
 import { formatMemoryForPrompt, trimMemoryForBudget } from "./memory";
 import { classifySanityTier, sanityNarrationDirective } from "./sanity";
 
+// Lore raised 2,500 -> 4,000 for retrieved source chunks (issue #64) — a
+// tunable starting point, not a final answer. The extra ~1,500 input tokens
+// per turn are paid by the player's BYOK key; see docs/rag-per-turn-budget.md.
 const TOKEN_BUDGET = {
   system: 2500,
-  lore: 2500,
+  lore: 4000,
   gameState: 1000,
   history: 1000,
   instruction: 300,
-  total: 7300,
+  total: 8800,
 };
 
 const CHARS_PER_TOKEN = 4;
@@ -69,21 +73,66 @@ ${actingRequirements.length > 0 ? actingRequirements.map((r) => `- ${r}`).join("
   return { role: "system", content, cacheControl: true };
 }
 
-export function buildLoreContext(loreContext: LoreContext): PromptLayer {
-  if (loreContext.entries.length === 0) {
+/**
+ * Greedy first-fit over retrieval-ranked chunks: keep rank order, take each
+ * chunk that still fits the remaining budget. Deterministic for a given list.
+ */
+export function selectRetrievedForBudget(
+  chunks: readonly RetrievedLoreChunk[],
+  budgetTokens: number,
+): RetrievedLoreChunk[] {
+  const selected: RetrievedLoreChunk[] = [];
+  let used = 0;
+  for (const chunk of chunks) {
+    if (used + chunk.token_count > budgetTokens) continue;
+    selected.push(chunk);
+    used += chunk.token_count;
+  }
+  return selected;
+}
+
+export function buildLoreContext(
+  loreContext: LoreContext,
+  retrievedChunks: readonly RetrievedLoreChunk[] = [],
+): PromptLayer {
+  // Curated guardrails are injected FIRST and in full (issue #64) — retrieved
+  // chunks only ever fill the budget the authored lore leaves behind, so the
+  // hand-written canon is never crowded out by retrieval.
+  const retrieved = selectRetrievedForBudget(
+    retrievedChunks,
+    TOKEN_BUDGET.lore - loreContext.totalTokens,
+  );
+
+  if (loreContext.entries.length === 0 && retrieved.length === 0) {
     return { role: "system", content: "", cacheControl: true };
   }
 
-  const sections = loreContext.entries.map((entry) => {
-    // narratorOnly defaults to true — all existing lore contains Beyonder world
-    // knowledge that an ordinary starting character would not possess.
-    const tag = entry.narratorOnly !== false ? " [NARRATOR ONLY]" : "";
-    return `### ${entry.title} [${entry.category}]${tag}\n${entry.content}`;
-  });
+  const parts: string[] = [];
 
-  const content = `## Lore Context\nUse the following lore as reference for narrative accuracy. Do not contradict this information.\n\n${sections.join("\n\n")}`;
+  if (loreContext.entries.length > 0) {
+    const sections = loreContext.entries.map((entry) => {
+      // narratorOnly defaults to true — all existing lore contains Beyonder world
+      // knowledge that an ordinary starting character would not possess.
+      const tag = entry.narratorOnly !== false ? " [NARRATOR ONLY]" : "";
+      return `### ${entry.title} [${entry.category}]${tag}\n${entry.content}`;
+    });
+    parts.push(
+      `## Lore Context\nUse the following lore as reference for narrative accuracy. Do not contradict this information.\n\n${sections.join("\n\n")}`,
+    );
+  }
 
-  return { role: "system", content, cacheControl: true };
+  if (retrieved.length > 0) {
+    // Retrieved corpus text is narrator reference by definition — the player
+    // character has not "read the novel".
+    const sections = retrieved.map(
+      (chunk) => `### ${chunk.title} (${chunk.source}) [NARRATOR ONLY]\n${chunk.content}`,
+    );
+    parts.push(
+      `## Retrieved Source Material [NARRATOR ONLY]\nPassages retrieved from the source material for narrative accuracy. Reference only — never reveal knowledge the character has not earned in play, and never quote these passages verbatim.\n\n${sections.join("\n\n")}`,
+    );
+  }
+
+  return { role: "system", content: parts.join("\n\n"), cacheControl: true };
 }
 
 /**
@@ -163,7 +212,7 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     layers.push(sanityLayer);
   }
 
-  const loreLayer = buildLoreContext(input.loreContext);
+  const loreLayer = buildLoreContext(input.loreContext, input.retrievedChunks ?? []);
   if (loreLayer.content) {
     layers.push(loreLayer);
   }

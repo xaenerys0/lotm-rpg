@@ -1,0 +1,4 @@
+{"id":"seer-divination","query":"Which sequence grants augury and dream interpretation?","expectedChunkIds":["wiki-seer-fixture-101-0000"],"canonPosition":1,"maxConcealmentTier":0}
+{"id":"tingen-city","query":"What city in the Loen Kingdom is known for fog and chapels?","expectedChunkIds":["wiki-tingen-fixture-107-0000"],"canonPosition":null,"maxConcealmentTier":0}
+{"id":"pendulum-ritual","query":"the pendulum divination and the cleansing ritual","expectedChunkIds":["novel-ch2-0000"],"canonPosition":2,"maxConcealmentTier":0}
+{"id":"timeline-guard","query":"the gathering of three above the grey fog","expectedChunkIds":[],"canonPosition":2,"maxConcealmentTier":0}

@@ -30,6 +30,7 @@ import {
 import {
   buildSystemPrompt,
   buildLoreContext,
+  selectRetrievedForBudget,
   buildSanityDirective,
   buildGameStatePrompt,
   buildHistoryPrompt,
@@ -1534,6 +1535,83 @@ describe("prompts", () => {
     it("returns empty content for no entries", () => {
       const layer = buildLoreContext({ entries: [], totalTokens: 0 });
       expect(layer.content).toBe("");
+    });
+
+    it("appends retrieved chunks after the curated guardrails (issue #64)", () => {
+      const ctx = makeLoreContext();
+      const layer = buildLoreContext(ctx, [
+        {
+          id: "novel-ch1-0000",
+          title: "Chapter 1",
+          content: "The fog came early that autumn.",
+          source: "novel",
+          token_count: 50,
+        },
+      ]);
+      const curatedAt = layer.content.indexOf("## Lore Context");
+      const retrievedAt = layer.content.indexOf("## Retrieved Source Material");
+      expect(curatedAt).toBeGreaterThanOrEqual(0);
+      expect(retrievedAt).toBeGreaterThan(curatedAt);
+      expect(layer.content).toContain("Chapter 1 (novel) [NARRATOR ONLY]");
+      expect(layer.content).toContain("The fog came early that autumn.");
+      expect(layer.content).toContain("never quote these passages verbatim");
+    });
+
+    it("renders retrieved chunks alone when no curated entries match", () => {
+      const layer = buildLoreContext({ entries: [], totalTokens: 0 }, [
+        {
+          id: "wiki-x-0000",
+          title: "Tingen",
+          content: "A foggy city.",
+          source: "wiki",
+          token_count: 10,
+        },
+      ]);
+      expect(layer.content).toContain("## Retrieved Source Material");
+      expect(layer.content).not.toContain("## Lore Context");
+    });
+
+    it("never crowds out curated lore: retrieved chunks only fill the remainder", () => {
+      const bigChunk = (id: string, tokens: number) => ({
+        id,
+        title: id,
+        content: "x",
+        source: "novel",
+        token_count: tokens,
+      });
+      // Curated lore consumes all but 100 tokens of the lore budget.
+      const ctx = {
+        entries: makeLoreContext().entries,
+        totalTokens: TOKEN_BUDGET.lore - 100,
+      };
+      const layer = buildLoreContext(ctx, [
+        bigChunk("too-big", 150),
+        bigChunk("fits", 80),
+        bigChunk("also-too-big-now", 50),
+      ]);
+      // First-fit over rank order: the oversized chunk is skipped, the fitting
+      // one is taken, and the next no longer fits the remainder.
+      expect(layer.content).toContain("fits");
+      expect(layer.content).not.toContain("too-big");
+      expect(layer.content).not.toContain("also-too-big-now");
+    });
+  });
+
+  describe("selectRetrievedForBudget", () => {
+    const chunk = (id: string, tokens: number) => ({
+      id,
+      title: id,
+      content: "c",
+      source: "novel",
+      token_count: tokens,
+    });
+
+    it("packs in rank order with first-fit and is deterministic", () => {
+      const chunks = [chunk("a", 60), chunk("b", 50), chunk("c", 40)];
+      expect(selectRetrievedForBudget(chunks, 100).map((c) => c.id)).toEqual(["a", "c"]);
+      expect(selectRetrievedForBudget(chunks, 100).map((c) => c.id)).toEqual(["a", "c"]);
+      expect(selectRetrievedForBudget(chunks, 0)).toEqual([]);
+      expect(selectRetrievedForBudget([], 100)).toEqual([]);
     });
   });
 

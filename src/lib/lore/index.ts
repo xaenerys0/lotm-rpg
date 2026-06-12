@@ -1,5 +1,7 @@
 export type { LoreCategory, LoreEntry } from "./types";
 
+export { selectCuratedLore } from "./selection";
+
 export {
   createSupabaseChunkMatcher,
   DEFAULT_RETRIEVAL_COUNT,

@@ -51,6 +51,13 @@ model without re-parsing or re-chunking.
   - Flags: `--concealment-tier <n>` (default 0), `--base-url <url>` (default the
     LOTM Fandom wiki), `--min-chars <n>` (stub threshold, default 40).
 
+- `eval.ts` (`pnpm rag:eval`) — the **evaluation + leakage harness** (issue #64).
+  Runs the labeled `EvalCase` set against the offline lexical retriever over a
+  chunk corpus and prints recall@k + a leakage report. **Advisory**: always exits
+  0 unless `--strict` (then leakage violations fail the run).
+  - `pnpm rag:eval chunks.jsonl cases.jsonl`
+  - `pnpm rag:eval chunks.jsonl cases.jsonl --k 5 --strict`
+
 The remaining **load** stage lands in its own issue and follows the same
 JSONL-in/JSONL-out shape.
 

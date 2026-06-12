@@ -20,6 +20,7 @@ export type {
   PromptAssembly,
   LoreContext,
   PromptInput,
+  RetrievedLoreChunk,
   ChatMessage,
   ProviderRequest,
   ProviderResponse,
@@ -41,6 +42,7 @@ export {
   buildHistoryPrompt,
   buildInstructionPrompt,
   isWithinTokenBudget,
+  selectRetrievedForBudget,
   TOKEN_BUDGET,
 } from "./prompts";
 

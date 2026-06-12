@@ -39,10 +39,9 @@ import type {
   AIErrorCode,
 } from "@/lib/ai";
 import { generate, addTurn, buildTurnRecord, TOKEN_BUDGET, AIError } from "@/lib/ai";
-import { getLoreByPathway, getLoreByCity } from "@/lib/lore";
+import { selectCuratedLore } from "@/lib/lore";
 import { getPathway, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
-import type { LoreEntry } from "@/lib/lore";
 
 function loadProviderConfig(): ProviderConfig | null {
   try {
@@ -105,30 +104,6 @@ function clearCombatFromStorage(sessionId: string): void {
   }
 }
 
-function selectLoreEntries(
-  pathwayName: string,
-  location: string,
-): { entries: LoreEntry[]; totalTokens: number } {
-  const pathwayLore = getLoreByPathway(pathwayName.toLowerCase());
-  const cityLore = getLoreByCity(location.toLowerCase().split(" ")[0]);
-  const combined = [...pathwayLore];
-  for (const entry of cityLore) {
-    if (!combined.some((e) => e.slug === entry.slug)) {
-      combined.push(entry);
-    }
-  }
-
-  const budget = TOKEN_BUDGET.lore;
-  let totalTokens = 0;
-  const selected: LoreEntry[] = [];
-  for (const entry of combined) {
-    if (totalTokens + entry.tokenCount > budget) break;
-    selected.push(entry);
-    totalTokens += entry.tokenCount;
-  }
-  return { entries: selected, totalTokens };
-}
-
 const SANITY_TIER_STYLE: Record<SanityTier, { color: string; glow: string }> = {
   high: {
     color: "bg-sanity-high",
@@ -178,9 +153,12 @@ function buildAICallParams(currentSession: GameSession) {
     seq,
     abilities: seq?.abilities.map((a) => a.name) ?? [],
     actingReqs: seq?.actingRequirements ?? [],
-    loreContext: selectLoreEntries(
+    // Curated guardrail selection lives in @/lib/lore (tested); the component
+    // stays a thin caller (issue #63).
+    loreContext: selectCuratedLore(
       pathway?.name ?? "fool",
       currentSession.gameState.location,
+      TOKEN_BUDGET.lore,
     ),
   };
 }
