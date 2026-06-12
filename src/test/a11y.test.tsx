@@ -19,6 +19,7 @@ import GlossaryPage from "@/app/(game)/glossary/page";
 import MarketPage from "@/app/(game)/market/page";
 import ProfilePage from "@/app/(game)/profile/page";
 import LeaderboardPage from "@/app/(game)/leaderboard/page";
+import SocietyPage from "@/app/(game)/society/page";
 
 import {
   buildLegacy,
@@ -293,6 +294,17 @@ describe("accessibility — stub pages", () => {
 
   it("leaderboard page has no violations", async () => {
     await expectNoAxeViolations(<LeaderboardPage />);
+  });
+
+  it("society page (eligible founder) has no violations", async () => {
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-soc", "Klein"),
+      sequenceLevel: 7,
+    };
+    const session = createSession(gameState, "soc-1", 1000);
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["soc-1"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "soc-1", serializeSession(session));
+    await expectNoAxeViolations(<SocietyPage />);
   });
 
   it("market page has no violations", async () => {

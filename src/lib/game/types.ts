@@ -50,6 +50,10 @@ export interface GameSession {
    */
   identityState?: import("./identity").IdentityState;
   /**
+   * Secret society / Tarot Club state (issue #32). Absent until founded.
+   */
+  societyState?: import("./society").SocietyState;
+  /**
    * Permadeath marker (issue #12). Set once, never cleared: the session is
    * preserved as a historical record (inventory, memory, journal stay
    * readable) but play cannot continue.

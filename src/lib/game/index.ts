@@ -34,6 +34,23 @@ export {
 } from "./digestion";
 
 export {
+  canConvene,
+  canFoundSociety,
+  foundSociety,
+  holdGathering,
+  isValidSocietyShape,
+  recruitMember,
+  resolveMemberArc,
+  societyKindForPathway,
+  GATHERING_COOLDOWN_TURNS,
+  SOCIETY_FOUNDING_SEQUENCE,
+  SOCIETY_KIND_LABELS,
+  type GatheringOutcome,
+  type SocietyKind,
+  type SocietyMember,
+  type SocietyState,
+} from "./society";
+export {
   composeDeduction,
   composeDialogueAction,
   composeRitualAction,

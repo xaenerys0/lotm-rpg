@@ -7,6 +7,7 @@ import {
 } from "@/lib/ai";
 import { createDigestionState } from "./digestion";
 import { isValidIdentityStateShape } from "./identity";
+import { isValidSocietyShape } from "./society";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
 
 const VALID_PHASES: GamePhase[] = [
@@ -223,6 +224,11 @@ export function isValidSessionShape(obj: unknown): boolean {
 
   // Identity state (issue #22) is optional but strict when present.
   if (s.identityState !== undefined && !isValidIdentityStateShape(s.identityState)) {
+    return false;
+  }
+
+  // Society state (issue #32) is optional but strict when present.
+  if (s.societyState !== undefined && !isValidSocietyShape(s.societyState)) {
     return false;
   }
 
