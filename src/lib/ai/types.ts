@@ -143,6 +143,12 @@ export interface TurnRecord {
   playerAction: string;
   aiResponse: AIResponse;
   timestamp: number;
+  /**
+   * Ids of the `source_chunks` retrieved for this turn (issue #63), recorded
+   * so "why did the narrator say X" stays answerable without vector-search
+   * forensics. Absent on turns that performed no retrieval.
+   */
+  retrievedChunkIds?: string[];
 }
 
 export interface BulletSummary {

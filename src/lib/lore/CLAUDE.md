@@ -7,6 +7,16 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 ## Structure
 
 - `types.ts` — `LoreEntry` and `LoreCategory` type definitions.
+- `retrieval.ts` — Runtime retrieval (issue #63): `retrieveChunks(query, options)`
+  embeds the query with the save's **locked** embedding model (per-character
+  model lock — mismatches throw) and calls the gated `match_source_chunks` RPC.
+  The **timeline gate** (`canon_order <= canonPosition`) and **concealment
+  gate** are enforced server-side and re-checked client-side as defense in
+  depth. `createSupabaseChunkMatcher(client)` wraps a Supabase client into the
+  injectable RPC seam; `retrievalChunkIds(chunks)` extracts the ids recorded on
+  the turn record (determinism/debuggability); `toPgVector` serializes query
+  vectors. This **extends** the curated `lore_entries` injection — curated
+  guardrails are injected first (issue #64); retrieved chunks fill the rest.
 - `tingen.ts` — Tingen City locations and geography.
 - `fifth-epoch.ts` — Fifth Epoch baseline: politics, technology, social norms.
 - `organizations.ts` — Nighthawks, Mandated Punishers, Machinery Hivemind, Psychology Alchemists, Aurora Order.

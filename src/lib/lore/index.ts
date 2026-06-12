@@ -1,5 +1,17 @@
 export type { LoreCategory, LoreEntry } from "./types";
 
+export {
+  createSupabaseChunkMatcher,
+  DEFAULT_RETRIEVAL_COUNT,
+  retrievalChunkIds,
+  retrieveChunks,
+  toPgVector,
+  type MatchSourceChunksRpc,
+  type RetrieveChunksOptions,
+  type RetrievedChunk,
+  type SupabaseRpcClient,
+} from "./retrieval";
+
 export { TINGEN_LORE } from "./tingen";
 export { FIFTH_EPOCH_LORE } from "./fifth-epoch";
 export { ORGANIZATION_LORE } from "./organizations";

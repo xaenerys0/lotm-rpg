@@ -22,6 +22,20 @@ export interface GameSession {
   gameState: GameState;
   memory: MemoryState;
   turnCount: number;
+  /**
+   * The player's current position on the shared canon timeline (issue #63).
+   * The retrieval timeline gate filters `canon_order <= canonPosition`, so the
+   * narrator sees past + present world-state but never the player's future.
+   * Monotonic — it only ever advances (see `advanceCanonPosition`).
+   */
+  canonPosition: number;
+  /**
+   * The embedding model locked for this save at character creation (issue
+   * #63). A save's query vectors and recorded retrieval ids only make sense
+   * inside one model's map, so there is NO mid-save switching — a new
+   * character may repick.
+   */
+  embeddingModelId: string;
   phase: GamePhase;
   currentNarrative: string | null;
   currentChoices: Choice[] | null;

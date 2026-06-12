@@ -34,8 +34,11 @@ export {
 } from "./digestion";
 
 export {
+  advanceCanonPosition,
   createSession,
   createDefaultGameState,
+  DEFAULT_CANON_POSITION,
+  type CreateSessionOptions,
   sessionToSummary,
   serializeSession,
   deserializeSession,

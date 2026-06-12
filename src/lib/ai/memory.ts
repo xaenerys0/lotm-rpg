@@ -180,11 +180,15 @@ export function buildTurnRecord(
   turnNumber: number,
   playerAction: string,
   aiResponse: AIResponse,
+  retrievedChunkIds?: string[],
 ): TurnRecord {
   return {
     turnNumber,
     playerAction,
     aiResponse,
     timestamp: Date.now(),
+    // Recorded for retrieval determinism/debuggability (issue #63); omitted
+    // entirely on turns that performed no retrieval.
+    ...(retrievedChunkIds !== undefined ? { retrievedChunkIds } : {}),
   };
 }

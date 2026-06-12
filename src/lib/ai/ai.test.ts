@@ -1857,6 +1857,16 @@ describe("memory", () => {
       expect(turn.playerAction).toBe("I search");
       expect(turn.aiResponse).toBe(response);
       expect(turn.timestamp).toBeGreaterThan(0);
+      // No retrieval on this turn: the field is omitted, not an empty array.
+      expect("retrievedChunkIds" in turn).toBe(false);
+    });
+
+    it("records the retrieved chunk ids when retrieval ran (issue #63)", () => {
+      const turn = buildTurnRecord(2, "I divine", makeValidAIResponse(), [
+        "chunk-a",
+        "chunk-b",
+      ]);
+      expect(turn.retrievedChunkIds).toEqual(["chunk-a", "chunk-b"]);
     });
   });
 

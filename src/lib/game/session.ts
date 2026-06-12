@@ -1,5 +1,10 @@
 import type { GameState, MemoryState } from "@/lib/ai";
-import { createMemoryState } from "@/lib/ai";
+import {
+  createMemoryState,
+  getEmbeddingModel,
+  APPROVED_EMBEDDING_MODELS,
+  DEFAULT_EMBEDDING_MODEL_ID,
+} from "@/lib/ai";
 import { createDigestionState } from "./digestion";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
 
@@ -12,17 +17,35 @@ const VALID_PHASES: GamePhase[] = [
   "error",
 ];
 
+/** Where a fresh save starts on the shared canon timeline (chapter 1). */
+export const DEFAULT_CANON_POSITION = 1;
+
+export interface CreateSessionOptions {
+  /** Approved embedding model to lock for this save (character creation). */
+  embeddingModelId?: string;
+  /** Starting canon-timeline position (e.g. a later-epoch start). */
+  canonPosition?: number;
+}
+
 export function createSession(
   gameState: GameState,
   id: string = crypto.randomUUID(),
   now: number = Date.now(),
   initialMemory?: MemoryState,
+  options: CreateSessionOptions = {},
 ): GameSession {
+  // Validates against the approved list — locking an unknown model would
+  // orphan the save from every pre-embedded map.
+  const embeddingModelId = getEmbeddingModel(
+    options.embeddingModelId ?? DEFAULT_EMBEDDING_MODEL_ID,
+  ).id;
   return {
     id,
     gameState,
     memory: initialMemory ?? createMemoryState(),
     turnCount: 0,
+    canonPosition: options.canonPosition ?? DEFAULT_CANON_POSITION,
+    embeddingModelId,
     phase: "idle",
     currentNarrative: null,
     currentChoices: null,
@@ -99,7 +122,28 @@ export function deserializeSession(json: string): GameSession | null {
     ...s,
     gameState,
     errorCode: s.errorCode ?? null,
+    // Seed the RAG fields for sessions saved before issue #63: the timeline
+    // starts at canon position 1 and the lock falls back to the default model.
+    canonPosition: (s.canonPosition as number | undefined) ?? DEFAULT_CANON_POSITION,
+    embeddingModelId:
+      (s.embeddingModelId as string | undefined) ?? DEFAULT_EMBEDDING_MODEL_ID,
   } as GameSession;
+}
+
+/**
+ * Advance the player's shared-timeline position (issue #63). Monotonic: the
+ * timeline gate's guarantee depends on the position never moving backward, so
+ * regressions are ignored rather than applied.
+ */
+export function advanceCanonPosition(
+  session: GameSession,
+  position: number,
+  now: number = Date.now(),
+): GameSession {
+  if (!Number.isFinite(position) || position <= session.canonPosition) {
+    return session;
+  }
+  return { ...session, canonPosition: position, updatedAt: now };
 }
 
 export function isValidDigestionShape(obj: unknown): boolean {
@@ -161,6 +205,20 @@ export function isValidSessionShape(obj: unknown): boolean {
   // Injuries are optional (older sessions predate combat) but must be
   // well-shaped when present; absent simply means no active injuries.
   if (gs.injuries !== undefined && !isValidInjuriesShape(gs.injuries)) return false;
+
+  // RAG fields (issue #63) are optional (older sessions predate them) but
+  // must be valid when present: a finite positive position, and a model id on
+  // the approved list (an unknown lock would orphan the save from every map).
+  if (s.canonPosition !== undefined) {
+    if (!Number.isFinite(s.canonPosition) || (s.canonPosition as number) < 0) {
+      return false;
+    }
+  }
+  if (s.embeddingModelId !== undefined) {
+    if (!APPROVED_EMBEDDING_MODELS.some((m) => m.id === s.embeddingModelId)) {
+      return false;
+    }
+  }
 
   if (typeof s.memory !== "object" || s.memory === null) return false;
   const mem = s.memory as Record<string, unknown>;
