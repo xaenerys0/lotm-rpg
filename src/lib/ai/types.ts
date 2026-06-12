@@ -133,6 +133,11 @@ export interface GameState {
   characterName?: string;
   characterBackground?: string;
   /**
+   * Funds in pence (issue #16 — the marketplace introduced currency).
+   * Optional for saves that predate it; `getFunds` seeds the default.
+   */
+  funds?: number;
+  /**
    * Digestion progress for the potion matching the current pathway/sequence.
    * Optional for backward compatibility with sessions saved before the Acting
    * Method mechanic; the game engine seeds a default when it is missing.

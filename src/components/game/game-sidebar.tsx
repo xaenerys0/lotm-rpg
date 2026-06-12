@@ -11,6 +11,7 @@ const navItems = [
   { href: "/journal", label: "Journal" },
   { href: "/map", label: "Map" },
   { href: "/glossary", label: "Glossary" },
+  { href: "/market", label: "Market" },
   { href: "/settings", label: "Settings" },
 ] as const;
 

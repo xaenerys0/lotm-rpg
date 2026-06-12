@@ -15,6 +15,7 @@ import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
 import MapPage from "@/app/(game)/map/page";
 import GlossaryPage from "@/app/(game)/glossary/page";
+import MarketPage from "@/app/(game)/market/page";
 
 import {
   buildLegacy,
@@ -270,6 +271,17 @@ describe("accessibility — stub pages", () => {
 
   it("glossary page has no violations", async () => {
     await expectNoAxeViolations(<GlossaryPage />);
+  });
+
+  it("market page has no violations", async () => {
+    const session = createSession(
+      createDefaultGameState(1, "char-m", "Klein"),
+      "mkt-1",
+      1000,
+    );
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["mkt-1"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "mkt-1", serializeSession(session));
+    await expectNoAxeViolations(<MarketPage />);
   });
 
   it("journal page has no violations", async () => {

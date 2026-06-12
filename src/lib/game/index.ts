@@ -34,6 +34,29 @@ export {
 } from "./digestion";
 
 export {
+  addItemToInventory,
+  adjustFunds,
+  canAfford,
+  filterListings,
+  getFunds,
+  removeItemForListing,
+  validateListing,
+  LISTING_DAYS,
+  PRICE_GUIDANCE,
+  STARTING_FUNDS,
+  type ListingFilter,
+  type ListingStatus,
+  type MarketListing,
+} from "./marketplace";
+export {
+  createListing,
+  delist,
+  fetchActiveListings,
+  fetchOwnHistory,
+  purchase,
+  type MarketplaceClient,
+} from "./marketplace-sync";
+export {
   composeMessage,
   getMessageTemplate,
   selectMessagesForScene,

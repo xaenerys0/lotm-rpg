@@ -303,9 +303,50 @@ export interface Database {
         };
         Relationships: [];
       };
+      market_listings: {
+        // Player trading post (issue #16). Purchases only via purchase_listing.
+        Row: {
+          id: string;
+          seller_id: string;
+          item: Json;
+          price: number;
+          status: string;
+          created_at: string;
+          expires_at: string;
+          sold_to: string | null;
+          sold_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          seller_id: string;
+          item: Json;
+          price: number;
+          status?: string;
+          created_at?: string;
+          expires_at?: string;
+          sold_to?: string | null;
+          sold_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          seller_id?: string;
+          item?: Json;
+          price?: number;
+          status?: string;
+          created_at?: string;
+          expires_at?: string;
+          sold_to?: string | null;
+          sold_at?: string | null;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      purchase_listing: {
+        Args: { p_listing_id: string };
+        Returns: Json;
+      };
       rate_world_message: {
         Args: { p_message_id: string; p_helpful: boolean };
         Returns: undefined;
