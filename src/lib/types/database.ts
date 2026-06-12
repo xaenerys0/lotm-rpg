@@ -38,6 +38,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       lore_entries: {
         Row: {
@@ -91,6 +92,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       source_chunks: {
         // Private RAG corpus. No direct client query path (RLS denies
@@ -140,6 +142,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       chunk_embeddings: {
         // Model-keyed vector store: one row per (chunk, model).
@@ -162,6 +165,7 @@ export interface Database {
           embedding?: string;
           created_at?: string;
         };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
@@ -200,5 +204,6 @@ export interface Database {
       lore_category: LoreCategoryEnum;
       source_chunk_source: SourceChunkSourceEnum;
     };
+    CompositeTypes: Record<string, never>;
   };
 }

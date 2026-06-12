@@ -58,8 +58,14 @@ model without re-parsing or re-chunking.
   - `pnpm rag:eval chunks.jsonl cases.jsonl`
   - `pnpm rag:eval chunks.jsonl cases.jsonl --k 5 --strict`
 
-The remaining **load** stage lands in its own issue and follows the same
-JSONL-in/JSONL-out shape.
+- `load.ts` (`pnpm rag:load`) — the **load** stage. Upserts `ChunkRecord` JSONL
+  into `source_chunks` and (with `--model <id>`) `chunk_embeddings`. Idempotent
+  (deterministic uuid from the pipeline id). Requires `SUPABASE_URL` +
+  `SUPABASE_SERVICE_ROLE_KEY` (RLS denies everyone else by design) — run it
+  **operator-side only**, never in the app or CI.
+  - `pnpm rag:load embedded.qwen3.jsonl --model qwen3-embedding-0.6b`
+  - `pnpm rag:load chunks.jsonl --chunks-only`
+  - Flags: `--model <id>`, `--chunks-only`, `--batch <n>` (default 200).
 
 ## Conventions
 

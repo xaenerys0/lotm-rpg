@@ -16,7 +16,8 @@
     "rag:embed": "tsx scripts/rag/embed.ts",
     "rag:novel": "tsx scripts/rag/novel.ts",
     "rag:wiki": "tsx scripts/rag/wiki.ts",
-    "rag:eval": "tsx scripts/rag/eval.ts"
+    "rag:eval": "tsx scripts/rag/eval.ts",
+    "rag:load": "tsx scripts/rag/load.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

@@ -26,6 +26,7 @@ export {
   type ChunkEmbedder,
   type EmbedChunksOptions,
 } from "./embed";
+export { chunkUuid, toEmbeddingRow, toSourceChunkRow } from "./load";
 export { countTokens } from "./tokenizer";
 export { iterateJsonl, parseJsonl, toJsonl } from "./jsonl";
 

@@ -9,7 +9,8 @@ two sources never diverge. The novel (issue #62) and wiki (issue #61)
 parse/normalize stages live here too.
 
 This module is **dev/ingestion-only** — nothing under `src/app` or the runtime
-retrieval path imports it. Runtime retrieval goes through the
+retrieval path imports it. (`load.ts` imports `node:crypto`, which would fail in
+the browser bundle anyway — a tripwire, not a bug.) Runtime retrieval goes through the
 `match_source_chunks` RPC (RAG #1, migration `20260601120000`), not this code.
 
 ## Structure
@@ -60,11 +61,17 @@ retrieval path imports it. Runtime retrieval goes through the
   timeline gate's safety net — any violation is a bug.
 - `html.ts` — `stripHtml` / `decodeEntities`, the shared final cleaning pass used
   by both the novel and wiki pipelines.
+- `load.ts` — The load-stage row mapping (closing #57's stage contract):
+  `chunkUuid` (deterministic RFC-4122 v5-style uuid from the pipeline chunk id —
+  idempotent upserts, no schema change; the pipeline id is preserved in
+  `ref.chunk_key`), `toSourceChunkRow`, and `toEmbeddingRow` (throws on
+  unembedded records / wrong dims). The Supabase write loop is the
+  `scripts/rag/load.ts` driver (service-role, operator-side only).
 - `jsonl.ts` — `parseJsonl` / `iterateJsonl` / `toJsonl` — the JSONL read/write seam
   shared by every pipeline stage.
 - `index.ts` — Public exports.
 - `chunk.test.ts` / `tokenizer.test.ts` / `jsonl.test.ts` / `novel.test.ts` /
-  `wiki.test.ts` / `eval.test.ts` — colocated tests.
+  `wiki.test.ts` / `eval.test.ts` / `load.test.ts` — colocated tests.
 - `__fixtures__/` — Golden fixtures: `normalized-docs.jsonl` (input) →
   `chunks.expected.jsonl` (expected chunker output); `novel-chapters.txt`
   (synthetic 3-chapter novel; **original prose, not the copyrighted novel**) →
@@ -93,7 +100,8 @@ with a new model without re-parsing or re-chunking). The **chunk** stage
 (`scripts/rag/embed.ts`, `pnpm rag:embed`, issue #60), and the **novel
 parse/normalize** stages (`scripts/rag/novel.ts`, `pnpm rag:novel`, issue #62), and
 the **wiki parse/normalize** stages (`scripts/rag/wiki.ts`, `pnpm rag:wiki`, issue
-#61) live here. The remaining **load** stage lands in a later RAG issue.
+#61), and the **load** stage (`scripts/rag/load.ts`, `pnpm rag:load`) live here —
+the stage contract is complete end-to-end.
 
 ## Chunker guarantees
 
