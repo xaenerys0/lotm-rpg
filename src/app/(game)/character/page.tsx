@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { CharacterSheet } from "@/components/game/character-sheet";
+import { FirstTimeHint } from "@/components/game/first-time-hint";
 
 export const metadata: Metadata = { title: "Character" };
 
@@ -13,6 +14,11 @@ export default function CharacterPage() {
         </h1>
         <p className="mt-2 text-muted">Your Beyonder identity and progression.</p>
       </header>
+
+      <FirstTimeHint id="character">
+        Your sheet reads like a dossier: abilities, the acting method your potion demands,
+        your condition, and everything in your pockets.
+      </FirstTimeHint>
 
       <CharacterSheet />
     </div>

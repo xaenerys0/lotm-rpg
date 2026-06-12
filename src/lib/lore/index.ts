@@ -1,6 +1,15 @@
 export type { LoreCategory, LoreEntry } from "./types";
 
 export { selectCuratedLore } from "./selection";
+export {
+  getGlossaryTerm,
+  glossaryForSequence,
+  GLOSSARY_CATEGORIES,
+  GLOSSARY_TERMS,
+  sealedTermCount,
+  type GlossaryCategory,
+  type GlossaryTerm,
+} from "./glossary";
 
 export {
   createSupabaseChunkMatcher,

@@ -1,0 +1,65 @@
+"use client";
+
+import { useCallback, useRef, useSyncExternalStore, useState } from "react";
+
+import { noopSubscribe } from "@/lib/react";
+
+// First-time hints (issue #14): a one-shot, dismissible pointer shown the
+// first time a player opens a screen. Dismissal persists per hint id.
+
+const HINT_KEY_PREFIX = "lotm-rpg-hint-";
+
+export function FirstTimeHint({
+  id,
+  children,
+}: {
+  id: string;
+  children: React.ReactNode;
+}) {
+  const seenCacheRef = useRef<boolean | undefined>(undefined);
+  const initiallySeen = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (seenCacheRef.current === undefined) {
+        try {
+          seenCacheRef.current = localStorage.getItem(HINT_KEY_PREFIX + id) === "1";
+        } catch {
+          seenCacheRef.current = true;
+        }
+      }
+      return seenCacheRef.current;
+    },
+    // Server snapshot: render nothing until the client knows.
+    () => true,
+  );
+
+  const [dismissed, setDismissed] = useState(false);
+
+  const dismiss = useCallback(() => {
+    setDismissed(true);
+    try {
+      localStorage.setItem(HINT_KEY_PREFIX + id, "1");
+    } catch {
+      // Storage unavailable — the hint will simply show again next visit.
+    }
+  }, [id]);
+
+  if (initiallySeen || dismissed) return null;
+
+  return (
+    <div
+      role="note"
+      className="mb-6 flex items-start justify-between gap-4 rounded-md border border-gaslight/30 bg-gaslight/[0.05] px-4 py-3 animate-fade-in"
+    >
+      <p className="text-sm leading-relaxed text-foreground/85">{children}</p>
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Dismiss hint"
+        className="min-h-[24px] shrink-0 rounded px-2 py-1 text-xs font-medium text-gaslight hover:underline"
+      >
+        Got it
+      </button>
+    </div>
+  );
+}

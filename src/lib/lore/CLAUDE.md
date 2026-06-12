@@ -17,6 +17,7 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
   the turn record (determinism/debuggability); `toPgVector` serializes query
   vectors. This **extends** the curated `lore_entries` injection — curated
   guardrails are injected first (issue #64); retrieved chunks fill the rest.
+- `glossary.ts` — In-game glossary (issue #14): `GLOSSARY_TERMS` with **progressive disclosure** via `revealAtSequence` (9-8 basics at the start; rituals/organisations ~8-7; demigod concepts at 5; Sefirah-tier mysteries at 4). `glossaryForSequence(level)`, `getGlossaryTerm(slug)`, `sealedTermCount(level)`. Entries are player-safe world-building — no narrator-only lore.
 - `tingen.ts` — Tingen City locations and geography.
 - `fifth-epoch.ts` — Fifth Epoch baseline: politics, technology, social norms.
 - `organizations.ts` — Nighthawks, Mandated Punishers, Machinery Hivemind, Psychology Alchemists, Aurora Order.

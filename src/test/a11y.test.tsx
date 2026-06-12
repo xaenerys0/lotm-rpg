@@ -14,6 +14,7 @@ import { CombatEncounterView } from "@/components/game/combat-encounter";
 import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
 import MapPage from "@/app/(game)/map/page";
+import GlossaryPage from "@/app/(game)/glossary/page";
 
 import {
   buildLegacy,
@@ -231,6 +232,10 @@ describe("accessibility — stub pages", () => {
 
   it("map page has no violations", async () => {
     await expectNoAxeViolations(<MapPage />);
+  });
+
+  it("glossary page has no violations", async () => {
+    await expectNoAxeViolations(<GlossaryPage />);
   });
 
   it("journal page has no violations", async () => {

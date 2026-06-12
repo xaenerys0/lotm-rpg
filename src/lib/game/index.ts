@@ -34,6 +34,11 @@ export {
 } from "./digestion";
 
 export {
+  TUTORIAL_REQUIRED_TOPICS,
+  TUTORIAL_SCENES,
+  type TutorialScene,
+} from "./tutorial";
+export {
   applySetback,
   buildLegacy,
   deserializeLegacies,

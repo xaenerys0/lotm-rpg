@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { MapPanel } from "@/components/game/map-panel";
+import { FirstTimeHint } from "@/components/game/first-time-hint";
 
 export const metadata: Metadata = { title: "Map" };
 
@@ -15,6 +16,11 @@ export default function MapPage() {
           The districts of the city, as a walker knows them.
         </p>
       </header>
+
+      <FirstTimeHint id="map">
+        The gazetteer marks where your active character currently is. More of the world
+        opens up as your story travels.
+      </FirstTimeHint>
 
       <MapPanel />
     </div>
