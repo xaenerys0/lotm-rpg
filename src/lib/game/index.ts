@@ -34,6 +34,24 @@ export {
 } from "./digestion";
 
 export {
+  divergenceScore,
+  evaluateAchievements,
+  getAchievement,
+  legacyCount,
+  showcaseStats,
+  ACHIEVEMENTS,
+  type Achievement,
+  type ShowcaseStats,
+} from "./achievements";
+export {
+  fetchLeaderboard,
+  publishShowcase,
+  toShowcaseRow,
+  type LeaderboardEntry,
+  type LeaderboardMetric,
+  type ShowcaseClient,
+} from "./showcase-sync";
+export {
   addItemToInventory,
   adjustFunds,
   canAfford,

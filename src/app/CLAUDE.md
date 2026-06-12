@@ -16,7 +16,7 @@ Next.js App Router with two route groups:
 
 1. Generates a CSP nonce and sets security headers
 2. Calls `updateSession()` from `@/lib/supabase/middleware` to refresh the auth session
-3. Redirects unauthenticated users away from protected routes (`/play`, `/character`, `/journal`, `/map`, `/glossary`, `/market`, `/settings` -> `/login`)
+3. Redirects unauthenticated users away from protected routes (`/play`, `/character`, `/journal`, `/map`, `/glossary`, `/market`, `/profile`, `/leaderboard`, `/settings` -> `/login`)
 
 The matcher excludes static/PWA assets so they bypass the auth session refresh:
 `_next/*`, `favicon.ico`, image extensions, plus `manifest.webmanifest` and `sw.js`.
@@ -56,6 +56,8 @@ The app is installable on Android and iOS ("Add to Home Screen"):
 - `/map` — Tingen district gazetteer (issue #13). Server component wraps `MapPanel` client component.
 - `/glossary` — In-game glossary with progressive disclosure (issue #14). Server component wraps `GlossaryPanel` client component.
 - `/market` — Player trading post (issue #16). Server component wraps `MarketPanel` client component.
+- `/profile` — Player showcase with privacy controls (issue #18). Server component wraps `ShowcasePanel`.
+- `/leaderboard` — Public leaderboards (issue #18). Server component wraps `LeaderboardPanel`.
 - `/settings` — AI provider configuration (BYOK) and preferences. Server component wraps `ProviderConfig` client component.
 
 ## API Routes

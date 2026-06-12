@@ -16,6 +16,8 @@ import JournalPage from "@/app/(game)/journal/page";
 import MapPage from "@/app/(game)/map/page";
 import GlossaryPage from "@/app/(game)/glossary/page";
 import MarketPage from "@/app/(game)/market/page";
+import ProfilePage from "@/app/(game)/profile/page";
+import LeaderboardPage from "@/app/(game)/leaderboard/page";
 
 import {
   buildLegacy,
@@ -271,6 +273,21 @@ describe("accessibility — stub pages", () => {
 
   it("glossary page has no violations", async () => {
     await expectNoAxeViolations(<GlossaryPage />);
+  });
+
+  it("profile page (with session) has no violations", async () => {
+    const session = createSession(
+      createDefaultGameState(1, "char-p", "Klein"),
+      "prof-1",
+      1000,
+    );
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["prof-1"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "prof-1", serializeSession(session));
+    await expectNoAxeViolations(<ProfilePage />);
+  });
+
+  it("leaderboard page has no violations", async () => {
+    await expectNoAxeViolations(<LeaderboardPage />);
   });
 
   it("market page has no violations", async () => {

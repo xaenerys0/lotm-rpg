@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Eight migrations in order:
+Migrations live in `migrations/`. Nine migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -47,6 +47,10 @@ Migrations live in `migrations/`. Eight migrations in order:
    - `world_message_votes` — PK `(message_id, user_id)`; written only via the RPC
    - RLS: authenticated read ALL messages (shared world), owner insert/delete; votes readable by owner
    - `rate_world_message(uuid, boolean)` — SECURITY DEFINER: one vote per player (unique violation = silent no-op), maintains counters atomically; EXECUTE granted to `authenticated` only
+
+8. `20260613010000_create_player_showcases.sql` — Player showcase + leaderboards (issue #18)
+   - `player_showcases` — one row per player: `display_name`, `public` (default false), `pathway_id`, `sequence_level`, `achievement_ids`, `divergence_score` (CHECK 0-100), `stats` jsonb
+   - RLS: owners full access; other authenticated users may SELECT only rows where `public = true` — private data is never selectable, so it cannot leak
 
 ## Auth Session Persistence
 

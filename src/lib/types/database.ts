@@ -340,6 +340,43 @@ export interface Database {
         };
         Relationships: [];
       };
+      player_showcases: {
+        // Published player profiles (issue #18). Public rows world-readable.
+        Row: {
+          user_id: string;
+          display_name: string;
+          public: boolean;
+          pathway_id: number;
+          sequence_level: number;
+          achievement_ids: string[];
+          divergence_score: number;
+          stats: Json;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          display_name?: string;
+          public?: boolean;
+          pathway_id: number;
+          sequence_level: number;
+          achievement_ids?: string[];
+          divergence_score?: number;
+          stats?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          display_name?: string;
+          public?: boolean;
+          pathway_id?: number;
+          sequence_level?: number;
+          achievement_ids?: string[];
+          divergence_score?: number;
+          stats?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
