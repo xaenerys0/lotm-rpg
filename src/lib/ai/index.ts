@@ -89,6 +89,20 @@ export {
 } from "./embeddings";
 
 export {
+  addUsage,
+  DEFAULT_TOKEN_RATES,
+  deserializeUsage,
+  emptyUsage,
+  estimateSessionCost,
+  formatTokenCount,
+  formatUsage,
+  serializeUsage,
+  type SessionUsage,
+  type TokenRates,
+  type TurnUsage,
+} from "./usage";
+
+export {
   generatePrologueScene,
   generatePrologueFinale,
   MIN_PROLOGUE_SCENES,

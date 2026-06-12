@@ -38,7 +38,20 @@ import type {
   InstructionType,
   AIErrorCode,
 } from "@/lib/ai";
-import { generate, addTurn, buildTurnRecord, TOKEN_BUDGET, AIError } from "@/lib/ai";
+import {
+  generate,
+  addTurn,
+  buildTurnRecord,
+  TOKEN_BUDGET,
+  AIError,
+  addUsage,
+  deserializeUsage,
+  emptyUsage,
+  formatUsage,
+  serializeUsage,
+  type SessionUsage,
+  type TurnUsage,
+} from "@/lib/ai";
 import { selectCuratedLore } from "@/lib/lore";
 import { getPathway, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
@@ -101,6 +114,27 @@ function clearCombatFromStorage(sessionId: string): void {
     localStorage.removeItem(COMBAT_KEY_PREFIX + sessionId);
   } catch {
     // Storage unavailable
+  }
+}
+
+// Rough per-session token usage (issue #15) — its own localStorage entry so
+// the persisted session schema is untouched.
+const USAGE_KEY_PREFIX = "lotm:usage:";
+
+function loadUsageFromStorage(sessionId: string): SessionUsage {
+  try {
+    const raw = localStorage.getItem(USAGE_KEY_PREFIX + sessionId);
+    return (raw ? deserializeUsage(raw) : null) ?? emptyUsage();
+  } catch {
+    return emptyUsage();
+  }
+}
+
+function saveUsageToStorage(sessionId: string, usage: SessionUsage): void {
+  try {
+    localStorage.setItem(USAGE_KEY_PREFIX + sessionId, serializeUsage(usage));
+  } catch {
+    // Storage full or unavailable
   }
 }
 
@@ -217,6 +251,31 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   );
   const [combat, setCombat] = useState<CombatEncounter | null>(initialCombat ?? null);
 
+  const usageCacheRef = useRef<SessionUsage | undefined>(undefined);
+  const initialUsage = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (usageCacheRef.current === undefined) {
+        usageCacheRef.current = loadUsageFromStorage(sessionId);
+      }
+      return usageCacheRef.current;
+    },
+    () => null,
+  );
+  const [usage, setUsage] = useState<SessionUsage | null>(initialUsage ?? null);
+
+  const recordUsage = useCallback(
+    (turn: TurnUsage | undefined) => {
+      if (!turn) return;
+      setUsage((prev) => {
+        const next = addUsage(prev ?? emptyUsage(), turn);
+        saveUsageToStorage(sessionId, next);
+        return next;
+      });
+    },
+    [sessionId],
+  );
+
   const updateSession = useCallback((next: GameSession) => {
     setSession(next);
     saveSessionToStorage(next);
@@ -315,6 +374,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         });
 
         if (generationRef.current !== gen) return;
+        recordUsage(result.usage);
 
         const choices = result.response.choices?.length
           ? result.response.choices
@@ -355,7 +415,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         updateSession(errSession);
       }
     },
-    [updateSession, dispatchMissingConfig],
+    [updateSession, dispatchMissingConfig, recordUsage],
   );
 
   const resolveChoice = useCallback(
@@ -389,6 +449,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         });
 
         if (generationRef.current !== gen) return;
+        recordUsage(result.usage);
 
         const next = transition(currentSession, {
           type: "RESOLUTION_READY",
@@ -407,7 +468,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         updateSession(errSession);
       }
     },
-    [updateSession, dispatchMissingConfig],
+    [updateSession, dispatchMissingConfig, recordUsage],
   );
 
   useEffect(() => {
@@ -510,6 +571,19 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               |
             </span>
             <span>Turn {session.turnCount}</span>
+            {usage !== null && usage.turns > 0 && (
+              <>
+                <span className="text-border" aria-hidden="true">
+                  |
+                </span>
+                <span
+                  className="text-muted"
+                  title="Estimated session token usage — rough; your own API key pays the provider"
+                >
+                  {formatUsage(usage)}
+                </span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <DigestionMeter digestion={session.gameState.digestion} />

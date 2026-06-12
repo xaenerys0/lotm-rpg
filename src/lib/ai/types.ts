@@ -92,6 +92,8 @@ export interface AIResponse {
 export interface ValidatedAIResponse {
   response: AIResponse;
   validation: ValidationResult;
+  /** Rough token estimates for this call (issue #15) — chars/4 heuristic. */
+  usage?: { promptTokens: number; outputTokens: number };
 }
 
 export type InstructionType =

@@ -8,6 +8,7 @@ import type {
   ProviderConfig,
   ProviderResponse,
   ValidatedAIResponse,
+  RetrievedLoreChunk,
 } from "./types";
 import { AIError } from "./errors";
 import { createAdapter, type LLMProviderAdapter } from "./providers";
@@ -78,6 +79,8 @@ export interface GenerateOptions {
   gameState: GameState;
   memory: MemoryState;
   loreContext: LoreContext;
+  /** Gated retrieval results (issue #64); packed after the curated lore. */
+  retrievedChunks?: RetrievedLoreChunk[];
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];
@@ -94,6 +97,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     gameState: options.gameState,
     memory: options.memory,
     loreContext: options.loreContext,
+    retrievedChunks: options.retrievedChunks,
     instruction: options.instruction,
     playerAction: options.playerAction,
     abilities: options.abilities,
@@ -121,6 +125,12 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
   return {
     response: aiResponse,
     validation: finalValidation,
+    // Rough per-call token estimate (issue #15): prompt side from the
+    // assembly's own budget arithmetic, output side from the parsed JSON.
+    usage: {
+      promptTokens: assembly.totalTokenEstimate,
+      outputTokens: Math.ceil(JSON.stringify(aiResponse).length / 4),
+    },
   };
 }
 

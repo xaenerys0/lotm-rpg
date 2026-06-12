@@ -285,6 +285,26 @@ export function ProviderConfig() {
     }
   }, [buildConfig, isCustom, handleRefreshModels]);
 
+  // Key removal/rotation (issue #15): wipe the key from the form AND from the
+  // persisted config immediately — no save step where a stale key lingers.
+  const handleRemoveKey = useCallback(() => {
+    setForm((f) => ({ ...f, apiKey: "" }));
+    setConnectionStatus("idle");
+    try {
+      const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
+      if (raw) {
+        const stored = JSON.parse(raw) as Record<string, unknown>;
+        localStorage.setItem(
+          PROVIDER_CONFIG_KEY,
+          JSON.stringify({ ...stored, apiKey: "" }),
+        );
+      }
+    } catch {
+      // Storage unavailable — the in-memory form is still cleared.
+    }
+    setSaveStatus("unsaved");
+  }, []);
+
   const handleSave = useCallback(() => {
     setSaveStatus("saving");
     try {
@@ -373,6 +393,15 @@ export function ProviderConfig() {
               ? "Your API key from ollama.com. Sign in at ollama.com → Account Settings to generate one."
               : "Your key is stored locally in this browser. It is never sent to our servers."}
         </p>
+        {providerMeta.requiresAuth && (
+          <p className="mt-2 rounded-md border border-border bg-background/60 px-3 py-2 text-xs leading-relaxed text-muted">
+            <strong className="font-semibold text-foreground/80">Privacy:</strong> your
+            key lives only in this browser&apos;s local storage and is sent only to your
+            chosen provider, directly from your browser, with each AI call. It never
+            touches our servers or database, and nothing derived from it is logged. Remove
+            it at any time with &ldquo;Remove key&rdquo; below.
+          </p>
+        )}
       </fieldset>
 
       {/* Base URL (conditional) */}
@@ -509,6 +538,16 @@ export function ProviderConfig() {
                 ? "Saved"
                 : "Save Configuration"}
           </button>
+
+          {providerMeta.requiresAuth && form.apiKey && (
+            <button
+              type="button"
+              onClick={handleRemoveKey}
+              className="rounded-md border border-crimson/30 px-4 py-2 text-sm font-medium text-sanity-low transition-all duration-200 hover:border-crimson/50 hover:bg-crimson/[0.06]"
+            >
+              Remove key
+            </button>
+          )}
         </div>
 
         {/* Status Indicators */}
