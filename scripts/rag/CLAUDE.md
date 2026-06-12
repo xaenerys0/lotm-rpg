@@ -30,7 +30,19 @@ model without re-parsing or re-chunking.
   - Offline/occasional operator batch — needs a running embedder (local Ollama or the
     operator box); it is never part of CI or the app bundle.
 
-Later stages (parse/normalize for wiki #4 and novel #5, load) land in their own issues
+- `novel.ts` (`pnpm rag:novel`) — the novel **parse + normalize** stages (issue #62).
+  Reads an EPUB, a one-file-per-chapter directory (md/txt/html), or a single
+  chapter-headed file, and writes normalized `SourceDocument` JSONL for the chunk
+  stage. The full real-novel ingest is gated on receiving the actual file; the
+  pipeline is validated against the synthetic fixture in
+  `src/lib/rag/__fixtures__/novel-chapters.txt`.
+  - `pnpm rag:novel book.epub > docs.jsonl`
+  - `pnpm rag:novel chapters/ docs.jsonl`
+  - `pnpm rag:novel novel.txt | pnpm rag:chunk | pnpm rag:embed --model qwen3-embedding-0.6b`
+  - Flags: `--arc-map <file.json>` — override the default `LOTM_NOVEL_ARC_MAP`
+    (approximate chapter boundaries) with a corrected JSON array of `NovelArcEntry`.
+
+Later stages (parse/normalize for wiki #4, load) land in their own issues
 and follow the same JSONL-in/JSONL-out shape.
 
 ## Conventions

@@ -5,7 +5,8 @@
 The source-agnostic core of the RAG ingestion pipeline (issue #59, sub-issue of
 #57). Defines the canonical JSONL chunk artifact, the stage contract, and the
 **shared chunker** that the novel (#5) and wiki (#4) pipelines both use, so the
-two sources never diverge.
+two sources never diverge. The novel parse/normalize stage (issue #62) lives
+here too.
 
 This module is **dev/ingestion-only** — nothing under `src/app` or the runtime
 retrieval path imports it. Runtime retrieval goes through the
@@ -28,13 +29,28 @@ retrieval path imports it. Runtime retrieval goes through the
   stays decoupled from the runtime AI module; `@/lib/ai`'s `EmbeddingProvider` satisfies it
   structurally and is wired in the `scripts/rag/embed.ts` driver. Operator-offline batch work,
   never an always-on service.
+- `novel.ts` — The novel parse + normalize stages (issue #62): `parseNovelText`
+  (single md/txt file with "Chapter N" headings; front matter dropped),
+  `parseNovelFiles` (one-file-per-chapter; heading else filename numbering),
+  `parseEpub` (fflate unzip → OPF spine order → heading-driven chapters, with a
+  sequential fallback for unheaded spines), `stripHtml` (block-aware tag strip +
+  entity decode), and `normalizeNovelChapters` (chapters → `SourceDocument`s:
+  `canon_order` = chapter index; `arc_bucket`/`concealment_tier`/`in_world_date`
+  from the arc map). Throws rather than guessing when no chapter number can be
+  derived — chronology correctness is a hard requirement.
+- `novel-arcs.ts` — The hand-authored `NovelArcEntry` map (`LOTM_NOVEL_ARC_MAP`,
+  8 volumes, **approximate chapter boundaries — verify against the real file at
+  ingest**; override per-run via `pnpm rag:novel --arc-map`) and `resolveArc`.
 - `jsonl.ts` — `parseJsonl` / `iterateJsonl` / `toJsonl` — the JSONL read/write seam
   shared by every pipeline stage.
 - `index.ts` — Public exports.
-- `chunk.test.ts` / `tokenizer.test.ts` / `jsonl.test.ts` — colocated tests.
+- `chunk.test.ts` / `tokenizer.test.ts` / `jsonl.test.ts` / `novel.test.ts` —
+  colocated tests.
 - `__fixtures__/` — Golden fixtures: `normalized-docs.jsonl` (input) →
-  `chunks.expected.jsonl` (expected chunker output). Regenerate the expected file
-  via the chunk stage if the chunker changes intentionally.
+  `chunks.expected.jsonl` (expected chunker output); `novel-chapters.txt`
+  (synthetic 3-chapter novel; **original prose, not the copyrighted novel**) →
+  `novel-docs.expected.jsonl` (expected parse+normalize output). Regenerate an
+  expected file via its stage CLI if the stage changes intentionally.
 
 ## The canonical artifact (JSONL)
 
@@ -52,9 +68,10 @@ parse → normalize → chunk → embed → load
 
 Each stage reads and writes JSONL, so any stage re-runs in isolation (e.g. re-embed
 with a new model without re-parsing or re-chunking). The **chunk** stage
-(`scripts/rag/chunk.ts`, `pnpm rag:chunk`) and the **embed** stage
-(`scripts/rag/embed.ts`, `pnpm rag:embed`, issue #60) live here. The remaining stages
-land in later RAG issues (#4 wiki parse/normalize, #5 novel parse/normalize, load).
+(`scripts/rag/chunk.ts`, `pnpm rag:chunk`), the **embed** stage
+(`scripts/rag/embed.ts`, `pnpm rag:embed`, issue #60), and the **novel
+parse/normalize** stages (`scripts/rag/novel.ts`, `pnpm rag:novel`, issue #62) live
+here. The remaining stages land in later RAG issues (#4 wiki parse/normalize, load).
 
 ## Chunker guarantees
 

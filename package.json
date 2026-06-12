@@ -13,7 +13,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "rag:chunk": "tsx scripts/rag/chunk.ts",
-    "rag:embed": "tsx scripts/rag/embed.ts"
+    "rag:embed": "tsx scripts/rag/embed.ts",
+    "rag:novel": "tsx scripts/rag/novel.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -33,6 +34,7 @@
     "axe-core": "^4.11.4",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.6",
+    "fflate": "^0.8.3",
     "gpt-tokenizer": "^3.4.0",
     "jsdom": "^29.1.1",
     "prettier": "^3.8.3",
