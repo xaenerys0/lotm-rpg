@@ -6,6 +6,7 @@ import {
   DEFAULT_EMBEDDING_MODEL_ID,
 } from "@/lib/ai";
 import { createDigestionState } from "./digestion";
+import { isValidIdentityStateShape } from "./identity";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
 
 const VALID_PHASES: GamePhase[] = [
@@ -218,6 +219,11 @@ export function isValidSessionShape(obj: unknown): boolean {
     if (!APPROVED_EMBEDDING_MODELS.some((m) => m.id === s.embeddingModelId)) {
       return false;
     }
+  }
+
+  // Identity state (issue #22) is optional but strict when present.
+  if (s.identityState !== undefined && !isValidIdentityStateShape(s.identityState)) {
+    return false;
   }
 
   // The permadeath marker (issue #12) is optional but strict when present.

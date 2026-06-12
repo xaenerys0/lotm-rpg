@@ -34,6 +34,29 @@ export {
 } from "./digestion";
 
 export {
+  activeIdentity,
+  adjustReputation,
+  applyExposure,
+  checkExposure,
+  createIdentity,
+  createIdentityState,
+  discardIdentity,
+  identityCapability,
+  identityPromptContext,
+  isValidIdentityStateShape,
+  recordIdentityUse,
+  switchIdentity,
+  EXPOSURE_EVENT_THRESHOLD,
+  FULL_IDENTITY_THRESHOLDS,
+  MAX_BASIC_IDENTITIES,
+  type ExposureEvent,
+  type Identity,
+  type IdentityCapability,
+  type IdentityState,
+  type NewIdentityFields,
+  type SocialClass,
+} from "./identity";
+export {
   FREE_TEXT_CHOICE_ID,
   FREE_TEXT_MAX_LENGTH,
   freeTextRejection,

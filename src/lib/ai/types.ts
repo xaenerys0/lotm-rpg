@@ -210,6 +210,11 @@ export interface PromptInput {
   memory: MemoryState;
   loreContext: LoreContext;
   /**
+   * Active-persona presentation context (issue #22) — one narrator-facing
+   * line from `identityPromptContext`; null/absent when wearing the true face.
+   */
+  identityContext?: string | null;
+  /**
    * Gated chunks from `retrieveChunks` (issue #64), in retrieval-rank order.
    * They fill whatever lore budget the curated entries leave — authored lore
    * is never crowded out.

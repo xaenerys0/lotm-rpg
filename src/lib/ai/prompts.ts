@@ -215,6 +215,15 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     layers.push(sanityLayer);
   }
 
+  // Active persona (issue #22): one presentation-context line so tone and
+  // social access track the identity the character is currently wearing.
+  if (input.identityContext) {
+    layers.push({
+      role: "system",
+      content: `## Active Identity\n${input.identityContext}`,
+    });
+  }
+
   const loreLayer = buildLoreContext(input.loreContext, input.retrievedChunks ?? []);
   if (loreLayer.content) {
     layers.push(loreLayer);

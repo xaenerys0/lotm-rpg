@@ -1,15 +1,25 @@
 "use client";
 
-import { useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 
 import { noopSubscribe } from "@/lib/react";
 import { getPathway, getSequence } from "@/lib/rules";
 import { classifySanityTier } from "@/lib/ai";
 import {
+  activeIdentity,
+  createIdentity,
+  createIdentityState,
   deserializeSession,
+  discardIdentity,
+  identityCapability,
+  serializeSession,
+  switchIdentity,
   SESSION_INDEX_KEY,
   SESSION_KEY_PREFIX,
   type GameSession,
+  type IdentityCapability,
+  type IdentityState,
+  type SocialClass,
 } from "@/lib/game";
 import type { Item } from "@/lib/types/rules";
 
@@ -67,6 +77,16 @@ export function CharacterSheet() {
   );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [overrides, setOverrides] = useState<Record<string, GameSession>>({});
+
+  const persistSession = useCallback((next: GameSession) => {
+    setOverrides((prev) => ({ ...prev, [next.id]: next }));
+    try {
+      localStorage.setItem(SESSION_KEY_PREFIX + next.id, serializeSession(next));
+    } catch {
+      // Storage full or unavailable — the in-memory sheet still updates.
+    }
+  }, []);
 
   if (sessions === null) {
     return <p className="text-sm text-muted">Consulting the records…</p>;
@@ -86,7 +106,8 @@ export function CharacterSheet() {
     );
   }
 
-  const session = sessions.find((s) => s.id === selectedId) ?? sessions[0];
+  const baseSession = sessions.find((s) => s.id === selectedId) ?? sessions[0];
+  const session = overrides[baseSession.id] ?? baseSession;
   const state = session.gameState;
   const pathway = getPathway(state.pathwayId);
   const sequence = getSequence(state.pathwayId, state.sequenceLevel);
@@ -251,6 +272,9 @@ export function CharacterSheet() {
         </section>
       </div>
 
+      {/* Identities (issue #22) */}
+      <IdentitySection session={session} onUpdate={persistSession} />
+
       {/* Inventory */}
       <section aria-labelledby="sheet-inventory">
         <h2
@@ -298,5 +322,247 @@ export function CharacterSheet() {
         )}
       </section>
     </div>
+  );
+}
+
+const SOCIAL_CLASSES: SocialClass[] = ["lower", "middle", "upper", "noble"];
+
+function IdentitySection({
+  session,
+  onUpdate,
+}: {
+  session: GameSession;
+  onUpdate: (next: GameSession) => void;
+}) {
+  const capability: IdentityCapability = identityCapability(
+    session.gameState.pathwayId,
+    session.gameState.sequenceLevel,
+  );
+  const identityState: IdentityState = session.identityState ?? createIdentityState();
+  const active = activeIdentity(identityState);
+
+  const [showForm, setShowForm] = useState(false);
+  const [name, setName] = useState("");
+  const [appearance, setAppearance] = useState("");
+  const [socialClass, setSocialClass] = useState<SocialClass>("middle");
+  const [backstory, setBackstory] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+
+  // Event-handler only (never during render) — useCallback marks it as such
+  // for the purity lint.
+  const apply = useCallback(
+    (next: IdentityState) => {
+      onUpdate({ ...session, identityState: next, updatedAt: Date.now() });
+    },
+    [session, onUpdate],
+  );
+
+  const handleCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      apply(
+        createIdentity(
+          identityState,
+          { name, appearance, socialClass, backstory },
+          capability,
+        ),
+      );
+      setShowForm(false);
+      setName("");
+      setAppearance("");
+      setBackstory("");
+      setFormError(null);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "That face will not hold.");
+    }
+  };
+
+  return (
+    <section aria-labelledby="sheet-identities">
+      <h2
+        id="sheet-identities"
+        className="gaslit font-serif text-lg font-semibold text-amber/90"
+      >
+        Identities
+      </h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        {capability === "full"
+          ? "Your abilities let you live as other people entirely — separate names, reputations, and lives. NPCs treat each face as its own person until something connects them."
+          : "Without the right abilities you can manage one surface-level disguise at a time. It frays quickly, and sharp eyes may see through it."}
+      </p>
+
+      {active && (
+        <p className="mt-3 text-sm text-foreground/85">
+          Currently presenting as{" "}
+          <span className="font-medium text-amber">{active.name}</span>.
+        </p>
+      )}
+
+      <ul className="mt-4 grid gap-3 sm:grid-cols-2">
+        {identityState.identities.map((identity) => {
+          const isActive = identity.id === identityState.activeIdentityId;
+          return (
+            <li key={identity.id} className="parchment rounded-md p-4">
+              <div className="flex items-baseline justify-between gap-2">
+                <p className="text-sm font-semibold text-foreground">
+                  {identity.name}
+                  {identity.activeDisguise && (
+                    <span className="ml-2 text-[10px] tracking-[0.15em] text-muted uppercase">
+                      disguise
+                    </span>
+                  )}
+                </p>
+                <span className="text-xs text-muted">{identity.socialClass} class</span>
+              </div>
+              {identity.appearance && (
+                <p className="mt-1 text-xs leading-relaxed text-muted">
+                  {identity.appearance}
+                </p>
+              )}
+              <div className="mt-3">
+                <div className="flex items-center justify-between text-[11px] text-muted">
+                  <span id={`risk-${identity.id}`}>Exposure risk</span>
+                  <span>{identity.exposureRisk}%</span>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-labelledby={`risk-${identity.id}`}
+                  aria-valuenow={identity.exposureRisk}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  className="mt-1 h-1.5 overflow-hidden rounded-full bg-border/60"
+                >
+                  <div
+                    className={`h-full ${identity.exposureRisk >= 60 ? "bg-sanity-low" : identity.exposureRisk >= 30 ? "bg-sanity-mid" : "bg-sanity-high"}`}
+                    style={{ width: `${identity.exposureRisk}%` }}
+                  />
+                </div>
+              </div>
+              <p className="mt-2 text-[11px] text-muted">
+                Known by {identity.knownBy.length}{" "}
+                {identity.knownBy.length === 1 ? "person" : "people"}
+                {identity.exposedTo.length > 0 &&
+                  ` · exposed to ${identity.exposedTo.join(", ")}`}
+              </p>
+              {Object.keys(identity.reputation).length > 0 && (
+                <p className="mt-1 text-[11px] text-muted">
+                  Standing:{" "}
+                  {Object.entries(identity.reputation)
+                    .map(([who, value]) => `${who} ${value > 0 ? "+" : ""}${value}`)
+                    .join(" · ")}
+                </p>
+              )}
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    apply(switchIdentity(identityState, isActive ? null : identity.id))
+                  }
+                  className="min-h-[24px] rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber hover:border-amber/50"
+                >
+                  {isActive ? "Return to your own face" : "Wear this face"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => apply(discardIdentity(identityState, identity.id))}
+                  className="min-h-[24px] rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:border-crimson/40 hover:text-sanity-low"
+                >
+                  Discard
+                </button>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {showForm ? (
+        <form onSubmit={handleCreate} className="mt-4 max-w-md space-y-3">
+          <div>
+            <label htmlFor="identity-name" className="mb-1 block text-xs text-muted">
+              Name
+            </label>
+            <input
+              id="identity-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="identity-appearance"
+              className="mb-1 block text-xs text-muted"
+            >
+              Appearance
+            </label>
+            <input
+              id="identity-appearance"
+              type="text"
+              value={appearance}
+              onChange={(e) => setAppearance(e.target.value)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label htmlFor="identity-class" className="mb-1 block text-xs text-muted">
+              Social class
+            </label>
+            <select
+              id="identity-class"
+              value={socialClass}
+              onChange={(e) => setSocialClass(e.target.value as SocialClass)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            >
+              {SOCIAL_CLASSES.map((value) => (
+                <option key={value} value={value}>
+                  {value}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="identity-backstory" className="mb-1 block text-xs text-muted">
+              Backstory (optional)
+            </label>
+            <textarea
+              id="identity-backstory"
+              rows={2}
+              value={backstory}
+              onChange={(e) => setBackstory(e.target.value)}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            />
+          </div>
+          {formError && (
+            <p role="alert" className="text-xs text-sanity-low">
+              {formError}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="rounded-md bg-amber/90 px-4 py-2 text-sm font-medium text-background hover:bg-amber"
+            >
+              Craft the identity
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowForm(true)}
+          className="mt-4 rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber hover:border-amber/50"
+        >
+          {capability === "full" ? "Craft a new identity" : "Prepare a disguise"}
+        </button>
+      )}
+    </section>
   );
 }

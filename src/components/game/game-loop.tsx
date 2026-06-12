@@ -48,6 +48,10 @@ import {
   freeTextToChoice,
   validateFreeText,
   FREE_TEXT_MAX_LENGTH,
+  applyExposure,
+  checkExposure,
+  identityPromptContext,
+  recordIdentityUse,
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
@@ -240,6 +244,10 @@ function buildAICallParams(currentSession: GameSession) {
     seq,
     abilities: seq?.abilities.map((a) => a.name) ?? [],
     actingReqs: seq?.actingRequirements ?? [],
+    // Active persona (issue #22): narrator presentation context.
+    identityContext: currentSession.identityState
+      ? identityPromptContext(currentSession.identityState)
+      : null,
     // Curated guardrail selection lives in @/lib/lore (tested); the component
     // stays a thin caller (issue #63).
     loreContext: selectCuratedLore(
@@ -498,7 +506,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         return;
       }
 
-      const { seq, abilities, actingReqs, loreContext } =
+      const { seq, abilities, actingReqs, loreContext, identityContext } =
         buildAICallParams(currentSession);
 
       const instruction: InstructionType = currentSession.activePillar
@@ -516,6 +524,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           gameState: currentSession.gameState,
           memory: currentSession.memory,
           loreContext,
+          identityContext,
           instruction,
           playerAction,
           abilities,
@@ -583,7 +592,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       const pillar: GameplayPillar = CHOICE_PILLAR_MAP[selectedChoice.type];
       const instruction = PILLAR_INSTRUCTION_MAP[pillar];
 
-      const { abilities, actingReqs, loreContext } = buildAICallParams(currentSession);
+      const { abilities, actingReqs, loreContext, identityContext } =
+        buildAICallParams(currentSession);
 
       try {
         const result = await generate({
@@ -591,6 +601,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           gameState: currentSession.gameState,
           memory: currentSession.memory,
           loreContext,
+          identityContext,
           instruction,
           playerAction: selectedChoice.text,
           abilities,
@@ -696,6 +707,21 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         session.turnCount,
         playerAction,
       );
+      // Identity bookkeeping (issue #22): a public turn in a persona teaches
+      // present NPCs that face and accrues exposure; once risk runs high, a
+      // shared witness may connect two faces.
+      let identityState = session.identityState;
+      let exposureNarrative: string | null = null;
+      if (identityState && identityState.activeIdentityId) {
+        identityState = recordIdentityUse(identityState, gameState.npcsPresent);
+        const exposure = checkExposure(identityState);
+        if (exposure) {
+          identityState = applyExposure(identityState, exposure);
+          exposureNarrative = `${exposure.npc} looks at you a heartbeat too long — and you see the recognition land. Two of your faces are now one person to them.`;
+          setFreeTextNotice(exposureNarrative);
+        }
+      }
+
       // Journal capture (issue #11): the AI's flag plus deterministic
       // detections from the state delta, recorded before the phase advances.
       const seq = getSequence(gameState.pathwayId, gameState.sequenceLevel);
@@ -709,7 +735,31 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           arc: `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
         }),
       );
-      const updated = { ...session, gameState, memory };
+      if (exposureNarrative) {
+        appendJournalEntries(session.id, [
+          {
+            id: crypto.randomUUID(),
+            turnNumber: session.turnCount,
+            createdAt: Date.now(),
+            location: gameState.location,
+            eventType: "major-event",
+            summary: "An identity was exposed.",
+            narrative: exposureNarrative,
+            involvedNpcs: gameState.npcsPresent,
+            arc: `Sequence ${gameState.sequenceLevel}`,
+            characterId: gameState.characterId,
+            ...(gameState.characterName
+              ? { characterName: gameState.characterName }
+              : {}),
+          },
+        ]);
+      }
+      const updated = {
+        ...session,
+        gameState,
+        memory,
+        ...(identityState ? { identityState } : {}),
+      };
       const next = transition(updated, { type: "APPLY_CONSEQUENCES" });
       updateSession(next);
     }

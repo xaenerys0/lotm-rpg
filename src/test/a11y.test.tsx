@@ -19,6 +19,9 @@ import GlossaryPage from "@/app/(game)/glossary/page";
 import {
   buildLegacy,
   endSession,
+  createIdentity,
+  createIdentityState,
+  switchIdentity,
   addAnnotation,
   addJournalEntries,
   createJournal,
@@ -239,7 +242,23 @@ describe("accessibility — stub pages", () => {
         },
       ],
     };
-    const session = createSession(gameState, "sheet-1", 1000);
+    const session = {
+      ...createSession(gameState, "sheet-1", 1000),
+      identityState: switchIdentity(
+        createIdentity(
+          createIdentityState(),
+          {
+            name: "Sherlock Moriarty",
+            appearance: "A lean detective",
+            socialClass: "middle",
+          },
+          "full",
+          1000,
+          "id-1",
+        ),
+        "id-1",
+      ),
+    };
     localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["sheet-1"]));
     localStorage.setItem(SESSION_KEY_PREFIX + "sheet-1", serializeSession(session));
     await expectNoAxeViolations(<CharacterPage />);

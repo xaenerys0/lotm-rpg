@@ -81,6 +81,8 @@ export interface GenerateOptions {
   loreContext: LoreContext;
   /** Gated retrieval results (issue #64); packed after the curated lore. */
   retrievedChunks?: RetrievedLoreChunk[];
+  /** Active-persona context (issue #22), from `identityPromptContext`. */
+  identityContext?: string | null;
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];
@@ -98,6 +100,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     memory: options.memory,
     loreContext: options.loreContext,
     retrievedChunks: options.retrievedChunks,
+    identityContext: options.identityContext,
     instruction: options.instruction,
     playerAction: options.playerAction,
     abilities: options.abilities,

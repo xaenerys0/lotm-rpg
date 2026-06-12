@@ -45,6 +45,11 @@ export interface GameSession {
   errorMessage: string | null;
   errorCode: AIErrorCode | "CONFIG_MISSING" | null;
   /**
+   * Pathway-gated personas (issue #22). Absent on sessions that have never
+   * created an identity; `activeIdentityId: null` = the true face.
+   */
+  identityState?: import("./identity").IdentityState;
+  /**
    * Permadeath marker (issue #12). Set once, never cleared: the session is
    * preserved as a historical record (inventory, memory, journal stay
    * readable) but play cannot continue.
