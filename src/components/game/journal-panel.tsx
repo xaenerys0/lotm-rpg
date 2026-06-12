@@ -3,6 +3,8 @@
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 
 import { createClient } from "@/lib/supabase/client";
+import { sceneArtKey } from "@/lib/ai";
+import { SceneArt } from "./scene-art";
 import { noopSubscribe } from "@/lib/react";
 import {
   addAnnotation,
@@ -262,6 +264,7 @@ export function JournalPanel() {
                   <li key={e.id}>
                     <EntryCard
                       entry={e}
+                      sessionId={activeSessionId ?? ""}
                       journal={journal}
                       onChange={updateJournal}
                       onAnnotationSync={syncAnnotationRemote}
@@ -289,11 +292,13 @@ function groupByArc(entries: readonly JournalEntry[]): [string, JournalEntry[]][
 
 function EntryCard({
   entry,
+  sessionId,
   journal,
   onChange,
   onAnnotationSync,
 }: {
   entry: JournalEntry;
+  sessionId: string;
   journal: Journal;
   onChange: (next: Journal) => void;
   onAnnotationSync: (annotationId: string, next: Journal) => void;
@@ -350,6 +355,13 @@ function EntryCard({
 
       {expanded && (
         <div className="mt-3 space-y-4">
+          {/* Cached illustration only (issue #20) — the journal never spends. */}
+          <SceneArt
+            artKey={sceneArtKey(sessionId, entry.turnNumber)}
+            context={{ summary: entry.summary, location: entry.location }}
+            config={null}
+            enabled={false}
+          />
           <p className="font-serif text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
             {entry.narrative}
           </p>

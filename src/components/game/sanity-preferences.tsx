@@ -45,6 +45,12 @@ export function SanityPreferences() {
         onToggle={() => toggle("sanityMeterVisible")}
       />
       <PreferenceToggle
+        label="Scene illustrations"
+        description="Illustrate key moments (advancement, deaths, battles) with AI-generated art via your own OpenAI key. Roughly $0.04 per image — off by default."
+        checked={prefs.sceneArtEnabled}
+        onToggle={() => toggle("sceneArtEnabled")}
+      />
+      <PreferenceToggle
         label="High-contrast mode"
         description="Brightens text and borders and quiets the fog and lamplight effects, so the words always come first."
         checked={prefs.highContrast}

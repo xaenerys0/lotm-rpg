@@ -89,6 +89,16 @@ export {
 } from "./embeddings";
 
 export {
+  buildSceneArtPrompt,
+  generateSceneArt,
+  sceneArtKey,
+  sceneArtSupported,
+  shouldGenerateSceneArt,
+  SCENE_ART_STYLE,
+  type SceneArtContext,
+} from "./scene-art";
+
+export {
   addUsage,
   DEFAULT_TOKEN_RATES,
   deserializeUsage,

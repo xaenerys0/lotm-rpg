@@ -1,0 +1,91 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import {
+  buildSceneArtPrompt,
+  generateSceneArt,
+  sceneArtSupported,
+  type ProviderConfig,
+  type SceneArtContext,
+} from "@/lib/ai";
+
+import { getCachedArt, putCachedArt } from "./scene-art-cache";
+
+// Scene illustration (issue #20): renders a cached image immediately; when
+// absent (and the player has opted in with a supporting provider) it
+// generates once, caches, and fades in. Failures stay silent — art is
+// garnish, never a blocker.
+
+export function SceneArt({
+  artKey,
+  context,
+  config,
+  enabled,
+}: {
+  artKey: string;
+  context: SceneArtContext;
+  config: ProviderConfig | null;
+  enabled: boolean;
+}) {
+  const [src, setSrc] = useState<string | null>(null);
+  const [generating, setGenerating] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const cached = await getCachedArt(artKey);
+      if (cancelled) return;
+      if (cached) {
+        setSrc(cached);
+        return;
+      }
+      if (!enabled || !config || !sceneArtSupported(config)) return;
+      setGenerating(true);
+      try {
+        const dataUrl = await generateSceneArt(config, buildSceneArtPrompt(context));
+        await putCachedArt(artKey, dataUrl);
+        if (!cancelled) setSrc(dataUrl);
+      } catch {
+        // Art is optional — never surface an error for it.
+      } finally {
+        if (!cancelled) setGenerating(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // Regenerate only when the moment itself changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [artKey, enabled]);
+
+  if (src) {
+    return (
+      <figure className="my-4 animate-fade-in">
+        {/* Data-URL output from the generator — next/image adds nothing here. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={src}
+          alt={`Illustration: ${context.summary}`}
+          className="mx-auto w-full max-w-md rounded-lg border border-border/70 shadow-[0_0_32px_rgba(0,0,0,0.5)]"
+        />
+        <figcaption className="mt-2 text-center font-serif text-xs italic text-muted">
+          {context.summary}
+        </figcaption>
+      </figure>
+    );
+  }
+
+  if (generating) {
+    return (
+      <p
+        role="status"
+        className="my-4 text-center font-serif text-xs italic text-muted animate-pulse"
+      >
+        An illustration takes shape in the fog…
+      </p>
+    );
+  }
+
+  return null;
+}

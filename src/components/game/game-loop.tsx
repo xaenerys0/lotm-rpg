@@ -52,6 +52,7 @@ import {
   checkExposure,
   identityPromptContext,
   recordIdentityUse,
+  validateJournalFlag,
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
@@ -79,6 +80,8 @@ import {
 } from "@/lib/ai";
 import { selectCuratedLore } from "@/lib/lore";
 import { createClient } from "@/lib/supabase/client";
+import { SceneArt } from "./scene-art";
+import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
 import { getPathway, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
 
@@ -907,7 +910,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             )}
             {session.phase === "resolution" && <ResolutionPhase />}
             {session.phase === "consequences" && (
-              <ConsequencesPhase session={session} onContinue={handleContinue} />
+              <ConsequencesPhase
+                session={session}
+                onContinue={handleContinue}
+                config={providerConfig}
+                sceneArtEnabled={preferences.sceneArtEnabled}
+              />
             )}
             {session.phase === "error" && (
               <ErrorPhase
@@ -1286,14 +1294,21 @@ function CombatLauncher({ onStart }: { onStart: (ambush: boolean) => void }) {
 function ConsequencesPhase({
   session,
   onContinue,
+  config,
+  sceneArtEnabled,
 }: {
   session: GameSession;
   onContinue: () => void;
+  config: ProviderConfig | null;
+  sceneArtEnabled: boolean;
 }) {
   const resolution = session.lastResolution;
   if (!resolution) return null;
 
   const response = resolution.response;
+  // Scene art (issue #20): the AI's journal flag marks the key moments.
+  const artFlag = validateJournalFlag(response.journalEntry);
+  const illustrate = artFlag !== null && shouldGenerateSceneArt(artFlag.eventType);
   const hasStateChanges =
     response.worldStateChanges && response.worldStateChanges.length > 0;
   const hasItems = response.itemsDiscovered && response.itemsDiscovered.length > 0;
@@ -1328,6 +1343,18 @@ function ConsequencesPhase({
             {response.narrative}
           </p>
         </div>
+        {illustrate && artFlag && (
+          <SceneArt
+            artKey={sceneArtKey(session.id, session.turnCount)}
+            context={{
+              summary: artFlag.summary,
+              location: session.gameState.location,
+              ...(seq ? { pathwayName: seq.name } : {}),
+            }}
+            config={config}
+            enabled={sceneArtEnabled}
+          />
+        )}
       </div>
 
       {/* Consequences Summary */}
