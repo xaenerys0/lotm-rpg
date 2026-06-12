@@ -81,6 +81,7 @@ import {
 import { selectCuratedLore } from "@/lib/lore";
 import { createClient } from "@/lib/supabase/client";
 import { SceneArt } from "./scene-art";
+import { WorldMessages } from "./world-messages";
 import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
 import { getPathway, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
@@ -906,6 +907,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   freeTextNotice={freeTextNotice}
                 />
                 <CombatLauncher onStart={startCombat} />
+                <WorldMessages location={session.gameState.location} />
               </>
             )}
             {session.phase === "resolution" && <ResolutionPhase />}

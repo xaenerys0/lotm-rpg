@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Five migrations in order:
+Migrations live in `migrations/`. Six migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -39,6 +39,12 @@ Migrations live in `migrations/`. Five migrations in order:
    - `journal_entries` — auto-recorded events: `id` (client-supplied uuid), `user_id` (FK `auth.users`), `session_id`, `character_id`/`character_name`, `turn_number`, `event_type` (checked against the seven journal event types), `summary`, `narrative`, `location`, `involved_npcs`, `arc`, `created_at`
    - `journal_annotations` — player-only notes: `id`, `user_id`, `entry_id` (FK cascade), `text`, timestamps. **Never included in AI context.**
    - RLS: owner-only (`auth.uid() = user_id`) for all operations on both tables
+
+6. `20260612230000_create_world_messages.sql` — Shared world messages (issue #17)
+   - `world_messages` — template-composed notes: `id`, `user_id`, `location` (indexed), `template_id`, `fills` (jsonb), `text` (CHECK ≤120 chars), `helpful`/`unhelpful` counters
+   - `world_message_votes` — PK `(message_id, user_id)`; written only via the RPC
+   - RLS: authenticated read ALL messages (shared world), owner insert/delete; votes readable by owner
+   - `rate_world_message(uuid, boolean)` — SECURITY DEFINER: one vote per player (unique violation = silent no-op), maintains counters atomically; EXECUTE granted to `authenticated` only
 
 ## Auth Session Persistence
 

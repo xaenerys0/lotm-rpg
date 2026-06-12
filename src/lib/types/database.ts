@@ -244,9 +244,72 @@ export interface Database {
         };
         Relationships: [];
       };
+      world_messages: {
+        // Template-composed shared messages (issue #17). Shared read.
+        Row: {
+          id: string;
+          user_id: string;
+          location: string;
+          template_id: string;
+          fills: Json;
+          text: string;
+          helpful: number;
+          unhelpful: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          location: string;
+          template_id: string;
+          fills?: Json;
+          text: string;
+          helpful?: number;
+          unhelpful?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          location?: string;
+          template_id?: string;
+          fills?: Json;
+          text?: string;
+          helpful?: number;
+          unhelpful?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      world_message_votes: {
+        // One vote per player per message; written via rate_world_message.
+        Row: {
+          message_id: string;
+          user_id: string;
+          helpful: boolean;
+          created_at: string;
+        };
+        Insert: {
+          message_id: string;
+          user_id: string;
+          helpful: boolean;
+          created_at?: string;
+        };
+        Update: {
+          message_id?: string;
+          user_id?: string;
+          helpful?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
+      rate_world_message: {
+        Args: { p_message_id: string; p_helpful: boolean };
+        Returns: undefined;
+      };
       match_source_chunks: {
         Args: {
           p_query_embedding: string;

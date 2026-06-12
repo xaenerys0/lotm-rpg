@@ -34,6 +34,22 @@ export {
 } from "./digestion";
 
 export {
+  composeMessage,
+  getMessageTemplate,
+  selectMessagesForScene,
+  MAX_MESSAGES_PER_SCENE,
+  MESSAGE_TEMPLATES,
+  type MessageCategory,
+  type MessageTemplate,
+  type WorldMessage,
+} from "./world-messages";
+export {
+  fetchLocationMessages,
+  placeMessage,
+  rateMessage,
+  type WorldMessagesClient,
+} from "./world-messages-sync";
+export {
   activeIdentity,
   adjustReputation,
   applyExposure,
