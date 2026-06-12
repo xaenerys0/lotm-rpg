@@ -50,6 +50,7 @@ import {
 import {
   createMemoryState,
   addTurn,
+  addSessionFact,
   summarizeTurn,
   extractSessionFacts,
   estimateMemoryTokens,
@@ -1855,6 +1856,48 @@ describe("prompts", () => {
       const hasHistory = assembly.layers.some((l) => l.content.includes("History"));
       expect(hasHistory).toBe(false);
     });
+
+    it("includes the city narration tone layer when provided", () => {
+      const assembly = assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        cityNarration: "Backlund is the capital and the City of Dust.",
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      const tone = assembly.layers.find((l) => l.content.includes("Setting Tone"));
+      expect(tone).toBeDefined();
+      expect(tone!.content).toContain("City of Dust");
+    });
+
+    it("omits the city narration layer when null or absent", () => {
+      const withNull = assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        cityNarration: null,
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      const withAbsent = assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      expect(withNull.layers.some((l) => l.content.includes("Setting Tone"))).toBe(false);
+      expect(withAbsent.layers.some((l) => l.content.includes("Setting Tone"))).toBe(
+        false,
+      );
+    });
   });
 
   describe("promptToMessages", () => {
@@ -2122,6 +2165,34 @@ describe("memory", () => {
       turn.aiResponse = { narrative: "Nothing happened." };
       const facts = extractSessionFacts(turn);
       expect(facts).toHaveLength(0);
+    });
+  });
+
+  describe("addSessionFact", () => {
+    it("appends a fact without mutating the input", () => {
+      const state = createMemoryState();
+      const next = addSessionFact(state, {
+        type: "event",
+        description: "Travelled to Backlund.",
+        turnNumber: 3,
+      });
+      expect(next.sessionFacts).toHaveLength(1);
+      expect(next.sessionFacts[0].description).toBe("Travelled to Backlund.");
+      expect(state.sessionFacts).toHaveLength(0);
+    });
+
+    it("caps session facts at the maximum, evicting the oldest", () => {
+      let state = createMemoryState();
+      for (let i = 0; i < 45; i++) {
+        state = addSessionFact(state, {
+          type: "event",
+          description: `fact ${i}`,
+          turnNumber: i,
+        });
+      }
+      expect(state.sessionFacts.length).toBeLessThanOrEqual(40);
+      // The earliest facts were evicted first.
+      expect(state.sessionFacts[0].description).toBe("fact 5");
     });
   });
 

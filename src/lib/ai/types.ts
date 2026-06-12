@@ -235,6 +235,12 @@ export interface PromptInput {
    * is never crowded out.
    */
   retrievedChunks?: RetrievedLoreChunk[];
+  /**
+   * Per-city narration tone (issue #23), one sentence, from
+   * `cityNarrationDirective(location)`. Omitted/`null` for cities with no
+   * specific tone — the assembler then drops the layer.
+   */
+  cityNarration?: string | null;
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];

@@ -34,8 +34,8 @@ import {
   createSession,
   createDefaultGameState,
   serializeSession,
-  SESSION_KEY_PREFIX,
   SESSION_INDEX_KEY,
+  SESSION_KEY_PREFIX,
   JOURNAL_KEY_PREFIX,
   createEncounter,
   applyPreparation,
@@ -353,5 +353,15 @@ describe("accessibility — stub pages", () => {
     );
     localStorage.setItem(JOURNAL_KEY_PREFIX + "jrnl-1", serializeJournal(journal));
     await expectNoAxeViolations(<JournalPage />);
+  });
+
+  it("map page (active session, travel controls) has no violations", async () => {
+    const session = createSession(
+      createDefaultGameState(1, "char-map", "Klein"),
+      "map-1",
+    );
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["map-1"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "map-1", serializeSession(session));
+    await expectNoAxeViolations(<MapPage />);
   });
 });

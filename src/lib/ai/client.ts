@@ -85,6 +85,8 @@ export interface GenerateOptions {
   identityContext?: string | null;
   /** Epoch tone directive (issues #26/#29), from `epochNarrationDirective`. */
   epochContext?: string | null;
+  /** Per-city narration tone (issue #23), from `cityNarrationDirective`. */
+  cityNarration?: string | null;
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];
@@ -104,6 +106,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     retrievedChunks: options.retrievedChunks,
     identityContext: options.identityContext,
     epochContext: options.epochContext,
+    cityNarration: options.cityNarration,
     instruction: options.instruction,
     playerAction: options.playerAction,
     abilities: options.abilities,

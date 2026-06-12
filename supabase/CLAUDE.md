@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Nine migrations in order:
+Migrations live in `migrations/`. Ten migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -48,9 +48,16 @@ Migrations live in `migrations/`. Nine migrations in order:
    - RLS: authenticated read ALL messages (shared world), owner insert/delete; votes readable by owner
    - `rate_world_message(uuid, boolean)` — SECURITY DEFINER: one vote per player (unique violation = silent no-op), maintains counters atomically; EXECUTE granted to `authenticated` only
 
-8. `20260613010000_create_player_showcases.sql` — Player showcase + leaderboards (issue #18)
+8. `20260613000000_create_marketplace.sql` — Item marketplace (issue #16)
+   - `market_listings` — `id`, `seller_id`, `item_name`/`item_description`/`item_category` (checked against rules-engine categories), `price_pence` (CHECK positive int under cap), `status` (`active`/`sold`/`delisted`), `buyer_id`, timestamps
+   - RLS: authenticated read active listings + own history; owner insert/delist
+   - `purchase_listing(uuid)` — SECURITY DEFINER: row-locked atomic purchase, self-purchase and stale listings rejected server-side; the ONLY path to `sold`; EXECUTE granted to `authenticated` only
+
+9. `20260613010000_create_player_showcases.sql` — Player showcase + leaderboards (issue #18)
    - `player_showcases` — one row per player: `display_name`, `public` (default false), `pathway_id`, `sequence_level`, `achievement_ids`, `divergence_score` (CHECK 0-100), `stats` jsonb
    - RLS: owners full access; other authenticated users may SELECT only rows where `public = true` — private data is never selectable, so it cannot leak
+
+10. `20260613020000_seed_additional_city_lore.sql` — Seed lore for the three additional cities (issue #23): Backlund, Trier, and Bayam (18 entries). Generated from `src/lib/lore/{backlund,trier,bayam}.ts` (TS source is canonical). Same `lore_entries` INSERT format as migration 3.
 
 ## Auth Session Persistence
 

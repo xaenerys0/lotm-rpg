@@ -249,6 +249,15 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     layers.push(demigodLayer);
   }
 
+  // Per-city narration tone (issue #23): one sentence so each city reads with
+  // its own atmosphere. Dropped when the location maps to no specific tone.
+  if (input.cityNarration) {
+    layers.push({
+      role: "system",
+      content: `## Setting Tone\n${input.cityNarration}`,
+    });
+  }
+
   // Active persona (issue #22): one presentation-context line so tone and
   // social access track the identity the character is currently wearing.
   if (input.identityContext) {

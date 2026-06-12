@@ -90,7 +90,12 @@ import {
   type SessionUsage,
   type TurnUsage,
 } from "@/lib/ai";
-import { selectCuratedLore, epochNarrationDirective, epochOpeningBeat } from "@/lib/lore";
+import {
+  selectCuratedLore,
+  epochNarrationDirective,
+  epochOpeningBeat,
+  cityNarrationDirective,
+} from "@/lib/lore";
 import { createClient } from "@/lib/supabase/client";
 import { SceneArt } from "./scene-art";
 import { WorldMessages } from "./world-messages";
@@ -273,6 +278,9 @@ function buildAICallParams(currentSession: GameSession) {
       currentSession.gameState.location,
       TOKEN_BUDGET.lore,
     ),
+    // Per-city narration tone (issue #23): one tone sentence per city, null
+    // for cities (incl. the Tingen start) with no specific tone.
+    cityNarration: cityNarrationDirective(currentSession.gameState.location),
   };
 }
 
@@ -539,8 +547,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         return;
       }
 
-      const { seq, abilities, actingReqs, loreContext, identityContext, epochContext } =
-        buildAICallParams(currentSession);
+      const {
+        seq,
+        abilities,
+        actingReqs,
+        loreContext,
+        identityContext,
+        epochContext,
+        cityNarration,
+      } = buildAICallParams(currentSession);
 
       const instruction: InstructionType = currentSession.activePillar
         ? PILLAR_INSTRUCTION_MAP[currentSession.activePillar]
@@ -560,6 +575,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           loreContext,
           identityContext,
           epochContext,
+          cityNarration,
           instruction,
           playerAction,
           abilities,
@@ -627,8 +643,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       const pillar: GameplayPillar = CHOICE_PILLAR_MAP[selectedChoice.type];
       const instruction = PILLAR_INSTRUCTION_MAP[pillar];
 
-      const { abilities, actingReqs, loreContext, identityContext, epochContext } =
-        buildAICallParams(currentSession);
+      const {
+        abilities,
+        actingReqs,
+        loreContext,
+        identityContext,
+        epochContext,
+        cityNarration,
+      } = buildAICallParams(currentSession);
 
       try {
         const result = await generate({
@@ -638,6 +660,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           loreContext,
           identityContext,
           epochContext,
+          cityNarration,
           instruction,
           playerAction: selectedChoice.text,
           abilities,

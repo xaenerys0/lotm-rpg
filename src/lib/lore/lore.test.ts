@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   ALL_LORE_ENTRIES,
+  BACKLUND_LORE,
+  BAYAM_LORE,
+  cityNarrationDirective,
   DARKNESS_PATHWAY_LORE,
   DEATH_PATHWAY_LORE,
   DOOR_PATHWAY_LORE,
@@ -20,6 +23,7 @@ import {
   ORGANIZATION_LORE,
   SUN_PATHWAY_LORE,
   TINGEN_LORE,
+  TRIER_LORE,
   TYRANT_PATHWAY_LORE,
   VISIONARY_PATHWAY_LORE,
 } from "./index";
@@ -88,6 +92,20 @@ describe("Lore content coverage", () => {
   it("has Tingen City location entries", () => {
     expect(TINGEN_LORE.length).toBeGreaterThanOrEqual(5);
     expect(TINGEN_LORE.every((e) => e.category === "location")).toBe(true);
+  });
+
+  it("has Backlund, Trier, and Bayam city location sets", () => {
+    for (const [lore, city] of [
+      [BACKLUND_LORE, "backlund"],
+      [TRIER_LORE, "trier"],
+      [BAYAM_LORE, "bayam"],
+    ] as const) {
+      expect(lore.length).toBeGreaterThanOrEqual(5);
+      // Every entry carries the city field that selection/narration match on.
+      expect(lore.every((e) => e.city === city)).toBe(true);
+      // Each set leads with an overview entry.
+      expect(lore.some((e) => e.slug === `${city}-city-overview`)).toBe(true);
+    }
   });
 
   it("has Fifth Epoch baseline entries", () => {
@@ -205,10 +223,34 @@ describe("Lore query helpers", () => {
   });
 });
 
+describe("cityNarrationDirective", () => {
+  it("returns a tone sentence for each new city, matching the first word", () => {
+    expect(cityNarrationDirective("Backlund")).toContain("capital");
+    expect(cityNarrationDirective("Empress Borough, Backlund")).toBeNull();
+    expect(cityNarrationDirective("Backlund — East Borough")).toContain("Dust");
+    expect(cityNarrationDirective("Trier")).toContain("Intis");
+    expect(cityNarrationDirective("Bayam Harbour")).toContain("Archipelago");
+  });
+
+  it("returns null for unknown or unmapped locations", () => {
+    expect(cityNarrationDirective("Tingen City")).toBeNull();
+    expect(cityNarrationDirective("Backwater Village")).toBeNull();
+    expect(cityNarrationDirective("")).toBeNull();
+    expect(cityNarrationDirective("   ")).toBeNull();
+  });
+
+  it("is case-insensitive on the leading word", () => {
+    expect(cityNarrationDirective("BAYAM")).toBe(cityNarrationDirective("bayam"));
+  });
+});
+
 describe("Total lore corpus", () => {
   it("aggregates all sub-collections", () => {
     const expected =
       TINGEN_LORE.length +
+      BACKLUND_LORE.length +
+      TRIER_LORE.length +
+      BAYAM_LORE.length +
       FIFTH_EPOCH_LORE.length +
       ORGANIZATION_LORE.length +
       NPC_LORE.length +

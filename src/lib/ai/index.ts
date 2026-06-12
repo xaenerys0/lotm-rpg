@@ -59,6 +59,7 @@ export {
 export {
   createMemoryState,
   addTurn,
+  addSessionFact,
   summarizeTurn,
   extractSessionFacts,
   estimateMemoryTokens,

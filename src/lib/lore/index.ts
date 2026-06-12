@@ -30,8 +30,12 @@ export {
   type RetrievedChunk,
   type SupabaseRpcClient,
 } from "./retrieval";
+export { cityNarrationDirective } from "./narration";
 
 export { TINGEN_LORE } from "./tingen";
+export { BACKLUND_LORE } from "./backlund";
+export { TRIER_LORE } from "./trier";
+export { BAYAM_LORE } from "./bayam";
 export { FIFTH_EPOCH_LORE } from "./fifth-epoch";
 export { ORGANIZATION_LORE } from "./organizations";
 export { NPC_LORE } from "./npcs";
@@ -47,6 +51,9 @@ export { HANGED_MAN_PATHWAY_LORE } from "./pathway-hanged-man";
 
 import type { LoreEntry } from "./types";
 import { TINGEN_LORE } from "./tingen";
+import { BACKLUND_LORE } from "./backlund";
+import { TRIER_LORE } from "./trier";
+import { BAYAM_LORE } from "./bayam";
 import { FIFTH_EPOCH_LORE } from "./fifth-epoch";
 import { ORGANIZATION_LORE } from "./organizations";
 import { NPC_LORE } from "./npcs";
@@ -62,6 +69,9 @@ import { HANGED_MAN_PATHWAY_LORE } from "./pathway-hanged-man";
 
 export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...TINGEN_LORE,
+  ...BACKLUND_LORE,
+  ...TRIER_LORE,
+  ...BAYAM_LORE,
   ...FIFTH_EPOCH_LORE,
   ...ORGANIZATION_LORE,
   ...NPC_LORE,

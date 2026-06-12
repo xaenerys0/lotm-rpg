@@ -258,6 +258,17 @@ export {
 } from "./session";
 
 export {
+  CITIES,
+  canTravelTo,
+  cityIdFromLocation,
+  getCity,
+  travelDays,
+  travelTo,
+  type City,
+  type TravelResult,
+} from "./travel";
+
+export {
   AMBUSH_PREP_CAP,
   VICTORY_THRESHOLD,
   DEFEAT_THRESHOLD,

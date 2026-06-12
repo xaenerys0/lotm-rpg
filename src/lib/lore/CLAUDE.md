@@ -20,6 +20,10 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 - `epochs.ts` — Epoch starting points (issues #26/#29): `EPOCHS` (all five — player-safe summary, narrator `toneDirective`, `startingLocation`, `openingBeat`, `dangerModifier`; the Fifth is the baseline and adds nothing), `getEpoch` (unknown → Fifth), `epochNarrationDirective`, `epochOpeningBeat`. Threaded into prompt assembly as the `## Epoch` system layer (PromptInput.epochContext) and into the first scene's player action.
 - `glossary.ts` — In-game glossary (issue #14): `GLOSSARY_TERMS` with **progressive disclosure** via `revealAtSequence` (9-8 basics at the start; rituals/organisations ~8-7; demigod concepts at 5; Sefirah-tier mysteries at 4). `glossaryForSequence(level)`, `getGlossaryTerm(slug)`, `sealedTermCount(level)`. Entries are player-safe world-building — no narrator-only lore.
 - `tingen.ts` — Tingen City locations and geography.
+- `backlund.ts` — Backlund (Loen capital) locations: overview, Empress/Hillston/East boroughs, the Backlund Bridge & Tussock, the capital's Churches (issue #23).
+- `trier.ts` — Trier (Intis Republic capital) locations: overview, city walls & quartiers, the Island District & Saint Viève Cathedral, the underground/catacombs, stations & transport, the Church of the Eternal Blazing Sun (issue #23).
+- `bayam.ts` — Bayam (Rorsted Archipelago capital) locations: overview, harbour/adventurers' quarter, Cathedral of Waves, streets & cemeteries, the Sea God Kalvetua & native belief (issue #23).
+- `narration.ts` — `cityNarrationDirective(location)` (issue #23): one tone sentence per city (Backlund = soot/class/intrigue; Trier = sun-worship/revolutionary ferment; Bayam = salt/colonial trade/island superstition), matched on the location's lowercase first word; `null` for unknown/unmapped cities (incl. the Tingen start). Threaded into prompt assembly via `PromptInput.cityNarration`.
 - `fifth-epoch.ts` — Fifth Epoch baseline: politics, technology, social norms.
 - `organizations.ts` — Nighthawks, Mandated Punishers, Machinery Hivemind, Psychology Alchemists, Aurora Order.
 - `npcs.ts` — Key Tingen NPCs: Dunn Smith, Leonard Mitchell, Old Neil, Daly Simone, Azik Eggers, Klein Moretti, Melissa Moretti, Ince Zangwill.
@@ -37,7 +41,7 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 
 ## Database Table
 
-`lore_entries` in Supabase (migration `20260527111842`). Seeded by `20260527113655`; the five additional pathways (Darkness, Tyrant, Door, Error, Hanged Man) are seeded by `20260612170000`.
+`lore_entries` in Supabase (migration `20260527111842`). Seeded by `20260527113655`; the five additional pathways (Darkness, Tyrant, Door, Error, Hanged Man) are seeded by `20260612170000`; the three additional cities (Backlund, Trier, Bayam) by `20260613020000`.
 
 Metadata columns for filtering: `category`, `pathway`, `epoch`, `city`, `npcs`, `sequences`, `tags`.
 `embedding` column (vector 1536) is nullable — populated post-MVP via pgvector.

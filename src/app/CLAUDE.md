@@ -53,7 +53,7 @@ The app is installable on Android and iOS ("Add to Home Screen"):
 - `/play` — Dashboard with pathway selection, new game, continue, and active game loop. Server component wraps `PlayDashboard` client component.
 - `/character` — Character sheet (issue #13). Server component wraps `CharacterSheet` client component.
 - `/journal` — Story journal (issue #11). Server component wraps `JournalPanel` client component.
-- `/map` — Tingen district gazetteer (issue #13). Server component wraps `MapPanel` client component.
+- `/map` — Tingen district gazetteer (issue #13) + farther-afield city travel (issue #23). Server component wraps `MapPanel` client component.
 - `/glossary` — In-game glossary with progressive disclosure (issue #14). Server component wraps `GlossaryPanel` client component.
 - `/market` — Player trading post (issue #16). Server component wraps `MarketPanel` client component.
 - `/profile` — Player showcase with privacy controls (issue #18). Server component wraps `ShowcasePanel`.
