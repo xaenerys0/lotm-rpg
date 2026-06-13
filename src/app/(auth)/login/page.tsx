@@ -17,9 +17,9 @@ export default async function LoginPage() {
     <main
       id="main-content"
       tabIndex={-1}
-      className="flex min-h-screen items-center justify-center bg-background"
+      className="flex min-h-screen items-center justify-center bg-background px-4 py-8"
     >
-      <div className="w-full max-w-md space-y-8 rounded-lg border border-border bg-surface p-8 shadow-lg">
+      <div className="w-full max-w-md space-y-8 rounded-lg border border-border bg-surface p-6 shadow-lg sm:p-8">
         <div className="text-center">
           <h1 className="font-serif text-3xl font-bold text-amber">
             Lord of the Mysteries

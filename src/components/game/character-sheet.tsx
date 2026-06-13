@@ -24,6 +24,7 @@ import {
   type SocialClass,
 } from "@/lib/game";
 import type { Item } from "@/lib/types/rules";
+import { purgeCharacter } from "./character-actions";
 
 // Character sheet panel (issue #13): identity, abilities & acting
 // requirements, condition, and the inventory. Sanity is shown as an in-world
@@ -53,17 +54,31 @@ export function CharacterSheet() {
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<Record<string, GameSession>>({});
+  // Locally-removed characters: the underlying store read is one-shot, so we
+  // track deletions here to keep the sheet in sync without a full re-read.
+  const [deletedIds, setDeletedIds] = useState<string[]>([]);
 
   const persistSession = useCallback((next: GameSession) => {
     setOverrides((prev) => ({ ...prev, [next.id]: next }));
     writeSession(next);
   }, []);
 
+  // Permanently delete the selected character (shared cleanup in
+  // `purgeCharacter` — same contract as the dashboard's Manage view), then drop
+  // it from the displayed list and fall back to another Beyonder.
+  const handleDelete = useCallback((sessionId: string) => {
+    purgeCharacter(sessionId);
+    setSelectedId(null);
+    setDeletedIds((prev) => [...prev, sessionId]);
+  }, []);
+
   if (sessions === null) {
     return <p className="text-sm text-muted">Consulting the records…</p>;
   }
 
-  if (sessions.length === 0) {
+  const livingSessions = sessions.filter((s) => !deletedIds.includes(s.id));
+
+  if (livingSessions.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
         <p className="font-serif text-lg italic text-foreground/70">
@@ -77,7 +92,8 @@ export function CharacterSheet() {
     );
   }
 
-  const baseSession = sessions.find((s) => s.id === selectedId) ?? sessions[0];
+  const baseSession =
+    livingSessions.find((s) => s.id === selectedId) ?? livingSessions[0];
   const session = overrides[baseSession.id] ?? baseSession;
   const state = session.gameState;
   const pathway = getPathway(state.pathwayId);
@@ -94,7 +110,7 @@ export function CharacterSheet() {
 
   return (
     <div className="space-y-8">
-      {sessions.length > 1 && (
+      {livingSessions.length > 1 && (
         <div>
           <label htmlFor="sheet-session" className="mb-1.5 block text-xs text-muted">
             Beyonder
@@ -103,9 +119,9 @@ export function CharacterSheet() {
             id="sheet-session"
             value={session.id}
             onChange={(e) => setSelectedId(e.target.value)}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
           >
-            {sessions.map((s) => (
+            {livingSessions.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.gameState.characterName ?? "Unnamed Beyonder"} — Turn {s.turnCount}
               </option>
@@ -301,7 +317,68 @@ export function CharacterSheet() {
           </div>
         )}
       </section>
+
+      {/* Delete character — two-step confirm so it is never a single misclick.
+          Keyed by session id so switching Beyonders resets any pending state. */}
+      <DeleteCharacter
+        key={session.id}
+        name={state.characterName ?? "Unnamed Beyonder"}
+        onDelete={() => handleDelete(session.id)}
+      />
     </div>
+  );
+}
+
+function DeleteCharacter({ name, onDelete }: { name: string; onDelete: () => void }) {
+  const [confirming, setConfirming] = useState(false);
+
+  return (
+    <section
+      aria-labelledby="sheet-danger"
+      className="rounded-lg border border-crimson/30 bg-crimson/[0.04] p-6"
+    >
+      <h2 id="sheet-danger" className="font-serif text-lg font-semibold text-sanity-low">
+        Delete Character
+      </h2>
+      <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted">
+        Permanently erase <span className="text-foreground/85">{name}</span> — the save,
+        journal, in-progress combat, and usage record all vanish. This cannot be undone.
+      </p>
+      {confirming ? (
+        <div
+          className="mt-4 flex flex-wrap items-center gap-2"
+          role="group"
+          aria-label={`Confirm deletion of ${name}`}
+        >
+          <span className="text-sm text-sanity-low" role="status">
+            Delete permanently?
+          </span>
+          <button
+            type="button"
+            onClick={onDelete}
+            className="min-h-[32px] rounded border border-crimson/50 bg-crimson/10 px-3 py-1.5 text-xs font-medium text-sanity-low transition-colors hover:bg-crimson/20"
+          >
+            Delete
+          </button>
+          <button
+            type="button"
+            onClick={() => setConfirming(false)}
+            className="min-h-[32px] rounded border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:text-foreground"
+          >
+            Cancel
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="mt-4 min-h-[32px] rounded border border-crimson/40 px-3 py-1.5 text-xs font-medium text-sanity-low transition-colors hover:border-crimson/60 hover:bg-crimson/10"
+          aria-label={`Delete ${name}`}
+        >
+          Delete this character
+        </button>
+      )}
+    </section>
   );
 }
 

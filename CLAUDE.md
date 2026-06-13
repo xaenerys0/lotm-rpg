@@ -8,24 +8,28 @@ Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
 
 ## Commands
 
-| Command             | Purpose             |
-| ------------------- | ------------------- |
-| `pnpm dev`          | Start dev server    |
-| `pnpm build`        | Production build    |
-| `pnpm lint`         | ESLint              |
-| `pnpm format`       | Prettier (write)    |
-| `pnpm format:check` | Prettier (check)    |
-| `pnpm typecheck`    | TypeScript check    |
-| `pnpm test`         | Vitest (single run) |
-| `pnpm test:watch`   | Vitest (watch mode) |
-| `pnpm rag:chunk`    | RAG chunk stage CLI |
-| `pnpm rag:embed`    | RAG embed stage CLI |
-| `pnpm rag:novel`    | RAG novel parse CLI |
-| `pnpm rag:wiki`     | RAG wiki parse CLI  |
-| `pnpm rag:eval`     | RAG eval harness    |
-| `pnpm rag:load`     | RAG load stage CLI  |
+| Command             | Purpose              |
+| ------------------- | -------------------- |
+| `pnpm dev`          | Start dev server     |
+| `pnpm build`        | Production build     |
+| `pnpm lint`         | ESLint               |
+| `pnpm format`       | Prettier (write)     |
+| `pnpm format:check` | Prettier (check)     |
+| `pnpm typecheck`    | TypeScript check     |
+| `pnpm test`         | Vitest (single run)  |
+| `pnpm test:watch`   | Vitest (watch mode)  |
+| `pnpm test:e2e`     | Playwright UI tests  |
+| `pnpm test:e2e:ui`  | Playwright (UI mode) |
+| `pnpm rag:chunk`    | RAG chunk stage CLI  |
+| `pnpm rag:embed`    | RAG embed stage CLI  |
+| `pnpm rag:novel`    | RAG novel parse CLI  |
+| `pnpm rag:wiki`     | RAG wiki parse CLI   |
+| `pnpm rag:eval`     | RAG eval harness     |
+| `pnpm rag:load`     | RAG load stage CLI   |
 
 Run a **single test file** with `pnpm vitest run <path>` (e.g. `pnpm vitest run src/lib/game/character-admin.test.ts`); filter to **one test by name** with `-t "<substring>"`. Check coverage with `pnpm vitest run --coverage` (the 95% gate that the pre-commit checklist enforces).
+
+**Playwright UI tests** live in `e2e/` (real-browser layout/responsiveness checks jsdom can't do — see `e2e/README.md`). The public tier runs with no backend; the authenticated game-page tier runs only when `E2E_SUPABASE_URL` is set. Not part of the Vitest run or the coverage gate.
 
 ## Architecture
 
@@ -63,6 +67,7 @@ docs/
 ├── rag-per-turn-budget.md # RAG latency/token/operator-cost budget (issue #64)
 ├── anchors-design.md      # Anchors system design (issue #35) — canon + data model
 └── rules/                 # Shared rule files (@-imported by scoped CLAUDE.md)
+e2e/                       # Playwright UI tests (real-browser responsiveness) — see e2e/README.md
 ```
 
 ## Key Conventions

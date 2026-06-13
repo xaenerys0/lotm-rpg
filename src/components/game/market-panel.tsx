@@ -253,7 +253,7 @@ export function MarketPanel() {
                   maxPrice: e.target.value ? Number(e.target.value) : undefined,
                 }))
               }
-              className="w-28 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none sm:w-28"
             />
           </div>
           <div>

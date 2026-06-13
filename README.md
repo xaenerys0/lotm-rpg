@@ -9,7 +9,7 @@ A single-player, AI-narrated browser RPG set in the Lord of the Mysteries univer
 - **Styling:** Tailwind CSS v4 (Victorian steampunk dark theme, `@theme inline` tokens — no config file)
 - **AI:** Provider-agnostic LLM layer (Anthropic, OpenAI, OpenRouter, Ollama, Ollama Cloud, Custom) — BYOK
 - **Retrieval:** Local-only RAG over the novel + wiki (CPU embeddings, pgvector)
-- **Testing:** Vitest 4 with a 95% coverage threshold
+- **Testing:** Vitest 4 (unit + jsdom/axe-core a11y) with a 95% coverage threshold, plus Playwright for real-browser UI/responsiveness checks
 - **PWA:** Installable on Android & iOS (manifest + minimal service worker)
 - **Deployment:** Vercel
 
@@ -45,6 +45,8 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 | `pnpm typecheck`    | TypeScript type check        |
 | `pnpm test`         | Run tests (single run)       |
 | `pnpm test:watch`   | Run tests (watch mode)       |
+| `pnpm test:e2e`     | Playwright UI/e2e tests      |
+| `pnpm test:e2e:ui`  | Playwright UI mode           |
 | `pnpm rag:novel`    | Parse the novel into chunks  |
 | `pnpm rag:wiki`     | Parse wiki pages into chunks |
 | `pnpm rag:chunk`    | RAG chunk stage              |
@@ -53,6 +55,8 @@ Open [http://localhost:3000](http://localhost:3000) to see the app.
 | `pnpm rag:eval`     | RAG retrieval eval harness   |
 
 Run a single test file with `pnpm vitest run <path>`, filter to one test with `-t "<name>"`, and check coverage with `pnpm vitest run --coverage`.
+
+Playwright UI tests live in `e2e/` and run in a real browser (mobile + desktop) to catch layout/responsiveness regressions Vitest's jsdom can't measure. The public tier needs no backend; the authenticated game-page tier runs only when `E2E_SUPABASE_URL` is set — see [`e2e/README.md`](e2e/README.md).
 
 ## Project Structure
 
@@ -83,6 +87,7 @@ supabase/
 docs/
 ├── lotm-lore-summary.md  # LOTM universe reference
 └── rules/                # Shared development rule files (@-imported by CLAUDE.md)
+e2e/                      # Playwright UI tests (real-browser responsiveness) — see e2e/README.md
 ```
 
 Most directories carry their own `CLAUDE.md` with context-specific architecture notes; start there when working in an area.
