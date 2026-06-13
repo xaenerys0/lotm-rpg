@@ -1,9 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState } from "react";
 
-import { noopSubscribe } from "@/lib/react";
-import { createClient } from "@/lib/supabase/client";
+import {
+  loadActiveSession,
+  persistSession,
+  useStoredValue,
+} from "@/lib/react/session-store";
+import { createBrowserClientSafe, createClient } from "@/lib/supabase/client";
 import type { Item } from "@/lib/types/rules";
 import {
   addItemToInventory,
@@ -11,18 +15,14 @@ import {
   canAfford,
   createListing,
   delist,
-  deserializeSession,
   fetchActiveListings,
   fetchOwnHistory,
   filterListings,
   getFunds,
   purchase,
   removeItemForListing,
-  serializeSession,
   validateListing,
   PRICE_GUIDANCE,
-  SESSION_INDEX_KEY,
-  SESSION_KEY_PREFIX,
   type GameSession,
   type ListingFilter,
   type MarketListing,
@@ -34,47 +34,16 @@ import {
 // the save. Realtime-ish freshness comes from refetch-on-action plus a
 // Supabase realtime subscription when available (best-effort).
 
-function marketClient(): MarketplaceClient | null {
-  try {
-    return createClient() as unknown as MarketplaceClient;
-  } catch {
-    return null;
-  }
-}
-
-function loadActiveSession(): GameSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_INDEX_KEY);
-    const ids: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(ids) || typeof ids[0] !== "string") return null;
-    const sessionRaw = localStorage.getItem(SESSION_KEY_PREFIX + ids[0]);
-    return sessionRaw ? deserializeSession(sessionRaw) : null;
-  } catch {
-    return null;
-  }
-}
+const marketClient = (): MarketplaceClient | null =>
+  createBrowserClientSafe<MarketplaceClient>();
 
 export function MarketPanel() {
-  const sessionCacheRef = useRef<GameSession | null | undefined>(undefined);
-  const initialSession = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (sessionCacheRef.current === undefined) {
-        sessionCacheRef.current = loadActiveSession();
-      }
-      return sessionCacheRef.current;
-    },
-    () => null,
-  );
-  const [session, setSession] = useState<GameSession | null>(initialSession ?? null);
+  const initialSession = useStoredValue(loadActiveSession, null);
+  const [session, setSession] = useState<GameSession | null>(initialSession);
 
   const persist = useCallback((next: GameSession) => {
     setSession(next);
-    try {
-      localStorage.setItem(SESSION_KEY_PREFIX + next.id, serializeSession(next));
-    } catch {
-      // Storage unavailable — in-memory state still updates.
-    }
+    persistSession(next);
   }, []);
 
   const [listings, setListings] = useState<MarketListing[]>([]);

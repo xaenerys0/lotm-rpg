@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import { createClient } from "@/lib/supabase/client";
+import { createBrowserClientSafe, createClient } from "@/lib/supabase/client";
 import {
   composeMessage,
   fetchLocationMessages,
@@ -18,13 +18,8 @@ import {
 // subtly at the current location. Best-effort networking — the scene never
 // waits on it, and a signed-out or offline player simply sees nothing.
 
-function client(): WorldMessagesClient | null {
-  try {
-    return createClient() as unknown as WorldMessagesClient;
-  } catch {
-    return null;
-  }
-}
+const client = (): WorldMessagesClient | null =>
+  createBrowserClientSafe<WorldMessagesClient>();
 
 export function WorldMessages({ location }: { location: string }) {
   const [messages, setMessages] = useState<WorldMessage[]>([]);

@@ -1,15 +1,14 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 
-import { noopSubscribe } from "@/lib/react";
+import { loadActiveSession, useStoredValue } from "@/lib/react/session-store";
 import {
   glossaryForSequence,
   sealedTermCount,
   GLOSSARY_CATEGORIES,
   type GlossaryTerm,
 } from "@/lib/lore";
-import { deserializeSession, SESSION_INDEX_KEY, SESSION_KEY_PREFIX } from "@/lib/game";
 
 // Glossary panel (issue #14): the in-game reference with progressive
 // disclosure — entries unlock as the active character advances, so deep-game
@@ -26,34 +25,16 @@ interface GlossaryScope {
 const DEFAULT_SCOPE: GlossaryScope = { sequenceLevel: 9 };
 
 function loadActiveScope(): GlossaryScope {
-  try {
-    const raw = localStorage.getItem(SESSION_INDEX_KEY);
-    const ids: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(ids) || typeof ids[0] !== "string") return DEFAULT_SCOPE;
-    const sessionRaw = localStorage.getItem(SESSION_KEY_PREFIX + ids[0]);
-    const session = sessionRaw ? deserializeSession(sessionRaw) : null;
-    if (!session) return DEFAULT_SCOPE;
-    return {
-      sequenceLevel: session.gameState.sequenceLevel ?? 9,
-      epoch: session.gameState.epoch,
-    };
-  } catch {
-    return DEFAULT_SCOPE;
-  }
+  const session = loadActiveSession();
+  if (!session) return DEFAULT_SCOPE;
+  return {
+    sequenceLevel: session.gameState.sequenceLevel ?? 9,
+    epoch: session.gameState.epoch,
+  };
 }
 
 export function GlossaryPanel() {
-  const scopeCacheRef = useRef<GlossaryScope | undefined>(undefined);
-  const scope = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (scopeCacheRef.current === undefined) {
-        scopeCacheRef.current = loadActiveScope();
-      }
-      return scopeCacheRef.current;
-    },
-    () => DEFAULT_SCOPE,
-  );
+  const scope = useStoredValue(loadActiveScope, DEFAULT_SCOPE);
   const { sequenceLevel, epoch } = scope;
 
   const [query, setQuery] = useState("");

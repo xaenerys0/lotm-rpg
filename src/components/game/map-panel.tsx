@@ -1,19 +1,19 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useState } from "react";
 
-import { noopSubscribe } from "@/lib/react";
+import {
+  loadActiveSession,
+  persistSession,
+  useStoredValue,
+} from "@/lib/react/session-store";
 import {
   canTravelTo,
   CITIES,
   cityIdFromLocation,
-  deserializeSession,
-  serializeSession,
   travelDays,
   travelTo,
   type GameSession,
-  SESSION_INDEX_KEY,
-  SESSION_KEY_PREFIX,
 } from "@/lib/game";
 import { addSessionFact } from "@/lib/ai";
 import { gazetteerForEpoch, type GazetteerDistrict } from "@/lib/lore";
@@ -28,18 +28,6 @@ import { gazetteerForEpoch, type GazetteerDistrict } from "@/lib/lore";
 // active session's location via the pure `travelTo` engine and persists to
 // localStorage (mirroring the session-persist pattern in market-panel.tsx).
 
-function loadActiveSession(): GameSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_INDEX_KEY);
-    const ids: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(ids) || typeof ids[0] !== "string") return null;
-    const sessionRaw = localStorage.getItem(SESSION_KEY_PREFIX + ids[0]);
-    return sessionRaw ? deserializeSession(sessionRaw) : null;
-  } catch {
-    return null;
-  }
-}
-
 function isHere(district: GazetteerDistrict, location: string | null): boolean {
   if (!location) return false;
   const lowered = location.toLowerCase();
@@ -47,18 +35,8 @@ function isHere(district: GazetteerDistrict, location: string | null): boolean {
 }
 
 export function MapPanel() {
-  const sessionCacheRef = useRef<GameSession | null | undefined>(undefined);
-  const initialSession = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (sessionCacheRef.current === undefined) {
-        sessionCacheRef.current = loadActiveSession();
-      }
-      return sessionCacheRef.current;
-    },
-    () => null,
-  );
-  const [session, setSession] = useState<GameSession | null>(initialSession ?? null);
+  const initialSession = useStoredValue(loadActiveSession, null);
+  const [session, setSession] = useState<GameSession | null>(initialSession);
   const [notice, setNotice] = useState<string | null>(null);
 
   const location = session?.gameState.location ?? null;
@@ -81,11 +59,7 @@ export function MapPanel() {
       };
       setSession(next);
       setNotice(`You set out for ${result.state.location}.`);
-      try {
-        localStorage.setItem(SESSION_KEY_PREFIX + next.id, serializeSession(next));
-      } catch {
-        // Storage unavailable — in-memory state still updates.
-      }
+      persistSession(next);
     },
     [session],
   );

@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { createClient } from "@/lib/supabase/client";
 import { sceneArtKey } from "@/lib/ai";
 import { SceneArt } from "./scene-art";
-import { noopSubscribe } from "@/lib/react";
+import { loadAllSessions, useStoredValue } from "@/lib/react/session-store";
 import {
   addAnnotation,
   annotationsFor,
@@ -13,7 +13,6 @@ import {
   deleteAnnotation,
   deleteAnnotationRemote,
   deserializeJournal,
-  deserializeSession,
   editAnnotation,
   filterJournal,
   journalEventLabel,
@@ -22,8 +21,6 @@ import {
   syncAnnotation,
   JOURNAL_EVENT_TYPES,
   JOURNAL_KEY_PREFIX,
-  SESSION_INDEX_KEY,
-  SESSION_KEY_PREFIX,
   type Journal,
   type JournalEntry,
   type JournalEventType,
@@ -41,26 +38,13 @@ interface SessionOption {
 }
 
 function loadSessionOptions(): SessionOption[] {
-  try {
-    const raw = localStorage.getItem(SESSION_INDEX_KEY);
-    const ids: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(ids)) return [];
-    const options: SessionOption[] = [];
-    for (const id of ids) {
-      if (typeof id !== "string") continue;
-      const sessionRaw = localStorage.getItem(SESSION_KEY_PREFIX + id);
-      const session = sessionRaw ? deserializeSession(sessionRaw) : null;
-      if (!session) continue;
-      const name = session.gameState.characterName ?? "Unnamed Beyonder";
-      options.push({
-        id,
-        label: `${name} — Turn ${session.turnCount} (${session.gameState.location})`,
-      });
-    }
-    return options;
-  } catch {
-    return [];
-  }
+  return loadAllSessions().map((session) => {
+    const name = session.gameState.characterName ?? "Unnamed Beyonder";
+    return {
+      id: session.id,
+      label: `${name} — Turn ${session.turnCount} (${session.gameState.location})`,
+    };
+  });
 }
 
 function loadJournal(sessionId: string): Journal {
@@ -93,17 +77,7 @@ async function currentUserId(
 }
 
 export function JournalPanel() {
-  const optionsCacheRef = useRef<SessionOption[] | undefined>(undefined);
-  const sessionOptions = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (optionsCacheRef.current === undefined) {
-        optionsCacheRef.current = loadSessionOptions();
-      }
-      return optionsCacheRef.current;
-    },
-    () => null,
-  );
+  const sessionOptions = useStoredValue<SessionOption[] | null>(loadSessionOptions, null);
 
   const [sessionId, setSessionId] = useState<string | null>(null);
   const activeSessionId = sessionId ?? sessionOptions?.[0]?.id ?? null;

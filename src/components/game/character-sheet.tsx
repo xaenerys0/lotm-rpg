@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useState } from "react";
 
-import { noopSubscribe } from "@/lib/react";
+import {
+  loadAllSessions,
+  persistSession as writeSession,
+  useStoredValue,
+} from "@/lib/react/session-store";
 import { getPathway, getSequence } from "@/lib/rules";
 import { classifySanityTier } from "@/lib/ai";
 import { getEpoch } from "@/lib/lore";
@@ -10,14 +14,10 @@ import {
   activeIdentity,
   createIdentity,
   createIdentityState,
-  deserializeSession,
   discardIdentity,
   identityCapability,
-  serializeSession,
   switchIdentity,
   trueGodName,
-  SESSION_INDEX_KEY,
-  SESSION_KEY_PREFIX,
   type GameSession,
   type IdentityCapability,
   type IdentityState,
@@ -28,23 +28,6 @@ import type { Item } from "@/lib/types/rules";
 // Character sheet panel (issue #13): identity, abilities & acting
 // requirements, condition, and the inventory. Sanity is shown as an in-world
 // descriptor — never a number — preserving the hidden-meter design.
-
-function loadSessions(): GameSession[] {
-  try {
-    const raw = localStorage.getItem(SESSION_INDEX_KEY);
-    const ids: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(ids)) return [];
-    return ids
-      .filter((id): id is string => typeof id === "string")
-      .map((id) => {
-        const sessionRaw = localStorage.getItem(SESSION_KEY_PREFIX + id);
-        return sessionRaw ? deserializeSession(sessionRaw) : null;
-      })
-      .filter((session): session is GameSession => session !== null);
-  } catch {
-    return [];
-  }
-}
 
 const SANITY_DESCRIPTORS: Record<ReturnType<typeof classifySanityTier>, string> = {
   high: "Steady — the world holds its shape.",
@@ -66,28 +49,14 @@ const ITEM_CATEGORY_GLYPHS: Record<Item["category"], string> = {
 };
 
 export function CharacterSheet() {
-  const sessionsCacheRef = useRef<GameSession[] | undefined>(undefined);
-  const sessions = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (sessionsCacheRef.current === undefined) {
-        sessionsCacheRef.current = loadSessions();
-      }
-      return sessionsCacheRef.current;
-    },
-    () => null,
-  );
+  const sessions = useStoredValue<GameSession[] | null>(loadAllSessions, null);
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<Record<string, GameSession>>({});
 
   const persistSession = useCallback((next: GameSession) => {
     setOverrides((prev) => ({ ...prev, [next.id]: next }));
-    try {
-      localStorage.setItem(SESSION_KEY_PREFIX + next.id, serializeSession(next));
-    } catch {
-      // Storage full or unavailable — the in-memory sheet still updates.
-    }
+    writeSession(next);
   }, []);
 
   if (sessions === null) {

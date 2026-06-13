@@ -11,8 +11,6 @@ import {
   createEncounter,
   deriveEncounterEnemy,
   isValidEncounterShape,
-  serializeSession,
-  deserializeSession,
   digestionFeedback,
   classifySanityTier,
   isLossOfControl,
@@ -20,7 +18,6 @@ import {
   DEFAULT_PREFERENCES,
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
-  SESSION_KEY_PREFIX,
   PROVIDER_CONFIG_KEY,
   type GamePreferences,
   type SanityTier,
@@ -115,30 +112,17 @@ import { WorldMessages } from "./world-messages";
 import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
 import { getPathway, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
+import {
+  loadSessionById,
+  persistSession,
+  useStoredValue,
+} from "@/lib/react/session-store";
 
 function loadProviderConfig(): ProviderConfig | null {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ProviderConfig;
-  } catch {
-    return null;
-  }
-}
-
-function saveSessionToStorage(session: GameSession): void {
-  try {
-    localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
-  } catch {
-    // Storage full or unavailable
-  }
-}
-
-function loadSessionFromStorage(sessionId: string): GameSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY_PREFIX + sessionId);
-    if (!raw) return null;
-    return deserializeSession(raw);
   } catch {
     return null;
   }
@@ -313,17 +297,7 @@ function buildAICallParams(currentSession: GameSession) {
 // ─── Main Component ────────────────────────────────────────────────
 
 export function GameLoop({ sessionId }: { sessionId: string }) {
-  const sessionCacheRef = useRef<GameSession | null | undefined>(undefined);
-  const initialSession = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (sessionCacheRef.current === undefined) {
-        sessionCacheRef.current = loadSessionFromStorage(sessionId);
-      }
-      return sessionCacheRef.current;
-    },
-    () => null,
-  );
+  const initialSession = useStoredValue(() => loadSessionById(sessionId), null);
   const [session, setSession] = useState<GameSession | null>(initialSession);
   const generationRef = useRef(0);
 
@@ -390,7 +364,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   );
   const updateSession = useCallback((next: GameSession) => {
     setSession(next);
-    saveSessionToStorage(next);
+    persistSession(next);
   }, []);
 
   // Death & failure flow (issue #12). The rules engine owns the verdict; the
