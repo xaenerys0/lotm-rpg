@@ -241,7 +241,9 @@ export function PlayDashboard() {
       }
     })();
     setPendingDeleteId(null);
-    setSessions(loadExistingSessions());
+    // localStorage is already consistent (saveSessionIndex above); drop the
+    // deleted character from the displayed list without re-reading every save.
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
   }, []);
 
   if (view === "playing" && activeSessionId) {
