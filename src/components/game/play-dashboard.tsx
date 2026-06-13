@@ -206,7 +206,7 @@ export function PlayDashboard() {
 
   if (view === "playing" && activeSessionId) {
     return (
-      <div className="mx-auto max-w-[var(--container-game)] px-6 py-6 animate-fade-in">
+      <div className="mx-auto max-w-[var(--container-game)] px-4 py-6 animate-fade-in sm:px-6">
         <button
           type="button"
           onClick={handleBackToDashboard}
@@ -227,7 +227,7 @@ export function PlayDashboard() {
 
   if (view === "manage") {
     return (
-      <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in">
+      <div className="mx-auto max-w-[var(--container-game)] px-4 py-8 animate-fade-in sm:px-6 sm:py-10">
         <button
           type="button"
           onClick={handleBackToDashboard}
@@ -321,7 +321,7 @@ export function PlayDashboard() {
   // ─── Home Dashboard ─────────────────────────────────────────────
 
   return (
-    <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
+    <div className="mx-auto max-w-[var(--container-game)] px-4 py-8 animate-fade-in-up sm:px-6 sm:py-10">
       <header className="mb-10">
         <h1 className="font-serif text-3xl font-bold tracking-tight text-amber md:text-4xl">
           Welcome, Beyonder

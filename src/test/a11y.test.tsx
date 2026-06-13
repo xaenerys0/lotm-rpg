@@ -305,7 +305,12 @@ describe("accessibility — stub pages", () => {
     };
     localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["sheet-1"]));
     localStorage.setItem(SESSION_KEY_PREFIX + "sheet-1", serializeSession(session));
-    await expectNoAxeViolations(<CharacterPage />);
+    const { container } = render(<CharacterPage />);
+    await expectNoAxeViolationsInContainer(container);
+
+    // Open the two-step delete confirm and re-check the live region + buttons.
+    fireEvent.click(screen.getByRole("button", { name: /Delete Klein/ }));
+    await expectNoAxeViolationsInContainer(container);
   });
 
   it("map page has no violations", async () => {

@@ -921,7 +921,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       <div className="mx-auto max-w-3xl px-4">
         {/* Status Bar */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
-          <div className="flex items-center gap-4 text-xs text-muted">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
             <span className="font-serif text-sm text-foreground/80">
               {sequenceLabel}{" "}
               <span className="text-muted">
@@ -954,7 +954,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               </>
             )}
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <DigestionMeter digestion={session.gameState.digestion} />
             {preferences.sanityMeterVisible && (
               <SanityMeter
