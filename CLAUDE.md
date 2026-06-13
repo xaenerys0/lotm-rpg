@@ -1,3 +1,7 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
 # LOTM RPG
 
 Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
@@ -20,6 +24,8 @@ Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
 | `pnpm rag:wiki`     | RAG wiki parse CLI  |
 | `pnpm rag:eval`     | RAG eval harness    |
 | `pnpm rag:load`     | RAG load stage CLI  |
+
+Run a **single test file** with `pnpm vitest run <path>` (e.g. `pnpm vitest run src/lib/game/character-admin.test.ts`); filter to **one test by name** with `-t "<substring>"`. Check coverage with `pnpm vitest run --coverage` (the 95% gate that the pre-commit checklist enforces).
 
 ## Architecture
 
