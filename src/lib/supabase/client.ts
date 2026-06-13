@@ -17,3 +17,17 @@ export function createClient() {
     },
   );
 }
+
+/**
+ * Best-effort browser client for optional, network-dependent features. Returns
+ * the client cast to the caller's structural client type, or `null` if
+ * construction throws (e.g. missing env) — so best-effort callers can simply
+ * no-op when offline or signed out instead of crashing the render.
+ */
+export function createBrowserClientSafe<T>(): T | null {
+  try {
+    return createClient() as unknown as T;
+  } catch {
+    return null;
+  }
+}

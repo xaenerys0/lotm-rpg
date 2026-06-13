@@ -17,6 +17,7 @@ import type {
 } from "@/lib/types/combat";
 import { getGroupForPathway } from "@/lib/rules";
 import { sanityDelta } from "./sanity";
+import { clamp } from "./math";
 
 /**
  * Combat engine (issue #10).
@@ -37,10 +38,6 @@ import { sanityDelta } from "./sanity";
  * as the `randomFactor` captured at encounter creation, so a serialized
  * encounter always resolves the same way.
  */
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
 
 /** Round to 4 decimals to keep advantage maths free of float noise. */
 function round4(value: number): number {

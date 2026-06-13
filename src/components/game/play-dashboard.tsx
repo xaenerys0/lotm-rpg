@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import type { ProviderConfig, MemoryState } from "@/lib/ai";
 import type { GameSessionSummary, JournalSyncClient } from "@/lib/game";
@@ -8,12 +8,8 @@ import {
   createSession,
   createDefaultGameState,
   sessionToSummary,
-  serializeSession,
-  deserializeSession,
   characterDeletionPlan,
   deleteSessionEntriesRemote,
-  SESSION_KEY_PREFIX,
-  SESSION_INDEX_KEY,
   PROVIDER_CONFIG_KEY,
   PROLOGUE_DRAFT_KEY,
   isActivePrologueDraft,
@@ -28,7 +24,13 @@ import {
   ECHOES_KEY,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
-import { noopSubscribe } from "@/lib/react";
+import {
+  loadAllSessions,
+  loadSessionIndex,
+  saveSessionIndex,
+  persistSession,
+  useStoredValue,
+} from "@/lib/react/session-store";
 import { createClient } from "@/lib/supabase/client";
 import { GameLoop } from "./game-loop";
 import { CharacterCreation } from "./character-creation";
@@ -45,40 +47,10 @@ function loadConfig(): ProviderConfig | null {
   }
 }
 
-function loadSessionIndex(): string[] {
-  try {
-    const raw = localStorage.getItem(SESSION_INDEX_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as string[];
-  } catch {
-    return [];
-  }
-}
-
-function saveSessionIndex(ids: string[]): void {
-  try {
-    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(ids));
-  } catch {
-    // Storage unavailable
-  }
-}
-
 function loadExistingSessions(): GameSessionSummary[] {
-  const ids = loadSessionIndex();
-  const summaries: GameSessionSummary[] = [];
-  for (const id of ids) {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY_PREFIX + id);
-      if (!raw) continue;
-      const session = deserializeSession(raw);
-      if (session) {
-        summaries.push(sessionToSummary(session));
-      }
-    } catch {
-      continue;
-    }
-  }
-  return summaries.sort((a, b) => b.updatedAt - a.updatedAt);
+  return loadAllSessions()
+    .map(sessionToSummary)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
 interface InitialData {
@@ -123,30 +95,22 @@ function withLegacyFacts(memory: MemoryState): MemoryState {
 }
 
 export function PlayDashboard() {
-  const cacheRef = useRef<InitialData | null>(null);
-  const initialData = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (cacheRef.current === null) {
-        const hasDraft = (() => {
-          try {
-            const raw = localStorage.getItem(PROLOGUE_DRAFT_KEY);
-            if (!raw) return false;
-            return isActivePrologueDraft(JSON.parse(raw));
-          } catch {
-            return false;
-          }
-        })();
-        cacheRef.current = {
-          hasConfig: loadConfig() !== null,
-          sessions: loadExistingSessions(),
-          hasPrologueDraft: hasDraft,
-        };
+  const initialData = useStoredValue<InitialData>(() => {
+    const hasDraft = (() => {
+      try {
+        const raw = localStorage.getItem(PROLOGUE_DRAFT_KEY);
+        if (!raw) return false;
+        return isActivePrologueDraft(JSON.parse(raw));
+      } catch {
+        return false;
       }
-      return cacheRef.current;
-    },
-    () => emptyInitialData,
-  );
+    })();
+    return {
+      hasConfig: loadConfig() !== null,
+      sessions: loadExistingSessions(),
+      hasPrologueDraft: hasDraft,
+    };
+  }, emptyInitialData);
 
   const [view, setView] = useState<DashboardView>(
     initialData.hasPrologueDraft ? "character-creation" : "home",
@@ -191,14 +155,8 @@ export function PlayDashboard() {
         sessionFacts: [...memory.sessionFacts, ...echoes.facts],
       });
 
-      try {
-        localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
-        const index = loadSessionIndex();
-        index.unshift(session.id);
-        saveSessionIndex(index);
-      } catch {
-        // Storage full
-      }
+      persistSession(session);
+      saveSessionIndex([session.id, ...loadSessionIndex()]);
 
       setActiveSessionId(session.id);
       setView("playing");

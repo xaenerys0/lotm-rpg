@@ -1,21 +1,17 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useState } from "react";
 
-import { noopSubscribe } from "@/lib/react";
+import { loadActiveSession, useStoredValue } from "@/lib/react/session-store";
 import { createClient } from "@/lib/supabase/client";
 import { getPathway } from "@/lib/rules";
 import {
-  deserializeSession,
   divergenceScore,
   evaluateAchievements,
   getAchievement,
   publishShowcase,
   showcaseStats,
   toShowcaseRow,
-  SESSION_INDEX_KEY,
-  SESSION_KEY_PREFIX,
-  type GameSession,
   type ShowcaseClient,
 } from "@/lib/game";
 
@@ -23,30 +19,8 @@ import {
 // stats for the active chronicle, with explicit publish + privacy control.
 // Nothing leaves the device until the player presses Publish.
 
-function loadActiveSession(): GameSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_INDEX_KEY);
-    const ids: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(ids) || typeof ids[0] !== "string") return null;
-    const sessionRaw = localStorage.getItem(SESSION_KEY_PREFIX + ids[0]);
-    return sessionRaw ? deserializeSession(sessionRaw) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function ShowcasePanel() {
-  const sessionCacheRef = useRef<GameSession | null | undefined>(undefined);
-  const session = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (sessionCacheRef.current === undefined) {
-        sessionCacheRef.current = loadActiveSession();
-      }
-      return sessionCacheRef.current;
-    },
-    () => null,
-  );
+  const session = useStoredValue(loadActiveSession, null);
 
   const [displayName, setDisplayName] = useState("");
   const [isPublic, setIsPublic] = useState(false);

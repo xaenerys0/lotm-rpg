@@ -1,50 +1,52 @@
 "use client";
 
-import { useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useMemo, useState } from "react";
 
-import { noopSubscribe } from "@/lib/react";
+import { loadActiveSession, useStoredValue } from "@/lib/react/session-store";
 import {
   glossaryForSequence,
   sealedTermCount,
   GLOSSARY_CATEGORIES,
   type GlossaryTerm,
 } from "@/lib/lore";
-import { deserializeSession, SESSION_INDEX_KEY, SESSION_KEY_PREFIX } from "@/lib/game";
 
 // Glossary panel (issue #14): the in-game reference with progressive
 // disclosure — entries unlock as the active character advances, so deep-game
 // concepts stay sealed until approached. Written as world-building.
 
-function loadActiveSequence(): number {
-  try {
-    const raw = localStorage.getItem(SESSION_INDEX_KEY);
-    const ids: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(ids) || typeof ids[0] !== "string") return 9;
-    const sessionRaw = localStorage.getItem(SESSION_KEY_PREFIX + ids[0]);
-    const session = sessionRaw ? deserializeSession(sessionRaw) : null;
-    return session?.gameState.sequenceLevel ?? 9;
-  } catch {
-    return 9;
-  }
+// The active character's sequence (progressive disclosure) and epoch (content
+// isolation) together decide which lexicon entries exist. Epoch is left
+// undefined for legacy/absent saves so the glossary defaults to the Fifth.
+interface GlossaryScope {
+  sequenceLevel: number;
+  epoch?: number;
+}
+
+const DEFAULT_SCOPE: GlossaryScope = { sequenceLevel: 9 };
+
+function loadActiveScope(): GlossaryScope {
+  const session = loadActiveSession();
+  if (!session) return DEFAULT_SCOPE;
+  return {
+    sequenceLevel: session.gameState.sequenceLevel ?? 9,
+    epoch: session.gameState.epoch,
+  };
 }
 
 export function GlossaryPanel() {
-  const seqCacheRef = useRef<number | undefined>(undefined);
-  const sequenceLevel = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (seqCacheRef.current === undefined) {
-        seqCacheRef.current = loadActiveSequence();
-      }
-      return seqCacheRef.current;
-    },
-    () => 9,
-  );
+  const scope = useStoredValue(loadActiveScope, DEFAULT_SCOPE);
+  const { sequenceLevel, epoch } = scope;
 
   const [query, setQuery] = useState("");
 
-  const visible = useMemo(() => glossaryForSequence(sequenceLevel), [sequenceLevel]);
-  const sealed = sealedTermCount(sequenceLevel);
+  const visible = useMemo(
+    () => glossaryForSequence(sequenceLevel, epoch),
+    [sequenceLevel, epoch],
+  );
+  const sealed = useMemo(
+    () => sealedTermCount(sequenceLevel, epoch),
+    [sequenceLevel, epoch],
+  );
 
   const filtered = useMemo(() => {
     const lowered = query.trim().toLowerCase();

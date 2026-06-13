@@ -8,6 +8,10 @@ import {
   DEATH_PATHWAY_LORE,
   DOOR_PATHWAY_LORE,
   ERROR_PATHWAY_LORE,
+  FIRST_EPOCH_LORE,
+  SECOND_EPOCH_LORE,
+  THIRD_EPOCH_LORE,
+  FOURTH_EPOCH_LORE,
   FIFTH_EPOCH_LORE,
   FOOL_PATHWAY_LORE,
   getLoreByCategory,
@@ -123,6 +127,41 @@ describe("Lore content coverage", () => {
 
   it("has Fifth Epoch baseline entries", () => {
     expect(FIFTH_EPOCH_LORE.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("has rich, correctly-tagged lore for each pre-Iron-Age epoch", () => {
+    for (const [lore, epoch, overview] of [
+      [FIRST_EPOCH_LORE, 1, "first-epoch-overview"],
+      [SECOND_EPOCH_LORE, 2, "second-epoch-overview"],
+      [THIRD_EPOCH_LORE, 3, "third-epoch-overview"],
+      [FOURTH_EPOCH_LORE, 4, "fourth-epoch-overview"],
+    ] as const) {
+      expect(lore.length).toBeGreaterThanOrEqual(3);
+      // Every entry is tagged for exactly its epoch — no crossover.
+      expect(lore.every((e) => e.epoch === epoch)).toBe(true);
+      // Each set leads with a metaphysics overview that curated selection injects.
+      const lead = lore.find((e) => e.slug === overview);
+      expect(lead).toBeDefined();
+      expect(lead!.category).toBe("metaphysics");
+    }
+  });
+
+  it("isolates epochs: getLoreByEpoch never mixes eras", () => {
+    for (const epoch of [1, 2, 3, 4, 5]) {
+      const entries = getLoreByEpoch(epoch);
+      expect(entries.length).toBeGreaterThan(0);
+      expect(entries.every((e) => e.epoch === epoch)).toBe(true);
+    }
+  });
+
+  it("treats the curated pathway lore prose as Fifth-Epoch-framed", () => {
+    // Pathways exist in every era, but the curated lore PROSE is written with
+    // Fifth-Epoch framing (churches, Nighthawks, gaslight), so it is tagged
+    // epoch 5 and gated out of earlier epochs to avoid crossover. The pathway
+    // MECHANICS reach every epoch through the rules engine, not this lore.
+    const pathwayEntries = ALL_LORE_ENTRIES.filter((e) => e.category === "pathway");
+    expect(pathwayEntries.length).toBeGreaterThan(0);
+    expect(pathwayEntries.every((e) => e.epoch === 5)).toBe(true);
   });
 
   it("has Nighthawks organization entries", () => {
@@ -264,6 +303,10 @@ describe("Total lore corpus", () => {
       BACKLUND_LORE.length +
       TRIER_LORE.length +
       BAYAM_LORE.length +
+      FIRST_EPOCH_LORE.length +
+      SECOND_EPOCH_LORE.length +
+      THIRD_EPOCH_LORE.length +
+      FOURTH_EPOCH_LORE.length +
       FIFTH_EPOCH_LORE.length +
       ORGANIZATION_LORE.length +
       NPC_LORE.length +

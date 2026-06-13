@@ -1,8 +1,12 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useState } from "react";
 
-import { noopSubscribe } from "@/lib/react";
+import {
+  loadActiveSession,
+  persistSession,
+  useStoredValue,
+} from "@/lib/react/session-store";
 import {
   addItemToInventory,
   addJournalEntries,
@@ -10,17 +14,13 @@ import {
   canFoundSociety,
   createJournal,
   deserializeJournal,
-  deserializeSession,
   foundSociety,
   holdGathering,
   recruitMember,
   resolveMemberArc,
   serializeJournal,
-  serializeSession,
   GATHERING_COOLDOWN_TURNS,
   JOURNAL_KEY_PREFIX,
-  SESSION_INDEX_KEY,
-  SESSION_KEY_PREFIX,
   SOCIETY_FOUNDING_SEQUENCE,
   SOCIETY_KIND_LABELS,
   societyKindForPathway,
@@ -33,42 +33,16 @@ import {
 // the narrator and investigation pillar consume, trades land in the
 // inventory, and the journal records the session.
 
-function loadActiveSession(): GameSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_INDEX_KEY);
-    const ids: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(ids) || typeof ids[0] !== "string") return null;
-    const sessionRaw = localStorage.getItem(SESSION_KEY_PREFIX + ids[0]);
-    return sessionRaw ? deserializeSession(sessionRaw) : null;
-  } catch {
-    return null;
-  }
-}
-
 export function SocietyPanel() {
-  const sessionCacheRef = useRef<GameSession | null | undefined>(undefined);
-  const initialSession = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (sessionCacheRef.current === undefined) {
-        sessionCacheRef.current = loadActiveSession();
-      }
-      return sessionCacheRef.current;
-    },
-    () => null,
-  );
-  const [session, setSession] = useState<GameSession | null>(initialSession ?? null);
+  const initialSession = useStoredValue(loadActiveSession, null);
+  const [session, setSession] = useState<GameSession | null>(initialSession);
   const [name, setName] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [lastOutcome, setLastOutcome] = useState<GatheringOutcome | null>(null);
 
   const persist = useCallback((next: GameSession) => {
     setSession(next);
-    try {
-      localStorage.setItem(SESSION_KEY_PREFIX + next.id, serializeSession(next));
-    } catch {
-      // Storage unavailable — in-memory state still updates.
-    }
+    persistSession(next);
   }, []);
 
   const handleFound = useCallback(() => {

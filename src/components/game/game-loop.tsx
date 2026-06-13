@@ -11,8 +11,6 @@ import {
   createEncounter,
   deriveEncounterEnemy,
   isValidEncounterShape,
-  serializeSession,
-  deserializeSession,
   digestionFeedback,
   classifySanityTier,
   isLossOfControl,
@@ -20,7 +18,6 @@ import {
   DEFAULT_PREFERENCES,
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
-  SESSION_KEY_PREFIX,
   PROVIDER_CONFIG_KEY,
   type GamePreferences,
   type SanityTier,
@@ -107,6 +104,7 @@ import {
   epochNarrationDirective,
   epochOpeningBeat,
   cityNarrationDirective,
+  getEpoch,
 } from "@/lib/lore";
 import { createClient } from "@/lib/supabase/client";
 import { SceneArt } from "./scene-art";
@@ -114,30 +112,17 @@ import { WorldMessages } from "./world-messages";
 import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
 import { getPathway, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
+import {
+  loadSessionById,
+  persistSession,
+  useStoredValue,
+} from "@/lib/react/session-store";
 
 function loadProviderConfig(): ProviderConfig | null {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ProviderConfig;
-  } catch {
-    return null;
-  }
-}
-
-function saveSessionToStorage(session: GameSession): void {
-  try {
-    localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
-  } catch {
-    // Storage full or unavailable
-  }
-}
-
-function loadSessionFromStorage(sessionId: string): GameSession | null {
-  try {
-    const raw = localStorage.getItem(SESSION_KEY_PREFIX + sessionId);
-    if (!raw) return null;
-    return deserializeSession(raw);
   } catch {
     return null;
   }
@@ -301,6 +286,7 @@ function buildAICallParams(currentSession: GameSession) {
       pathway?.name ?? "fool",
       currentSession.gameState.location,
       TOKEN_BUDGET.lore,
+      currentSession.gameState.epoch,
     ),
     // Per-city narration tone (issue #23): one tone sentence per city, null
     // for cities (incl. the Tingen start) with no specific tone.
@@ -311,17 +297,7 @@ function buildAICallParams(currentSession: GameSession) {
 // ─── Main Component ────────────────────────────────────────────────
 
 export function GameLoop({ sessionId }: { sessionId: string }) {
-  const sessionCacheRef = useRef<GameSession | null | undefined>(undefined);
-  const initialSession = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (sessionCacheRef.current === undefined) {
-        sessionCacheRef.current = loadSessionFromStorage(sessionId);
-      }
-      return sessionCacheRef.current;
-    },
-    () => null,
-  );
+  const initialSession = useStoredValue(() => loadSessionById(sessionId), null);
   const [session, setSession] = useState<GameSession | null>(initialSession);
   const generationRef = useRef(0);
 
@@ -388,7 +364,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   );
   const updateSession = useCallback((next: GameSession) => {
     setSession(next);
-    saveSessionToStorage(next);
+    persistSession(next);
   }, []);
 
   // Death & failure flow (issue #12). The rules engine owns the verdict; the
@@ -929,6 +905,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     session.gameState.sequenceLevel === 0
       ? trueGodName(session.gameState.pathwayId)
       : (seq?.name ?? "Unknown");
+  const epoch = getEpoch(session.gameState.epoch);
   // Combat only needs ability names; the True-God-aware derivation lives in one
   // place (sequenceAbilities) rather than running the full AI-call bundle.
   const { abilities: combatAbilities } = sequenceAbilities(
@@ -955,6 +932,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               |
             </span>
             <span>{session.gameState.location}</span>
+            <span className="text-border" aria-hidden="true">
+              |
+            </span>
+            <span title={epoch.era}>{epoch.name}</span>
             <span className="text-border" aria-hidden="true">
               |
             </span>

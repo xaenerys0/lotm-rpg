@@ -9,6 +9,8 @@
 // world-building, not a manual, and contain ONLY knowledge a Beyonder of that
 // standing could plausibly hold — nothing here is narrator-only lore.
 
+import { passesEpochGate } from "./epochs";
+
 export const GLOSSARY_CATEGORIES = [
   "Mechanics",
   "Pathways",
@@ -31,6 +33,14 @@ export interface GlossaryTerm {
    * 9 = visible from the start.
    */
   revealAtSequence: number;
+  /**
+   * Epoch gate (issue: character epoch isolation). Untagged terms are universal
+   * Beyonder knowledge that holds in every era. A tagged term is shown only to a
+   * character of that exact epoch — so a First-Epoch character never sees the
+   * Fifth-Epoch nations and churches, and their existence isn't even hinted at
+   * by the sealed-term count.
+   */
+  epoch?: number;
 }
 
 export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
@@ -90,6 +100,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     definition:
       "The Church of the Evernight Goddess's quiet professionals: they investigate the uncanny, confiscate the dangerous, and bury the inexplicable. Officially, they do not exist.",
     revealAtSequence: 9,
+    epoch: 5,
   },
   {
     slug: "church-of-the-evernight-goddess",
@@ -98,6 +109,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     definition:
       "Keeper of night, secrets, and the doctrine that some knowledge should stay unread. Strong in the Loen Kingdom; its cathedrals hold evening services and other, unlisted appointments.",
     revealAtSequence: 9,
+    epoch: 5,
   },
   {
     slug: "loen-kingdom",
@@ -106,6 +118,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     definition:
       "A constitutional monarchy of steam, coal, and empire — the setting's heart. Its cities run on ledgers by day and on quieter arrangements by night.",
     revealAtSequence: 9,
+    epoch: 5,
   },
   {
     slug: "tingen",
@@ -114,6 +127,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     definition:
       "A provincial city in the Awwa region: university, docks, foundries, fog. A surprising amount of the second city's business passes through it.",
     revealAtSequence: 9,
+    epoch: 5,
   },
   {
     slug: "fifth-epoch",
@@ -122,6 +136,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     definition:
       "The current age, reckoned from the fall of the Fourth. An era of steam engines and gaslight — young enough that its foundations still creak.",
     revealAtSequence: 9,
+    epoch: 5,
   },
   // ── With a little standing (Seq 8) ──
   {
@@ -155,6 +170,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     definition:
       "Faith of sailors, soldiers, and judges of the sea. Its Mandated Punishers handle the uncanny with rather less paperwork than the Nighthawks.",
     revealAtSequence: 8,
+    epoch: 5,
   },
   {
     slug: "church-of-the-god-of-steam",
@@ -163,6 +179,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     definition:
       "Patron of engineers, factories, and progress. Its Machinery Hivemind keeps the industrial age's secrets running on schedule.",
     revealAtSequence: 8,
+    epoch: 5,
   },
   // ── A practitioner's knowledge (Seq 7) ──
   {
@@ -205,6 +222,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     definition:
       "The honorific the churches give their Sequence 4s. The word is doing a great deal of diplomatic work.",
     revealAtSequence: 5,
+    epoch: 5,
   },
   // ── At the threshold (Seq 4) ──
   {
@@ -223,14 +241,98 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
       "Whatever stands past Sequence 0. The libraries that addressed the question directly are the reason several catalogues now have gaps.",
     revealAtSequence: 4,
   },
+  // ── Epoch-specific terms (issue: character epoch isolation) ──
+  // Each is tagged to a single non-Fifth epoch, so it appears only for a
+  // character of that era — and its existence is hidden from everyone else.
+  {
+    slug: "original-creator",
+    term: "The Original Creator",
+    category: "History",
+    definition:
+      "The primordial, maddened will whose awakening and self-destruction scattered the first powers across the world — the catastrophe that opened the Age of Chaos.",
+    revealAtSequence: 9,
+    epoch: 1,
+  },
+  {
+    slug: "age-of-chaos",
+    term: "The Age of Chaos",
+    category: "History",
+    definition:
+      "The First Epoch: a lawless dawn of monstrous mutation and bare survival, before nations, churches, or any codified path to power.",
+    revealAtSequence: 9,
+    epoch: 1,
+  },
+  {
+    slug: "ancient-gods",
+    term: "The Ancient Gods",
+    category: "History",
+    definition:
+      "The eight monstrous-but-rational deities who divided rule over the Dark Epoch — among them the Giant King, the Elf King, and the Sanguine Ancestor — beneath whom humanity lived as the slave race.",
+    revealAtSequence: 9,
+    epoch: 2,
+  },
+  {
+    slug: "the-dark-epoch",
+    term: "The Dark Epoch",
+    category: "History",
+    definition:
+      "The Second Epoch: the long night when inhuman gods ruled openly and humans survived as the property or prey of Giants, Elves, and Sanguines.",
+    revealAtSequence: 9,
+    epoch: 2,
+  },
+  {
+    slug: "ancient-sun-god",
+    term: "The Ancient Sun God",
+    category: "History",
+    definition:
+      "The human survivor who slew the Ancient Gods and reigned over the Third Epoch as the sole Orthodox God — until his own lieutenants conspired to kill him.",
+    revealAtSequence: 9,
+    epoch: 3,
+  },
+  {
+    slug: "forsaken-land",
+    term: "The Forsaken Land of the Gods",
+    category: "Geography",
+    definition:
+      "The cursed, sunless continent left when the Ancient Sun God fell — wracked by eternal lightning, where the abandoned faithful still keep their penance.",
+    revealAtSequence: 9,
+    epoch: 3,
+  },
+  {
+    slug: "epoch-of-the-gods",
+    term: "The Epoch of the Gods",
+    category: "History",
+    definition:
+      "The Fourth Epoch: the age when gods walked the world in person and raised rival god-empires whose wars remade the continents.",
+    revealAtSequence: 9,
+    epoch: 4,
+  },
+  {
+    slug: "solomon-empire",
+    term: "The Solomon Empire",
+    category: "Organizations",
+    definition:
+      "The god-empire of the Sequence-0 Black Emperor Solomon, which dominated the Northern Continent of the Fourth Epoch and warred for a thousand years against the orthodox Seven Gods.",
+    revealAtSequence: 9,
+    epoch: 4,
+  },
 ];
 
 /**
  * Terms visible to a character at `sequenceLevel` (progressive disclosure):
- * a term unlocks once the player's sequence is at or below its threshold.
+ * a term unlocks once the player's sequence is at or below its threshold. Terms
+ * are also epoch-gated (issue: character epoch isolation) — a character only
+ * ever sees universal mechanics plus terms tagged for its own epoch. An absent
+ * `epoch` defaults to the Fifth.
  */
-export function glossaryForSequence(sequenceLevel: number): GlossaryTerm[] {
-  return GLOSSARY_TERMS.filter((term) => term.revealAtSequence >= sequenceLevel);
+export function glossaryForSequence(
+  sequenceLevel: number,
+  epoch?: number,
+): GlossaryTerm[] {
+  return GLOSSARY_TERMS.filter(
+    (term) =>
+      term.revealAtSequence >= sequenceLevel && passesEpochGate(term.epoch, epoch),
+  );
 }
 
 /** Look up one term by slug (locked or not — caller decides visibility). */
@@ -238,7 +340,16 @@ export function getGlossaryTerm(slug: string): GlossaryTerm | undefined {
   return GLOSSARY_TERMS.find((term) => term.slug === slug);
 }
 
-/** Count of still-sealed terms — surfaced as flavor, never as a spoiler list. */
-export function sealedTermCount(sequenceLevel: number): number {
-  return GLOSSARY_TERMS.length - glossaryForSequence(sequenceLevel).length;
+/**
+ * Count of still-sealed terms — surfaced as flavor, never as a spoiler list.
+ * Counted against the epoch-applicable universe only, so an other-epoch term's
+ * very existence is never leaked to a character who can never reach it.
+ */
+export function sealedTermCount(sequenceLevel: number, epoch?: number): number {
+  // A single pass over the epoch-applicable universe: a term is sealed when its
+  // reveal threshold is still below the player's sequence. Counting only
+  // epoch-applicable terms keeps other-epoch entries' existence hidden.
+  return GLOSSARY_TERMS.filter(
+    (term) => passesEpochGate(term.epoch, epoch) && term.revealAtSequence < sequenceLevel,
+  ).length;
 }

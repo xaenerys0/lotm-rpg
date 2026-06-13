@@ -5,6 +5,7 @@ export {
   epochNarrationDirective,
   epochOpeningBeat,
   getEpoch,
+  passesEpochGate,
   DEFAULT_EPOCH_ID,
   EPOCHS,
   type Epoch,
@@ -31,11 +32,21 @@ export {
   type SupabaseRpcClient,
 } from "./retrieval";
 export { cityNarrationDirective } from "./narration";
+export {
+  gazetteerForEpoch,
+  type EpochGazetteer,
+  type GazetteerDistrict,
+  type GazetteerFartherCity,
+} from "./gazetteer";
 
 export { TINGEN_LORE } from "./tingen";
 export { BACKLUND_LORE } from "./backlund";
 export { TRIER_LORE } from "./trier";
 export { BAYAM_LORE } from "./bayam";
+export { FIRST_EPOCH_LORE } from "./epoch-first";
+export { SECOND_EPOCH_LORE } from "./epoch-second";
+export { THIRD_EPOCH_LORE } from "./epoch-third";
+export { FOURTH_EPOCH_LORE } from "./epoch-fourth";
 export { FIFTH_EPOCH_LORE } from "./fifth-epoch";
 export { ORGANIZATION_LORE } from "./organizations";
 export { NPC_LORE } from "./npcs";
@@ -63,10 +74,15 @@ export { ABYSS_PATHWAY_LORE } from "./pathway-abyss";
 export { CHAINED_PATHWAY_LORE } from "./pathway-chained";
 
 import type { LoreEntry } from "./types";
+import { DEFAULT_EPOCH_ID } from "./epochs";
 import { TINGEN_LORE } from "./tingen";
 import { BACKLUND_LORE } from "./backlund";
 import { TRIER_LORE } from "./trier";
 import { BAYAM_LORE } from "./bayam";
+import { FIRST_EPOCH_LORE } from "./epoch-first";
+import { SECOND_EPOCH_LORE } from "./epoch-second";
+import { THIRD_EPOCH_LORE } from "./epoch-third";
+import { FOURTH_EPOCH_LORE } from "./epoch-fourth";
 import { FIFTH_EPOCH_LORE } from "./fifth-epoch";
 import { ORGANIZATION_LORE } from "./organizations";
 import { NPC_LORE } from "./npcs";
@@ -98,6 +114,10 @@ export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...BACKLUND_LORE,
   ...TRIER_LORE,
   ...BAYAM_LORE,
+  ...FIRST_EPOCH_LORE,
+  ...SECOND_EPOCH_LORE,
+  ...THIRD_EPOCH_LORE,
+  ...FOURTH_EPOCH_LORE,
   ...FIFTH_EPOCH_LORE,
   ...ORGANIZATION_LORE,
   ...NPC_LORE,
@@ -155,6 +175,11 @@ const LORE_BY_PATHWAY = indexBy((e) =>
   e.pathway === undefined ? undefined : normalizePathwayKey(e.pathway),
 );
 const LORE_BY_CITY = indexBy((e) => e.city);
+// Epoch setting lore is selected once per turn (selectCuratedLore), so index it
+// at module load like the pathway/city maps rather than re-scanning the corpus.
+const LORE_BY_EPOCH_SETTING = indexBy((e) =>
+  e.category === "metaphysics" && e.epoch !== undefined ? e.epoch : undefined,
+);
 
 export function getLoreByPathway(pathway: string): LoreEntry[] {
   return LORE_BY_PATHWAY.get(normalizePathwayKey(pathway)) ?? [];
@@ -166,6 +191,16 @@ export function getLoreByCity(city: string): LoreEntry[] {
 
 export function getLoreByEpoch(epoch: number): LoreEntry[] {
   return ALL_LORE_ENTRIES.filter((e) => e.epoch === epoch);
+}
+
+// The epoch's "setting" lore: the world-context overview entries for an era
+// (category "metaphysics"), excluding the city/faction/NPC entries that are only
+// relevant when the player is actually at that place. Curated selection injects
+// these so a character always carries its own era's politics/society/powers,
+// regardless of the prose `startingLocation` the city-key heuristic can't match.
+// An absent epoch defaults to the Fifth.
+export function getLoreByEpochSetting(epoch: number | undefined): LoreEntry[] {
+  return LORE_BY_EPOCH_SETTING.get(epoch ?? DEFAULT_EPOCH_ID) ?? [];
 }
 
 export function getLoreBySlug(slug: string): LoreEntry | undefined {

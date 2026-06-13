@@ -109,3 +109,21 @@ export function epochOpeningBeat(epochId: number | undefined): string | null {
   const beat = getEpoch(epochId).openingBeat;
   return beat === "" ? null : beat;
 }
+
+/**
+ * The epoch content gate (issue: character epoch isolation). Untagged entries
+ * are universal — shared Beyonder mechanics that hold in every era — and always
+ * pass. A tagged entry passes only for a character of that exact epoch, so no
+ * Fifth-Epoch city, faction, or chunk ever reaches a First-Epoch character (and
+ * vice versa). An absent character epoch defaults to the Fifth
+ * ({@link DEFAULT_EPOCH_ID}). Mirrors the timeline gate's "timeless rows always
+ * pass" semantics so the SQL gate, the client RAG filter, curated selection,
+ * and the glossary all share one rule.
+ */
+export function passesEpochGate(
+  entryEpoch: number | null | undefined,
+  characterEpoch: number | null | undefined,
+): boolean {
+  if (entryEpoch === null || entryEpoch === undefined) return true; // universal
+  return entryEpoch === (characterEpoch ?? DEFAULT_EPOCH_ID);
+}

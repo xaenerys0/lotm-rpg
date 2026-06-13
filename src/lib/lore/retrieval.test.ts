@@ -39,6 +39,7 @@ const chunk = (overrides: Partial<RetrievedChunk>): RetrievedChunk => ({
   arc_bucket: "clown",
   concealment_tier: 0,
   in_world_date: "1349",
+  epoch: 5,
   fts_rank: 1,
   vec_rank: 1,
   rrf_score: 0.03,
@@ -95,6 +96,7 @@ const fakeRpc: MatchSourceChunksRpc = (args) => {
       (args.p_player_position == null ||
         row.canon_order === null ||
         row.canon_order <= args.p_player_position) &&
+      (args.p_epoch == null || row.epoch === null || row.epoch === args.p_epoch) &&
       row.concealment_tier <= (args.p_max_concealment_tier ?? 0),
   );
   const scored = gated
@@ -156,6 +158,7 @@ describe("retrieveChunks", () => {
       p_query_text: "fog",
       p_model_id: MODEL_ID,
       p_player_position: 200,
+      p_epoch: null,
       p_max_concealment_tier: 0,
       p_sources: null,
       p_tags: null,
@@ -219,6 +222,43 @@ describe("retrieveChunks", () => {
     const a = await retrieveChunks("fog and tarot", base);
     const b = await retrieveChunks("fog and tarot", base);
     expect(retrievalChunkIds(a)).toEqual(retrievalChunkIds(b));
+  });
+
+  it("forwards the epoch gate and excludes other-epoch chunks", async () => {
+    const rpc = vi.fn<MatchSourceChunksRpc>().mockResolvedValue([]);
+    await retrieveChunks("fog", { ...base, rpc, epoch: 1 });
+    expect(rpc).toHaveBeenCalledWith(expect.objectContaining({ p_epoch: 1 }));
+
+    // End-to-end through the gated fake RPC: a First-Epoch character sees none of
+    // the Fifth-Epoch corpus (every CORPUS chunk is epoch 5).
+    const results = await retrieveChunks("the fog", { ...base, epoch: 1 });
+    expect(results).toEqual([]);
+  });
+
+  it("lets a universal (null-epoch) chunk through the epoch gate", async () => {
+    const universalRpc: MatchSourceChunksRpc = () =>
+      Promise.resolve([
+        chunk({ id: "00000000-0000-0000-0000-00000000002a", epoch: null }),
+        chunk({ id: "00000000-0000-0000-0000-00000000002b", epoch: 5 }),
+      ]);
+    const results = await retrieveChunks("fog", {
+      ...base,
+      rpc: universalRpc,
+      epoch: 2,
+    });
+    // The null-epoch chunk passes for every epoch; the Fifth-tagged one is dropped
+    // by the defense-in-depth filter for a Second-Epoch character.
+    expect(results.map((r) => r.id)).toEqual(["00000000-0000-0000-0000-00000000002a"]);
+  });
+
+  it("drops an other-epoch row that slips past the RPC (defense in depth)", async () => {
+    const leakyRpc: MatchSourceChunksRpc = () =>
+      Promise.resolve([
+        chunk({ id: "00000000-0000-0000-0000-00000000003a", epoch: 5 }),
+        chunk({ id: "00000000-0000-0000-0000-00000000003b", epoch: 3 }),
+      ]);
+    const results = await retrieveChunks("fog", { ...base, rpc: leakyRpc, epoch: 3 });
+    expect(results.map((r) => r.id)).toEqual(["00000000-0000-0000-0000-00000000003b"]);
   });
 });
 
