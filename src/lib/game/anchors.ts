@@ -28,6 +28,8 @@
 //                                   gameState.sequenceLevel);
 //   // thread `highRisk` into evaluateFailure({ ..., highRisk }).
 
+import { clamp } from "./math";
+
 // ─── Types ───────────────────────────────────────────────────────────
 
 export type AnchorKind = "object" | "place" | "congregation";
@@ -48,10 +50,6 @@ export const ANCHOR_INTEGRITY_MIN = 0;
 export const ANCHOR_INTEGRITY_MAX = 100;
 
 const ANCHOR_KINDS: readonly AnchorKind[] = ["object", "place", "congregation"];
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
 
 export function emptyAnchorState(): AnchorState {
   return { anchors: [] };

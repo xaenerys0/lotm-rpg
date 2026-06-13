@@ -32,9 +32,11 @@ export function selectCuratedLore(
   const epochLore = getLoreByEpochSetting(epoch);
   const cityLore = getLoreByCity(location.toLowerCase().split(" ")[0]);
 
+  const seen = new Set<string>();
   const combined: LoreEntry[] = [];
   for (const entry of [...pathwayLore, ...epochLore, ...cityLore]) {
-    if (!combined.some((e) => e.slug === entry.slug)) {
+    if (!seen.has(entry.slug)) {
+      seen.add(entry.slug);
       combined.push(entry);
     }
   }

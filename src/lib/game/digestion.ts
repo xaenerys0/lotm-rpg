@@ -1,5 +1,7 @@
 import type { DigestionState } from "@/lib/ai";
 
+import { clamp } from "./math";
+
 /**
  * Acting Method digestion engine.
  *
@@ -39,10 +41,6 @@ export const MAX_REVERSE_PER_EVAL = 8;
  * can never get permanently stuck (Acceptance: minimum progress per session).
  */
 export const MIN_PROGRESS_PER_SESSION = 2;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
 
 export function createDigestionState(
   pathwayId: number,

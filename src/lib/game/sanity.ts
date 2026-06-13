@@ -1,6 +1,8 @@
 import type { GameState } from "@/lib/ai";
 import { classifySanityTier, type SanityTier } from "@/lib/ai";
 
+import { clamp } from "./math";
+
 /**
  * Sanity / madness engine (issue #9).
  *
@@ -26,10 +28,6 @@ export const SANITY_MIN = 0;
 
 /** Highest (weakest) sequence level a starting Beyonder occupies. */
 const MAX_SEQUENCE_LEVEL = 9;
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
-}
 
 // ─── UI Effect Profiles ──────────────────────────────────────────────
 
