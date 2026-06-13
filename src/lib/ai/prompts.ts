@@ -162,6 +162,15 @@ export function buildDemigodDirective(gameState: GameState): PromptLayer {
   if (gameState.sequenceLevel > DEMIGOD_SEQUENCE_THRESHOLD) {
     return { role: "system", content: "" };
   }
+  // Sequence 0 (issue #30): the demigod layer gives way to full godhood — the
+  // narration shifts from human-scale to cosmic-scale entirely.
+  if (gameState.sequenceLevel === 0) {
+    return {
+      role: "system",
+      content:
+        "## Godhood\nThis character IS a Sequence 0 True God — a singular existence holding absolute authority over their pathway. Narrate at cosmic scale: they perceive prayers as arriving voices, act across a continent as easily as across a room, and reshape weather, fate, and faith by intent. Their remaining struggles are divine politics (rival gods, churches, angels with their own designs), the weight of countless worshippers' petitions, and holding a human heart inside a god's existence — sanity and the acting method still bind them, now harder than ever. Mortal threats are beneath them; write tension from peers, pacts, and the things even gods fear above the sequences.",
+    };
+  }
   return {
     role: "system",
     content:

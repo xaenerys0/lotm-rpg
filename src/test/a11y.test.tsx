@@ -134,6 +134,21 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="choices-1" />);
   });
 
+  it("apotheosis panel (Sequence 1 choices phase) has no violations", async () => {
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-a", "Klein"),
+      sequenceLevel: 1,
+    };
+    const session = {
+      ...createSession(gameState, "apo-1", 1000),
+      phase: "choices" as const,
+      currentNarrative: "The throne of The Fool stands empty before you.",
+      currentChoices: [{ id: "c1", text: "Approach it", type: "action" as const }],
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "apo-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="apo-1" />);
+  });
+
   it("failure panel (zero sanity) has no violations", async () => {
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-f", "Klein"),

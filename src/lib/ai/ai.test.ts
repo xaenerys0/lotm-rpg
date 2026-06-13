@@ -1745,6 +1745,13 @@ describe("prompts", () => {
         expect(layer.content.toLowerCase()).toContain("church");
       }
     });
+
+    it("shifts to a full godhood directive at Sequence 0 (issue #30)", () => {
+      const layer = buildDemigodDirective(makeGameState({ sequenceLevel: 0 }));
+      expect(layer.content).toContain("Godhood");
+      expect(layer.content).toContain("True God");
+      expect(layer.content).not.toContain("Demigod Stakes");
+    });
   });
 
   describe("assemblePrompt", () => {

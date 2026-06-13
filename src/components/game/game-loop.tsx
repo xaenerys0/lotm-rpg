@@ -44,6 +44,16 @@ import {
   fallbackDescentScene,
   serializeLegacies,
   LEGACIES_KEY,
+  type FailureVerdict,
+  apotheosisRequirements,
+  apotheosisSuccessChance,
+  attemptApotheosis,
+  canAttemptApotheosis,
+  drawPetition,
+  trueGodName,
+  APOTHEOSIS_STAGES,
+  TRUE_GOD_ABILITIES,
+  TRUE_GOD_ACTING,
   deserializeArtifacts,
   mintArtifact,
   serializeArtifacts,
@@ -260,11 +270,16 @@ function buildAICallParams(currentSession: GameSession) {
     currentSession.gameState.pathwayId,
     currentSession.gameState.sequenceLevel,
   );
+  // Sequence 0 (issue #30) has no rules-engine Sequence — a True God's
+  // abilities are authority itself, framed by the apotheosis module.
+  const isTrueGod = currentSession.gameState.sequenceLevel === 0;
   return {
     pathway,
     seq,
-    abilities: seq?.abilities.map((a) => a.name) ?? [],
-    actingReqs: seq?.actingRequirements ?? [],
+    abilities: isTrueGod
+      ? [...TRUE_GOD_ABILITIES]
+      : (seq?.abilities.map((a) => a.name) ?? []),
+    actingReqs: isTrueGod ? [...TRUE_GOD_ACTING] : (seq?.actingRequirements ?? []),
     // Active persona (issue #22): narrator presentation context.
     identityContext: currentSession.identityState
       ? identityPromptContext(currentSession.identityState)
@@ -371,6 +386,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // AI only narrates the descent (best-effort, with a deterministic fallback).
   const [setbackNotes, setSetbackNotes] = useState<string[] | null>(null);
   const [facingFate, setFacingFate] = useState(false);
+  // Synchronous re-entrancy lock for the irrevocable endings (permadeath and
+  // apotheosis). A ref, not state, so a rapid second click is blocked within
+  // the same tick — before React can flush the `facingFate` re-render that
+  // disables the button. Prevents an already-resolved apotheosis from being
+  // re-rolled or the legacy/journal from being written twice.
+  const endingInFlight = useRef(false);
 
   const handleSetback = useCallback(() => {
     if (!session) return;
@@ -387,85 +408,151 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     });
   }, [session, updateSession]);
 
+  // The shared ending: legacy + echo persistence, the narrated final scene,
+  // the death journal entry, and the session's end. Used by loss-of-control
+  // permadeath (issue #12) and a failed apotheosis (issue #30).
+  const concludeChronicle = useCallback(
+    async (verdict: FailureVerdict, descentAction: string) => {
+      if (!session || endingInFlight.current) return;
+      endingInFlight.current = true;
+      setFacingFate(true);
+      const legacy = buildLegacy(session, verdict.severity);
+
+      // The world remembers: persist the legacy for future characters.
+      try {
+        const raw = localStorage.getItem(LEGACIES_KEY);
+        const legacies = (raw ? deserializeLegacies(raw) : null) ?? [];
+        localStorage.setItem(LEGACIES_KEY, serializeLegacies([...legacies, legacy]));
+      } catch {
+        // Storage unavailable — the session still ends.
+      }
+
+      // Timeline echoes (issue #31): the fall also mints a physical artifact a
+      // future character — in this epoch or later — may discover.
+      try {
+        const rawEchoes = localStorage.getItem(ECHOES_KEY);
+        const artifacts = (rawEchoes ? deserializeArtifacts(rawEchoes) : null) ?? [];
+        localStorage.setItem(
+          ECHOES_KEY,
+          serializeArtifacts([...artifacts, mintArtifact(session, legacy)]),
+        );
+      } catch {
+        // Storage unavailable — the echo is lost to the fog.
+      }
+
+      // AI narrates the descent; the deterministic scene covers any failure.
+      let scene = fallbackDescentScene(verdict.severity, session.gameState);
+      if (providerConfig) {
+        try {
+          const { abilities, actingReqs, loreContext } = buildAICallParams(session);
+          const result = await generate({
+            config: providerConfig,
+            gameState: session.gameState,
+            memory: session.memory,
+            loreContext,
+            instruction: "narrative",
+            playerAction: descentAction,
+            abilities,
+            actingRequirements: actingReqs,
+          });
+          if (result.response.narrative) scene = result.response.narrative;
+          recordUsage(result.usage);
+        } catch {
+          // Fallback scene already set.
+        }
+      }
+
+      appendJournalEntries(session.id, [
+        {
+          id: crypto.randomUUID(),
+          turnNumber: session.turnCount,
+          createdAt: Date.now(),
+          location: session.gameState.location,
+          eventType: "death",
+          summary: legacy.epitaph,
+          narrative: scene,
+          involvedNpcs: session.gameState.npcsPresent,
+          arc: `Sequence ${session.gameState.sequenceLevel}`,
+          characterId: session.gameState.characterId,
+          ...(session.gameState.characterName
+            ? { characterName: session.gameState.characterName }
+            : {}),
+        },
+      ]);
+
+      updateSession(endSession(session, legacy, scene));
+      setFacingFate(false);
+      endingInFlight.current = false;
+    },
+    [session, providerConfig, recordUsage, updateSession],
+  );
+
   const handlePermadeath = useCallback(async () => {
-    if (!session || facingFate) return;
-    setFacingFate(true);
+    if (!session) return;
     const verdict = evaluateFailure({
       cause: "loss-of-control",
       sequenceLevel: session.gameState.sequenceLevel,
       highRisk: session.gameState.digestion?.complete ?? false,
     });
-    const legacy = buildLegacy(session, verdict.severity);
+    await concludeChronicle(
+      verdict,
+      `Narrate the character's final descent — sanity has collapsed entirely and this is ${
+        verdict.severity === "fatal"
+          ? "their death"
+          : "their irreversible transformation into something monstrous"
+      }. This ends their story: write a closing scene, no choices.`,
+    );
+  }, [session, concludeChronicle]);
 
-    // The world remembers: persist the legacy for future characters.
-    try {
-      const raw = localStorage.getItem(LEGACIES_KEY);
-      const legacies = (raw ? deserializeLegacies(raw) : null) ?? [];
-      localStorage.setItem(LEGACIES_KEY, serializeLegacies([...legacies, legacy]));
-    } catch {
-      // Storage unavailable — the session still ends.
+  // Apotheosis (issue #30): the engine — not the AI — decides the ascent.
+  // Success writes Sequence 0 and the tease; failure at this height is
+  // absolute and routes through the same permadeath machinery.
+  const [ascension, setAscension] = useState<{
+    honorific: string;
+    tease: string;
+  } | null>(null);
+
+  const handleApotheosis = useCallback(async () => {
+    // The attempt is irrevocable and rolls exactly once — take the synchronous
+    // lock before the roll so a rapid second click cannot re-roll it.
+    if (!session || endingInFlight.current) return;
+    endingInFlight.current = true;
+    const result = attemptApotheosis(session);
+    if (result.outcome === "ascended") {
+      appendJournalEntries(session.id, [
+        {
+          id: crypto.randomUUID(),
+          turnNumber: session.turnCount,
+          createdAt: Date.now(),
+          location: session.gameState.location,
+          eventType: "advancement",
+          summary: `Became ${result.honorific} — the Sequence 0 True God of the pathway.`,
+          narrative: result.tease,
+          involvedNpcs: session.gameState.npcsPresent,
+          arc: "Sequence 0",
+          characterId: session.gameState.characterId,
+          ...(session.gameState.characterName
+            ? { characterName: session.gameState.characterName }
+            : {}),
+        },
+      ]);
+      setAscension({ honorific: result.honorific, tease: result.tease });
+      updateSession(result.session);
+      endingInFlight.current = false;
+      return;
     }
-
-    // Timeline echoes (issue #31): the fall also mints a physical artifact a
-    // future character — in this epoch or later — may discover.
-    try {
-      const rawEchoes = localStorage.getItem(ECHOES_KEY);
-      const artifacts = (rawEchoes ? deserializeArtifacts(rawEchoes) : null) ?? [];
-      localStorage.setItem(
-        ECHOES_KEY,
-        serializeArtifacts([...artifacts, mintArtifact(session, legacy)]),
-      );
-    } catch {
-      // Storage unavailable — the echo is lost to the fog.
-    }
-
-    // AI narrates the descent; the deterministic scene covers any failure.
-    let scene = fallbackDescentScene(verdict.severity, session.gameState);
-    if (providerConfig) {
-      try {
-        const { abilities, actingReqs, loreContext } = buildAICallParams(session);
-        const result = await generate({
-          config: providerConfig,
-          gameState: session.gameState,
-          memory: session.memory,
-          loreContext,
-          instruction: "narrative",
-          playerAction: `Narrate the character's final descent — sanity has collapsed entirely and this is ${
-            verdict.severity === "fatal"
-              ? "their death"
-              : "their irreversible transformation into something monstrous"
-          }. This ends their story: write a closing scene, no choices.`,
-          abilities,
-          actingRequirements: actingReqs,
-        });
-        if (result.response.narrative) scene = result.response.narrative;
-        recordUsage(result.usage);
-      } catch {
-        // Fallback scene already set.
-      }
-    }
-
-    appendJournalEntries(session.id, [
-      {
-        id: crypto.randomUUID(),
-        turnNumber: session.turnCount,
-        createdAt: Date.now(),
-        location: session.gameState.location,
-        eventType: "death",
-        summary: legacy.epitaph,
-        narrative: scene,
-        involvedNpcs: session.gameState.npcsPresent,
-        arc: `Sequence ${session.gameState.sequenceLevel}`,
-        characterId: session.gameState.characterId,
-        ...(session.gameState.characterName
-          ? { characterName: session.gameState.characterName }
-          : {}),
-      },
-    ]);
-
-    updateSession(endSession(session, legacy, scene));
-    setFacingFate(false);
-  }, [session, facingFate, providerConfig, recordUsage, updateSession]);
+    // Failure hands off to the shared ending path; release the lock so
+    // concludeChronicle can re-acquire it synchronously (no await between).
+    endingInFlight.current = false;
+    await concludeChronicle(
+      result.verdict,
+      `Narrate the apotheosis ritual collapsing at the final threshold — the pathway rejects the ascent and the character is unmade. This is ${
+        result.verdict.severity === "fatal"
+          ? "their death"
+          : "their irreversible transformation into something monstrous"
+      }. This ends their story: write a closing scene, no choices.`,
+    );
+  }, [session, updateSession, concludeChronicle]);
 
   const handleFullRestart = useCallback(() => {
     // Full restart: fresh timeline — the canonical baseline is restored by
@@ -477,6 +564,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     } catch {
       // Storage unavailable
     }
+    // Clear any lingering ascension banner so it cannot bleed into a new run.
+    setAscension(null);
   }, []);
 
   const startCombat = useCallback(
@@ -781,6 +870,19 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         }
       }
 
+      // Divine petitions (issue #30): a True God hears worshippers — some
+      // turns a petition arrives as a memory fact the narrator weaves in.
+      let memoryAfterPetitions = memory;
+      if (gameState.sequenceLevel === 0) {
+        const petition = drawPetition(gameState.pathwayId, session.turnCount);
+        if (petition) {
+          memoryAfterPetitions = {
+            ...memory,
+            sessionFacts: [...memory.sessionFacts, petition],
+          };
+        }
+      }
+
       // Journal capture (issue #11): the AI's flag plus deterministic
       // detections from the state delta, recorded before the phase advances.
       const seq = getSequence(gameState.pathwayId, gameState.sequenceLevel);
@@ -816,7 +918,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       const updated = {
         ...session,
         gameState,
-        memory,
+        memory: memoryAfterPetitions,
         ...(identityState ? { identityState } : {}),
       };
       const next = transition(updated, { type: "APPLY_CONSEQUENCES" });
@@ -843,9 +945,17 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const pathway = getPathway(session.gameState.pathwayId);
   const seq = getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel);
   const lostControl = isLossOfControl(session.gameState);
+  // Sequence 0 (issue #30) has no rules-engine Sequence — present the honorific
+  // and the True God ability framing instead of the empty "Unknown" fallback.
+  const isTrueGod = session.gameState.sequenceLevel === 0;
+  const sequenceLabel = isTrueGod
+    ? trueGodName(session.gameState.pathwayId)
+    : (seq?.name ?? "Unknown");
   // Combat only needs ability names — derive them directly rather than running
   // the full AI-call param bundle (which also scans/selects lore) per render.
-  const combatAbilities = seq?.abilities.map((a) => a.name) ?? [];
+  const combatAbilities = isTrueGod
+    ? [...TRUE_GOD_ABILITIES]
+    : (seq?.abilities.map((a) => a.name) ?? []);
 
   return (
     <SanityEffects
@@ -857,7 +967,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
           <div className="flex items-center gap-4 text-xs text-muted">
             <span className="font-serif text-sm text-foreground/80">
-              {seq?.name ?? "Unknown"}{" "}
+              {sequenceLabel}{" "}
               <span className="text-muted">
                 ({pathway?.name ?? "?"} Seq. {session.gameState.sequenceLevel})
               </span>
@@ -919,6 +1029,28 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           </div>
         )}
 
+        {/* Apotheosis achieved (issue #30) — the glimpse above the sequences. */}
+        {ascension && (
+          <div
+            role="status"
+            className="mb-6 rounded-md border border-occult/40 bg-occult/[0.08] p-5 animate-fade-in"
+          >
+            <p className="gaslit font-serif text-base font-semibold text-occult-bright">
+              You are {ascension.honorific} now. Sequence 0. A True God.
+            </p>
+            <p className="mt-2 font-serif text-sm italic leading-relaxed text-foreground/85">
+              {ascension.tease}
+            </p>
+            <button
+              type="button"
+              onClick={() => setAscension(null)}
+              className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-occult-bright hover:underline"
+            >
+              Take the throne
+            </button>
+          </div>
+        )}
+
         {/* Loss of control — sanity has bottomed out (issue #12). */}
         {lostControl && !session.ended && (
           <FailurePanel
@@ -963,6 +1095,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   freeTextNotice={freeTextNotice}
                 />
                 <CombatLauncher onStart={startCombat} />
+                {session.gameState.sequenceLevel === 1 && (
+                  <ApotheosisPanel
+                    session={session}
+                    busy={facingFate}
+                    onAttempt={() => void handleApotheosis()}
+                  />
+                )}
                 <WorldMessages location={session.gameState.location} />
               </>
             )}
@@ -1555,6 +1694,102 @@ function CombatLauncher({ onStart }: { onStart: (ambush: boolean) => void }) {
         </button>
       </div>
     </div>
+  );
+}
+
+// Apotheosis (issue #30): shown to a Sequence 1 King of Angels. The checklist
+// is the engine's own requirement verdicts; the attempt is two-step (arm, then
+// confirm) because failure at this height is permadeath.
+function ApotheosisPanel({
+  session,
+  busy,
+  onAttempt,
+}: {
+  session: GameSession;
+  busy: boolean;
+  onAttempt: () => void;
+}) {
+  const [armed, setArmed] = useState(false);
+  const requirements = apotheosisRequirements(session);
+  const ready = canAttemptApotheosis(session);
+  const chance = Math.round(apotheosisSuccessChance(session) * 100);
+  const honorific = trueGodName(session.gameState.pathwayId);
+
+  return (
+    <section
+      aria-labelledby="apotheosis-heading"
+      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+    >
+      <h2
+        id="apotheosis-heading"
+        className="gaslit font-serif text-base font-semibold text-occult-bright"
+      >
+        The throne of {honorific} stands empty
+      </h2>
+      <p className="mt-1 text-sm leading-relaxed text-muted">
+        One rung remains. Sequence 0 is not climbed — it is seized, once, by the one the
+        pathway accepts.
+      </p>
+      <ul className="mt-3 space-y-1.5">
+        {requirements.map((req) => (
+          <li key={req.id} className="flex items-start gap-2 text-sm">
+            <span
+              aria-hidden="true"
+              className={req.met ? "text-occult-bright" : "text-muted"}
+            >
+              {req.met ? "✦" : "◇"}
+            </span>
+            <span className={req.met ? "text-foreground/85" : "text-muted"}>
+              {req.label}
+              <span className="sr-only">{req.met ? " — met" : " — not yet met"}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {ready && (
+        <ol className="mt-4 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-foreground/75">
+          {APOTHEOSIS_STAGES.map((stage) => (
+            <li key={stage}>{stage}</li>
+          ))}
+        </ol>
+      )}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {!armed ? (
+          <button
+            type="button"
+            onClick={() => setArmed(true)}
+            disabled={!ready || busy}
+            className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-4 py-2 text-sm font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Begin the apotheosis ritual
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onAttempt}
+              disabled={busy}
+              className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-crimson/60 disabled:opacity-40"
+            >
+              {busy ? "The world holds its breath…" : "Seize the throne — irrevocably"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setArmed(false)}
+              disabled={busy}
+              className="min-h-[24px] rounded px-2 py-1 text-xs text-muted hover:text-foreground/80"
+            >
+              Step back
+            </button>
+          </>
+        )}
+        {ready && (
+          <span className="text-xs text-muted">
+            The augurs put your odds near {chance}%. Failure is not survivable.
+          </span>
+        )}
+      </div>
+    </section>
   );
 }
 

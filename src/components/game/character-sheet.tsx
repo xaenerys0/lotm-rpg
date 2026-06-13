@@ -14,6 +14,7 @@ import {
   identityCapability,
   serializeSession,
   switchIdentity,
+  trueGodName,
   SESSION_INDEX_KEY,
   SESSION_KEY_PREFIX,
   type GameSession,
@@ -161,8 +162,11 @@ export function CharacterSheet() {
               )}
             </h2>
             <p className="mt-1 font-serif text-sm italic text-muted">
-              Sequence {state.sequenceLevel} {sequence?.name ?? "Beyonder"} ·{" "}
-              {pathway?.name ?? "Unknown"} Pathway
+              Sequence {state.sequenceLevel}{" "}
+              {state.sequenceLevel === 0
+                ? `${trueGodName(state.pathwayId)} — True God`
+                : (sequence?.name ?? "Beyonder")}{" "}
+              · {pathway?.name ?? "Unknown"} Pathway
             </p>
           </div>
           <p className="text-xs text-muted">

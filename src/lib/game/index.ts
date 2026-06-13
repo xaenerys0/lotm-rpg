@@ -204,6 +204,26 @@ export {
   type SetbackResult,
 } from "./death";
 export {
+  apotheosisRequirements,
+  apotheosisSuccessChance,
+  attemptApotheosis,
+  canAttemptApotheosis,
+  drawPetition,
+  trueGodName,
+  uniquenessItemFor,
+  ABOVE_SEQUENCE_TEASE,
+  APOTHEOSIS_SANITY_RATIO,
+  APOTHEOSIS_STAGES,
+  PETITION_CHANCE,
+  TRUE_GOD_ABILITIES,
+  TRUE_GOD_ACTING,
+  TRUE_GOD_NAMES,
+  type ApotheosisAscended,
+  type ApotheosisRequirement,
+  type ApotheosisResult,
+  type ApotheosisUnmade,
+} from "./apotheosis";
+export {
   artifactToItem,
   deserializeArtifacts,
   discoverableArtifacts,
