@@ -6,8 +6,8 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 
 ## Structure
 
-- `pathways.ts` — Pathway and sequence definitions (abilities, ingredients, rituals). ~1,240 lines of game data.
-- `groups.ts` — Pathway group clustering (mysteries, god-almighty, eternal-darkness) and neighbor relationships.
+- `pathways.ts` — Pathway and sequence definitions (abilities, ingredients, rituals) for all 22 pathways. Large block of game data.
+- `groups.ts` — Pathway group clustering (nine groups partitioning all 22 pathways) and neighbor relationships.
 - `laws.ts` — Three cosmic laws: indestructibility (conservation of total characteristic weight), conservation (sequential advancement only), convergence (same/neighboring pathway attraction).
 - `validation.ts` — High-level validation API: `validateAdvancement()` and `validateTransfer()`.
 - `index.ts` — Public exports.
@@ -22,7 +22,36 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 
 ## Current Scope
 
-4 pathways implemented (Fool, Visionary, Sun, Death), sequences 9-5 only. 18 more pathways and higher sequences (4-0) are planned.
+All **22 pathways** implemented (issue #28). The original nine carry sequences
+**9 down to 1** (issue #25 added the demigod tiers Seq 4-1: Saint → Angel →
+King of Angels); the thirteen added in #28 ship at **Seq 9-5** and grow deeper
+when the private novel source is available (the same staged rollout used for
+#21/#25). Sequence 0 (True God) is reached via the apotheosis endgame in
+`@/lib/game/apotheosis` (issue #30), not stored as a `Sequence` here.
+
+Nine groups partition all 22 pathways (`PATHWAY_GROUPS`):
+
+- **Mysteries** (Sefirah Castle): Fool (1), Door (7), Error (8)
+- **God Almighty** (Chaos Sea): Visionary (2), Sun (3), Tyrant (6), Hanged Man (9), White Tower (10)
+- **Eternal Darkness** (River of Eternal Darkness): Death (4), Darkness (5), Twilight Giant (11)
+- **Order**: Justiciar (12), Black Emperor (13)
+- **Combat**: Red Priest (14), Demoness (15)
+- **Life**: Mother (16), Moon (17)
+- **Knowledge**: Hermit (18), Paragon (19)
+- **Wheel of Fortune**: Wheel of Fortune (20)
+- **Abyss**: Abyss (21), Chained (22)
+
+The three canonical god-family groups (Mysteries, God Almighty, Eternal
+Darkness) are canon-solid; the six smaller groupings for pathways 12-22 are a
+reasonable thematic partition pending novel-source verification — they feed
+only the soft kindred-pathway bonus in `computePathwayMatchup`. The Seq 9-5
+sequence **names** for the new pathways are **verified against the novel text**
+(every sampled name appears in the source); their abilities, acting
+requirements, and lore depth remain provisional. Classification scales with
+sequence: Low (9-8), Mid (7-5), High (4-3, Saint), Demigod (2-1,
+Angel/King of Angels). The Anchors system (issues #35, #25) — required for
+Beyonders at Seq ≤ 2 — lives in `@/lib/game/anchors` with its design in
+`docs/anchors-design.md`.
 
 ## Conventions
 

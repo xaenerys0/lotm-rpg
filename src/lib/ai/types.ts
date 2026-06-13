@@ -87,11 +87,19 @@ export interface AIResponse {
   actingEvaluation?: ActingEvaluation;
   sanityImpact?: number;
   itemsDiscovered?: Item[];
+  /**
+   * Optional journal-worthy flag (issue #11). Loosely typed at the AI
+   * boundary; `validateJournalFlag` (@/lib/game/journal) is the single
+   * validation point before anything reaches the journal.
+   */
+  journalEntry?: { summary: string; eventType: string };
 }
 
 export interface ValidatedAIResponse {
   response: AIResponse;
   validation: ValidationResult;
+  /** Rough token estimates for this call (issue #15) — chars/4 heuristic. */
+  usage?: { promptTokens: number; outputTokens: number };
 }
 
 export type InstructionType =
@@ -125,6 +133,16 @@ export interface GameState {
   characterName?: string;
   characterBackground?: string;
   /**
+   * Starting epoch (issues #26/#29). Optional — absent means the Fifth.
+   * Set at character creation; rules-engine-only (never AI-mutable).
+   */
+  epoch?: number;
+  /**
+   * Funds in pence (issue #16 — the marketplace introduced currency).
+   * Optional for saves that predate it; `getFunds` seeds the default.
+   */
+  funds?: number;
+  /**
    * Digestion progress for the potion matching the current pathway/sequence.
    * Optional for backward compatibility with sessions saved before the Acting
    * Method mechanic; the game engine seeds a default when it is missing.
@@ -143,6 +161,12 @@ export interface TurnRecord {
   playerAction: string;
   aiResponse: AIResponse;
   timestamp: number;
+  /**
+   * Ids of the `source_chunks` retrieved for this turn (issue #63), recorded
+   * so "why did the narrator say X" stays answerable without vector-search
+   * forensics. Absent on turns that performed no retrieval.
+   */
+  retrievedChunkIds?: string[];
 }
 
 export interface BulletSummary {
@@ -178,10 +202,45 @@ export interface LoreContext {
   totalTokens: number;
 }
 
+/**
+ * A retrieved corpus chunk as the prompt assembler consumes it (issue #64) — a
+ * structural slice of `RetrievedChunk` from `@/lib/lore/retrieval`, declared
+ * here so the AI layer does not depend on the retrieval module.
+ */
+export interface RetrievedLoreChunk {
+  id: string;
+  title: string;
+  content: string;
+  source: string;
+  token_count: number;
+}
+
 export interface PromptInput {
   gameState: GameState;
   memory: MemoryState;
   loreContext: LoreContext;
+  /**
+   * Epoch tone directive (issues #26/#29) — one narrator-facing line from
+   * `epochNarrationDirective`; null/absent for the Fifth-Epoch baseline.
+   */
+  epochContext?: string | null;
+  /**
+   * Active-persona presentation context (issue #22) — one narrator-facing
+   * line from `identityPromptContext`; null/absent when wearing the true face.
+   */
+  identityContext?: string | null;
+  /**
+   * Gated chunks from `retrieveChunks` (issue #64), in retrieval-rank order.
+   * They fill whatever lore budget the curated entries leave — authored lore
+   * is never crowded out.
+   */
+  retrievedChunks?: RetrievedLoreChunk[];
+  /**
+   * Per-city narration tone (issue #23), one sentence, from
+   * `cityNarrationDirective(location)`. Omitted/`null` for cities with no
+   * specific tone — the assembler then drops the layer.
+   */
+  cityNarration?: string | null;
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];

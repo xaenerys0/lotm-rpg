@@ -7,7 +7,23 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 ## Structure
 
 - `types.ts` — `LoreEntry` and `LoreCategory` type definitions.
+- `retrieval.ts` — Runtime retrieval (issue #63): `retrieveChunks(query, options)`
+  embeds the query with the save's **locked** embedding model (per-character
+  model lock — mismatches throw) and calls the gated `match_source_chunks` RPC.
+  The **timeline gate** (`canon_order <= canonPosition`) and **concealment
+  gate** are enforced server-side and re-checked client-side as defense in
+  depth. `createSupabaseChunkMatcher(client)` wraps a Supabase client into the
+  injectable RPC seam; `retrievalChunkIds(chunks)` extracts the ids recorded on
+  the turn record (determinism/debuggability); `toPgVector` serializes query
+  vectors. This **extends** the curated `lore_entries` injection — curated
+  guardrails are injected first (issue #64); retrieved chunks fill the rest.
+- `epochs.ts` — Epoch starting points (issues #26/#29): `EPOCHS` (all five — player-safe summary, narrator `toneDirective`, `startingLocation`, `openingBeat`, `dangerModifier`; the Fifth is the baseline and adds nothing), `getEpoch` (unknown → Fifth), `epochNarrationDirective`, `epochOpeningBeat`. Threaded into prompt assembly as the `## Epoch` system layer (PromptInput.epochContext) and into the first scene's player action.
+- `glossary.ts` — In-game glossary (issue #14): `GLOSSARY_TERMS` with **progressive disclosure** via `revealAtSequence` (9-8 basics at the start; rituals/organisations ~8-7; demigod concepts at 5; Sefirah-tier mysteries at 4). `glossaryForSequence(level)`, `getGlossaryTerm(slug)`, `sealedTermCount(level)`. Entries are player-safe world-building — no narrator-only lore.
 - `tingen.ts` — Tingen City locations and geography.
+- `backlund.ts` — Backlund (Loen capital) locations: overview, Empress/Hillston/East boroughs, the Backlund Bridge & Tussock, the capital's Churches (issue #23).
+- `trier.ts` — Trier (Intis Republic capital) locations: overview, city walls & quartiers, the Island District & Saint Viève Cathedral, the underground/catacombs, stations & transport, the Church of the Eternal Blazing Sun (issue #23).
+- `bayam.ts` — Bayam (Rorsted Archipelago capital) locations: overview, harbour/adventurers' quarter, Cathedral of Waves, streets & cemeteries, the Sea God Kalvetua & native belief (issue #23).
+- `narration.ts` — `cityNarrationDirective(location)` (issue #23): one tone sentence per city (Backlund = soot/class/intrigue; Trier = sun-worship/revolutionary ferment; Bayam = salt/colonial trade/island superstition), matched on the location's lowercase first word; `null` for unknown/unmapped cities (incl. the Tingen start). Threaded into prompt assembly via `PromptInput.cityNarration`.
 - `fifth-epoch.ts` — Fifth Epoch baseline: politics, technology, social norms.
 - `organizations.ts` — Nighthawks, Mandated Punishers, Machinery Hivemind, Psychology Alchemists, Aurora Order.
 - `npcs.ts` — Key Tingen NPCs: Dunn Smith, Leonard Mitchell, Old Neil, Daly Simone, Azik Eggers, Klein Moretti, Melissa Moretti, Ince Zangwill.
@@ -15,12 +31,18 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 - `pathway-visionary.ts` — Visionary pathway lore (Seq 9-5).
 - `pathway-sun.ts` — Sun pathway lore (Seq 9-5).
 - `pathway-death.ts` — Death pathway lore (Seq 9-5).
+- `pathway-darkness.ts` — Darkness pathway lore (Seq 9-5).
+- `pathway-tyrant.ts` — Tyrant pathway lore (Seq 9-5).
+- `pathway-door.ts` — Door pathway lore (Seq 9-5).
+- `pathway-error.ts` — Error pathway lore (Seq 9-5).
+- `pathway-hanged-man.ts` — Hanged Man pathway lore (Seq 9-5).
+- `pathway-{white-tower,twilight-giant,justiciar,black-emperor,red-priest,demoness,mother,moon,hermit,paragon,wheel-of-fortune,abyss,chained}.ts` — The thirteen additional pathways (issue #28). Each holds a single player-safe **overview** entry (family/group + the canon Seq 9-5 progression); per-sequence lore depth awaits the novel source. The `pathway` field is the lowercased full name with spaces (e.g. `"white tower"`) so `selectCuratedLore` matches it.
 - `index.ts` — Re-exports and query helpers (`getLoreByCategory`, `getLoreByPathway`, etc.).
 - `lore.test.ts` — Data integrity tests.
 
 ## Database Table
 
-`lore_entries` in Supabase (migration `20260527111842`). Seeded by `20260527113655`.
+`lore_entries` in Supabase (migration `20260527111842`). Seeded by `20260527113655`; the five additional pathways (Darkness, Tyrant, Door, Error, Hanged Man) are seeded by `20260612170000`; the three additional cities (Backlund, Trier, Bayam) by `20260613020000`; the thirteen remaining pathways (White Tower … Chained, overview entries) by `20260613030000`.
 
 Metadata columns for filtering: `category`, `pathway`, `epoch`, `city`, `npcs`, `sequences`, `tags`.
 `embedding` column (vector 1536) is nullable — populated post-MVP via pgvector.

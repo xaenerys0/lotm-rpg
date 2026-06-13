@@ -9,7 +9,9 @@ import {
 } from "./world-state";
 import { createDigestionState } from "./digestion";
 import {
+  advanceCanonPosition,
   createSession,
+  DEFAULT_CANON_POSITION,
   createDefaultGameState,
   sessionToSummary,
   serializeSession,
@@ -22,7 +24,7 @@ import { VALID_TRANSITIONS, PILLAR_INSTRUCTION_MAP, CHOICE_PILLAR_MAP } from "./
 import type { GameSession, GamePhase, GameplayPillar } from "./types";
 import type { GameState, Choice, ValidatedAIResponse, StateChange } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
-import { createMemoryState } from "@/lib/ai";
+import { createMemoryState, DEFAULT_EMBEDDING_MODEL_ID } from "@/lib/ai";
 
 function makeGameState(overrides: Partial<GameState> = {}): GameState {
   return {
@@ -45,6 +47,8 @@ function makeSession(overrides: Partial<GameSession> = {}): GameSession {
     gameState: makeGameState(),
     memory: createMemoryState(),
     turnCount: 0,
+    canonPosition: 1,
+    embeddingModelId: DEFAULT_EMBEDDING_MODEL_ID,
     phase: "idle",
     currentNarrative: null,
     currentChoices: null,
@@ -1093,6 +1097,55 @@ describe("createSession", () => {
   });
 });
 
+// ─── canon position & embedding model lock (issue #63) ─────────────
+
+describe("createSession RAG fields (issue #63)", () => {
+  it("seeds the default canon position and locked embedding model", () => {
+    const session = createSession(makeGameState(), "id", 1000);
+    expect(session.canonPosition).toBe(DEFAULT_CANON_POSITION);
+    expect(session.embeddingModelId).toBe(DEFAULT_EMBEDDING_MODEL_ID);
+  });
+
+  it("locks an explicitly chosen approved model and start position", () => {
+    const session = createSession(makeGameState(), "id", 1000, undefined, {
+      embeddingModelId: "bge-m3",
+      canonPosition: 250,
+    });
+    expect(session.embeddingModelId).toBe("bge-m3");
+    expect(session.canonPosition).toBe(250);
+  });
+
+  it("rejects locking a model that is not on the approved list", () => {
+    expect(() =>
+      createSession(makeGameState(), "id", 1000, undefined, {
+        embeddingModelId: "text-embedding-3-large",
+      }),
+    ).toThrow(/Unknown embedding model/);
+  });
+});
+
+describe("advanceCanonPosition", () => {
+  it("advances the timeline position and touches updatedAt", () => {
+    const session = createSession(makeGameState(), "id", 1000);
+    const advanced = advanceCanonPosition(session, 42, 2000);
+    expect(advanced.canonPosition).toBe(42);
+    expect(advanced.updatedAt).toBe(2000);
+    // Pure: the original session is untouched.
+    expect(session.canonPosition).toBe(DEFAULT_CANON_POSITION);
+  });
+
+  it("is monotonic: regressions and non-finite positions are ignored", () => {
+    const session = advanceCanonPosition(
+      createSession(makeGameState(), "id", 1000),
+      100,
+      2000,
+    );
+    expect(advanceCanonPosition(session, 99, 3000)).toBe(session);
+    expect(advanceCanonPosition(session, 100, 3000)).toBe(session);
+    expect(advanceCanonPosition(session, Number.NaN, 3000)).toBe(session);
+  });
+});
+
 // ─── createDefaultGameState ────────────────────────────────────────
 
 describe("createDefaultGameState", () => {
@@ -1251,6 +1304,36 @@ describe("deserializeSession", () => {
   it("returns null for missing required fields", () => {
     expect(deserializeSession("{}")).toBeNull();
     expect(deserializeSession('{"id": "x"}')).toBeNull();
+  });
+
+  it("seeds canon position and the default model lock for legacy sessions", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    delete modified.canonPosition;
+    delete modified.embeddingModelId;
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored?.canonPosition).toBe(DEFAULT_CANON_POSITION);
+    expect(restored?.embeddingModelId).toBe(DEFAULT_EMBEDDING_MODEL_ID);
+  });
+
+  it("preserves an explicit canon position and approved model lock", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    modified.canonPosition = 333;
+    modified.embeddingModelId = "bge-m3";
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored?.canonPosition).toBe(333);
+    expect(restored?.embeddingModelId).toBe("bge-m3");
+  });
+
+  it("returns null for an unapproved model lock or invalid canon position", () => {
+    const withModel = JSON.parse(serializeSession(makeSession()));
+    withModel.embeddingModelId = "not-a-real-model";
+    expect(deserializeSession(JSON.stringify(withModel))).toBeNull();
+
+    const withPosition = JSON.parse(serializeSession(makeSession()));
+    withPosition.canonPosition = -5;
+    expect(deserializeSession(JSON.stringify(withPosition))).toBeNull();
+    withPosition.canonPosition = "soon";
+    expect(deserializeSession(JSON.stringify(withPosition))).toBeNull();
   });
 
   it("returns null for invalid phase", () => {

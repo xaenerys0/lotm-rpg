@@ -186,6 +186,157 @@
   }
 }
 
+/* ─── Victorian occult atmosphere (issue #13) ─────────────────────────
+   The gas-lit layer over the base theme: drifting fog, candle-flicker,
+   parchment narrative panels, and a gaslight halo for headers. All motion
+   here is decorative and inherits the global reduced-motion neutraliser. */
+
+/* Parchment: a paper-grain texture for narrative panels. The grain is an
+   inline SVG turbulence tile so no asset is shipped; tinted warm and edged
+   with a deep inner shadow like a page read by lamplight. */
+.parchment {
+  position: relative;
+  background-color: var(--color-surface);
+  background-image:
+    radial-gradient(ellipse 90% 70% at 20% 0%, rgba(217, 119, 6, 0.05), transparent 60%),
+    radial-gradient(
+      ellipse 70% 60% at 95% 100%,
+      rgba(124, 58, 237, 0.025),
+      transparent 60%
+    ),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.45 0 0 0 0 0.30 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  box-shadow:
+    inset 0 0 48px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(231, 229, 228, 0.04);
+}
+
+/* Gaslight halo: a warm radial bloom behind a heading, like a wall sconce. */
+.gaslit {
+  position: relative;
+}
+.gaslit::before {
+  content: "";
+  position: absolute;
+  inset: -2.5rem -3rem;
+  background: radial-gradient(
+    ellipse 60% 90% at 18% 50%,
+    rgba(251, 191, 36, 0.07),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* Fog: two soft banks drifting across the page at different speeds. Mounted
+   once on the game shell; sits above the background, below the content. */
+.fog-overlay {
+  position: relative;
+  isolation: isolate;
+}
+.fog-overlay::before,
+.fog-overlay::after {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 45% 30% at 25% 35%, rgba(87, 83, 78, 0.13), transparent 70%),
+    radial-gradient(ellipse 55% 35% at 75% 75%, rgba(87, 83, 78, 0.1), transparent 70%);
+  animation: fog-drift 90s ease-in-out infinite alternate;
+}
+.fog-overlay::after {
+  background:
+    radial-gradient(
+      ellipse 40% 28% at 70% 25%,
+      rgba(138, 129, 120, 0.07),
+      transparent 70%
+    ),
+    radial-gradient(ellipse 50% 30% at 20% 80%, rgba(87, 83, 78, 0.09), transparent 70%);
+  animation-duration: 140s;
+  animation-direction: alternate-reverse;
+}
+@keyframes fog-drift {
+  from {
+    transform: translate3d(-3%, -1.5%, 0) scale(1);
+  }
+  to {
+    transform: translate3d(3%, 1.5%, 0) scale(1.08);
+  }
+}
+
+/* Candle-flicker: an uneven, living glow for flames, orbs, and sconces. */
+.candle-flicker {
+  animation: candle-flicker 3.4s steps(24, jump-none) infinite;
+}
+@keyframes candle-flicker {
+  0%,
+  100% {
+    opacity: 1;
+    filter: brightness(1);
+  }
+  37% {
+    opacity: 0.86;
+    filter: brightness(0.92);
+  }
+  44% {
+    opacity: 0.97;
+    filter: brightness(1.05);
+  }
+  61% {
+    opacity: 0.8;
+    filter: brightness(0.88);
+  }
+  68% {
+    opacity: 0.95;
+    filter: brightness(1.02);
+  }
+  82% {
+    opacity: 0.88;
+    filter: brightness(0.95);
+  }
+}
+
+/* ─── High-contrast mode (issue #13, WCAG 1.4.3/1.4.6 support) ─────────
+   Toggled from Settings (data-contrast on <html>) and honoured automatically
+   for users whose system asks for more contrast. Brightens text, borders,
+   and muted copy; mutes the decorative atmosphere so content leads. */
+[data-contrast="high"] {
+  --color-foreground: #fafaf9;
+  --color-muted: #c9c1b8;
+  --color-border: #57534e;
+  --color-amber: #f59e0b;
+}
+[data-contrast="high"] .fog-overlay::before,
+[data-contrast="high"] .fog-overlay::after,
+[data-contrast="high"] .gaslit::before {
+  display: none;
+}
+[data-contrast="high"] .parchment {
+  background-image: none;
+  box-shadow: none;
+}
+@media (prefers-contrast: more) {
+  :root:not([data-contrast="normal"]) {
+    --color-foreground: #fafaf9;
+    --color-muted: #c9c1b8;
+    --color-border: #57534e;
+    --color-amber: #f59e0b;
+  }
+}
+
+/* Small screens (issue #27): the critical-tier sanity glitch uses the
+   costliest filter stack — soften it so low-power mobile GPUs keep frame
+   rate; every other effect is cheap (opacity/hue shifts). */
+@media (max-width: 640px) {
+  .sanity-fx-critical {
+    animation-duration: 6s;
+  }
+  .fog-overlay::before,
+  .fog-overlay::after {
+    animation: none;
+  }
+}
+
 /* ─── Reduced motion (WCAG 2.2 — 2.2.2 / 2.3.3) ───────────────────────
    Globally neutralise transitions, looping loaders, and entrance animations
    for users who ask for reduced motion. Static styles (filters, colours,

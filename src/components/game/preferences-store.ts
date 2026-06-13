@@ -29,3 +29,16 @@ export function savePreferences(prefs: GamePreferences): void {
     // Storage unavailable — preference simply won't persist.
   }
 }
+
+/** Reflect the high-contrast preference onto <html> (issue #13). */
+export function applyContrastPreference(prefs: GamePreferences): void {
+  try {
+    if (prefs.highContrast) {
+      document.documentElement.dataset.contrast = "high";
+    } else {
+      delete document.documentElement.dataset.contrast;
+    }
+  } catch {
+    // No DOM (SSR) — the PreferenceEffects mount applies it client-side.
+  }
+}

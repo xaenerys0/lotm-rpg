@@ -38,6 +38,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       lore_entries: {
         Row: {
@@ -91,6 +92,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       source_chunks: {
         // Private RAG corpus. No direct client query path (RLS denies
@@ -140,6 +142,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       chunk_embeddings: {
         // Model-keyed vector store: one row per (chunk, model).
@@ -162,10 +165,229 @@ export interface Database {
           embedding?: string;
           created_at?: string;
         };
+        Relationships: [];
+      };
+      journal_entries: {
+        // Auto-recorded story journal events (issue #11). Owner-only RLS.
+        Row: {
+          id: string;
+          user_id: string;
+          session_id: string;
+          character_id: string;
+          character_name: string | null;
+          turn_number: number;
+          event_type: string;
+          summary: string;
+          narrative: string;
+          location: string;
+          involved_npcs: string[];
+          arc: string;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          user_id: string;
+          session_id: string;
+          character_id: string;
+          character_name?: string | null;
+          turn_number: number;
+          event_type: string;
+          summary: string;
+          narrative?: string;
+          location?: string;
+          involved_npcs?: string[];
+          arc?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          session_id?: string;
+          character_id?: string;
+          character_name?: string | null;
+          turn_number?: number;
+          event_type?: string;
+          summary?: string;
+          narrative?: string;
+          location?: string;
+          involved_npcs?: string[];
+          arc?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      journal_annotations: {
+        // Player-only notes (issue #11). NEVER included in AI context.
+        Row: {
+          id: string;
+          user_id: string;
+          entry_id: string;
+          text: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id: string;
+          user_id: string;
+          entry_id: string;
+          text: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          entry_id?: string;
+          text?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      world_messages: {
+        // Template-composed shared messages (issue #17). Shared read.
+        Row: {
+          id: string;
+          user_id: string;
+          location: string;
+          template_id: string;
+          fills: Json;
+          text: string;
+          helpful: number;
+          unhelpful: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          location: string;
+          template_id: string;
+          fills?: Json;
+          text: string;
+          helpful?: number;
+          unhelpful?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          location?: string;
+          template_id?: string;
+          fills?: Json;
+          text?: string;
+          helpful?: number;
+          unhelpful?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      world_message_votes: {
+        // One vote per player per message; written via rate_world_message.
+        Row: {
+          message_id: string;
+          user_id: string;
+          helpful: boolean;
+          created_at: string;
+        };
+        Insert: {
+          message_id: string;
+          user_id: string;
+          helpful: boolean;
+          created_at?: string;
+        };
+        Update: {
+          message_id?: string;
+          user_id?: string;
+          helpful?: boolean;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      market_listings: {
+        // Player trading post (issue #16). Purchases only via purchase_listing.
+        Row: {
+          id: string;
+          seller_id: string;
+          item: Json;
+          price: number;
+          status: string;
+          created_at: string;
+          expires_at: string;
+          sold_to: string | null;
+          sold_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          seller_id: string;
+          item: Json;
+          price: number;
+          status?: string;
+          created_at?: string;
+          expires_at?: string;
+          sold_to?: string | null;
+          sold_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          seller_id?: string;
+          item?: Json;
+          price?: number;
+          status?: string;
+          created_at?: string;
+          expires_at?: string;
+          sold_to?: string | null;
+          sold_at?: string | null;
+        };
+        Relationships: [];
+      };
+      player_showcases: {
+        // Published player profiles (issue #18). Public rows world-readable.
+        Row: {
+          user_id: string;
+          display_name: string;
+          public: boolean;
+          pathway_id: number;
+          sequence_level: number;
+          achievement_ids: string[];
+          divergence_score: number;
+          stats: Json;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          display_name?: string;
+          public?: boolean;
+          pathway_id: number;
+          sequence_level: number;
+          achievement_ids?: string[];
+          divergence_score?: number;
+          stats?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          display_name?: string;
+          public?: boolean;
+          pathway_id?: number;
+          sequence_level?: number;
+          achievement_ids?: string[];
+          divergence_score?: number;
+          stats?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
     Functions: {
+      purchase_listing: {
+        Args: { p_listing_id: string };
+        Returns: Json;
+      };
+      rate_world_message: {
+        Args: { p_message_id: string; p_helpful: boolean };
+        Returns: undefined;
+      };
       match_source_chunks: {
         Args: {
           p_query_embedding: string;
@@ -200,5 +422,6 @@ export interface Database {
       lore_category: LoreCategoryEnum;
       source_chunk_source: SourceChunkSourceEnum;
     };
+    CompositeTypes: Record<string, never>;
   };
 }

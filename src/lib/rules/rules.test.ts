@@ -12,6 +12,11 @@ import {
   VISIONARY_PATHWAY,
   SUN_PATHWAY,
   DEATH_PATHWAY,
+  DARKNESS_PATHWAY,
+  TYRANT_PATHWAY,
+  DOOR_PATHWAY,
+  ERROR_PATHWAY,
+  HANGED_MAN_PATHWAY,
   getPathway,
   getSequence,
   areNeighboringPathways,
@@ -30,8 +35,35 @@ import { validateAdvancement, validateTransfer } from "./validation";
 // Pathway definitions
 // ---------------------------------------------------------------------------
 describe("pathway definitions", () => {
-  it("defines exactly 4 MVP pathways", () => {
-    expect(ALL_PATHWAYS).toHaveLength(4);
+  it("defines all 22 pathways", () => {
+    expect(ALL_PATHWAYS).toHaveLength(22);
+  });
+
+  it("pathway ids are unique and cover 1..22", () => {
+    const ids = ALL_PATHWAYS.map((p) => p.id).sort((a, b) => a - b);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toEqual(Array.from({ length: 22 }, (_, i) => i + 1));
+  });
+
+  it("the 13 additional pathways have their canon names and ids (issue #28)", () => {
+    const expected: Array<[number, string]> = [
+      [10, "White Tower"],
+      [11, "Twilight Giant"],
+      [12, "Justiciar"],
+      [13, "Black Emperor"],
+      [14, "Red Priest"],
+      [15, "Demoness"],
+      [16, "Mother"],
+      [17, "Moon"],
+      [18, "Hermit"],
+      [19, "Paragon"],
+      [20, "Wheel of Fortune"],
+      [21, "Abyss"],
+      [22, "Chained"],
+    ];
+    for (const [id, name] of expected) {
+      expect(ALL_PATHWAYS.find((p) => p.id === id)?.name).toBe(name);
+    }
   });
 
   it.each([
@@ -39,15 +71,34 @@ describe("pathway definitions", () => {
     [VISIONARY_PATHWAY, "Visionary", 2],
     [SUN_PATHWAY, "Sun", 3],
     [DEATH_PATHWAY, "Death", 4],
+    [DARKNESS_PATHWAY, "Darkness", 5],
+    [TYRANT_PATHWAY, "Tyrant", 6],
+    [DOOR_PATHWAY, "Door", 7],
+    [ERROR_PATHWAY, "Error", 8],
+    [HANGED_MAN_PATHWAY, "Hanged Man", 9],
   ])("pathway %s has correct name and id", (pathway, name, id) => {
     expect(pathway.name).toBe(name);
     expect(pathway.id).toBe(id);
   });
 
-  it("each pathway has sequences 9 through 5", () => {
+  it("sequence depth matches pathway scope: 9..1 for the original 9, 9..5 for the new 13", () => {
+    // The original nine pathways are implemented to the demigod tiers (Seq 4-1,
+    // issue #25). The thirteen added in issue #28 ship at Seq 9-5; their deep
+    // sequences await the private novel source, mirroring the #21/#25 rollout.
     for (const pathway of ALL_PATHWAYS) {
       const levels = pathway.sequences.map((s) => s.level).sort((a, b) => b - a);
-      expect(levels).toEqual([9, 8, 7, 6, 5]);
+      if (pathway.id <= 9) {
+        expect(levels).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
+      } else {
+        expect(levels).toEqual([9, 8, 7, 6, 5]);
+      }
+    }
+  });
+
+  it("every pathway's sequence names are unique", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      const names = pathway.sequences.map((s) => s.name);
+      expect(new Set(names).size).toBe(names.length);
     }
   });
 
@@ -92,13 +143,17 @@ describe("pathway definitions", () => {
     }
   });
 
-  it("Seq 9 and 8 are Low classification, Seq 7 through 5 are Mid", () => {
+  it("classifications scale with sequence: Low (9-8), Mid (7-5), High (4-3), Demigod (2-1)", () => {
     for (const pathway of ALL_PATHWAYS) {
       for (const seq of pathway.sequences) {
         if (seq.level >= 8) {
           expect(seq.classification).toBe("Low");
-        } else {
+        } else if (seq.level >= 5) {
           expect(seq.classification).toBe("Mid");
+        } else if (seq.level >= 3) {
+          expect(seq.classification).toBe("High");
+        } else {
+          expect(seq.classification).toBe("Demigod");
         }
       }
     }
@@ -109,16 +164,120 @@ describe("pathway definitions", () => {
     expect(getPathway(2)?.name).toBe("Visionary");
     expect(getPathway(3)?.name).toBe("Sun");
     expect(getPathway(4)?.name).toBe("Death");
+    expect(getPathway(5)?.name).toBe("Darkness");
+    expect(getPathway(6)?.name).toBe("Tyrant");
+    expect(getPathway(7)?.name).toBe("Door");
+    expect(getPathway(8)?.name).toBe("Error");
+    expect(getPathway(9)?.name).toBe("Hanged Man");
     expect(getPathway(999)).toBeUndefined();
   });
 
-  it("getSequence returns correct sequence", () => {
+  it("getSequence returns correct Sequence 9 name for every pathway", () => {
     expect(getSequence(1, 9)?.name).toBe("Seer");
     expect(getSequence(1, 5)?.name).toBe("Marionettist");
     expect(getSequence(2, 9)?.name).toBe("Spectator");
     expect(getSequence(3, 9)?.name).toBe("Bard");
     expect(getSequence(4, 9)?.name).toBe("Corpse Collector");
-    expect(getSequence(1, 4)).toBeUndefined();
+    expect(getSequence(5, 9)?.name).toBe("Sleepless");
+    expect(getSequence(6, 9)?.name).toBe("Sailor");
+    expect(getSequence(7, 9)?.name).toBe("Apprentice");
+    expect(getSequence(8, 9)?.name).toBe("Marauder");
+    expect(getSequence(9, 9)?.name).toBe("Secrets Suppliant");
+    expect(getSequence(1, 0)).toBeUndefined();
+  });
+
+  it("canon Sequence 5 names for the new pathways", () => {
+    expect(getSequence(5, 5)?.name).toBe("Spirit Warlock");
+    expect(getSequence(6, 5)?.name).toBe("Ocean Songster");
+    expect(getSequence(7, 5)?.name).toBe("Traveler");
+    expect(getSequence(8, 5)?.name).toBe("Dream Stealer");
+    expect(getSequence(9, 5)?.name).toBe("Shepherd");
+  });
+
+  it("canon Saint (Seq 4) names for every pathway", () => {
+    expect(getSequence(1, 4)?.name).toBe("Bizarro Sorcerer");
+    expect(getSequence(2, 4)?.name).toBe("Manipulator");
+    expect(getSequence(3, 4)?.name).toBe("Unshadowed");
+    expect(getSequence(4, 4)?.name).toBe("Undying");
+    expect(getSequence(5, 4)?.name).toBe("Nightwatcher");
+    expect(getSequence(6, 4)?.name).toBe("Cataclysmic Interrer");
+    expect(getSequence(7, 4)?.name).toBe("Secrets Sorcerer");
+    expect(getSequence(8, 4)?.name).toBe("Parasite");
+    expect(getSequence(9, 4)?.name).toBe("Black Knight");
+  });
+
+  it("canon Sequence 3 names for every pathway", () => {
+    expect(getSequence(1, 3)?.name).toBe("Scholar of Yore");
+    expect(getSequence(2, 3)?.name).toBe("Dream Weaver");
+    expect(getSequence(3, 3)?.name).toBe("Justice Mentor");
+    expect(getSequence(4, 3)?.name).toBe("Ferryman");
+    expect(getSequence(5, 3)?.name).toBe("Horror Bishop");
+    expect(getSequence(6, 3)?.name).toBe("Sea King");
+    expect(getSequence(7, 3)?.name).toBe("Wanderer");
+    expect(getSequence(8, 3)?.name).toBe("Mentor of Deceit");
+    expect(getSequence(9, 3)?.name).toBe("Trinity Templar");
+  });
+
+  it("canon Sequence 2 names for every pathway", () => {
+    expect(getSequence(1, 2)?.name).toBe("Miracle Invoker");
+    expect(getSequence(2, 2)?.name).toBe("Discerner");
+    expect(getSequence(3, 2)?.name).toBe("Lightseeker");
+    expect(getSequence(4, 2)?.name).toBe("Death Consul");
+    expect(getSequence(5, 2)?.name).toBe("Servant of Concealment");
+    expect(getSequence(6, 2)?.name).toBe("Calamity");
+    expect(getSequence(7, 2)?.name).toBe("Planeswalker");
+    expect(getSequence(8, 2)?.name).toBe("Trojan Horse of Destiny");
+    expect(getSequence(9, 2)?.name).toBe("Profane Presbyter");
+  });
+
+  it("canon Angel (Seq 1) names for every pathway", () => {
+    expect(getSequence(1, 1)?.name).toBe("Attendant of Mysteries");
+    expect(getSequence(2, 1)?.name).toBe("Author");
+    expect(getSequence(3, 1)?.name).toBe("White Angel");
+    expect(getSequence(4, 1)?.name).toBe("Pale Emperor");
+    expect(getSequence(5, 1)?.name).toBe("Knight of Misfortune");
+    expect(getSequence(6, 1)?.name).toBe("Thunder God");
+    expect(getSequence(7, 1)?.name).toBe("Key of Stars");
+    expect(getSequence(8, 1)?.name).toBe("Worm of Time");
+    expect(getSequence(9, 1)?.name).toBe("Dark Angel");
+  });
+
+  it("each sequence has 2-4 abilities mixing active and passive", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      for (const seq of pathway.sequences) {
+        expect(seq.abilities.length).toBeGreaterThanOrEqual(2);
+        expect(seq.abilities.length).toBeLessThanOrEqual(4);
+        for (const ability of seq.abilities) {
+          expect(ability.name.length).toBeGreaterThan(0);
+          expect(ability.description.length).toBeGreaterThan(0);
+          expect(["active", "passive"]).toContain(ability.type);
+        }
+      }
+    }
+  });
+
+  it("each sequence has exactly 3 acting requirements, all non-empty", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      for (const seq of pathway.sequences) {
+        expect(seq.actingRequirements).toHaveLength(3);
+        for (const requirement of seq.actingRequirements) {
+          expect(requirement.length).toBeGreaterThan(0);
+        }
+      }
+    }
+  });
+
+  it("each sequence's prerequisites include a formula and a main ingredient", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      for (const seq of pathway.sequences) {
+        expect(seq.prerequisiteItems.some((i) => i.category === "potion-formula")).toBe(
+          true,
+        );
+        expect(seq.prerequisiteItems.some((i) => i.category === "main-ingredient")).toBe(
+          true,
+        );
+      }
+    }
   });
 });
 
@@ -126,8 +285,14 @@ describe("pathway definitions", () => {
 // Pathway groups and neighboring relationships
 // ---------------------------------------------------------------------------
 describe("pathway groups", () => {
-  it("defines three groups", () => {
-    expect(Object.keys(PATHWAY_GROUPS)).toHaveLength(3);
+  it("defines nine groups partitioning all 22 pathways", () => {
+    expect(Object.keys(PATHWAY_GROUPS)).toHaveLength(9);
+    // Every pathway belongs to exactly one group; the groups cover 1..22.
+    const allIds = Object.values(PATHWAY_GROUPS)
+      .flatMap((g) => g.pathwayIds)
+      .sort((a, b) => a - b);
+    expect(new Set(allIds).size).toBe(allIds.length);
+    expect(allIds).toEqual(Array.from({ length: 22 }, (_, i) => i + 1));
   });
 
   it("Visionary and Sun share God Almighty group", () => {
@@ -138,12 +303,28 @@ describe("pathway groups", () => {
     expect(areInSameGroup(1, 2)).toBe(false);
   });
 
-  it("getGroupForPathway returns correct group", () => {
+  it("getGroupForPathway returns the canon group for every pathway", () => {
+    // Lord of the Mysteries (Sefirah Castle): Fool, Door, Error.
     expect(getGroupForPathway(1)?.id).toBe("mysteries");
+    expect(getGroupForPathway(7)?.id).toBe("mysteries");
+    expect(getGroupForPathway(8)?.id).toBe("mysteries");
+    // God Almighty (Chaos Sea): Visionary, Sun, Tyrant, Hanged Man.
     expect(getGroupForPathway(2)?.id).toBe("god-almighty");
     expect(getGroupForPathway(3)?.id).toBe("god-almighty");
+    expect(getGroupForPathway(6)?.id).toBe("god-almighty");
+    expect(getGroupForPathway(9)?.id).toBe("god-almighty");
+    // Eternal Darkness (River of Eternal Darkness): Death, Darkness.
     expect(getGroupForPathway(4)?.id).toBe("eternal-darkness");
+    expect(getGroupForPathway(5)?.id).toBe("eternal-darkness");
     expect(getGroupForPathway(999)).toBeUndefined();
+  });
+
+  it("every pathway's group matches its membership in PATHWAY_GROUPS", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      const group = getGroupForPathway(pathway.id);
+      expect(group?.id).toBe(pathway.group);
+      expect(group?.pathwayIds).toContain(pathway.id);
+    }
   });
 
   it("Visionary and Sun are neighboring pathways", () => {
@@ -151,10 +332,33 @@ describe("pathway groups", () => {
     expect(areNeighboringPathways(3, 2)).toBe(true);
   });
 
-  it("Fool has no MVP neighbors (Error/Door not in MVP)", () => {
-    expect(areNeighboringPathways(1, 2)).toBe(false);
-    expect(areNeighboringPathways(1, 3)).toBe(false);
-    expect(areNeighboringPathways(1, 4)).toBe(false);
+  it("Fool neighbors Door and Error within the Mysteries group", () => {
+    expect(areNeighboringPathways(1, 7)).toBe(true);
+    expect(areNeighboringPathways(1, 8)).toBe(true);
+    expect(areNeighboringPathways(7, 8)).toBe(true);
+  });
+
+  it("Death and Darkness neighbor each other in Eternal Darkness", () => {
+    expect(areNeighboringPathways(4, 5)).toBe(true);
+    expect(areNeighboringPathways(5, 4)).toBe(true);
+  });
+
+  it("neighbor relationships are symmetric", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      for (const neighborId of pathway.neighboringPathways) {
+        const neighbor = getPathway(neighborId);
+        expect(neighbor).toBeDefined();
+        expect(neighbor!.neighboringPathways).toContain(pathway.id);
+      }
+    }
+  });
+
+  it("neighboring pathways always belong to the same group", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      for (const neighborId of pathway.neighboringPathways) {
+        expect(areInSameGroup(pathway.id, neighborId)).toBe(true);
+      }
+    }
   });
 
   it("non-neighboring pathways return false", () => {
@@ -503,9 +707,10 @@ describe("prerequisite validation", () => {
     const attempt: AdvancementAttempt = {
       characterId: "player-1",
       currentPathwayId: 1,
-      currentSequence: 5,
-      targetSequence: 4,
-      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 5, quantity: 1 }],
+      currentSequence: 1,
+      // Sequence 0 (True God) is not yet implemented — an unknown target.
+      targetSequence: 0,
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 1, quantity: 1 }],
       availableItems: [],
       ritualCompleted: true,
     };
@@ -608,7 +813,7 @@ describe("validation API", () => {
     expect(result.valid).toBe(true);
   });
 
-  it("validates all four pathways' Seq 9→8 advancement with correct items", () => {
+  it("validates every pathway's Seq 9→8 advancement with correct items", () => {
     for (const pathway of ALL_PATHWAYS) {
       const ledger: WorldCharacteristicLedger = {
         characteristics: [{ pathwayId: pathway.id, sequenceLevel: 9, quantity: 1 }],

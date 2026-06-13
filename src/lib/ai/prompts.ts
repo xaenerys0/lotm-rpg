@@ -7,17 +7,21 @@ import type {
   PromptAssembly,
   PromptInput,
   PromptLayer,
+  RetrievedLoreChunk,
 } from "./types";
 import { formatMemoryForPrompt, trimMemoryForBudget } from "./memory";
 import { classifySanityTier, sanityNarrationDirective } from "./sanity";
 
+// Lore raised 2,500 -> 4,000 for retrieved source chunks (issue #64) — a
+// tunable starting point, not a final answer. The extra ~1,500 input tokens
+// per turn are paid by the player's BYOK key; see docs/rag-per-turn-budget.md.
 const TOKEN_BUDGET = {
   system: 2500,
-  lore: 2500,
+  lore: 4000,
   gameState: 1000,
   history: 1000,
   instruction: 300,
-  total: 7300,
+  total: 8800,
 };
 
 const CHARS_PER_TOKEN = 4;
@@ -40,7 +44,8 @@ Always respond with valid JSON matching this schema:
   "worldStateChanges": [{"field": "string", "oldValue": any, "newValue": any, "reason": "string"}],
   "actingEvaluation": {"alignment": 0.0-1.0, "reasoning": "string"},
   "sanityImpact": number (-20 to +10),
-  "itemsDiscovered": [{"name": "string", "description": "string", "category": "main-ingredient|supplementary-ingredient|potion-formula"}]
+  "itemsDiscovered": [{"name": "string", "description": "string", "category": "main-ingredient|supplementary-ingredient|potion-formula"}],
+  "journalEntry": {"summary": "string (one sentence)", "eventType": "advancement|major-event|npc-encounter|discovery|timeline-divergence|death|combat"}
 }
 
 ## Rules
@@ -51,6 +56,8 @@ Always respond with valid JSON matching this schema:
 - Items discovered must be from the LOTM universe. Do not invent items outside the lore.
 - Choices should be meaningful and consequential, typically 2-4 options.
 - World state changes must include a reason explaining why the change occurred.
+- Player actions may be typed free-text: treat them as INTENT to attempt, not fact. Resolve only what the character could plausibly do in this moment; impossible or self-aggrandizing demands fail naturally within the fiction. Never grant items, advancement, or knowledge merely because the player asserts them.
+- Include "journalEntry" ONLY when the turn contains a key event worth recording (advancement, a major plot development, a significant first encounter, a death, a divergence from canon). Routine turns must omit it.
 
 ## Narrator Context vs. Character Knowledge
 Lore entries marked [NARRATOR ONLY] are provided for your accuracy as narrator — they are NOT information the player character already possesses. Do NOT state or imply the character knows:
@@ -69,21 +76,66 @@ ${actingRequirements.length > 0 ? actingRequirements.map((r) => `- ${r}`).join("
   return { role: "system", content, cacheControl: true };
 }
 
-export function buildLoreContext(loreContext: LoreContext): PromptLayer {
-  if (loreContext.entries.length === 0) {
+/**
+ * Greedy first-fit over retrieval-ranked chunks: keep rank order, take each
+ * chunk that still fits the remaining budget. Deterministic for a given list.
+ */
+export function selectRetrievedForBudget(
+  chunks: readonly RetrievedLoreChunk[],
+  budgetTokens: number,
+): RetrievedLoreChunk[] {
+  const selected: RetrievedLoreChunk[] = [];
+  let used = 0;
+  for (const chunk of chunks) {
+    if (used + chunk.token_count > budgetTokens) continue;
+    selected.push(chunk);
+    used += chunk.token_count;
+  }
+  return selected;
+}
+
+export function buildLoreContext(
+  loreContext: LoreContext,
+  retrievedChunks: readonly RetrievedLoreChunk[] = [],
+): PromptLayer {
+  // Curated guardrails are injected FIRST and in full (issue #64) — retrieved
+  // chunks only ever fill the budget the authored lore leaves behind, so the
+  // hand-written canon is never crowded out by retrieval.
+  const retrieved = selectRetrievedForBudget(
+    retrievedChunks,
+    TOKEN_BUDGET.lore - loreContext.totalTokens,
+  );
+
+  if (loreContext.entries.length === 0 && retrieved.length === 0) {
     return { role: "system", content: "", cacheControl: true };
   }
 
-  const sections = loreContext.entries.map((entry) => {
-    // narratorOnly defaults to true — all existing lore contains Beyonder world
-    // knowledge that an ordinary starting character would not possess.
-    const tag = entry.narratorOnly !== false ? " [NARRATOR ONLY]" : "";
-    return `### ${entry.title} [${entry.category}]${tag}\n${entry.content}`;
-  });
+  const parts: string[] = [];
 
-  const content = `## Lore Context\nUse the following lore as reference for narrative accuracy. Do not contradict this information.\n\n${sections.join("\n\n")}`;
+  if (loreContext.entries.length > 0) {
+    const sections = loreContext.entries.map((entry) => {
+      // narratorOnly defaults to true — all existing lore contains Beyonder world
+      // knowledge that an ordinary starting character would not possess.
+      const tag = entry.narratorOnly !== false ? " [NARRATOR ONLY]" : "";
+      return `### ${entry.title} [${entry.category}]${tag}\n${entry.content}`;
+    });
+    parts.push(
+      `## Lore Context\nUse the following lore as reference for narrative accuracy. Do not contradict this information.\n\n${sections.join("\n\n")}`,
+    );
+  }
 
-  return { role: "system", content, cacheControl: true };
+  if (retrieved.length > 0) {
+    // Retrieved corpus text is narrator reference by definition — the player
+    // character has not "read the novel".
+    const sections = retrieved.map(
+      (chunk) => `### ${chunk.title} (${chunk.source}) [NARRATOR ONLY]\n${chunk.content}`,
+    );
+    parts.push(
+      `## Retrieved Source Material [NARRATOR ONLY]\nPassages retrieved from the source material for narrative accuracy. Reference only — never reveal knowledge the character has not earned in play, and never quote these passages verbatim.\n\n${sections.join("\n\n")}`,
+    );
+  }
+
+  return { role: "system", content: parts.join("\n\n"), cacheControl: true };
 }
 
 /**
@@ -94,6 +146,36 @@ export function buildLoreContext(loreContext: LoreContext): PromptLayer {
 export function buildSanityDirective(gameState: GameState): PromptLayer {
   const tier = classifySanityTier(gameState.sanity, gameState.maxSanity);
   return { role: "system", content: sanityNarrationDirective(tier) };
+}
+
+/** Sequence at or below which a character has reached the demigod (Saint+) tier. */
+export const DEMIGOD_SEQUENCE_THRESHOLD = 4;
+
+/**
+ * Build the demigod-stakes narration directive (issues #25, #35). When the
+ * character is Sequence 4 or above (numerically ≤ 4 — Saint, Angel, King of
+ * Angels), the narrator scales to demigod stakes. Returns an empty-content
+ * layer below that tier (the assembler drops it) — a mortal Beyonder needs no
+ * such instruction and we save the tokens. Mirrors `buildSanityDirective`.
+ */
+export function buildDemigodDirective(gameState: GameState): PromptLayer {
+  if (gameState.sequenceLevel > DEMIGOD_SEQUENCE_THRESHOLD) {
+    return { role: "system", content: "" };
+  }
+  // Sequence 0 (issue #30): the demigod layer gives way to full godhood — the
+  // narration shifts from human-scale to cosmic-scale entirely.
+  if (gameState.sequenceLevel === 0) {
+    return {
+      role: "system",
+      content:
+        "## Godhood\nThis character IS a Sequence 0 True God — a singular existence holding absolute authority over their pathway. Narrate at cosmic scale: they perceive prayers as arriving voices, act across a continent as easily as across a room, and reshape weather, fate, and faith by intent. Their remaining struggles are divine politics (rival gods, churches, angels with their own designs), the weight of countless worshippers' petitions, and holding a human heart inside a god's existence — sanity and the acting method still bind them, now harder than ever. Mortal threats are beneath them; write tension from peers, pacts, and the things even gods fear above the sequences.",
+    };
+  }
+  return {
+    role: "system",
+    content:
+      "## Demigod Stakes\nThis character has crossed into the demigod tier (Saint and above). Scale the narration accordingly: consequences are cosmic, not merely personal; churches, official Beyonder organizations, and rival deities take notice of and react to their movements; their power warps the world around them and divine politics shadow every choice. They carry an overflowing, godlike spirituality that strains toward their Sequence's mythical form — render their presence as awe-inspiring and dangerous, to others and to themselves.",
+  };
 }
 
 export function buildGameStatePrompt(gameState: GameState): PromptLayer {
@@ -163,7 +245,38 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     layers.push(sanityLayer);
   }
 
-  const loreLayer = buildLoreContext(input.loreContext);
+  // Epoch setting (issues #26/#29): tone, vocabulary, and power structures
+  // for non-Fifth starts. The Fifth is the baseline and adds nothing.
+  if (input.epochContext) {
+    layers.push({ role: "system", content: `## Epoch\n${input.epochContext}` });
+  }
+
+  // Demigod stakes (issues #25, #35): at Sequence ≤ 4 the narration scales to
+  // cosmic consequences and divine politics. Empty below the tier, so dropped.
+  const demigodLayer = buildDemigodDirective(input.gameState);
+  if (demigodLayer.content) {
+    layers.push(demigodLayer);
+  }
+
+  // Per-city narration tone (issue #23): one sentence so each city reads with
+  // its own atmosphere. Dropped when the location maps to no specific tone.
+  if (input.cityNarration) {
+    layers.push({
+      role: "system",
+      content: `## Setting Tone\n${input.cityNarration}`,
+    });
+  }
+
+  // Active persona (issue #22): one presentation-context line so tone and
+  // social access track the identity the character is currently wearing.
+  if (input.identityContext) {
+    layers.push({
+      role: "system",
+      content: `## Active Identity\n${input.identityContext}`,
+    });
+  }
+
+  const loreLayer = buildLoreContext(input.loreContext, input.retrievedChunks ?? []);
   if (loreLayer.content) {
     layers.push(loreLayer);
   }

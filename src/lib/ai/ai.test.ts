@@ -30,7 +30,9 @@ import {
 import {
   buildSystemPrompt,
   buildLoreContext,
+  selectRetrievedForBudget,
   buildSanityDirective,
+  buildDemigodDirective,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,
@@ -48,6 +50,7 @@ import {
 import {
   createMemoryState,
   addTurn,
+  addSessionFact,
   summarizeTurn,
   extractSessionFacts,
   estimateMemoryTokens,
@@ -1535,6 +1538,83 @@ describe("prompts", () => {
       const layer = buildLoreContext({ entries: [], totalTokens: 0 });
       expect(layer.content).toBe("");
     });
+
+    it("appends retrieved chunks after the curated guardrails (issue #64)", () => {
+      const ctx = makeLoreContext();
+      const layer = buildLoreContext(ctx, [
+        {
+          id: "novel-ch1-0000",
+          title: "Chapter 1",
+          content: "The fog came early that autumn.",
+          source: "novel",
+          token_count: 50,
+        },
+      ]);
+      const curatedAt = layer.content.indexOf("## Lore Context");
+      const retrievedAt = layer.content.indexOf("## Retrieved Source Material");
+      expect(curatedAt).toBeGreaterThanOrEqual(0);
+      expect(retrievedAt).toBeGreaterThan(curatedAt);
+      expect(layer.content).toContain("Chapter 1 (novel) [NARRATOR ONLY]");
+      expect(layer.content).toContain("The fog came early that autumn.");
+      expect(layer.content).toContain("never quote these passages verbatim");
+    });
+
+    it("renders retrieved chunks alone when no curated entries match", () => {
+      const layer = buildLoreContext({ entries: [], totalTokens: 0 }, [
+        {
+          id: "wiki-x-0000",
+          title: "Tingen",
+          content: "A foggy city.",
+          source: "wiki",
+          token_count: 10,
+        },
+      ]);
+      expect(layer.content).toContain("## Retrieved Source Material");
+      expect(layer.content).not.toContain("## Lore Context");
+    });
+
+    it("never crowds out curated lore: retrieved chunks only fill the remainder", () => {
+      const bigChunk = (id: string, tokens: number) => ({
+        id,
+        title: id,
+        content: "x",
+        source: "novel",
+        token_count: tokens,
+      });
+      // Curated lore consumes all but 100 tokens of the lore budget.
+      const ctx = {
+        entries: makeLoreContext().entries,
+        totalTokens: TOKEN_BUDGET.lore - 100,
+      };
+      const layer = buildLoreContext(ctx, [
+        bigChunk("too-big", 150),
+        bigChunk("fits", 80),
+        bigChunk("also-too-big-now", 50),
+      ]);
+      // First-fit over rank order: the oversized chunk is skipped, the fitting
+      // one is taken, and the next no longer fits the remainder.
+      expect(layer.content).toContain("fits");
+      expect(layer.content).not.toContain("too-big");
+      expect(layer.content).not.toContain("also-too-big-now");
+    });
+  });
+
+  describe("selectRetrievedForBudget", () => {
+    const chunk = (id: string, tokens: number) => ({
+      id,
+      title: id,
+      content: "c",
+      source: "novel",
+      token_count: tokens,
+    });
+
+    it("packs in rank order with first-fit and is deterministic", () => {
+      const chunks = [chunk("a", 60), chunk("b", 50), chunk("c", 40)];
+      expect(selectRetrievedForBudget(chunks, 100).map((c) => c.id)).toEqual(["a", "c"]);
+      expect(selectRetrievedForBudget(chunks, 100).map((c) => c.id)).toEqual(["a", "c"]);
+      expect(selectRetrievedForBudget(chunks, 0)).toEqual([]);
+      expect(selectRetrievedForBudget([], 100)).toEqual([]);
+    });
   });
 
   describe("buildGameStatePrompt", () => {
@@ -1650,7 +1730,46 @@ describe("prompts", () => {
     });
   });
 
+  describe("buildDemigodDirective", () => {
+    it("returns empty content below the demigod tier (Seq > 4)", () => {
+      expect(buildDemigodDirective(makeGameState({ sequenceLevel: 9 })).content).toBe("");
+      expect(buildDemigodDirective(makeGameState({ sequenceLevel: 5 })).content).toBe("");
+    });
+
+    it("returns a demigod-stakes directive at Seq 4 (Saint) and above", () => {
+      for (const sequenceLevel of [4, 2, 1]) {
+        const layer = buildDemigodDirective(makeGameState({ sequenceLevel }));
+        expect(layer.role).toBe("system");
+        expect(layer.content).toContain("Demigod Stakes");
+        expect(layer.content.toLowerCase()).toContain("cosmic");
+        expect(layer.content.toLowerCase()).toContain("church");
+      }
+    });
+
+    it("shifts to a full godhood directive at Sequence 0 (issue #30)", () => {
+      const layer = buildDemigodDirective(makeGameState({ sequenceLevel: 0 }));
+      expect(layer.content).toContain("Godhood");
+      expect(layer.content).toContain("True God");
+      expect(layer.content).not.toContain("Demigod Stakes");
+    });
+  });
+
   describe("assemblePrompt", () => {
+    it("includes the demigod directive at Seq 4 and omits it below", () => {
+      const hasDemigod = (sequenceLevel: number) =>
+        assemblePrompt({
+          gameState: makeGameState({ sequenceLevel }),
+          memory: makeMemoryState(),
+          loreContext: { entries: [], totalTokens: 0 },
+          instruction: "narrative" as const,
+          playerAction: "I look around",
+          abilities: [],
+          actingRequirements: [],
+        }).layers.some((l) => l.content.includes("Demigod Stakes"));
+      expect(hasDemigod(4)).toBe(true);
+      expect(hasDemigod(9)).toBe(false);
+    });
+
     it("includes the sanity directive at low sanity", () => {
       const assembly = assemblePrompt({
         gameState: makeGameState({ sanity: 20, maxSanity: 100 }),
@@ -1743,6 +1862,48 @@ describe("prompts", () => {
       const assembly = assemblePrompt(input);
       const hasHistory = assembly.layers.some((l) => l.content.includes("History"));
       expect(hasHistory).toBe(false);
+    });
+
+    it("includes the city narration tone layer when provided", () => {
+      const assembly = assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        cityNarration: "Backlund is the capital and the City of Dust.",
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      const tone = assembly.layers.find((l) => l.content.includes("Setting Tone"));
+      expect(tone).toBeDefined();
+      expect(tone!.content).toContain("City of Dust");
+    });
+
+    it("omits the city narration layer when null or absent", () => {
+      const withNull = assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        cityNarration: null,
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      const withAbsent = assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      expect(withNull.layers.some((l) => l.content.includes("Setting Tone"))).toBe(false);
+      expect(withAbsent.layers.some((l) => l.content.includes("Setting Tone"))).toBe(
+        false,
+      );
     });
   });
 
@@ -1857,6 +2018,16 @@ describe("memory", () => {
       expect(turn.playerAction).toBe("I search");
       expect(turn.aiResponse).toBe(response);
       expect(turn.timestamp).toBeGreaterThan(0);
+      // No retrieval on this turn: the field is omitted, not an empty array.
+      expect("retrievedChunkIds" in turn).toBe(false);
+    });
+
+    it("records the retrieved chunk ids when retrieval ran (issue #63)", () => {
+      const turn = buildTurnRecord(2, "I divine", makeValidAIResponse(), [
+        "chunk-a",
+        "chunk-b",
+      ]);
+      expect(turn.retrievedChunkIds).toEqual(["chunk-a", "chunk-b"]);
     });
   });
 
@@ -2001,6 +2172,34 @@ describe("memory", () => {
       turn.aiResponse = { narrative: "Nothing happened." };
       const facts = extractSessionFacts(turn);
       expect(facts).toHaveLength(0);
+    });
+  });
+
+  describe("addSessionFact", () => {
+    it("appends a fact without mutating the input", () => {
+      const state = createMemoryState();
+      const next = addSessionFact(state, {
+        type: "event",
+        description: "Travelled to Backlund.",
+        turnNumber: 3,
+      });
+      expect(next.sessionFacts).toHaveLength(1);
+      expect(next.sessionFacts[0].description).toBe("Travelled to Backlund.");
+      expect(state.sessionFacts).toHaveLength(0);
+    });
+
+    it("caps session facts at the maximum, evicting the oldest", () => {
+      let state = createMemoryState();
+      for (let i = 0; i < 45; i++) {
+        state = addSessionFact(state, {
+          type: "event",
+          description: `fact ${i}`,
+          turnNumber: i,
+        });
+      }
+      expect(state.sessionFacts.length).toBeLessThanOrEqual(40);
+      // The earliest facts were evicted first.
+      expect(state.sessionFacts[0].description).toBe("fact 5");
     });
   });
 

@@ -22,6 +22,20 @@ export interface GameSession {
   gameState: GameState;
   memory: MemoryState;
   turnCount: number;
+  /**
+   * The player's current position on the shared canon timeline (issue #63).
+   * The retrieval timeline gate filters `canon_order <= canonPosition`, so the
+   * narrator sees past + present world-state but never the player's future.
+   * Monotonic — it only ever advances (see `advanceCanonPosition`).
+   */
+  canonPosition: number;
+  /**
+   * The embedding model locked for this save at character creation (issue
+   * #63). A save's query vectors and recorded retrieval ids only make sense
+   * inside one model's map, so there is NO mid-save switching — a new
+   * character may repick.
+   */
+  embeddingModelId: string;
   phase: GamePhase;
   currentNarrative: string | null;
   currentChoices: Choice[] | null;
@@ -30,6 +44,34 @@ export interface GameSession {
   activePillar: GameplayPillar | null;
   errorMessage: string | null;
   errorCode: AIErrorCode | "CONFIG_MISSING" | null;
+  /**
+   * Pathway-gated personas (issue #22). Absent on sessions that have never
+   * created an identity; `activeIdentityId: null` = the true face.
+   */
+  identityState?: import("./identity").IdentityState;
+  /**
+   * Secret society / Tarot Club state (issue #32). Absent until founded.
+   */
+  societyState?: import("./society").SocietyState;
+  /**
+   * Anchors (issues #35, #25). The tier-gated stabilising resource that opposes
+   * a high-Sequence Beyonder's godhood pressure. Absent on sessions that have
+   * never consecrated an anchor (a Seq 9 starter needs none); strictly validated
+   * when present — exactly like `identityState`.
+   */
+  anchorState?: import("./anchors").AnchorState;
+  /**
+   * Permadeath marker (issue #12). Set once, never cleared: the session is
+   * preserved as a historical record (inventory, memory, journal stay
+   * readable) but play cannot continue.
+   */
+  ended?: {
+    fate: "transformed" | "dead";
+    severity: "transformation" | "fatal";
+    /** The narrated descent scene shown on the death screen. */
+    scene: string;
+    at: number;
+  };
   createdAt: number;
   updatedAt: number;
 }

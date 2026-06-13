@@ -20,6 +20,7 @@ export type {
   PromptAssembly,
   LoreContext,
   PromptInput,
+  RetrievedLoreChunk,
   ChatMessage,
   ProviderRequest,
   ProviderResponse,
@@ -37,10 +38,13 @@ export {
   buildSystemPrompt,
   buildLoreContext,
   buildSanityDirective,
+  buildDemigodDirective,
+  DEMIGOD_SEQUENCE_THRESHOLD,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,
   isWithinTokenBudget,
+  selectRetrievedForBudget,
   TOKEN_BUDGET,
 } from "./prompts";
 
@@ -55,6 +59,7 @@ export {
 export {
   createMemoryState,
   addTurn,
+  addSessionFact,
   summarizeTurn,
   extractSessionFacts,
   estimateMemoryTokens,
@@ -85,6 +90,30 @@ export {
   type EmbeddingModel,
   type CreateEmbeddingProviderOptions,
 } from "./embeddings";
+
+export {
+  buildSceneArtPrompt,
+  generateSceneArt,
+  sceneArtKey,
+  sceneArtSupported,
+  shouldGenerateSceneArt,
+  SCENE_ART_STYLE,
+  type SceneArtContext,
+} from "./scene-art";
+
+export {
+  addUsage,
+  DEFAULT_TOKEN_RATES,
+  deserializeUsage,
+  emptyUsage,
+  estimateSessionCost,
+  formatTokenCount,
+  formatUsage,
+  serializeUsage,
+  type SessionUsage,
+  type TokenRates,
+  type TurnUsage,
+} from "./usage";
 
 export {
   generatePrologueScene,

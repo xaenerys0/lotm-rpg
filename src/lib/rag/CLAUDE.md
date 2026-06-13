@@ -5,10 +5,12 @@
 The source-agnostic core of the RAG ingestion pipeline (issue #59, sub-issue of
 #57). Defines the canonical JSONL chunk artifact, the stage contract, and the
 **shared chunker** that the novel (#5) and wiki (#4) pipelines both use, so the
-two sources never diverge.
+two sources never diverge. The novel (issue #62) and wiki (issue #61)
+parse/normalize stages live here too.
 
 This module is **dev/ingestion-only** — nothing under `src/app` or the runtime
-retrieval path imports it. Runtime retrieval goes through the
+retrieval path imports it. (`load.ts` imports `node:crypto`, which would fail in
+the browser bundle anyway — a tripwire, not a bug.) Runtime retrieval goes through the
 `match_source_chunks` RPC (RAG #1, migration `20260601120000`), not this code.
 
 ## Structure
@@ -28,13 +30,57 @@ retrieval path imports it. Runtime retrieval goes through the
   stays decoupled from the runtime AI module; `@/lib/ai`'s `EmbeddingProvider` satisfies it
   structurally and is wired in the `scripts/rag/embed.ts` driver. Operator-offline batch work,
   never an always-on service.
+- `novel.ts` — The novel parse + normalize stages (issue #62): `parseNovelText`
+  (single md/txt file with "Chapter N" headings; front matter dropped),
+  `parseNovelFiles` (one-file-per-chapter; heading else filename numbering),
+  `parseEpub` (fflate unzip → OPF spine order → heading-driven chapters, with a
+  sequential fallback for unheaded spines), `stripHtml` (block-aware tag strip +
+  entity decode), and `normalizeNovelChapters` (chapters → `SourceDocument`s:
+  `canon_order` = chapter index; `arc_bucket`/`concealment_tier`/`in_world_date`
+  from the arc map). Throws rather than guessing when no chapter number can be
+  derived — chronology correctness is a hard requirement.
+- `novel-arcs.ts` — The hand-authored `NovelArcEntry` map (`LOTM_NOVEL_ARC_MAP`,
+  8 volumes, **chapter boundaries verified against the real EPUB at ingest** —
+  Clown 1-213, Faceless 214-482, Traveler 483-732, Undying 733-946, Red Priest
+  947-1150, Lightseeker 1151-1266, Hanged Man 1267-1353, Fool 1354-1430;
+  override per-run via `pnpm rag:novel --arc-map`) and `resolveArc`.
+- `wiki.ts` — The wiki parse + normalize stages (issue #61): `createWikiXmlParser`
+  (push-based **streaming** MediaWiki XML parser — the dump is never held in
+  memory whole; `parseWikiXml` is the in-memory convenience), `cleanWikitext`
+  (nested templates/tables, file/category/interlanguage links, refs, headings,
+  lists, then the shared `stripHtml` pass), `extractCategories` (→ tags), and
+  `normalizeWikiPage(s)` (namespace-0 filter, redirect/stub skip, provenance —
+  page URL, page id, and CC-BY-SA attribution — in `ref`). Wiki documents carry
+  `canon_order: null` (world knowledge, not story position), so spoiler control
+  rides on `concealment_tier` (operator flag) and the curated-first budget (#64).
+  Validated against the real 13k-page Fandom dump (1,509 articles kept).
+- `eval.ts` — The evaluation + leakage harness (issue #64): `evalRecallAtK` and
+  `evalLeakage` over a labeled `EvalCase` set (query → expected chunk ids +
+  simulated player position/tier), retriever-agnostic (`EvalRetriever`), with
+  `createLexicalRetriever` as the deterministic offline path (term overlap +
+  the same gates as the RPC — no DB, no embedder). **Advisory** metrics
+  (`pnpm rag:eval` exits 0 unless `--strict`); the leakage check is the
+  timeline gate's safety net — any violation is a bug.
+- `html.ts` — `stripHtml` / `decodeEntities`, the shared final cleaning pass used
+  by both the novel and wiki pipelines.
+- `load.ts` — The load-stage row mapping (closing #57's stage contract):
+  `chunkUuid` (deterministic RFC-4122 v5-style uuid from the pipeline chunk id —
+  idempotent upserts, no schema change; the pipeline id is preserved in
+  `ref.chunk_key`), `toSourceChunkRow`, and `toEmbeddingRow` (throws on
+  unembedded records / wrong dims). The Supabase write loop is the
+  `scripts/rag/load.ts` driver (service-role, operator-side only).
 - `jsonl.ts` — `parseJsonl` / `iterateJsonl` / `toJsonl` — the JSONL read/write seam
   shared by every pipeline stage.
 - `index.ts` — Public exports.
-- `chunk.test.ts` / `tokenizer.test.ts` / `jsonl.test.ts` — colocated tests.
+- `chunk.test.ts` / `tokenizer.test.ts` / `jsonl.test.ts` / `novel.test.ts` /
+  `wiki.test.ts` / `eval.test.ts` / `load.test.ts` — colocated tests.
 - `__fixtures__/` — Golden fixtures: `normalized-docs.jsonl` (input) →
-  `chunks.expected.jsonl` (expected chunker output). Regenerate the expected file
-  via the chunk stage if the chunker changes intentionally.
+  `chunks.expected.jsonl` (expected chunker output); `novel-chapters.txt`
+  (synthetic 3-chapter novel; **original prose, not the copyrighted novel**) →
+  `novel-docs.expected.jsonl` (expected parse+normalize output); `wiki-pages.xml`
+  (synthetic MediaWiki export) → `wiki-docs.expected.jsonl`; `eval-cases.jsonl`
+  (labeled query → expected-chunk eval set over the fixture corpus). Regenerate
+  an expected file via its stage CLI if the stage changes intentionally.
 
 ## The canonical artifact (JSONL)
 
@@ -52,13 +98,20 @@ parse → normalize → chunk → embed → load
 
 Each stage reads and writes JSONL, so any stage re-runs in isolation (e.g. re-embed
 with a new model without re-parsing or re-chunking). The **chunk** stage
-(`scripts/rag/chunk.ts`, `pnpm rag:chunk`) and the **embed** stage
-(`scripts/rag/embed.ts`, `pnpm rag:embed`, issue #60) live here. The remaining stages
-land in later RAG issues (#4 wiki parse/normalize, #5 novel parse/normalize, load).
+(`scripts/rag/chunk.ts`, `pnpm rag:chunk`), the **embed** stage
+(`scripts/rag/embed.ts`, `pnpm rag:embed`, issue #60), and the **novel
+parse/normalize** stages (`scripts/rag/novel.ts`, `pnpm rag:novel`, issue #62), and
+the **wiki parse/normalize** stages (`scripts/rag/wiki.ts`, `pnpm rag:wiki`, issue
+#61), and the **load** stage (`scripts/rag/load.ts`, `pnpm rag:load`) live here —
+the stage contract is complete end-to-end.
 
 ## Chunker guarantees
 
-- Target window **300–800 tokens**, packed greedily up to the ceiling.
+- Target window **300–800 tokens**, packed greedily up to the ceiling. A single
+  sentence/word can never exceed the ceiling on its own (word- then
+  character-windowed — the latter for spaceless CJK passages); the worst-case
+  chunk is bounded by floor + ceiling when a large unit lands on an under-floor
+  chunk.
 - **~10–15% overlap** carried as whole trailing sentences (never a torn fact).
 - **Sentences are atomic** — a fact is never split across a boundary. The lone
   exception is a single sentence larger than the window, which is word-windowed.

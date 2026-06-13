@@ -389,6 +389,141 @@ const PATHWAY_COMBAT_STYLES: Record<number, CombatStyle> = {
       },
     },
   },
+  // Darkness — the Sleepless strikes from concealment and the dark.
+  5: {
+    flavor: "You melt into the dark and strike where you are not expected.",
+    signatureKind: "evasive",
+    options: {
+      aggressive: {
+        label: "Strike from the dark",
+        description: "Lunge from a pool of shadow before they can place you.",
+      },
+      defensive: {
+        label: "Veil of night",
+        description: "Wrap the dark close and dull the force of the blow.",
+      },
+      evasive: {
+        label: "Vanish into shadow",
+        description: "Slip into the dark and surface a step beyond their reach.",
+      },
+      ability: {
+        label: "Pacify the mind",
+        description: "Press a numbing quiet over their will to blunt the assault.",
+      },
+      artifact: {
+        label: "Unseal the charm",
+        description: "Break a sealed charm and loose what sleeps inside.",
+      },
+    },
+  },
+  // Tyrant — the Sailor answers with the fury of the storm and sea.
+  6: {
+    flavor: "You answer with the fury of storm and rising sea.",
+    signatureKind: "aggressive",
+    options: {
+      aggressive: {
+        label: "Unleash the tempest",
+        description: "Loose your mounting wrath as a battering surge of wind and water.",
+      },
+      defensive: {
+        label: "Brace against the gale",
+        description: "Set your feet like a deck in a storm and ride the impact.",
+      },
+      evasive: {
+        label: "Slip the current",
+        description: "Flow aside like water and let the strike pass through spray.",
+      },
+      ability: {
+        label: "Call the squall",
+        description: "Summon wind and rain to harry and unbalance the foe.",
+      },
+      artifact: {
+        label: "Unseal the relic",
+        description: "Break a storm-charged seal and call its power forth.",
+      },
+    },
+  },
+  // Door — the Apprentice repositions through space.
+  7: {
+    flavor: "You fold the space between you and never stand where they strike.",
+    signatureKind: "evasive",
+    options: {
+      aggressive: {
+        label: "Blink and strike",
+        description: "Flash through space to land a blow from an impossible angle.",
+      },
+      defensive: {
+        label: "Door of refuge",
+        description: "Open a brief door so the blow falls on empty air.",
+      },
+      evasive: {
+        label: "Step through the door",
+        description: "Phase across space, out of reach before the strike lands.",
+      },
+      ability: {
+        label: "Replay a record",
+        description: "Loose a recorded power you have stored for just this moment.",
+      },
+      artifact: {
+        label: "Unseal the charm",
+        description: "Break a sealed charm and loose what sleeps inside.",
+      },
+    },
+  },
+  // Error — the Marauder fights with stolen tricks and sleight of hand.
+  8: {
+    flavor: "You fight with stolen tricks and sleight of hand.",
+    signatureKind: "ability",
+    options: {
+      aggressive: {
+        label: "Strike at the opening",
+        description: "Read where their guard fails and take the opening you stole.",
+      },
+      defensive: {
+        label: "Misdirect the blow",
+        description: "Feint and deceive so the strike lands where you no longer are.",
+      },
+      evasive: {
+        label: "Pocket and slip away",
+        description: "Lift what you can and vanish into the confusion.",
+      },
+      ability: {
+        label: "Turn their own trick",
+        description: "Wield a power or tell you stole from the foe against them.",
+      },
+      artifact: {
+        label: "Unseal the charm",
+        description: "Break a sealed charm and loose what sleeps inside.",
+      },
+    },
+  },
+  // Hanged Man — the Secrets Suppliant endures through sacrifice and shadow.
+  9: {
+    flavor: "You pay in flesh and shadow what the fight demands, and endure.",
+    signatureKind: "defensive",
+    options: {
+      aggressive: {
+        label: "Loose the shadows",
+        description: "Send summoned shadows clawing forward at the foe.",
+      },
+      defensive: {
+        label: "Offer the sacrifice",
+        description: "Spend flesh and blood to harden yourself against the blow.",
+      },
+      evasive: {
+        label: "Lurk in shadow",
+        description: "Sink into your own shadow and wait out the assault.",
+      },
+      ability: {
+        label: "Shadow curse",
+        description: "Lay a curse through their shadow to sap their strength.",
+      },
+      artifact: {
+        label: "Unseal the reliquary",
+        description: "Break a bound vessel and free the rite within.",
+      },
+    },
+  },
 };
 
 function getCombatStyle(pathwayId: number): CombatStyle {

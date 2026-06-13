@@ -16,6 +16,10 @@ Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
 | `pnpm test:watch`   | Vitest (watch mode) |
 | `pnpm rag:chunk`    | RAG chunk stage CLI |
 | `pnpm rag:embed`    | RAG embed stage CLI |
+| `pnpm rag:novel`    | RAG novel parse CLI |
+| `pnpm rag:wiki`     | RAG wiki parse CLI  |
+| `pnpm rag:eval`     | RAG eval harness    |
+| `pnpm rag:load`     | RAG load stage CLI  |
 
 ## Architecture
 
@@ -50,6 +54,8 @@ supabase/
 docs/
 ├── lotm-lore-summary.md   # LOTM universe reference
 ├── lotm-research-outline.txt  # Extended research notes
+├── rag-per-turn-budget.md # RAG latency/token/operator-cost budget (issue #64)
+├── anchors-design.md      # Anchors system design (issue #35) — canon + data model
 └── rules/                 # Shared rule files (@-imported by scoped CLAUDE.md)
 ```
 

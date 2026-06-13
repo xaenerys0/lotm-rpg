@@ -13,7 +13,9 @@ import {
   PROLOGUE_DRAFT_KEY,
   isValidDraftShape,
   clearDraft,
+  TUTORIAL_SCENES,
 } from "@/lib/game";
+import { DEFAULT_EPOCH_ID, EPOCHS } from "@/lib/lore";
 import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
@@ -33,6 +35,7 @@ import type {
 } from "@/lib/ai";
 
 type CreationStep =
+  | "tutorial"
   | "mode-select"
   | "character-setup"
   | "ai-prologue"
@@ -45,6 +48,11 @@ const PATHWAY_DESCRIPTIONS: Record<number, string> = {
   2: "Spectator, Telepathist, Psychiatrist — mind and imagination",
   3: "Bard, Light Suppliant, Solar High Priest — radiance and healing",
   4: "Corpse Collector, Gravedigger, Spirit Medium — spirits and the dead",
+  5: "Sleepless, Midnight Poet, Nightmare — night, dreams, and concealment",
+  6: "Sailor, Folk of Rage, Seafarer — sea, storm, and wrath",
+  7: "Apprentice, Trickmaster, Astrologer — travel, doors, and space",
+  8: "Marauder, Swindler, Cryptologist — theft, trickery, and secrets",
+  9: "Secrets Suppliant, Listener, Shadow Ascetic — sacrifice, shadow, and taboo",
 };
 
 const AI_PATH: CreationStep[] = ["character-setup", "ai-prologue", "first-potion"];
@@ -62,6 +70,7 @@ interface CharacterCreationProps {
     characterName: string,
     characterBackground: string,
     initialMemory: MemoryState,
+    epoch: number,
   ) => void;
   onBack: () => void;
 }
@@ -110,6 +119,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
 
   // Step / flow state — restored from draft when available
   const [step, setStep] = useState<CreationStep>(savedDraft?.step ?? "mode-select");
+  const [tutorialIndex, setTutorialIndex] = useState(0);
+  const [epoch, setEpoch] = useState(DEFAULT_EPOCH_ID);
   const [skipPrologue, setSkipPrologue] = useState(false);
 
   // Character identity — restored from draft when available
@@ -316,8 +327,9 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           bg,
         );
     clearDraft();
-    onComplete(selectedPathwayId, name, bg, memory);
+    onComplete(selectedPathwayId, name, bg, memory, epoch);
   }, [
+    epoch,
     selectedPathwayId,
     characterName,
     characterBackground,
@@ -335,7 +347,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
       {/* Step dots — shown for all steps except mode-select */}
-      {step !== "mode-select" && progress.show && (
+      {step !== "mode-select" && step !== "tutorial" && progress.show && (
         <div className="mb-8 flex items-center justify-between">
           <span className="text-[10px] text-muted uppercase tracking-[0.2em]">
             Character Creation
@@ -359,6 +371,54 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               Step {progress.number}&thinsp;/&thinsp;{progress.total}
             </span>
           </div>
+        </div>
+      )}
+
+      {/* ── TUTORIAL (issue #14) ── */}
+      {step === "tutorial" && (
+        <div className="animate-fade-in-up">
+          {(() => {
+            const scene = TUTORIAL_SCENES[tutorialIndex];
+            const isLast = tutorialIndex === TUTORIAL_SCENES.length - 1;
+            return (
+              <div className="mx-auto max-w-2xl">
+                <p className="mb-2 text-[10px] tracking-[0.2em] text-gaslight uppercase">
+                  An Introduction — {tutorialIndex + 1} of {TUTORIAL_SCENES.length}
+                </p>
+                <h1 className="mb-6 font-serif text-3xl font-bold text-foreground">
+                  {scene.title}
+                </h1>
+                <div className="parchment rounded-lg px-6 py-5 sm:px-8 sm:py-6">
+                  <p className="font-serif text-base leading-[1.85] text-foreground/90">
+                    {scene.body}
+                  </p>
+                </div>
+                <p className="mt-4 border-l-2 border-gaslight/40 pl-4 text-sm leading-relaxed text-muted italic">
+                  {scene.lesson}
+                </p>
+                <div className="mt-8 flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setStep("mode-select")}
+                    className="min-h-[24px] rounded px-2 py-1 text-xs text-muted transition-colors hover:text-amber"
+                  >
+                    Skip the introduction
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      isLast
+                        ? setStep("mode-select")
+                        : setTutorialIndex((index) => index + 1)
+                    }
+                    className="rounded-md bg-amber/90 px-5 py-2.5 text-sm font-medium text-background transition-all duration-200 hover:bg-amber"
+                  >
+                    {isLast ? "Choose your path" : "Continue"}
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       )}
 
@@ -386,10 +446,48 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             encounter has led you to the threshold of the Beyonders. What happens next
             depends on who you are.
           </p>
-          <p className="mb-10 text-xs italic text-muted">
+          <p className="mb-6 text-xs italic text-muted">
             The AI prologue takes ~5 minutes and reveals your Beyonder affinity through
             story.
           </p>
+          {/* Epoch start (issues #26/#29): the Fifth is the classic default. */}
+          <div className="mb-6 max-w-md">
+            <label htmlFor="epoch-select" className="mb-1.5 block text-xs text-muted">
+              Begin in
+            </label>
+            <select
+              id="epoch-select"
+              value={epoch}
+              onChange={(e) => setEpoch(Number(e.target.value))}
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            >
+              {EPOCHS.map((era) => (
+                <option key={era.id} value={era.id}>
+                  {era.name} — {era.era}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-xs leading-relaxed text-muted">
+              {EPOCHS.find((era) => era.id === epoch)?.summary}
+            </p>
+          </div>
+
+          {/* Tutorial gate (issue #14): newcomers get the introduction;
+              veterans skip it entirely without missing gameplay content. */}
+          <button
+            type="button"
+            onClick={() => {
+              setTutorialIndex(0);
+              setStep("tutorial");
+            }}
+            className="mb-10 block rounded-md border border-gaslight/30 bg-gaslight/[0.05] px-4 py-3 text-left text-sm text-foreground/85 transition-all duration-200 hover:border-gaslight/50 hover:bg-gaslight/[0.08]"
+          >
+            <span className="font-medium text-gaslight">
+              New to Lord of the Mysteries?
+            </span>{" "}
+            Begin with a short introduction to Beyonders, potions, and the acting method
+            (~3 minutes, skippable at any point).
+          </button>
           <div className="grid max-w-2xl gap-4 sm:grid-cols-2">
             {/* AI Prologue card */}
             {providerConfig ? (
@@ -437,7 +535,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               </h2>
               <p className="text-sm leading-relaxed text-muted">
                 Already know your Beyonder pathway? Skip the prologue and select from all
-                four available paths directly.
+                available paths directly.
               </p>
             </button>
           </div>

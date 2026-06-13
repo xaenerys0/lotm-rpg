@@ -1,10 +1,10 @@
 /**
- * Player display preferences (issue #9).
+ * Player display preferences (issues #9, #13).
  *
- * Currently just the sanity-meter visibility toggle: by default the sanity
- * meter is hidden and the player reads their state from the UI's CSS effects
- * and unreliable narration. Players who prefer strategic management can reveal
- * the numeric meter.
+ * The sanity-meter visibility toggle (hidden by default — the player reads
+ * their state from CSS effects and unreliable narration) and the
+ * high-contrast display mode (brightens text/borders, mutes the decorative
+ * atmosphere).
  *
  * Pure functions only — localStorage access lives in the React layer.
  */
@@ -12,10 +12,16 @@
 export interface GamePreferences {
   /** When true, the numeric sanity meter is shown; otherwise it is hidden. */
   sanityMeterVisible: boolean;
+  /** High-contrast display mode (issue #13): applied as `data-contrast="high"`. */
+  highContrast: boolean;
+  /** AI scene art for key moments (issue #20). Opt-in — images cost real money. */
+  sceneArtEnabled: boolean;
 }
 
 export const DEFAULT_PREFERENCES: GamePreferences = {
   sanityMeterVisible: false,
+  highContrast: false,
+  sceneArtEnabled: false,
 };
 
 export function isValidPreferencesShape(obj: unknown): boolean {
@@ -23,7 +29,11 @@ export function isValidPreferencesShape(obj: unknown): boolean {
     return false;
   }
   const p = obj as Record<string, unknown>;
-  return typeof p.sanityMeterVisible === "boolean";
+  if (typeof p.sanityMeterVisible !== "boolean") return false;
+  // highContrast (#13) and sceneArtEnabled (#20) were added later — older
+  // payloads omit them.
+  if (p.highContrast !== undefined && typeof p.highContrast !== "boolean") return false;
+  return p.sceneArtEnabled === undefined || typeof p.sceneArtEnabled === "boolean";
 }
 
 /** Merge a (possibly partial / untrusted) preferences object over the defaults. */
@@ -33,6 +43,14 @@ export function mergePreferences(partial: Partial<GamePreferences>): GamePrefere
       typeof partial.sanityMeterVisible === "boolean"
         ? partial.sanityMeterVisible
         : DEFAULT_PREFERENCES.sanityMeterVisible,
+    highContrast:
+      typeof partial.highContrast === "boolean"
+        ? partial.highContrast
+        : DEFAULT_PREFERENCES.highContrast,
+    sceneArtEnabled:
+      typeof partial.sceneArtEnabled === "boolean"
+        ? partial.sceneArtEnabled
+        : DEFAULT_PREFERENCES.sceneArtEnabled,
   };
 }
 

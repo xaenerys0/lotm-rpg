@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   ALL_LORE_ENTRIES,
+  BACKLUND_LORE,
+  BAYAM_LORE,
+  cityNarrationDirective,
+  DARKNESS_PATHWAY_LORE,
   DEATH_PATHWAY_LORE,
+  DOOR_PATHWAY_LORE,
+  ERROR_PATHWAY_LORE,
   FIFTH_EPOCH_LORE,
   FOOL_PATHWAY_LORE,
   getLoreByCategory,
@@ -12,10 +18,26 @@ import {
   getLoreBySequence,
   getLoreBySlug,
   getLoreByTag,
+  HANGED_MAN_PATHWAY_LORE,
+  WHITE_TOWER_PATHWAY_LORE,
+  TWILIGHT_GIANT_PATHWAY_LORE,
+  JUSTICIAR_PATHWAY_LORE,
+  BLACK_EMPEROR_PATHWAY_LORE,
+  RED_PRIEST_PATHWAY_LORE,
+  DEMONESS_PATHWAY_LORE,
+  MOTHER_PATHWAY_LORE,
+  MOON_PATHWAY_LORE,
+  HERMIT_PATHWAY_LORE,
+  PARAGON_PATHWAY_LORE,
+  WHEEL_OF_FORTUNE_PATHWAY_LORE,
+  ABYSS_PATHWAY_LORE,
+  CHAINED_PATHWAY_LORE,
   NPC_LORE,
   ORGANIZATION_LORE,
   SUN_PATHWAY_LORE,
   TINGEN_LORE,
+  TRIER_LORE,
+  TYRANT_PATHWAY_LORE,
   VISIONARY_PATHWAY_LORE,
 } from "./index";
 import type { LoreCategory } from "./types";
@@ -85,6 +107,20 @@ describe("Lore content coverage", () => {
     expect(TINGEN_LORE.every((e) => e.category === "location")).toBe(true);
   });
 
+  it("has Backlund, Trier, and Bayam city location sets", () => {
+    for (const [lore, city] of [
+      [BACKLUND_LORE, "backlund"],
+      [TRIER_LORE, "trier"],
+      [BAYAM_LORE, "bayam"],
+    ] as const) {
+      expect(lore.length).toBeGreaterThanOrEqual(5);
+      // Every entry carries the city field that selection/narration match on.
+      expect(lore.every((e) => e.city === city)).toBe(true);
+      // Each set leads with an overview entry.
+      expect(lore.some((e) => e.slug === `${city}-city-overview`)).toBe(true);
+    }
+  });
+
   it("has Fifth Epoch baseline entries", () => {
     expect(FIFTH_EPOCH_LORE.length).toBeGreaterThanOrEqual(3);
   });
@@ -104,12 +140,17 @@ describe("Lore content coverage", () => {
     expect(names).toContain("Azik Eggers");
   });
 
-  it("covers all 4 MVP pathways (Seq 9-5)", () => {
+  it("covers all 9 pathways (Seq 9-5)", () => {
     for (const lore of [
       FOOL_PATHWAY_LORE,
       VISIONARY_PATHWAY_LORE,
       SUN_PATHWAY_LORE,
       DEATH_PATHWAY_LORE,
+      DARKNESS_PATHWAY_LORE,
+      TYRANT_PATHWAY_LORE,
+      DOOR_PATHWAY_LORE,
+      ERROR_PATHWAY_LORE,
+      HANGED_MAN_PATHWAY_LORE,
     ]) {
       expect(lore.length).toBeGreaterThanOrEqual(6);
       const seqs = lore.flatMap((e) => e.sequences);
@@ -122,7 +163,17 @@ describe("Lore content coverage", () => {
   });
 
   it("each pathway has an overview entry", () => {
-    for (const pathway of ["fool", "visionary", "sun", "death"]) {
+    for (const pathway of [
+      "fool",
+      "visionary",
+      "sun",
+      "death",
+      "darkness",
+      "tyrant",
+      "door",
+      "error",
+      "hanged-man",
+    ]) {
       const overview = ALL_LORE_ENTRIES.find(
         (e) => e.slug === `${pathway}-pathway-overview`,
       );
@@ -185,17 +236,59 @@ describe("Lore query helpers", () => {
   });
 });
 
+describe("cityNarrationDirective", () => {
+  it("returns a tone sentence for each new city, matching the first word", () => {
+    expect(cityNarrationDirective("Backlund")).toContain("capital");
+    expect(cityNarrationDirective("Empress Borough, Backlund")).toBeNull();
+    expect(cityNarrationDirective("Backlund — East Borough")).toContain("Dust");
+    expect(cityNarrationDirective("Trier")).toContain("Intis");
+    expect(cityNarrationDirective("Bayam Harbour")).toContain("Archipelago");
+  });
+
+  it("returns null for unknown or unmapped locations", () => {
+    expect(cityNarrationDirective("Tingen City")).toBeNull();
+    expect(cityNarrationDirective("Backwater Village")).toBeNull();
+    expect(cityNarrationDirective("")).toBeNull();
+    expect(cityNarrationDirective("   ")).toBeNull();
+  });
+
+  it("is case-insensitive on the leading word", () => {
+    expect(cityNarrationDirective("BAYAM")).toBe(cityNarrationDirective("bayam"));
+  });
+});
+
 describe("Total lore corpus", () => {
   it("aggregates all sub-collections", () => {
     const expected =
       TINGEN_LORE.length +
+      BACKLUND_LORE.length +
+      TRIER_LORE.length +
+      BAYAM_LORE.length +
       FIFTH_EPOCH_LORE.length +
       ORGANIZATION_LORE.length +
       NPC_LORE.length +
       FOOL_PATHWAY_LORE.length +
       VISIONARY_PATHWAY_LORE.length +
       SUN_PATHWAY_LORE.length +
-      DEATH_PATHWAY_LORE.length;
+      DEATH_PATHWAY_LORE.length +
+      DARKNESS_PATHWAY_LORE.length +
+      TYRANT_PATHWAY_LORE.length +
+      DOOR_PATHWAY_LORE.length +
+      ERROR_PATHWAY_LORE.length +
+      HANGED_MAN_PATHWAY_LORE.length +
+      WHITE_TOWER_PATHWAY_LORE.length +
+      TWILIGHT_GIANT_PATHWAY_LORE.length +
+      JUSTICIAR_PATHWAY_LORE.length +
+      BLACK_EMPEROR_PATHWAY_LORE.length +
+      RED_PRIEST_PATHWAY_LORE.length +
+      DEMONESS_PATHWAY_LORE.length +
+      MOTHER_PATHWAY_LORE.length +
+      MOON_PATHWAY_LORE.length +
+      HERMIT_PATHWAY_LORE.length +
+      PARAGON_PATHWAY_LORE.length +
+      WHEEL_OF_FORTUNE_PATHWAY_LORE.length +
+      ABYSS_PATHWAY_LORE.length +
+      CHAINED_PATHWAY_LORE.length;
     expect(ALL_LORE_ENTRIES.length).toBe(expected);
   });
 
@@ -203,5 +296,39 @@ describe("Total lore corpus", () => {
     const total = ALL_LORE_ENTRIES.reduce((sum, e) => sum + e.tokenCount, 0);
     expect(total).toBeGreaterThan(5000);
     expect(total).toBeLessThan(80000);
+  });
+
+  it("every one of the 22 pathways has retrievable overview lore (issue #28)", () => {
+    // getLoreByPathway is separator/case-insensitive, so selectCuratedLore
+    // resolves a pathway by its rules-engine name (e.g. "Hanged Man" → "hanged
+    // man") even though the stored field is hyphenated. These keys mirror the
+    // lowercased ALL_PATHWAYS names selectCuratedLore passes.
+    const pathwayKeys = [
+      "fool",
+      "visionary",
+      "sun",
+      "death",
+      "darkness",
+      "tyrant",
+      "door",
+      "error",
+      "hanged man",
+      "white tower",
+      "twilight giant",
+      "justiciar",
+      "black emperor",
+      "red priest",
+      "demoness",
+      "mother",
+      "moon",
+      "hermit",
+      "paragon",
+      "wheel of fortune",
+      "abyss",
+      "chained",
+    ];
+    for (const key of pathwayKeys) {
+      expect(getLoreByPathway(key).length).toBeGreaterThan(0);
+    }
   });
 });

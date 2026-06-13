@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Four migrations in order:
+Migrations live in `migrations/`. Eleven migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -34,6 +34,32 @@ Migrations live in `migrations/`. Four migrations in order:
    - RLS: **deny `anon` + `authenticated`** on both tables (copyrighted corpus, no direct client query path)
    - `match_source_chunks(...)` — `SECURITY DEFINER` RPC: hybrid FTS ⊕ pgvector (cosine) fused via Reciprocal Rank Fusion, parameterized by `model_id`; applies the timeline (`canon_order <= player_position`) and `concealment_tier` gates server-side. The sole corpus read path; granted to `authenticated` only.
    - Also retypes the reserved `lore_entries.embedding` from `vector(1536)` → `vector(1024)` for consistency (column is unpopulated, so a no-op on data).
+
+5. `20260612160000_create_journal.sql` — Story journal (issue #11)
+   - `journal_entries` — auto-recorded events: `id` (client-supplied uuid), `user_id` (FK `auth.users`), `session_id`, `character_id`/`character_name`, `turn_number`, `event_type` (checked against the seven journal event types), `summary`, `narrative`, `location`, `involved_npcs`, `arc`, `created_at`
+   - `journal_annotations` — player-only notes: `id`, `user_id`, `entry_id` (FK cascade), `text`, timestamps. **Never included in AI context.**
+   - RLS: owner-only (`auth.uid() = user_id`) for all operations on both tables
+
+6. `20260612170000_seed_additional_pathways_lore.sql` — Seed lore for the five additional pathways (issue #21): Darkness, Tyrant, Door, Error, Hanged Man (Seq 9-5 + overview, 30 entries). Generated from `src/lib/lore/pathway-{darkness,tyrant,door,error,hanged-man}.ts` (TS remains the canonical source).
+
+7. `20260612230000_create_world_messages.sql` — Shared world messages (issue #17)
+   - `world_messages` — template-composed notes: `id`, `user_id`, `location` (indexed), `template_id`, `fills` (jsonb), `text` (CHECK ≤120 chars), `helpful`/`unhelpful` counters
+   - `world_message_votes` — PK `(message_id, user_id)`; written only via the RPC
+   - RLS: authenticated read ALL messages (shared world), owner insert/delete; votes readable by owner
+   - `rate_world_message(uuid, boolean)` — SECURITY DEFINER: one vote per player (unique violation = silent no-op), maintains counters atomically; EXECUTE granted to `authenticated` only
+
+8. `20260613000000_create_marketplace.sql` — Item marketplace (issue #16)
+   - `market_listings` — `id`, `seller_id`, `item_name`/`item_description`/`item_category` (checked against rules-engine categories), `price_pence` (CHECK positive int under cap), `status` (`active`/`sold`/`delisted`), `buyer_id`, timestamps
+   - RLS: authenticated read active listings + own history; owner insert/delist
+   - `purchase_listing(uuid)` — SECURITY DEFINER: row-locked atomic purchase, self-purchase and stale listings rejected server-side; the ONLY path to `sold`; EXECUTE granted to `authenticated` only
+
+9. `20260613010000_create_player_showcases.sql` — Player showcase + leaderboards (issue #18)
+   - `player_showcases` — one row per player: `display_name`, `public` (default false), `pathway_id`, `sequence_level`, `achievement_ids`, `divergence_score` (CHECK 0-100), `stats` jsonb
+   - RLS: owners full access; other authenticated users may SELECT only rows where `public = true` — private data is never selectable, so it cannot leak
+
+10. `20260613020000_seed_additional_city_lore.sql` — Seed lore for the three additional cities (issue #23): Backlund, Trier, and Bayam (18 entries). Generated from `src/lib/lore/{backlund,trier,bayam}.ts` (TS source is canonical). Same `lore_entries` INSERT format as migration 3.
+
+11. `20260613030000_seed_remaining_pathways_lore.sql` — Seed lore for the thirteen remaining pathways (issue #28): White Tower, Twilight Giant, Justiciar, Black Emperor, Red Priest, Demoness, Mother, Moon, Hermit, Paragon, Wheel of Fortune, Abyss, Chained (13 overview entries). Generated from `src/lib/lore/pathway-*.ts` (TS source is canonical). Same `lore_entries` INSERT format as migration 3.
 
 ## Auth Session Persistence
 

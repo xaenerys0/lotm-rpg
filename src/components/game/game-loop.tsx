@@ -27,22 +27,91 @@ import {
   type LossOfControlSeverity,
   type CombatEncounter,
   type CombatResult,
+  addJournalEntries,
+  buildJournalEntry,
+  createJournal,
+  deriveJournalEntries,
+  deserializeJournal,
+  serializeJournal,
+  syncEntries,
+  JOURNAL_KEY_PREFIX,
+  type JournalEntry,
+  type JournalSyncClient,
+  applySetback,
+  buildLegacy,
+  deserializeLegacies,
+  endSession,
+  evaluateFailure,
+  fallbackDescentScene,
+  serializeLegacies,
+  LEGACIES_KEY,
+  type FailureVerdict,
+  apotheosisRequirements,
+  apotheosisSuccessChance,
+  attemptApotheosis,
+  canAttemptApotheosis,
+  drawPetition,
+  sequenceAbilities,
+  trueGodName,
+  APOTHEOSIS_STAGES,
+  deserializeArtifacts,
+  mintArtifact,
+  serializeArtifacts,
+  ECHOES_KEY,
+  freeTextRejection,
+  freeTextToChoice,
+  validateFreeText,
+  FREE_TEXT_MAX_LENGTH,
+  applyExposure,
+  checkExposure,
+  identityPromptContext,
+  recordIdentityUse,
+  validateJournalFlag,
+  composeDeduction,
+  composeDialogueAction,
+  composeRitualAction,
+  detectInputMode,
+  gatherClues,
+  INPUT_MODE_LABELS,
+  RITUAL_STEPS,
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
 import { loadPreferences } from "./preferences-store";
 import type {
+  GameState,
   DigestionState,
   ProviderConfig,
   Choice,
   InstructionType,
   AIErrorCode,
 } from "@/lib/ai";
-import { generate, addTurn, buildTurnRecord, TOKEN_BUDGET, AIError } from "@/lib/ai";
-import { getLoreByPathway, getLoreByCity } from "@/lib/lore";
+import {
+  generate,
+  addTurn,
+  buildTurnRecord,
+  TOKEN_BUDGET,
+  AIError,
+  addUsage,
+  deserializeUsage,
+  emptyUsage,
+  formatUsage,
+  serializeUsage,
+  type SessionUsage,
+  type TurnUsage,
+} from "@/lib/ai";
+import {
+  selectCuratedLore,
+  epochNarrationDirective,
+  epochOpeningBeat,
+  cityNarrationDirective,
+} from "@/lib/lore";
+import { createClient } from "@/lib/supabase/client";
+import { SceneArt } from "./scene-art";
+import { WorldMessages } from "./world-messages";
+import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
 import { getPathway, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
-import type { LoreEntry } from "@/lib/lore";
 
 function loadProviderConfig(): ProviderConfig | null {
   try {
@@ -105,28 +174,56 @@ function clearCombatFromStorage(sessionId: string): void {
   }
 }
 
-function selectLoreEntries(
-  pathwayName: string,
-  location: string,
-): { entries: LoreEntry[]; totalTokens: number } {
-  const pathwayLore = getLoreByPathway(pathwayName.toLowerCase());
-  const cityLore = getLoreByCity(location.toLowerCase().split(" ")[0]);
-  const combined = [...pathwayLore];
-  for (const entry of cityLore) {
-    if (!combined.some((e) => e.slug === entry.slug)) {
-      combined.push(entry);
-    }
-  }
+// Rough per-session token usage (issue #15) — its own localStorage entry so
+// the persisted session schema is untouched.
+const USAGE_KEY_PREFIX = "lotm:usage:";
 
-  const budget = TOKEN_BUDGET.lore;
-  let totalTokens = 0;
-  const selected: LoreEntry[] = [];
-  for (const entry of combined) {
-    if (totalTokens + entry.tokenCount > budget) break;
-    selected.push(entry);
-    totalTokens += entry.tokenCount;
+function loadUsageFromStorage(sessionId: string): SessionUsage {
+  try {
+    const raw = localStorage.getItem(USAGE_KEY_PREFIX + sessionId);
+    return (raw ? deserializeUsage(raw) : null) ?? emptyUsage();
+  } catch {
+    return emptyUsage();
   }
-  return { entries: selected, totalTokens };
+}
+
+function saveUsageToStorage(sessionId: string, usage: SessionUsage): void {
+  try {
+    localStorage.setItem(USAGE_KEY_PREFIX + sessionId, serializeUsage(usage));
+  } catch {
+    // Storage full or unavailable
+  }
+}
+
+// Story journal capture (issue #11): entries persist locally alongside the
+// session and batch-sync to Supabase best-effort after each turn.
+function appendJournalEntries(sessionId: string, entries: JournalEntry[]): void {
+  if (entries.length === 0) return;
+  try {
+    const raw = localStorage.getItem(JOURNAL_KEY_PREFIX + sessionId);
+    const journal = (raw ? deserializeJournal(raw) : null) ?? createJournal();
+    localStorage.setItem(
+      JOURNAL_KEY_PREFIX + sessionId,
+      serializeJournal(addJournalEntries(journal, entries)),
+    );
+  } catch {
+    // Storage full or unavailable — the turn proceeds regardless.
+  }
+  void (async () => {
+    try {
+      const client = createClient();
+      const { data } = await client.auth.getUser();
+      if (!data.user) return;
+      await syncEntries(
+        client as unknown as JournalSyncClient,
+        data.user.id,
+        sessionId,
+        entries,
+      );
+    } catch {
+      // Offline or unreachable — localStorage already has the entries.
+    }
+  })();
 }
 
 const SANITY_TIER_STYLE: Record<SanityTier, { color: string; glow: string }> = {
@@ -167,21 +264,48 @@ function getChoiceTypeIcon(type: Choice["type"]): string {
   }
 }
 
+// The two irrevocable endings (loss-of-control permadeath, failed apotheosis)
+// share one closing-scene instruction; only the lead-in clause differs.
+function descentAction(lead: string, severity: FailureVerdict["severity"]): string {
+  const fate =
+    severity === "fatal"
+      ? "their death"
+      : "their irreversible transformation into something monstrous";
+  return `${lead} ${fate}. This ends their story: write a closing scene, no choices.`;
+}
+
 function buildAICallParams(currentSession: GameSession) {
   const pathway = getPathway(currentSession.gameState.pathwayId);
   const seq = getSequence(
     currentSession.gameState.pathwayId,
     currentSession.gameState.sequenceLevel,
   );
+  // True-God-aware abilities (issue #30): Sequence 0 has no rules `Sequence`.
+  const { abilities, acting } = sequenceAbilities(
+    currentSession.gameState.pathwayId,
+    currentSession.gameState.sequenceLevel,
+  );
   return {
     pathway,
     seq,
-    abilities: seq?.abilities.map((a) => a.name) ?? [],
-    actingReqs: seq?.actingRequirements ?? [],
-    loreContext: selectLoreEntries(
+    abilities,
+    actingReqs: acting,
+    // Active persona (issue #22): narrator presentation context.
+    identityContext: currentSession.identityState
+      ? identityPromptContext(currentSession.identityState)
+      : null,
+    // Epoch tone (issues #26/#29): null for the Fifth-Epoch baseline.
+    epochContext: epochNarrationDirective(currentSession.gameState.epoch),
+    // Curated guardrail selection lives in @/lib/lore (tested); the component
+    // stays a thin caller (issue #63).
+    loreContext: selectCuratedLore(
       pathway?.name ?? "fool",
       currentSession.gameState.location,
+      TOKEN_BUDGET.lore,
     ),
+    // Per-city narration tone (issue #23): one tone sentence per city, null
+    // for cities (incl. the Tingen start) with no specific tone.
+    cityNarration: cityNarrationDirective(currentSession.gameState.location),
   };
 }
 
@@ -239,9 +363,198 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   );
   const [combat, setCombat] = useState<CombatEncounter | null>(initialCombat ?? null);
 
+  const usageCacheRef = useRef<SessionUsage | undefined>(undefined);
+  const initialUsage = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (usageCacheRef.current === undefined) {
+        usageCacheRef.current = loadUsageFromStorage(sessionId);
+      }
+      return usageCacheRef.current;
+    },
+    () => null,
+  );
+  const [usage, setUsage] = useState<SessionUsage | null>(initialUsage ?? null);
+
+  const recordUsage = useCallback(
+    (turn: TurnUsage | undefined) => {
+      if (!turn) return;
+      setUsage((prev) => {
+        const next = addUsage(prev ?? emptyUsage(), turn);
+        saveUsageToStorage(sessionId, next);
+        return next;
+      });
+    },
+    [sessionId],
+  );
   const updateSession = useCallback((next: GameSession) => {
     setSession(next);
     saveSessionToStorage(next);
+  }, []);
+
+  // Death & failure flow (issue #12). The rules engine owns the verdict; the
+  // AI only narrates the descent (best-effort, with a deterministic fallback).
+  const [setbackNotes, setSetbackNotes] = useState<string[] | null>(null);
+  const [facingFate, setFacingFate] = useState(false);
+  // Synchronous re-entrancy lock for the irrevocable endings (permadeath and
+  // apotheosis). A ref, not state, so a rapid second click is blocked within
+  // the same tick — before React can flush the `facingFate` re-render that
+  // disables the button. Prevents an already-resolved apotheosis from being
+  // re-rolled or the legacy/journal from being written twice.
+  const endingInFlight = useRef(false);
+
+  const handleSetback = useCallback(() => {
+    if (!session) return;
+    const result = applySetback(session.gameState, Math.random, session.turnCount);
+    setSetbackNotes(result.notes);
+    updateSession({
+      ...session,
+      gameState: result.state,
+      memory: {
+        ...session.memory,
+        sessionFacts: [...session.memory.sessionFacts, ...result.facts],
+      },
+      updatedAt: Date.now(),
+    });
+  }, [session, updateSession]);
+
+  // The shared ending: legacy + echo persistence, the narrated final scene,
+  // the death journal entry, and the session's end. Used by loss-of-control
+  // permadeath (issue #12) and a failed apotheosis (issue #30).
+  const concludeChronicle = useCallback(
+    async (verdict: FailureVerdict, descentAction: string) => {
+      if (!session || endingInFlight.current) return;
+      endingInFlight.current = true;
+      setFacingFate(true);
+      const legacy = buildLegacy(session, verdict.severity);
+
+      // The world remembers: persist the legacy for future characters.
+      try {
+        const raw = localStorage.getItem(LEGACIES_KEY);
+        const legacies = (raw ? deserializeLegacies(raw) : null) ?? [];
+        localStorage.setItem(LEGACIES_KEY, serializeLegacies([...legacies, legacy]));
+      } catch {
+        // Storage unavailable — the session still ends.
+      }
+
+      // Timeline echoes (issue #31): the fall also mints a physical artifact a
+      // future character — in this epoch or later — may discover.
+      try {
+        const rawEchoes = localStorage.getItem(ECHOES_KEY);
+        const artifacts = (rawEchoes ? deserializeArtifacts(rawEchoes) : null) ?? [];
+        localStorage.setItem(
+          ECHOES_KEY,
+          serializeArtifacts([...artifacts, mintArtifact(session, legacy)]),
+        );
+      } catch {
+        // Storage unavailable — the echo is lost to the fog.
+      }
+
+      // AI narrates the descent; the deterministic scene covers any failure.
+      let scene = fallbackDescentScene(verdict.severity, session.gameState);
+      if (providerConfig) {
+        try {
+          const { abilities, actingReqs, loreContext } = buildAICallParams(session);
+          const result = await generate({
+            config: providerConfig,
+            gameState: session.gameState,
+            memory: session.memory,
+            loreContext,
+            instruction: "narrative",
+            playerAction: descentAction,
+            abilities,
+            actingRequirements: actingReqs,
+          });
+          if (result.response.narrative) scene = result.response.narrative;
+          recordUsage(result.usage);
+        } catch {
+          // Fallback scene already set.
+        }
+      }
+
+      appendJournalEntries(session.id, [
+        buildJournalEntry(session.gameState, session.turnCount, {
+          eventType: "death",
+          summary: legacy.epitaph,
+          narrative: scene,
+        }),
+      ]);
+
+      updateSession(endSession(session, legacy, scene));
+      setFacingFate(false);
+      endingInFlight.current = false;
+    },
+    [session, providerConfig, recordUsage, updateSession],
+  );
+
+  const handlePermadeath = useCallback(async () => {
+    if (!session) return;
+    const verdict = evaluateFailure({
+      cause: "loss-of-control",
+      sequenceLevel: session.gameState.sequenceLevel,
+      highRisk: session.gameState.digestion?.complete ?? false,
+    });
+    await concludeChronicle(
+      verdict,
+      descentAction(
+        "Narrate the character's final descent — sanity has collapsed entirely and this is",
+        verdict.severity,
+      ),
+    );
+  }, [session, concludeChronicle]);
+
+  // Apotheosis (issue #30): the engine — not the AI — decides the ascent.
+  // Success writes Sequence 0 and the tease; failure at this height is
+  // absolute and routes through the same permadeath machinery.
+  const [ascension, setAscension] = useState<{
+    honorific: string;
+    tease: string;
+  } | null>(null);
+
+  const handleApotheosis = useCallback(async () => {
+    // The attempt is irrevocable and rolls exactly once — take the synchronous
+    // lock before the roll so a rapid second click cannot re-roll it.
+    if (!session || endingInFlight.current) return;
+    endingInFlight.current = true;
+    const result = attemptApotheosis(session);
+    if (result.outcome === "ascended") {
+      appendJournalEntries(session.id, [
+        buildJournalEntry(session.gameState, session.turnCount, {
+          eventType: "advancement",
+          summary: `Became ${result.honorific} — the Sequence 0 True God of the pathway.`,
+          narrative: result.tease,
+          arc: "Sequence 0",
+        }),
+      ]);
+      setAscension({ honorific: result.honorific, tease: result.tease });
+      updateSession(result.session);
+      endingInFlight.current = false;
+      return;
+    }
+    // Failure hands off to the shared ending path; release the lock so
+    // concludeChronicle can re-acquire it synchronously (no await between).
+    endingInFlight.current = false;
+    await concludeChronicle(
+      result.verdict,
+      descentAction(
+        "Narrate the apotheosis ritual collapsing at the final threshold — the pathway rejects the ascent and the character is unmade. This is",
+        result.verdict.severity,
+      ),
+    );
+  }, [session, updateSession, concludeChronicle]);
+
+  const handleFullRestart = useCallback(() => {
+    // Full restart: fresh timeline — the canonical baseline is restored by
+    // wiping the legacy list and its artifact echoes. Old sessions/journals
+    // stay readable as records.
+    try {
+      localStorage.removeItem(LEGACIES_KEY);
+      localStorage.removeItem(ECHOES_KEY);
+    } catch {
+      // Storage unavailable
+    }
+    // Clear any lingering ascension banner so it cannot bleed into a new run.
+    setAscension(null);
   }, []);
 
   const startCombat = useCallback(
@@ -312,8 +625,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         return;
       }
 
-      const { seq, abilities, actingReqs, loreContext } =
-        buildAICallParams(currentSession);
+      const {
+        seq,
+        abilities,
+        actingReqs,
+        loreContext,
+        identityContext,
+        epochContext,
+        cityNarration,
+      } = buildAICallParams(currentSession);
 
       const instruction: InstructionType = currentSession.activePillar
         ? PILLAR_INSTRUCTION_MAP[currentSession.activePillar]
@@ -321,7 +641,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
       const playerAction =
         currentSession.turnCount === 0
-          ? `I begin my journey as a Sequence ${currentSession.gameState.sequenceLevel} ${seq?.name ?? "Beyonder"} in ${currentSession.gameState.location}. Describe the opening scene and give me choices.`
+          ? (epochOpeningBeat(currentSession.gameState.epoch) ??
+            `I begin my journey as a Sequence ${currentSession.gameState.sequenceLevel} ${seq?.name ?? "Beyonder"} in ${currentSession.gameState.location}. Describe the opening scene and give me choices.`)
           : "Continue from the previous scene. Describe what happens next and give me choices.";
 
       try {
@@ -330,6 +651,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           gameState: currentSession.gameState,
           memory: currentSession.memory,
           loreContext,
+          identityContext,
+          epochContext,
+          cityNarration,
           instruction,
           playerAction,
           abilities,
@@ -337,6 +661,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         });
 
         if (generationRef.current !== gen) return;
+        recordUsage(result.usage);
 
         const choices = result.response.choices?.length
           ? result.response.choices
@@ -377,7 +702,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         updateSession(errSession);
       }
     },
-    [updateSession, dispatchMissingConfig],
+    [updateSession, dispatchMissingConfig, recordUsage],
   );
 
   const resolveChoice = useCallback(
@@ -396,7 +721,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       const pillar: GameplayPillar = CHOICE_PILLAR_MAP[selectedChoice.type];
       const instruction = PILLAR_INSTRUCTION_MAP[pillar];
 
-      const { abilities, actingReqs, loreContext } = buildAICallParams(currentSession);
+      const {
+        abilities,
+        actingReqs,
+        loreContext,
+        identityContext,
+        epochContext,
+        cityNarration,
+      } = buildAICallParams(currentSession);
 
       try {
         const result = await generate({
@@ -404,6 +736,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           gameState: currentSession.gameState,
           memory: currentSession.memory,
           loreContext,
+          identityContext,
+          epochContext,
+          cityNarration,
           instruction,
           playerAction: selectedChoice.text,
           abilities,
@@ -411,6 +746,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         });
 
         if (generationRef.current !== gen) return;
+        recordUsage(result.usage);
 
         const next = transition(currentSession, {
           type: "RESOLUTION_READY",
@@ -429,7 +765,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         updateSession(errSession);
       }
     },
-    [updateSession, dispatchMissingConfig],
+    [updateSession, dispatchMissingConfig, recordUsage],
   );
 
   useEffect(() => {
@@ -464,6 +800,34 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     [session, updateSession],
   );
 
+  // Free-text action (issue #19): validated by the rules engine, then wrapped
+  // as a synthetic choice so the normal resolution machinery (sanity, acting,
+  // journal) runs unchanged. Rejections are narrated, never errored.
+  const [freeTextNotice, setFreeTextNotice] = useState<string | null>(null);
+
+  const handleFreeText = useCallback(
+    (input: string) => {
+      if (!session) return;
+      const validation = validateFreeText(input);
+      if (!validation.ok) {
+        setFreeTextNotice(freeTextRejection(validation.reason));
+        return;
+      }
+      setFreeTextNotice(null);
+      const choice = freeTextToChoice(validation.text);
+      const withChoice = {
+        ...session,
+        currentChoices: [...(session.currentChoices ?? []), choice],
+      };
+      const next = transition(withChoice, {
+        type: "SELECT_CHOICE",
+        choiceId: choice.id,
+      });
+      updateSession(next);
+    },
+    [session, updateSession],
+  );
+
   const handleContinue = useCallback(() => {
     if (!session) return;
     const selectedChoice = session.currentChoices?.find(
@@ -480,7 +844,62 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         session.turnCount,
         playerAction,
       );
-      const updated = { ...session, gameState, memory };
+      // Identity bookkeeping (issue #22): a public turn in a persona teaches
+      // present NPCs that face and accrues exposure; once risk runs high, a
+      // shared witness may connect two faces.
+      let identityState = session.identityState;
+      let exposureNarrative: string | null = null;
+      if (identityState && identityState.activeIdentityId) {
+        identityState = recordIdentityUse(identityState, gameState.npcsPresent);
+        const exposure = checkExposure(identityState);
+        if (exposure) {
+          identityState = applyExposure(identityState, exposure);
+          exposureNarrative = `${exposure.npc} looks at you a heartbeat too long — and you see the recognition land. Two of your faces are now one person to them.`;
+          setFreeTextNotice(exposureNarrative);
+        }
+      }
+
+      // Divine petitions (issue #30): a True God hears worshippers — some
+      // turns a petition arrives as a memory fact the narrator weaves in.
+      let memoryAfterPetitions = memory;
+      if (gameState.sequenceLevel === 0) {
+        const petition = drawPetition(gameState.pathwayId, session.turnCount);
+        if (petition) {
+          memoryAfterPetitions = {
+            ...memory,
+            sessionFacts: [...memory.sessionFacts, petition],
+          };
+        }
+      }
+
+      // Journal capture (issue #11): the AI's flag plus deterministic
+      // detections from the state delta, recorded before the phase advances.
+      const seq = getSequence(gameState.pathwayId, gameState.sequenceLevel);
+      appendJournalEntries(
+        session.id,
+        deriveJournalEntries({
+          prevState: session.gameState,
+          nextState: gameState,
+          response: resolution.response,
+          turnNumber: session.turnCount,
+          arc: `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
+        }),
+      );
+      if (exposureNarrative) {
+        appendJournalEntries(session.id, [
+          buildJournalEntry(gameState, session.turnCount, {
+            eventType: "major-event",
+            summary: "An identity was exposed.",
+            narrative: exposureNarrative,
+          }),
+        ]);
+      }
+      const updated = {
+        ...session,
+        gameState,
+        memory: memoryAfterPetitions,
+        ...(identityState ? { identityState } : {}),
+      };
       const next = transition(updated, { type: "APPLY_CONSEQUENCES" });
       updateSession(next);
     }
@@ -505,9 +924,18 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const pathway = getPathway(session.gameState.pathwayId);
   const seq = getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel);
   const lostControl = isLossOfControl(session.gameState);
-  // Combat only needs ability names — derive them directly rather than running
-  // the full AI-call param bundle (which also scans/selects lore) per render.
-  const combatAbilities = seq?.abilities.map((a) => a.name) ?? [];
+  // Sequence 0 (issue #30) has no rules-engine Sequence — present the honorific
+  // instead of the empty "Unknown" fallback.
+  const sequenceLabel =
+    session.gameState.sequenceLevel === 0
+      ? trueGodName(session.gameState.pathwayId)
+      : (seq?.name ?? "Unknown");
+  // Combat only needs ability names; the True-God-aware derivation lives in one
+  // place (sequenceAbilities) rather than running the full AI-call bundle.
+  const { abilities: combatAbilities } = sequenceAbilities(
+    session.gameState.pathwayId,
+    session.gameState.sequenceLevel,
+  );
 
   return (
     <SanityEffects
@@ -519,7 +947,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
           <div className="flex items-center gap-4 text-xs text-muted">
             <span className="font-serif text-sm text-foreground/80">
-              {seq?.name ?? "Unknown"}{" "}
+              {sequenceLabel}{" "}
               <span className="text-muted">
                 ({pathway?.name ?? "?"} Seq. {session.gameState.sequenceLevel})
               </span>
@@ -532,6 +960,19 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               |
             </span>
             <span>Turn {session.turnCount}</span>
+            {usage !== null && usage.turns > 0 && (
+              <>
+                <span className="text-border" aria-hidden="true">
+                  |
+                </span>
+                <span
+                  className="text-muted"
+                  title="Estimated session token usage — rough; your own API key pays the provider"
+                >
+                  {formatUsage(usage)}
+                </span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <DigestionMeter digestion={session.gameState.digestion} />
@@ -544,20 +985,71 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           </div>
         </div>
 
-        {/* Loss of control — sanity has bottomed out (integrates with #12). */}
-        {lostControl && (
-          <LossOfControlNotice
+        {/* Setback aftermath — transient consequence report (issue #12). */}
+        {setbackNotes && !lostControl && (
+          <div
+            role="status"
+            className="mb-6 rounded-md border border-amber/40 bg-amber/[0.06] p-5 animate-fade-in"
+          >
+            <p className="font-serif text-sm font-semibold text-amber">
+              You survived — barely.
+            </p>
+            <ul className="mt-2 space-y-1 text-sm leading-relaxed text-foreground/80">
+              {setbackNotes.map((note) => (
+                <li key={note}>{note}</li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              onClick={() => setSetbackNotes(null)}
+              className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-amber hover:underline"
+            >
+              Carry on
+            </button>
+          </div>
+        )}
+
+        {/* Apotheosis achieved (issue #30) — the glimpse above the sequences. */}
+        {ascension && (
+          <div
+            role="status"
+            className="mb-6 rounded-md border border-occult/40 bg-occult/[0.08] p-5 animate-fade-in"
+          >
+            <p className="gaslit font-serif text-base font-semibold text-occult-bright">
+              You are {ascension.honorific} now. Sequence 0. A True God.
+            </p>
+            <p className="mt-2 font-serif text-sm italic leading-relaxed text-foreground/85">
+              {ascension.tease}
+            </p>
+            <button
+              type="button"
+              onClick={() => setAscension(null)}
+              className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-occult-bright hover:underline"
+            >
+              Take the throne
+            </button>
+          </div>
+        )}
+
+        {/* Loss of control — sanity has bottomed out (issue #12). */}
+        {lostControl && !session.ended && (
+          <FailurePanel
             severity={evaluateLossOfControl({
               sequenceLevel: session.gameState.sequenceLevel,
               // A fully-digested potion means the character is poised mid-
               // advancement — a fragile moment that escalates the fallout.
               highRisk: session.gameState.digestion?.complete ?? false,
             })}
+            busy={facingFate}
+            onSetback={handleSetback}
+            onPermadeath={() => void handlePermadeath()}
           />
         )}
 
-        {/* A combat encounter takes over the surface until it resolves. */}
-        {combat ? (
+        {/* Permadeath: the story is over; the record remains (issue #12). */}
+        {session.ended ? (
+          <DeathScreen ended={session.ended} onFullRestart={handleFullRestart} />
+        ) : combat ? (
           <CombatEncounterView
             encounter={combat}
             gameState={session.gameState}
@@ -577,14 +1069,30 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 <ChoicesPhase
                   narrative={session.currentNarrative ?? ""}
                   choices={session.currentChoices ?? []}
+                  gameState={session.gameState}
                   onSelect={handleSelectChoice}
+                  onFreeText={handleFreeText}
+                  freeTextNotice={freeTextNotice}
                 />
                 <CombatLauncher onStart={startCombat} />
+                {session.gameState.sequenceLevel === 1 && (
+                  <ApotheosisPanel
+                    session={session}
+                    busy={facingFate}
+                    onAttempt={() => void handleApotheosis()}
+                  />
+                )}
+                <WorldMessages location={session.gameState.location} />
               </>
             )}
             {session.phase === "resolution" && <ResolutionPhase />}
             {session.phase === "consequences" && (
-              <ConsequencesPhase session={session} onContinue={handleContinue} />
+              <ConsequencesPhase
+                session={session}
+                onContinue={handleContinue}
+                config={providerConfig}
+                sceneArtEnabled={preferences.sceneArtEnabled}
+              />
             )}
             {session.phase === "error" && (
               <ErrorPhase
@@ -618,8 +1126,19 @@ const LOSS_OF_CONTROL_COPY: Record<
   },
 };
 
-function LossOfControlNotice({ severity }: { severity: LossOfControlSeverity }) {
+function FailurePanel({
+  severity,
+  busy,
+  onSetback,
+  onPermadeath,
+}: {
+  severity: LossOfControlSeverity;
+  busy: boolean;
+  onSetback: () => void;
+  onPermadeath: () => void;
+}) {
   const copy = LOSS_OF_CONTROL_COPY[severity];
+  const isSetback = severity === "setback";
   return (
     <div className="mb-6 rounded-md border border-crimson/50 bg-crimson/[0.08] p-5 text-center animate-fade-in">
       <p className="font-serif text-base font-semibold text-sanity-low">{copy.title}</p>
@@ -629,8 +1148,263 @@ function LossOfControlNotice({ severity }: { severity: LossOfControlSeverity }) 
       <p className="mt-3 text-[10px] tracking-[0.2em] text-muted uppercase">
         Loss of control &mdash; {severity}
       </p>
+      <button
+        type="button"
+        onClick={isSetback ? onSetback : onPermadeath}
+        disabled={busy}
+        className="mt-4 rounded-md border border-crimson/50 bg-crimson/[0.12] px-5 py-2.5 text-sm font-medium text-sanity-low transition-all duration-200 hover:bg-crimson/[0.2] disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {busy
+          ? "The dark closes in..."
+          : isSetback
+            ? "Endure the breakdown"
+            : "Face your fate"}
+      </button>
     </div>
   );
+}
+
+function DeathScreen({
+  ended,
+  onFullRestart,
+}: {
+  ended: NonNullable<GameSession["ended"]>;
+  onFullRestart: () => void;
+}) {
+  return (
+    <div className="rounded-lg border border-crimson/40 bg-crimson/[0.05] p-8 text-center animate-fade-in">
+      <h2 className="font-serif text-2xl font-bold text-sanity-low">
+        {ended.fate === "dead" ? "The story ends here" : "Something else walks on"}
+      </h2>
+      <p className="mx-auto mt-4 max-w-xl font-serif text-base leading-relaxed whitespace-pre-wrap text-foreground/85">
+        {ended.scene}
+      </p>
+      <p className="mt-6 text-xs leading-relaxed text-muted">
+        This chronicle is closed, but it is not erased — its journal remains readable as a
+        historical record, and the world remembers what happened here.
+      </p>
+      <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <Link
+          href="/play"
+          className="rounded-md bg-amber/90 px-5 py-2.5 text-sm font-medium text-background transition-all duration-200 hover:bg-amber"
+        >
+          Begin anew in this world
+        </Link>
+        <Link
+          href="/play"
+          onClick={onFullRestart}
+          className="rounded-md border border-border px-5 py-2.5 text-sm text-muted transition-all duration-200 hover:border-amber/40 hover:text-foreground"
+        >
+          Restart the timeline completely
+        </Link>
+      </div>
+      <p className="mt-3 text-[11px] text-muted">
+        Beginning anew keeps this timeline — your next character will find traces of this
+        one. A full restart returns the world to its canonical baseline.
+      </p>
+    </div>
+  );
+}
+
+// ─── Mode assist (issue #24) ───────────────────────────────────────
+
+function ModeAssist({
+  mode,
+  gameState,
+  onCompose,
+}: {
+  mode: ReturnType<typeof detectInputMode>;
+  gameState: GameState;
+  onCompose: (action: string) => void;
+}) {
+  const [materials, setMaterials] = useState<string[]>([]);
+  const [intent, setIntent] = useState("");
+  const [npc, setNpc] = useState("");
+  const [topic, setTopic] = useState("");
+  const [clueA, setClueA] = useState("");
+  const [clueB, setClueB] = useState("");
+
+  if (mode === "ritual") {
+    return (
+      <div className="mt-6 rounded-md border border-occult/25 bg-occult/[0.04] p-4">
+        <p className="text-xs font-semibold tracking-wide text-occult-bright uppercase">
+          Guided ritual
+        </p>
+        <ol className="mt-2 list-inside list-decimal space-y-1 text-xs text-muted">
+          {RITUAL_STEPS.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+        {gameState.inventory.length > 0 && (
+          <fieldset className="mt-3">
+            <legend className="mb-1 text-xs text-muted">Materials to lay out</legend>
+            <div className="flex flex-wrap gap-2">
+              {gameState.inventory.map((item, index) => {
+                const checked = materials.includes(item.name);
+                return (
+                  <label
+                    key={`${item.name}-${index}`}
+                    className={`min-h-[24px] cursor-pointer rounded-md border px-2.5 py-1 text-xs ${
+                      checked
+                        ? "border-occult/50 bg-occult/15 text-occult-bright"
+                        : "border-border text-muted hover:border-occult/30"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() =>
+                        setMaterials((prev) =>
+                          checked
+                            ? prev.filter((name) => name !== item.name)
+                            : [...prev, item.name],
+                        )
+                      }
+                      className="sr-only"
+                    />
+                    {item.name}
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+        )}
+        <div className="mt-3 flex items-end gap-2">
+          <div className="flex-1">
+            <label htmlFor="ritual-intent" className="mb-1 block text-xs text-muted">
+              The petition
+            </label>
+            <input
+              id="ritual-intent"
+              type="text"
+              value={intent}
+              onChange={(e) => setIntent(e.target.value)}
+              placeholder="Show me the face of the thief…"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 font-serif text-sm text-foreground placeholder-muted focus:border-occult/50 focus:outline-none"
+            />
+          </div>
+          <button
+            type="button"
+            disabled={intent.trim() === ""}
+            onClick={() => {
+              onCompose(composeRitualAction(materials, intent));
+              setIntent("");
+              setMaterials([]);
+            }}
+            className="rounded-md border border-occult/40 bg-occult/[0.08] px-3 py-2 text-xs font-medium text-occult-bright hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-30"
+          >
+            Enact the ritual
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (mode === "dialogue" && gameState.npcsPresent.length > 0) {
+    return (
+      <div className="mt-6 flex flex-wrap items-end gap-2 rounded-md border border-border/60 bg-surface/40 p-4">
+        <div>
+          <label htmlFor="dialogue-npc" className="mb-1 block text-xs text-muted">
+            Speak with
+          </label>
+          <select
+            id="dialogue-npc"
+            value={npc}
+            onChange={(e) => setNpc(e.target.value)}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+          >
+            <option value="">choose…</option>
+            {gameState.npcsPresent.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex-1">
+          <label htmlFor="dialogue-topic" className="mb-1 block text-xs text-muted">
+            Ask about
+          </label>
+          <input
+            id="dialogue-topic"
+            type="text"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="the missing sailor…"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 font-serif text-sm text-foreground placeholder-muted focus:border-amber/50 focus:outline-none"
+          />
+        </div>
+        <button
+          type="button"
+          disabled={!npc || topic.trim() === ""}
+          onClick={() => {
+            onCompose(composeDialogueAction(npc, topic));
+            setTopic("");
+          }}
+          className="rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-2 text-xs font-medium text-amber hover:border-amber/50 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          Ask
+        </button>
+      </div>
+    );
+  }
+
+  if (mode === "investigation") {
+    const clues = gatherClues(gameState);
+    if (clues.length < 2) return null;
+    return (
+      <div className="mt-6 flex flex-wrap items-end gap-2 rounded-md border border-border/60 bg-surface/40 p-4">
+        <div>
+          <label htmlFor="clue-a" className="mb-1 block text-xs text-muted">
+            First clue
+          </label>
+          <select
+            id="clue-a"
+            value={clueA}
+            onChange={(e) => setClueA(e.target.value)}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+          >
+            <option value="">choose…</option>
+            {clues.map((clue) => (
+              <option key={clue} value={clue}>
+                {clue}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label htmlFor="clue-b" className="mb-1 block text-xs text-muted">
+            Second clue
+          </label>
+          <select
+            id="clue-b"
+            value={clueB}
+            onChange={(e) => setClueB(e.target.value)}
+            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+          >
+            <option value="">choose…</option>
+            {clues
+              .filter((clue) => clue !== clueA)
+              .map((clue) => (
+                <option key={clue} value={clue}>
+                  {clue}
+                </option>
+              ))}
+          </select>
+        </div>
+        <button
+          type="button"
+          disabled={!clueA || !clueB}
+          onClick={() => onCompose(composeDeduction(clueA, clueB))}
+          className="rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-2 text-xs font-medium text-amber hover:border-amber/50 disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          Weigh the clues
+        </button>
+      </div>
+    );
+  }
+
+  return null;
 }
 
 // ─── Sub-Components ──────────────────────────────────────────────
@@ -641,7 +1415,7 @@ function LoadingOrb() {
       <div className="relative h-12 w-12" aria-hidden="true">
         <div className="absolute inset-0 rounded-full bg-amber/20 animate-ping" />
         <div className="absolute inset-2 rounded-full bg-amber/40 animate-pulse" />
-        <div className="absolute inset-4 rounded-full bg-amber/80" />
+        <div className="candle-flicker absolute inset-4 rounded-full bg-amber/80" />
       </div>
       <p className="font-serif text-sm italic text-muted animate-pulse">
         The fog stirs...
@@ -748,12 +1522,21 @@ function SituationPhase() {
 function ChoicesPhase({
   narrative,
   choices,
+  gameState,
   onSelect,
+  onFreeText,
+  freeTextNotice,
 }: {
   narrative: string;
   choices: Choice[];
+  gameState: GameState;
   onSelect: (id: string) => void;
+  onFreeText: (input: string) => void;
+  freeTextNotice: string | null;
 }) {
+  const [freeText, setFreeText] = useState("");
+  // Context-dependent input mode (issue #24): inferred from the scene itself.
+  const mode = detectInputMode(choices, narrative);
   return (
     <div className="animate-fade-in-up">
       {/* Narrative */}
@@ -765,7 +1548,7 @@ function ChoicesPhase({
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
         </div>
-        <div className="rounded-lg border border-border/40 bg-surface/50 px-6 py-5 sm:px-8 sm:py-6">
+        <div className="parchment rounded-lg border border-border/40 px-6 py-5 sm:px-8 sm:py-6">
           <p className="font-serif text-base leading-[1.85] text-foreground/90 sm:text-lg">
             {narrative}
           </p>
@@ -775,7 +1558,7 @@ function ChoicesPhase({
       {/* Choices */}
       <div className="space-y-2.5">
         <p className="mb-3 text-center text-xs tracking-[0.2em] text-muted uppercase">
-          Choose your path
+          {INPUT_MODE_LABELS[mode]}
         </p>
         {choices.map((choice, i) => (
           <button
@@ -809,6 +1592,49 @@ function ChoicesPhase({
             </div>
           </button>
         ))}
+        {/* Mode-specific guided input (issue #24) — composes through the
+          validated free-text pipeline, so one resolution path serves all. */}
+        <ModeAssist mode={mode} gameState={gameState} onCompose={onFreeText} />
+
+        {/* Free text (issue #19): optional — choosers can ignore it entirely. */}
+        <form
+          className="mt-6"
+          onSubmit={(e) => {
+            e.preventDefault();
+            onFreeText(freeText);
+            setFreeText("");
+          }}
+        >
+          <label htmlFor="free-text-action" className="mb-1.5 block text-xs text-muted">
+            Or act on your own
+          </label>
+          <div className="flex items-end gap-2">
+            <input
+              id="free-text-action"
+              type="text"
+              value={freeText}
+              onChange={(e) => setFreeText(e.target.value)}
+              maxLength={FREE_TEXT_MAX_LENGTH}
+              placeholder="I follow the sound of the bells…"
+              className="w-full rounded-md border border-border bg-background px-4 py-3 font-serif text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            />
+            <button
+              type="submit"
+              disabled={freeText.trim() === ""}
+              className="shrink-0 rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-3 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30"
+            >
+              Act
+            </button>
+          </div>
+          {freeTextNotice && (
+            <p
+              role="status"
+              className="mt-3 font-serif text-sm italic text-foreground/70"
+            >
+              {freeTextNotice}
+            </p>
+          )}
+        </form>
       </div>
     </div>
   );
@@ -851,17 +1677,120 @@ function CombatLauncher({ onStart }: { onStart: (ambush: boolean) => void }) {
   );
 }
 
+// Apotheosis (issue #30): shown to a Sequence 1 King of Angels. The checklist
+// is the engine's own requirement verdicts; the attempt is two-step (arm, then
+// confirm) because failure at this height is permadeath.
+function ApotheosisPanel({
+  session,
+  busy,
+  onAttempt,
+}: {
+  session: GameSession;
+  busy: boolean;
+  onAttempt: () => void;
+}) {
+  const [armed, setArmed] = useState(false);
+  const requirements = apotheosisRequirements(session);
+  const ready = canAttemptApotheosis(session);
+  const chance = Math.round(apotheosisSuccessChance(session) * 100);
+  const honorific = trueGodName(session.gameState.pathwayId);
+
+  return (
+    <section
+      aria-labelledby="apotheosis-heading"
+      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+    >
+      <h2
+        id="apotheosis-heading"
+        className="gaslit font-serif text-base font-semibold text-occult-bright"
+      >
+        The throne of {honorific} stands empty
+      </h2>
+      <p className="mt-1 text-sm leading-relaxed text-muted">
+        One rung remains. Sequence 0 is not climbed — it is seized, once, by the one the
+        pathway accepts.
+      </p>
+      <ul className="mt-3 space-y-1.5">
+        {requirements.map((req) => (
+          <li key={req.id} className="flex items-start gap-2 text-sm">
+            <span
+              aria-hidden="true"
+              className={req.met ? "text-occult-bright" : "text-muted"}
+            >
+              {req.met ? "✦" : "◇"}
+            </span>
+            <span className={req.met ? "text-foreground/85" : "text-muted"}>
+              {req.label}
+              <span className="sr-only">{req.met ? " — met" : " — not yet met"}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      {ready && (
+        <ol className="mt-4 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-foreground/75">
+          {APOTHEOSIS_STAGES.map((stage) => (
+            <li key={stage}>{stage}</li>
+          ))}
+        </ol>
+      )}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {!armed ? (
+          <button
+            type="button"
+            onClick={() => setArmed(true)}
+            disabled={!ready || busy}
+            className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-4 py-2 text-sm font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Begin the apotheosis ritual
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onAttempt}
+              disabled={busy}
+              className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-crimson/60 disabled:opacity-40"
+            >
+              {busy ? "The world holds its breath…" : "Seize the throne — irrevocably"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setArmed(false)}
+              disabled={busy}
+              className="min-h-[24px] rounded px-2 py-1 text-xs text-muted hover:text-foreground/80"
+            >
+              Step back
+            </button>
+          </>
+        )}
+        {ready && (
+          <span className="text-xs text-muted">
+            The augurs put your odds near {chance}%. Failure is not survivable.
+          </span>
+        )}
+      </div>
+    </section>
+  );
+}
+
 function ConsequencesPhase({
   session,
   onContinue,
+  config,
+  sceneArtEnabled,
 }: {
   session: GameSession;
   onContinue: () => void;
+  config: ProviderConfig | null;
+  sceneArtEnabled: boolean;
 }) {
   const resolution = session.lastResolution;
   if (!resolution) return null;
 
   const response = resolution.response;
+  // Scene art (issue #20): the AI's journal flag marks the key moments.
+  const artFlag = validateJournalFlag(response.journalEntry);
+  const illustrate = artFlag !== null && shouldGenerateSceneArt(artFlag.eventType);
   const hasStateChanges =
     response.worldStateChanges && response.worldStateChanges.length > 0;
   const hasItems = response.itemsDiscovered && response.itemsDiscovered.length > 0;
@@ -896,6 +1825,18 @@ function ConsequencesPhase({
             {response.narrative}
           </p>
         </div>
+        {illustrate && artFlag && (
+          <SceneArt
+            artKey={sceneArtKey(session.id, session.turnCount)}
+            context={{
+              summary: artFlag.summary,
+              location: session.gameState.location,
+              ...(seq ? { pathwayName: seq.name } : {}),
+            }}
+            config={config}
+            enabled={sceneArtEnabled}
+          />
+        )}
       </div>
 
       {/* Consequences Summary */}

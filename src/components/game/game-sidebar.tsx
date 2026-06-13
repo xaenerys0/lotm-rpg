@@ -9,6 +9,12 @@ const navItems = [
   { href: "/play", label: "Dashboard" },
   { href: "/character", label: "Character" },
   { href: "/journal", label: "Journal" },
+  { href: "/map", label: "Map" },
+  { href: "/glossary", label: "Glossary" },
+  { href: "/market", label: "Market" },
+  { href: "/profile", label: "Profile" },
+  { href: "/leaderboard", label: "Leaderboard" },
+  { href: "/society", label: "Society" },
   { href: "/settings", label: "Settings" },
 ] as const;
 

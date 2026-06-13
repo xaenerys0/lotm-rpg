@@ -1,0 +1,106 @@
+<mediawiki xmlns="http://www.mediawiki.org/xml/export-0.11/" xml:lang="en">
+  <siteinfo>
+    <sitename>Lord of the Mysteries Fixture Wiki</sitename>
+    <dbname>fixturewiki</dbname>
+    <base>https://example.test/wiki/Main_Page</base>
+    <namespaces>
+      <namespace key="0" />
+      <namespace key="1">Talk</namespace>
+      <namespace key="10">Template</namespace>
+    </namespaces>
+  </siteinfo>
+  <page>
+    <title>Seer (fixture)</title>
+    <ns>0</ns>
+    <id>101</id>
+    <revision>
+      <id>9001</id>
+      <timestamp>2026-01-01T00:00:00Z</timestamp>
+      <contributor><username>Editor</username><id>7</id></contributor>
+      <text bytes="1200" xml:space="preserve">{{Infobox pathway
+|name = Seer
+|sequence = {{seq|9}}
+|image = [[File:Seer.png|thumb|A [[divination]] tool]]
+}}
+&lt;!-- editor note: keep short --&gt;
+The '''Seer''' is the Sequence 9 of the [[Fool Pathway|Fool pathway]].&lt;ref name="src"/&gt; A Seer gains rudimentary [[divination]] abilities, including augury and dream interpretation.&lt;ref&gt;Web novel, early chapters.&lt;/ref&gt;
+
+== Abilities ==
+* Spirit vision at close range
+* [[Pendulum]] dowsing
+* Augury performed with a [https://example.test/decks tarot deck]
+
+{| class="wikitable"
+! Sequence !! Name
+|-
+| 9 || Seer
+|}
+
+== Digestion ==
+Newly advanced Seers are advised to act out the potion&amp;rsquo;s role before any further advancement. Failure to control the corresponding desires may lead to loss of control.
+
+__NOTOC__
+[[Category:Fool Pathway]]
+[[Category:Sequence 9|Seer]]
+[[de:Seher]]</text>
+    </revision>
+  </page>
+  <page>
+    <title>Diviner</title>
+    <ns>0</ns>
+    <id>102</id>
+    <redirect title="Seer (fixture)" />
+    <revision>
+      <id>9002</id>
+      <text xml:space="preserve">#REDIRECT [[Seer (fixture)]]</text>
+    </revision>
+  </page>
+  <page>
+    <title>Old Augur</title>
+    <ns>0</ns>
+    <id>103</id>
+    <revision>
+      <id>9003</id>
+      <text xml:space="preserve">#redirect [[Seer (fixture)]]</text>
+    </revision>
+  </page>
+  <page>
+    <title>Talk:Seer (fixture)</title>
+    <ns>1</ns>
+    <id>104</id>
+    <revision>
+      <id>9004</id>
+      <text xml:space="preserve">Should we merge this with the pathway page? -- Editor</text>
+    </revision>
+  </page>
+  <page>
+    <title>Template:Seq</title>
+    <ns>10</ns>
+    <id>105</id>
+    <revision>
+      <id>9005</id>
+      <text xml:space="preserve">Sequence {{{1}}}</text>
+    </revision>
+  </page>
+  <page>
+    <title>Stub Page</title>
+    <ns>0</ns>
+    <id>106</id>
+    <revision>
+      <id>9006</id>
+      <text xml:space="preserve">Too short.</text>
+    </revision>
+  </page>
+  <page>
+    <title>Tingen (fixture)</title>
+    <ns>0</ns>
+    <id>107</id>
+    <revision>
+      <id>9007</id>
+      <text xml:space="preserve">[[File:Tingen.jpg|thumb|The [[canal]] at dusk]]
+'''Tingen''' is a city in the Loen Kingdom, known for its fog and its chapels. The city hosts a branch of the [[Nighthawks]], who police the supernatural. &lt;br&gt; Its streets run down to a slow canal.
+
+[[Category:Cities]]</text>
+    </revision>
+  </page>
+</mediawiki>

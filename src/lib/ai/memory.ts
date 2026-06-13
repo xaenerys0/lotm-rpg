@@ -105,6 +105,21 @@ export function addTurn(state: MemoryState, turn: TurnRecord): MemoryState {
   return next;
 }
 
+/**
+ * Append a single session fact to memory, respecting the session-facts cap
+ * (oldest evicted first). Pure — returns a new MemoryState. Used for events the
+ * engine records directly rather than extracting from an AI turn (e.g. issue
+ * #23 deliberate travel).
+ */
+export function addSessionFact(state: MemoryState, fact: SessionFact): MemoryState {
+  const next = structuredClone(state);
+  next.sessionFacts.push(fact);
+  while (next.sessionFacts.length > SESSION_FACTS_MAX) {
+    next.sessionFacts.shift();
+  }
+  return next;
+}
+
 export function estimateMemoryTokens(state: MemoryState): number {
   return (
     state.immediateTurns.length * TOKEN_PER_TURN_ESTIMATE +
@@ -180,11 +195,15 @@ export function buildTurnRecord(
   turnNumber: number,
   playerAction: string,
   aiResponse: AIResponse,
+  retrievedChunkIds?: string[],
 ): TurnRecord {
   return {
     turnNumber,
     playerAction,
     aiResponse,
     timestamp: Date.now(),
+    // Recorded for retrieval determinism/debuggability (issue #63); omitted
+    // entirely on turns that performed no retrieval.
+    ...(retrievedChunkIds !== undefined ? { retrievedChunkIds } : {}),
   };
 }

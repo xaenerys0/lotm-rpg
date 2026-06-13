@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     "coverage/**",
     // Static assets (e.g. the service worker) are not application source.
     "public/**",
+    // Agent worktrees are separate checkouts, linted in their own context.
+    ".claude/worktrees/**",
   ]),
 ]);
 

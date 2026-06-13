@@ -30,8 +30,42 @@ model without re-parsing or re-chunking.
   - Offline/occasional operator batch — needs a running embedder (local Ollama or the
     operator box); it is never part of CI or the app bundle.
 
-Later stages (parse/normalize for wiki #4 and novel #5, load) land in their own issues
-and follow the same JSONL-in/JSONL-out shape.
+- `novel.ts` (`pnpm rag:novel`) — the novel **parse + normalize** stages (issue #62).
+  Reads an EPUB, a one-file-per-chapter directory (md/txt/html), or a single
+  chapter-headed file, and writes normalized `SourceDocument` JSONL for the chunk
+  stage. The full real-novel ingest is gated on receiving the actual file; the
+  pipeline is validated against the synthetic fixture in
+  `src/lib/rag/__fixtures__/novel-chapters.txt`.
+  - `pnpm rag:novel book.epub > docs.jsonl`
+  - `pnpm rag:novel chapters/ docs.jsonl`
+  - `pnpm rag:novel novel.txt | pnpm rag:chunk | pnpm rag:embed --model qwen3-embedding-0.6b`
+  - Flags: `--arc-map <file.json>` — override the default `LOTM_NOVEL_ARC_MAP`
+    (approximate chapter boundaries) with a corrected JSON array of `NovelArcEntry`.
+
+- `wiki.ts` (`pnpm rag:wiki`) — the wiki **parse + normalize** stages (issue #61).
+  Streams the Fandom MediaWiki XML export (`pages_current.xml`; extract the .7z
+  first) page-by-page — the dump is never held in memory whole — and writes
+  normalized `SourceDocument` JSONL.
+  - `pnpm rag:wiki pages_current.xml > wiki-docs.jsonl`
+  - `pnpm rag:wiki pages_current.xml wiki-docs.jsonl --concealment-tier 1`
+  - Flags: `--concealment-tier <n>` (default 0), `--base-url <url>` (default the
+    LOTM Fandom wiki), `--min-chars <n>` (stub threshold, default 40).
+
+- `eval.ts` (`pnpm rag:eval`) — the **evaluation + leakage harness** (issue #64).
+  Runs the labeled `EvalCase` set against the offline lexical retriever over a
+  chunk corpus and prints recall@k + a leakage report. **Advisory**: always exits
+  0 unless `--strict` (then leakage violations fail the run).
+  - `pnpm rag:eval chunks.jsonl cases.jsonl`
+  - `pnpm rag:eval chunks.jsonl cases.jsonl --k 5 --strict`
+
+- `load.ts` (`pnpm rag:load`) — the **load** stage. Upserts `ChunkRecord` JSONL
+  into `source_chunks` and (with `--model <id>`) `chunk_embeddings`. Idempotent
+  (deterministic uuid from the pipeline id). Requires `SUPABASE_URL` +
+  `SUPABASE_SERVICE_ROLE_KEY` (RLS denies everyone else by design) — run it
+  **operator-side only**, never in the app or CI.
+  - `pnpm rag:load embedded.qwen3.jsonl --model qwen3-embedding-0.6b`
+  - `pnpm rag:load chunks.jsonl --chunks-only`
+  - Flags: `--model <id>`, `--chunks-only`, `--batch <n>` (default 200).
 
 ## Conventions
 

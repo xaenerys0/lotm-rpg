@@ -1,7 +1,7 @@
 // Public surface of the RAG ingestion core (issue #59): the canonical JSONL
 // chunk artifact, the stage contract, the JSONL I/O seam, and the shared
 // chunker. Consumed by the pipeline stage drivers in `scripts/rag/*` and by
-// later RAG issues (#3 embed, #4 wiki, #5 novel).
+// later RAG issues (#4 wiki).
 
 export type {
   ChunkOptions,
@@ -26,5 +26,41 @@ export {
   type ChunkEmbedder,
   type EmbedChunksOptions,
 } from "./embed";
+export { chunkUuid, toEmbeddingRow, toSourceChunkRow } from "./load";
 export { countTokens } from "./tokenizer";
 export { iterateJsonl, parseJsonl, toJsonl } from "./jsonl";
+
+export {
+  createLexicalRetriever,
+  DEFAULT_EVAL_K,
+  evalLeakage,
+  evalRecallAtK,
+  formatEvalReport,
+  type EvalCase,
+  type EvalChunk,
+  type EvalRetriever,
+  type LeakageReport,
+  type RecallReport,
+} from "./eval";
+export { decodeEntities, stripHtml } from "./html";
+export {
+  normalizeNovelChapters,
+  parseEpub,
+  parseNovelFiles,
+  parseNovelText,
+  type NovelChapter,
+  type NovelFile,
+} from "./novel";
+export { LOTM_NOVEL_ARC_MAP, resolveArc, type NovelArcEntry } from "./novel-arcs";
+export {
+  cleanWikitext,
+  createWikiXmlParser,
+  DEFAULT_WIKI_BASE_URL,
+  extractCategories,
+  normalizeWikiPage,
+  normalizeWikiPages,
+  parseWikiXml,
+  type NormalizeWikiOptions,
+  type WikiPage,
+  type WikiXmlParser,
+} from "./wiki";
