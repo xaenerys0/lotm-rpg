@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, it, vi } from "vitest";
-import { cleanup } from "@testing-library/react";
-import { expectNoAxeViolations } from "@/test/axe";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { expectNoAxeViolations, expectNoAxeViolationsInContainer } from "@/test/axe";
 
 import { LoginForm } from "@/components/auth/login-form";
 import { SignupForm } from "@/components/auth/signup-form";
 import { ProviderConfig } from "@/components/game/provider-config";
 import { SanityPreferences } from "@/components/game/sanity-preferences";
 import { CharacterCreation } from "@/components/game/character-creation";
+import { PlayDashboard } from "@/components/game/play-dashboard";
 import { GameSidebar } from "@/components/game/game-sidebar";
 import { MobileNav } from "@/components/game/mobile-nav";
 import { GameLoop } from "@/components/game/game-loop";
@@ -247,6 +248,25 @@ describe("accessibility — combat", () => {
     }
     encounter = resolveEncounter(encounter);
     await expectNoAxeViolations(view(encounter));
+  });
+});
+
+describe("accessibility — manage characters", () => {
+  it("manage view (and delete confirmation) has no violations", async () => {
+    const session = createSession(
+      createDefaultGameState(1, "char-m", "Klein"),
+      "manage-1",
+    );
+    localStorage.setItem(SESSION_KEY_PREFIX + "manage-1", serializeSession(session));
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["manage-1"]));
+
+    const { container } = render(<PlayDashboard />);
+    fireEvent.click(screen.getByRole("button", { name: "Manage characters" }));
+    await expectNoAxeViolationsInContainer(container);
+
+    // Open the two-step confirm and re-check the live region + button group.
+    fireEvent.click(screen.getByRole("button", { name: /Delete .*pathway/ }));
+    await expectNoAxeViolationsInContainer(container);
   });
 });
 

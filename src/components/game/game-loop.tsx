@@ -74,6 +74,8 @@ import {
   gatherClues,
   INPUT_MODE_LABELS,
   RITUAL_STEPS,
+  COMBAT_KEY_PREFIX,
+  USAGE_KEY_PREFIX,
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
@@ -141,10 +143,9 @@ function loadSessionFromStorage(sessionId: string): GameSession | null {
   }
 }
 
-// Combat encounters live in their own localStorage entry so an in-progress
-// fight survives a reload without touching the persisted session schema.
-const COMBAT_KEY_PREFIX = "lotm:combat:";
-
+// Combat encounters live in their own localStorage entry (COMBAT_KEY_PREFIX,
+// shared from @/lib/game) so an in-progress fight survives a reload without
+// touching the persisted session schema.
 function loadCombatFromStorage(sessionId: string): CombatEncounter | null {
   try {
     const raw = localStorage.getItem(COMBAT_KEY_PREFIX + sessionId);
@@ -174,10 +175,8 @@ function clearCombatFromStorage(sessionId: string): void {
   }
 }
 
-// Rough per-session token usage (issue #15) — its own localStorage entry so
-// the persisted session schema is untouched.
-const USAGE_KEY_PREFIX = "lotm:usage:";
-
+// Rough per-session token usage (issue #15) — its own localStorage entry
+// (USAGE_KEY_PREFIX, shared from @/lib/game) so the session schema is untouched.
 function loadUsageFromStorage(sessionId: string): SessionUsage {
   try {
     const raw = localStorage.getItem(USAGE_KEY_PREFIX + sessionId);

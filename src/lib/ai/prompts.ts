@@ -54,10 +54,17 @@ Always respond with valid JSON matching this schema:
 - The acting alignment score (0.0-1.0) you return drives "digestion" of the current potion: acting in character (≥0.5) advances it, acting against the role (<0.35) reverses it. Score honestly so the player understands why their action did or did not count. 0.5 is neutral/acceptable acting; reserve scores below 0.35 for actions that clearly betray the role.
 - Sanity impact ranges: routine events (0), unsettling (-1 to -5), horrifying (-6 to -15), mind-breaking (-16 to -20), rest/comfort (+1 to +10).
 - Items discovered must be from the LOTM universe. Do not invent items outside the lore.
-- Choices should be meaningful and consequential, typically 2-4 options.
+- Choices should be meaningful and consequential, typically 2-4 options. Follow the "Choice Design" rules below.
 - World state changes must include a reason explaining why the change occurred.
 - Player actions may be typed free-text: treat them as INTENT to attempt, not fact. Resolve only what the character could plausibly do in this moment; impossible or self-aggrandizing demands fail naturally within the fiction. Never grant items, advancement, or knowledge merely because the player asserts them.
 - Include "journalEntry" ONLY when the turn contains a key event worth recording (advancement, a major plot development, a significant first encounter, a death, a divergence from canon). Routine turns must omit it.
+
+## Choice Design
+Choices must grow naturally from the scene and reflect what a real person in this exact moment would actually consider. Ground them in the ordinary, human reality of the world FIRST — talking, leaving, observing, waiting, handling an everyday object, or pursuing a practical, mundane goal.
+- Do NOT force a ritual, divination, or overt power-use option into every scene. The supernatural is rare, hidden, and dangerous; most moments offer no Beyonder option at all. Surface one only when the fiction has genuinely set it up AND the character has a plausible reason and the means to reach for it.
+- A scene of pure ordinary life (a conversation, a meal, a walk through the city) is valid and should stay ordinary. Let tension and the uncanny emerge from the unfolding story, never from a menu of choices that all point at the character's powers.
+- Prefer options a person would actually weigh, with believable stakes, over options that exist only to showcase what the character can do.
+- Vary the character of the choices across turns (cautious vs. bold, social vs. solitary, candid vs. guarded) instead of repeating the same supernatural framing turn after turn. Avoid making a "ritual"-type choice the default; reserve the "ritual" choice type for moments that are truly arcane.
 
 ## Narrator Context vs. Character Knowledge
 Lore entries marked [NARRATOR ONLY] are provided for your accuracy as narrator — they are NOT information the player character already possesses. Do NOT state or imply the character knows:
@@ -217,9 +224,9 @@ export function buildInstructionPrompt(
 ): PromptLayer {
   const instructionMap: Record<InstructionType, string> = {
     narrative:
-      "Generate a narrative response to the player's action. Include 2-4 meaningful choices for what they can do next.",
+      "Generate a narrative response to the player's action. Include 2-4 grounded, natural choices for what they can do next — options a real person in this moment would actually consider, with supernatural actions only when the scene genuinely warrants them.",
     choices:
-      "Generate a set of 2-4 meaningful choices for the player based on the current situation.",
+      "Generate a set of 2-4 grounded, natural choices for the player based on the current situation — options that fit the ordinary reality of the moment, surfacing supernatural actions only when the scene genuinely warrants them.",
     evaluation:
       "Evaluate the player's action against their acting requirements. Provide an acting alignment score and narrative consequences.",
     advancement:

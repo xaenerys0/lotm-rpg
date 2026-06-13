@@ -38,6 +38,21 @@ function formatViolations(violations: Result[]): string {
     .join("\n");
 }
 
+/** Run axe against an already-rendered container and assert no violations. */
+export async function expectNoAxeViolationsInContainer(
+  container: HTMLElement,
+  options: RunOptions = DEFAULT_OPTIONS,
+): Promise<void> {
+  const results: AxeResults = await axe.run(container, options);
+  if (results.violations.length > 0) {
+    throw new Error(
+      `Found ${results.violations.length} accessibility violation(s):\n` +
+        formatViolations(results.violations),
+    );
+  }
+  expect(results.violations).toHaveLength(0);
+}
+
 /** Render `ui`, run axe, and assert there are no accessibility violations. */
 export async function expectNoAxeViolations(
   ui: ReactElement,
@@ -45,14 +60,7 @@ export async function expectNoAxeViolations(
 ): Promise<void> {
   const { container, unmount } = render(ui);
   try {
-    const results: AxeResults = await axe.run(container, options);
-    if (results.violations.length > 0) {
-      throw new Error(
-        `Found ${results.violations.length} accessibility violation(s):\n` +
-          formatViolations(results.violations),
-      );
-    }
-    expect(results.violations).toHaveLength(0);
+    await expectNoAxeViolationsInContainer(container, options);
   } finally {
     unmount();
   }

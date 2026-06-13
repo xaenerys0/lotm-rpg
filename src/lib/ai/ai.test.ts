@@ -1522,6 +1522,12 @@ describe("prompts", () => {
       const layer = buildSystemPrompt([], []);
       expect(layer.content).toContain("None yet");
     });
+
+    it("instructs grounded, non-forced choice design", () => {
+      const layer = buildSystemPrompt([], []);
+      expect(layer.content).toContain("Choice Design");
+      expect(layer.content).toContain("Do NOT force a ritual");
+    });
   });
 
   describe("buildLoreContext", () => {
@@ -1681,6 +1687,7 @@ describe("prompts", () => {
       const layer = buildInstructionPrompt("narrative", "I open the door");
       expect(layer.role).toBe("user");
       expect(layer.content).toContain("narrative response");
+      expect(layer.content).toContain("grounded, natural choices");
       expect(layer.content).toContain("I open the door");
     });
 

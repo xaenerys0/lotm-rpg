@@ -22,6 +22,7 @@ import {
 } from "./journal";
 import {
   deleteAnnotationRemote,
+  deleteSessionEntriesRemote,
   syncAnnotation,
   syncEntries,
   syncJournal,
@@ -364,6 +365,18 @@ describe("journal-sync", () => {
     );
     await expect(deleteAnnotationRemote(failing.client, "a1")).rejects.toThrow(
       /Annotation delete failed: down/,
+    );
+  });
+
+  it("deletes all entries for one session, surfacing failures", async () => {
+    const { client, eq } = makeClient();
+    await deleteSessionEntriesRemote(client, "session-1");
+    expect(client.from).toHaveBeenCalledWith("journal_entries");
+    expect(eq).toHaveBeenCalledWith("session_id", "session-1");
+
+    const failing = makeClient({ message: "down" });
+    await expect(deleteSessionEntriesRemote(failing.client, "session-1")).rejects.toThrow(
+      /Journal session delete failed: down/,
     );
   });
 

@@ -1,8 +1,20 @@
-import { headers } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function HomePage() {
-  await headers();
+  // Reading auth cookies makes this route dynamic (no extra `headers()` call
+  // needed). An already-signed-in player should land straight in the game —
+  // showing them the "Begin / Sign In" choices on the base URL feels unnatural.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (user) {
+    redirect("/play");
+  }
+
   return (
     <main
       id="main-content"
