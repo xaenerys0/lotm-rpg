@@ -35,13 +35,35 @@ import { validateAdvancement, validateTransfer } from "./validation";
 // Pathway definitions
 // ---------------------------------------------------------------------------
 describe("pathway definitions", () => {
-  it("defines all 9 playable pathways", () => {
-    expect(ALL_PATHWAYS).toHaveLength(9);
+  it("defines all 22 pathways", () => {
+    expect(ALL_PATHWAYS).toHaveLength(22);
   });
 
-  it("pathway ids are unique", () => {
-    const ids = ALL_PATHWAYS.map((p) => p.id);
+  it("pathway ids are unique and cover 1..22", () => {
+    const ids = ALL_PATHWAYS.map((p) => p.id).sort((a, b) => a - b);
     expect(new Set(ids).size).toBe(ids.length);
+    expect(ids).toEqual(Array.from({ length: 22 }, (_, i) => i + 1));
+  });
+
+  it("the 13 additional pathways have their canon names and ids (issue #28)", () => {
+    const expected: Array<[number, string]> = [
+      [10, "White Tower"],
+      [11, "Twilight Giant"],
+      [12, "Justiciar"],
+      [13, "Black Emperor"],
+      [14, "Red Priest"],
+      [15, "Demoness"],
+      [16, "Mother"],
+      [17, "Moon"],
+      [18, "Hermit"],
+      [19, "Paragon"],
+      [20, "Wheel of Fortune"],
+      [21, "Abyss"],
+      [22, "Chained"],
+    ];
+    for (const [id, name] of expected) {
+      expect(ALL_PATHWAYS.find((p) => p.id === id)?.name).toBe(name);
+    }
   });
 
   it.each([
@@ -59,10 +81,17 @@ describe("pathway definitions", () => {
     expect(pathway.id).toBe(id);
   });
 
-  it("each pathway has sequences 9 through 1", () => {
+  it("sequence depth matches pathway scope: 9..1 for the original 9, 9..5 for the new 13", () => {
+    // The original nine pathways are implemented to the demigod tiers (Seq 4-1,
+    // issue #25). The thirteen added in issue #28 ship at Seq 9-5; their deep
+    // sequences await the private novel source, mirroring the #21/#25 rollout.
     for (const pathway of ALL_PATHWAYS) {
       const levels = pathway.sequences.map((s) => s.level).sort((a, b) => b - a);
-      expect(levels).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
+      if (pathway.id <= 9) {
+        expect(levels).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
+      } else {
+        expect(levels).toEqual([9, 8, 7, 6, 5]);
+      }
     }
   });
 
@@ -256,8 +285,14 @@ describe("pathway definitions", () => {
 // Pathway groups and neighboring relationships
 // ---------------------------------------------------------------------------
 describe("pathway groups", () => {
-  it("defines three groups", () => {
-    expect(Object.keys(PATHWAY_GROUPS)).toHaveLength(3);
+  it("defines nine groups partitioning all 22 pathways", () => {
+    expect(Object.keys(PATHWAY_GROUPS)).toHaveLength(9);
+    // Every pathway belongs to exactly one group; the groups cover 1..22.
+    const allIds = Object.values(PATHWAY_GROUPS)
+      .flatMap((g) => g.pathwayIds)
+      .sort((a, b) => a - b);
+    expect(new Set(allIds).size).toBe(allIds.length);
+    expect(allIds).toEqual(Array.from({ length: 22 }, (_, i) => i + 1));
   });
 
   it("Visionary and Sun share God Almighty group", () => {

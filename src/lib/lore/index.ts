@@ -48,6 +48,19 @@ export { TYRANT_PATHWAY_LORE } from "./pathway-tyrant";
 export { DOOR_PATHWAY_LORE } from "./pathway-door";
 export { ERROR_PATHWAY_LORE } from "./pathway-error";
 export { HANGED_MAN_PATHWAY_LORE } from "./pathway-hanged-man";
+export { WHITE_TOWER_PATHWAY_LORE } from "./pathway-white-tower";
+export { TWILIGHT_GIANT_PATHWAY_LORE } from "./pathway-twilight-giant";
+export { JUSTICIAR_PATHWAY_LORE } from "./pathway-justiciar";
+export { BLACK_EMPEROR_PATHWAY_LORE } from "./pathway-black-emperor";
+export { RED_PRIEST_PATHWAY_LORE } from "./pathway-red-priest";
+export { DEMONESS_PATHWAY_LORE } from "./pathway-demoness";
+export { MOTHER_PATHWAY_LORE } from "./pathway-mother";
+export { MOON_PATHWAY_LORE } from "./pathway-moon";
+export { HERMIT_PATHWAY_LORE } from "./pathway-hermit";
+export { PARAGON_PATHWAY_LORE } from "./pathway-paragon";
+export { WHEEL_OF_FORTUNE_PATHWAY_LORE } from "./pathway-wheel-of-fortune";
+export { ABYSS_PATHWAY_LORE } from "./pathway-abyss";
+export { CHAINED_PATHWAY_LORE } from "./pathway-chained";
 
 import type { LoreEntry } from "./types";
 import { TINGEN_LORE } from "./tingen";
@@ -66,6 +79,19 @@ import { TYRANT_PATHWAY_LORE } from "./pathway-tyrant";
 import { DOOR_PATHWAY_LORE } from "./pathway-door";
 import { ERROR_PATHWAY_LORE } from "./pathway-error";
 import { HANGED_MAN_PATHWAY_LORE } from "./pathway-hanged-man";
+import { WHITE_TOWER_PATHWAY_LORE } from "./pathway-white-tower";
+import { TWILIGHT_GIANT_PATHWAY_LORE } from "./pathway-twilight-giant";
+import { JUSTICIAR_PATHWAY_LORE } from "./pathway-justiciar";
+import { BLACK_EMPEROR_PATHWAY_LORE } from "./pathway-black-emperor";
+import { RED_PRIEST_PATHWAY_LORE } from "./pathway-red-priest";
+import { DEMONESS_PATHWAY_LORE } from "./pathway-demoness";
+import { MOTHER_PATHWAY_LORE } from "./pathway-mother";
+import { MOON_PATHWAY_LORE } from "./pathway-moon";
+import { HERMIT_PATHWAY_LORE } from "./pathway-hermit";
+import { PARAGON_PATHWAY_LORE } from "./pathway-paragon";
+import { WHEEL_OF_FORTUNE_PATHWAY_LORE } from "./pathway-wheel-of-fortune";
+import { ABYSS_PATHWAY_LORE } from "./pathway-abyss";
+import { CHAINED_PATHWAY_LORE } from "./pathway-chained";
 
 export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...TINGEN_LORE,
@@ -84,6 +110,19 @@ export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...DOOR_PATHWAY_LORE,
   ...ERROR_PATHWAY_LORE,
   ...HANGED_MAN_PATHWAY_LORE,
+  ...WHITE_TOWER_PATHWAY_LORE,
+  ...TWILIGHT_GIANT_PATHWAY_LORE,
+  ...JUSTICIAR_PATHWAY_LORE,
+  ...BLACK_EMPEROR_PATHWAY_LORE,
+  ...RED_PRIEST_PATHWAY_LORE,
+  ...DEMONESS_PATHWAY_LORE,
+  ...MOTHER_PATHWAY_LORE,
+  ...MOON_PATHWAY_LORE,
+  ...HERMIT_PATHWAY_LORE,
+  ...PARAGON_PATHWAY_LORE,
+  ...WHEEL_OF_FORTUNE_PATHWAY_LORE,
+  ...ABYSS_PATHWAY_LORE,
+  ...CHAINED_PATHWAY_LORE,
 ];
 
 export function getLoreByCategory(category: LoreEntry["category"]): LoreEntry[] {

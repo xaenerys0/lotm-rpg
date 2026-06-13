@@ -19,6 +19,19 @@ import {
   getLoreBySlug,
   getLoreByTag,
   HANGED_MAN_PATHWAY_LORE,
+  WHITE_TOWER_PATHWAY_LORE,
+  TWILIGHT_GIANT_PATHWAY_LORE,
+  JUSTICIAR_PATHWAY_LORE,
+  BLACK_EMPEROR_PATHWAY_LORE,
+  RED_PRIEST_PATHWAY_LORE,
+  DEMONESS_PATHWAY_LORE,
+  MOTHER_PATHWAY_LORE,
+  MOON_PATHWAY_LORE,
+  HERMIT_PATHWAY_LORE,
+  PARAGON_PATHWAY_LORE,
+  WHEEL_OF_FORTUNE_PATHWAY_LORE,
+  ABYSS_PATHWAY_LORE,
+  CHAINED_PATHWAY_LORE,
   NPC_LORE,
   ORGANIZATION_LORE,
   SUN_PATHWAY_LORE,
@@ -262,7 +275,20 @@ describe("Total lore corpus", () => {
       TYRANT_PATHWAY_LORE.length +
       DOOR_PATHWAY_LORE.length +
       ERROR_PATHWAY_LORE.length +
-      HANGED_MAN_PATHWAY_LORE.length;
+      HANGED_MAN_PATHWAY_LORE.length +
+      WHITE_TOWER_PATHWAY_LORE.length +
+      TWILIGHT_GIANT_PATHWAY_LORE.length +
+      JUSTICIAR_PATHWAY_LORE.length +
+      BLACK_EMPEROR_PATHWAY_LORE.length +
+      RED_PRIEST_PATHWAY_LORE.length +
+      DEMONESS_PATHWAY_LORE.length +
+      MOTHER_PATHWAY_LORE.length +
+      MOON_PATHWAY_LORE.length +
+      HERMIT_PATHWAY_LORE.length +
+      PARAGON_PATHWAY_LORE.length +
+      WHEEL_OF_FORTUNE_PATHWAY_LORE.length +
+      ABYSS_PATHWAY_LORE.length +
+      CHAINED_PATHWAY_LORE.length;
     expect(ALL_LORE_ENTRIES.length).toBe(expected);
   });
 
@@ -270,5 +296,37 @@ describe("Total lore corpus", () => {
     const total = ALL_LORE_ENTRIES.reduce((sum, e) => sum + e.tokenCount, 0);
     expect(total).toBeGreaterThan(5000);
     expect(total).toBeLessThan(80000);
+  });
+
+  it("every one of the 22 pathways has retrievable overview lore (issue #28)", () => {
+    // The lowercased pathway name is the key selectCuratedLore matches on, so
+    // each pathway must expose at least one entry under that exact key.
+    const pathwayKeys = [
+      "fool",
+      "visionary",
+      "sun",
+      "death",
+      "darkness",
+      "tyrant",
+      "door",
+      "error",
+      "hanged-man",
+      "white tower",
+      "twilight giant",
+      "justiciar",
+      "black emperor",
+      "red priest",
+      "demoness",
+      "mother",
+      "moon",
+      "hermit",
+      "paragon",
+      "wheel of fortune",
+      "abyss",
+      "chained",
+    ];
+    for (const key of pathwayKeys) {
+      expect(getLoreByPathway(key).length).toBeGreaterThan(0);
+    }
   });
 });

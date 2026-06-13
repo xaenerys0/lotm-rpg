@@ -1,4 +1,13 @@
-export type PathwayGroupId = "mysteries" | "god-almighty" | "eternal-darkness";
+export type PathwayGroupId =
+  | "mysteries"
+  | "god-almighty"
+  | "eternal-darkness"
+  | "order"
+  | "combat"
+  | "life"
+  | "knowledge"
+  | "wheel-of-fortune"
+  | "abyss";
 
 export interface PathwayGroup {
   id: PathwayGroupId;

@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Ten migrations in order:
+Migrations live in `migrations/`. Eleven migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -58,6 +58,8 @@ Migrations live in `migrations/`. Ten migrations in order:
    - RLS: owners full access; other authenticated users may SELECT only rows where `public = true` — private data is never selectable, so it cannot leak
 
 10. `20260613020000_seed_additional_city_lore.sql` — Seed lore for the three additional cities (issue #23): Backlund, Trier, and Bayam (18 entries). Generated from `src/lib/lore/{backlund,trier,bayam}.ts` (TS source is canonical). Same `lore_entries` INSERT format as migration 3.
+
+11. `20260613030000_seed_remaining_pathways_lore.sql` — Seed lore for the thirteen remaining pathways (issue #28): White Tower, Twilight Giant, Justiciar, Black Emperor, Red Priest, Demoness, Mother, Moon, Hermit, Paragon, Wheel of Fortune, Abyss, Chained (13 overview entries). Generated from `src/lib/lore/pathway-*.ts` (TS source is canonical). Same `lore_entries` INSERT format as migration 3.
 
 ## Auth Session Persistence
 

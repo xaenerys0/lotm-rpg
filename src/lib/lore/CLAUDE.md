@@ -36,12 +36,13 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 - `pathway-door.ts` — Door pathway lore (Seq 9-5).
 - `pathway-error.ts` — Error pathway lore (Seq 9-5).
 - `pathway-hanged-man.ts` — Hanged Man pathway lore (Seq 9-5).
+- `pathway-{white-tower,twilight-giant,justiciar,black-emperor,red-priest,demoness,mother,moon,hermit,paragon,wheel-of-fortune,abyss,chained}.ts` — The thirteen additional pathways (issue #28). Each holds a single player-safe **overview** entry (family/group + the canon Seq 9-5 progression); per-sequence lore depth awaits the novel source. The `pathway` field is the lowercased full name with spaces (e.g. `"white tower"`) so `selectCuratedLore` matches it.
 - `index.ts` — Re-exports and query helpers (`getLoreByCategory`, `getLoreByPathway`, etc.).
 - `lore.test.ts` — Data integrity tests.
 
 ## Database Table
 
-`lore_entries` in Supabase (migration `20260527111842`). Seeded by `20260527113655`; the five additional pathways (Darkness, Tyrant, Door, Error, Hanged Man) are seeded by `20260612170000`; the three additional cities (Backlund, Trier, Bayam) by `20260613020000`.
+`lore_entries` in Supabase (migration `20260527111842`). Seeded by `20260527113655`; the five additional pathways (Darkness, Tyrant, Door, Error, Hanged Man) are seeded by `20260612170000`; the three additional cities (Backlund, Trier, Bayam) by `20260613020000`; the thirteen remaining pathways (White Tower … Chained, overview entries) by `20260613030000`.
 
 Metadata columns for filtering: `category`, `pathway`, `epoch`, `city`, `npcs`, `sequences`, `tags`.
 `embedding` column (vector 1536) is nullable — populated post-MVP via pgvector.

@@ -1,5 +1,3814 @@
 import type { Pathway, Sequence } from "@/lib/types/rules";
 
+const whiteTowerSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Reader",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Enhanced Mental Attributes",
+        description:
+          "Upon drinking the potion, Readers will possess great improvements to their reasoning and learning capabilities along with their memory",
+        type: "passive",
+      },
+      {
+        name: "Spirituality",
+        description: "They gain an enhanced Spirituality upon drinking this potion",
+        type: "passive",
+      },
+      {
+        name: "Divination Arts & Ritualistic Magic",
+        description:
+          "As a result of their enhanced Spirituality, Readers will be capable of using various Ritualistic Magic and Divination Arts",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Reader, leaning into the pathway of white tower",
+      "Practise memory in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Reader Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Reader potion of the White Tower pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 White Tower Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Reader potion, carrying the White Tower pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Knowledge and Wisdom, measured to the Reader formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Student of Ratiocination",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Enhanced Mental Attributes",
+        description:
+          "They gain an increase in observational and logical reasoning skills",
+        type: "passive",
+      },
+      {
+        name: "Spirituality",
+        description:
+          "A further enhancement to their Spirituality has been gained at this level",
+        type: "passive",
+      },
+      {
+        name: "Divination Arts & Ritualistic Magic",
+        description:
+          "As a result of this, a Student of Ratiocination will become an expert at Ritualistic Magic and Divination Arts",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Student of Ratiocination, leaning into the pathway of white tower",
+      "Practise memory in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Student of Ratiocination Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Student of Ratiocination potion of the White Tower pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 White Tower Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Student of Ratiocination potion, carrying the White Tower pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Knowledge and Wisdom, measured to the Student of Ratiocination formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Student of Ratiocination: digest the potion through faithful acting, then perform the White Tower pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Student of Ratiocination potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Knowledge and Wisdom at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Detective",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Physical Enhancements",
+        description: "A Detective possesses an enhanced mobility and speed",
+        type: "active",
+      },
+      {
+        name: "Combat Proficiency",
+        description: "They possess strong equipment and fighting capabilities",
+        type: "passive",
+      },
+      {
+        name: "Enhanced Mental Attributes",
+        description:
+          "They are good at using pre-established knowledge, deducing clues, observation details, and reasoning out various conclusions",
+        type: "passive",
+      },
+      {
+        name: "Spirituality",
+        description:
+          "With a further strengthening to their Spirituality comes along other changes, such as becoming more efficient at using Ritualistic Magic",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Detective, leaning into the pathway of white tower",
+      "Practise memory in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Detective Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Detective potion of the White Tower pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 White Tower Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Detective potion, carrying the White Tower pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Knowledge and Wisdom, measured to the Detective formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Detective: digest the potion through faithful acting, then perform the White Tower pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Detective potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Knowledge and Wisdom at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Polymath",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Analysis",
+        description:
+          "Polymaths can Analyze the different characteristics of a Beyonder power used by the target",
+        type: "active",
+      },
+      {
+        name: "Imitation",
+        description:
+          "Once sufficiently Analyzed, they can try to Imitate the corresponding Beyonder power",
+        type: "active",
+      },
+      {
+        name: "Enhanced Mental Attributes",
+        description: "They can understand and comprehend many things",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Polymath, leaning into the pathway of white tower",
+      "Practise memory in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Polymath Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Polymath potion of the White Tower pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 White Tower Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Polymath potion, carrying the White Tower pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Knowledge and Wisdom, measured to the Polymath formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Polymath: digest the potion through faithful acting, then perform the White Tower pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Polymath potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Knowledge and Wisdom at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Mysticism Magister",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Spellcasting",
+        description:
+          "A Mysticism Magister's mastery over rare and unique arcana not only enables them to cast Spells but also invent and create their own Spells that belong only to themselves",
+        type: "active",
+      },
+      {
+        name: "Analyze",
+        description:
+          "Mysticism Magisters are now able to Analyze the characteristics of a Demigod-level Beyonder power and attempt to copy it with Imitation",
+        type: "active",
+      },
+      {
+        name: "Imitation",
+        description:
+          "Their Imitated abilities have been enhanced with an Imitated Demigod-level power being only a bit weaker than a Recording",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Mysticism Magister, leaning into the pathway of white tower",
+      "Practise memory in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Mysticism Magister Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Mysticism Magister potion of the White Tower pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 White Tower Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Mysticism Magister potion, carrying the White Tower pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Knowledge and Wisdom, measured to the Mysticism Magister formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Mysticism Magister: digest the potion through faithful acting, then perform the White Tower pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Mysticism Magister potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Knowledge and Wisdom at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const twilightGiantSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Warrior",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Physical Enhancement (Divine Blood)",
+        description:
+          "Upon drinking the Warrior potion, they will possess supernatural strength and agility that greatly transcends those who are not Beyonders",
+        type: "passive",
+      },
+      {
+        name: "Spirituality",
+        description:
+          "Their Spirituality is slightly enhanced as a Beyonder, but weaker than most Sequence 9s if they did not already possess heightened levels of Spirituality before becoming a Warrior",
+        type: "passive",
+      },
+      {
+        name: "Ritualistic Magic",
+        description: "They can learn and cast only the most basic of Ritualistic Magics",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Warrior, leaning into the pathway of twilight giant",
+      "Practise overwhelming strength in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Warrior Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Warrior potion of the Twilight Giant pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Twilight Giant Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Warrior potion, carrying the Twilight Giant pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Twilight, Decay and Glory, measured to the Warrior formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Pugilist",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Supernatural Resistance",
+        description:
+          "Their body's superb physique and defensive capabilities can reduce the negative effects of certain supernatural powers",
+        type: "passive",
+      },
+      {
+        name: "Combat Proficiency (Gladiatorial)",
+        description:
+          "They are gifted with the ability and talent to become experts of combat that specialize in close quarters battles",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Pugilist, leaning into the pathway of twilight giant",
+      "Practise overwhelming strength in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Pugilist Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Pugilist potion of the Twilight Giant pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Twilight Giant Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Pugilist potion, carrying the Twilight Giant pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Twilight, Decay and Glory, measured to the Pugilist formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Pugilist: digest the potion through faithful acting, then perform the Twilight Giant pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Pugilist potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Twilight, Decay and Glory at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Weapon Master",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Weapon Mastery",
+        description:
+          'As long as it can be used as a "weapon" in the Weapon Master\'s hands, it can be used in tandem with their Physical Enhancement to instantly grant them a grandmaster\'s level of familiarity and effectiveness when using that "weapon" in combat',
+        type: "active",
+      },
+      {
+        name: "Physical Enhancement (Divine Blood)",
+        description:
+          "They possess extremely powerful strength, constitution, and agility that is much greater than any Sequence 7 Beyonder from any other Pathway",
+        type: "passive",
+      },
+      {
+        name: "Supernatural Resistance",
+        description:
+          "They can greatly reduce the negative effects and damage caused by using weapon-shaped Sealed Artifacts/Mystical Items via their enhanced physique",
+        type: "passive",
+      },
+      {
+        name: "Spirituality",
+        description:
+          "Their Spirituality as a Weapon Master has enhanced to a high enough degree that allows them to gain the ability to conduct more advanced Ritualistic Magic",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Weapon Master, leaning into the pathway of twilight giant",
+      "Practise overwhelming strength in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Weapon Master Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Weapon Master potion of the Twilight Giant pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Twilight Giant Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Weapon Master potion, carrying the Twilight Giant pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Twilight, Decay and Glory, measured to the Weapon Master formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Weapon Master: digest the potion through faithful acting, then perform the Twilight Giant pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Weapon Master potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Twilight, Decay and Glory at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Dawn Paladin",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Giant's Physique (Strength of Giants)",
+        description:
+          "Upon drinking this Sequence 6 potion, a Dawn Paladin will possess the body and strength akin to that of common Giants",
+        type: "active",
+      },
+      {
+        name: "Light of Dawn/Sunrise Gleam",
+        description:
+          "Centered on oneself, they can bask a radius of up to 40 to 50 meters in the bright Dawn rays that dispel Illusions, Exorcise and even weaken Evil Spirits",
+        type: "active",
+      },
+      {
+        name: "Dawn Weaponry",
+        description:
+          "They can use the Dawn to materialize different kinds of weapons, such as a massive two-handed axe, a disposable arm-thick spear, or their strongest weapon - Sword of Dawn",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Dawn Paladin, leaning into the pathway of twilight giant",
+      "Practise overwhelming strength in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Dawn Paladin Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Dawn Paladin potion of the Twilight Giant pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Twilight Giant Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Dawn Paladin potion, carrying the Twilight Giant pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Twilight, Decay and Glory, measured to the Dawn Paladin formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Dawn Paladin: digest the potion through faithful acting, then perform the Twilight Giant pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Dawn Paladin potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Twilight, Decay and Glory at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Guardian",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Damage Transference",
+        description: "Within a certain range, they can bear the damage of their allies",
+        type: "active",
+      },
+      {
+        name: "Giant's Physique (Strength of Giants)",
+        description:
+          "The strength of their physique has been enhanced, and as such they seldom suffer damage as a result of their heightened defenses",
+        type: "active",
+      },
+      {
+        name: "Supernatural Resistance",
+        description: "They are unable to be confused or misdirected by Illusions",
+        type: "passive",
+      },
+      {
+        name: "Spirituality",
+        description:
+          "Their Spirituality enhances to a degree to fortify their Cogitation",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Guardian, leaning into the pathway of twilight giant",
+      "Practise overwhelming strength in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Guardian Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Guardian potion of the Twilight Giant pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Twilight Giant Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Guardian potion, carrying the Twilight Giant pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Twilight, Decay and Glory, measured to the Guardian formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Guardian: digest the potion through faithful acting, then perform the Twilight Giant pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Guardian potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Twilight, Decay and Glory at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const justiciarSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Arbiter",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Authority",
+        description:
+          "Arbiters possess a convincing charm and have a considerable Authority, causing people to be more likely to believe and obey their commands and words",
+        type: "passive",
+      },
+      {
+        name: "Physical Enhancement",
+        description:
+          "Upon advancement, an Arbiter will possess an outstanding physique, with massively increased reflexes, senses, strength and speed",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Arbiter, leaning into the pathway of justiciar",
+      "Practise setting binding laws in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Arbiter Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Arbiter potion of the Justiciar pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Justiciar Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Arbiter potion, carrying the Justiciar pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Order, measured to the Arbiter formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Sheriff",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Area of Jurisdiction (Territory)",
+        description:
+          "Sheriffs are always connected to their own Area of Jurisdiction, granting them certain bonuses depending on their familiarity with their area",
+        type: "active",
+      },
+      {
+        name: "Recognition",
+        description:
+          "As long as they saw the person in the flesh, in a photo, or a sketch, then they'll be able to firmly remember the target’s appearance and obtain an additional sense on an extraordinary level",
+        type: "active",
+      },
+      {
+        name: "Supernatural Intuition",
+        description:
+          "Sheriffs possess the capability to detect all sorts of strange abnormalities, even if they are Concealed or just a remnant of a larger irregularity",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Sheriff, leaning into the pathway of justiciar",
+      "Practise setting binding laws in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Sheriff Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Sheriff potion of the Justiciar pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Justiciar Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Sheriff potion, carrying the Justiciar pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Order, measured to the Sheriff formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Sheriff: digest the potion through faithful acting, then perform the Justiciar pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Sheriff potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Interrogator",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Whip of Pain",
+        description:
+          "When an Interrogator uses this ability, the target will feel like electric currents are running through their spirit, connecting to form a whip of thorns that constantly beats their Soul",
+        type: "active",
+      },
+      {
+        name: "Psychic Piercing",
+        description:
+          "An Interrogator can directly invade into a target's mental defenses within an effective range of 5 meters, leaving them subject to counterattack and arrest",
+        type: "active",
+      },
+      {
+        name: "Brand of Restraint",
+        description:
+          "They can manifest an illusory brand that can Restrain and suppress others",
+        type: "active",
+      },
+      {
+        name: "Psychic Lashing",
+        description:
+          "An Interrogator is able to attack by utilizing bolts of illusory lightning",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Interrogator, leaning into the pathway of justiciar",
+      "Practise setting binding laws in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Interrogator Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Interrogator potion of the Justiciar pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Justiciar Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Interrogator potion, carrying the Justiciar pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Order, measured to the Interrogator formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Interrogator: digest the potion through faithful acting, then perform the Justiciar pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Interrogator potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Judge",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Verdict",
+        description:
+          "Judges can directly issue commands, rules, and Verdicts through their words, which has varied effects on the target(s) depending on the words used",
+        type: "active",
+      },
+      {
+        name: "Exile",
+        description:
+          'By saying the word "Exile", they can send an overwhelming and invisible force that forces targets out at high speeds',
+        type: "active",
+      },
+      {
+        name: "Confinement",
+        description:
+          'While in a room, they can say this word to make it Sealed, preventing entry or exit in a way akin to a s Distortion of "closing a door and Sealing the room"',
+        type: "active",
+      },
+      {
+        name: "Imprison",
+        description:
+          'Saying the word "Imprison", they can surround a target with a transparent wall, making the target trapped in a sticky liquid that is hard for even Spirit Bodies to go through',
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Judge, leaning into the pathway of justiciar",
+      "Practise setting binding laws in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Judge Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Judge potion of the Justiciar pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Justiciar Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Judge potion, carrying the Justiciar pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Order, measured to the Judge formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Judge: digest the potion through faithful acting, then perform the Justiciar pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Judge potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Disciplinary Paladin",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Punishment",
+        description:
+          "If someone were to break the rules previously set by a Disciplinary Paladin's Prohibition, the Disciplinary Paladin will be able to Punish the offender",
+        type: "active",
+      },
+      {
+        name: "Physical Enhancements",
+        description: "They gain significant improvements on both their physical body",
+        type: "passive",
+      },
+      {
+        name: "Enhanced Mental Attributes",
+        description: "They gain significant improvements to their Spirit Body",
+        type: "passive",
+      },
+      {
+        name: "Authority",
+        description:
+          "Their aura of Authori ty has been greatly strengthened and improved",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Disciplinary Paladin, leaning into the pathway of justiciar",
+      "Practise setting binding laws in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Disciplinary Paladin Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Disciplinary Paladin potion of the Justiciar pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Justiciar Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Disciplinary Paladin potion, carrying the Justiciar pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Order, measured to the Disciplinary Paladin formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Disciplinary Paladin: digest the potion through faithful acting, then perform the Justiciar pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Disciplinary Paladin potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const blackEmperorSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Lawyer",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Eloquence",
+        description:
+          "Lawyers are the masters of speech and reasoning, being able to influence the judgement, thoughts, and conclusions that others are brought to via words, actions, and established processes",
+        type: "passive",
+      },
+      {
+        name: "Law Proficiency",
+        description:
+          "They are very good at taking advantage of the loopholes within various social rules and laws, as well as the legal weaknesses an enemy possesses",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Lawyer, leaning into the pathway of black emperor",
+      "Practise loophole exploitation in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Lawyer Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Lawyer potion of the Black Emperor pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Black Emperor Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Lawyer potion, carrying the Black Emperor pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Disorder, the hidden faults of Order, measured to the Lawyer formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Barbarian",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Physical Enhancement",
+        description:
+          "Upon advancement, a Barbarian will gain various physical improvements such as a physical strength and constitution that breaks the 'rules' of a normal human body",
+        type: "passive",
+      },
+      {
+        name: "Mental Resistance",
+        description:
+          "In addition to their Physical Enhancement, upon advancement, a Barbarian will also possess a high resistance to psychological influences",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Barbarian, leaning into the pathway of black emperor",
+      "Practise loophole exploitation in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Barbarian Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Barbarian potion of the Black Emperor pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Black Emperor Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Barbarian potion, carrying the Black Emperor pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Disorder, the hidden faults of Order, measured to the Barbarian formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Barbarian: digest the potion through faithful acting, then perform the Black Emperor pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Barbarian potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Disorder, the hidden faults of Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Briber",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Bribery",
+        description: "The core ability of a Briber",
+        type: "active",
+      },
+      {
+        name: "Bribe-Weaken",
+        description:
+          "Within a certain period of time, the target will become weakened, significantly lowering their ranged and melee attacks, defense, and control over the Briber",
+        type: "active",
+      },
+      {
+        name: "Bribe-Arrogance",
+        description:
+          "The target would become proud and Arrogant, lowering their intelligence, and causing them to make mistakes or wrong judgements on their situation",
+        type: "active",
+      },
+      {
+        name: "Bribe-Charm",
+        description:
+          "The target will feel an intense feeling of good or would have a good perception of the Briber, making it hard to have negative intentions towards them",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Briber, leaning into the pathway of black emperor",
+      "Practise loophole exploitation in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Briber Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Briber potion of the Black Emperor pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Black Emperor Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Briber potion, carrying the Black Emperor pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Disorder, the hidden faults of Order, measured to the Briber formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Briber: digest the potion through faithful acting, then perform the Black Emperor pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Briber potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Disorder, the hidden faults of Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Baron of Corruption",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Distortion",
+        description:
+          "Barons of Corruption possess the Beyonder ability that allows them to warp the loopholes found within Order so as to Distort a target's words, actions, and intent",
+        type: "active",
+      },
+      {
+        name: "Corrosion",
+        description:
+          "They can Corrode anyone within a 10 meter range, causing them to become increasingly more 'dark' and greedy as they become more prone to do irrational actions",
+        type: "active",
+      },
+      {
+        name: "Weakness Detection",
+        description:
+          "In addition, with Corrosion and Distortion, Barons of Corruption are acutely able to sense a target's weaknesses and flaws",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Baron of Corruption, leaning into the pathway of black emperor",
+      "Practise loophole exploitation in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Baron of Corruption Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Baron of Corruption potion of the Black Emperor pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Black Emperor Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Baron of Corruption potion, carrying the Black Emperor pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Disorder, the hidden faults of Order, measured to the Baron of Corruption formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Baron of Corruption: digest the potion through faithful acting, then perform the Black Emperor pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Baron of Corruption potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Disorder, the hidden faults of Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Mentor of Disorder",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Disorder",
+        description:
+          "Mentors of Disorder are able to bring chaos within the Order of the surrounding environment, creating Disorder that grants them several advantages in a situation",
+        type: "active",
+      },
+      {
+        name: "Majesty",
+        description:
+          "A Mentor of Disorder is able to display a sense of great royalty, a Majesty that causes others to want to lower their bodies and obey their every command",
+        type: "active",
+      },
+      {
+        name: "Distortion",
+        description:
+          "Their ability to Distort has been slightly strengthened, allowing a Mentor of Disorder to be able to Distort their surroundings or nearby objects that are not tied to an 'entity'",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Mentor of Disorder, leaning into the pathway of black emperor",
+      "Practise loophole exploitation in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Mentor of Disorder Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Mentor of Disorder potion of the Black Emperor pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Black Emperor Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Mentor of Disorder potion, carrying the Black Emperor pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Disorder, the hidden faults of Order, measured to the Mentor of Disorder formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Mentor of Disorder: digest the potion through faithful acting, then perform the Black Emperor pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Mentor of Disorder potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Disorder, the hidden faults of Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const redPriestSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Hunter",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Physical Enhancement",
+        description:
+          "They possess inhuman physical qualities, giving them increased strength, speed, reaction, body control, and natural healing ability",
+        type: "active",
+      },
+      {
+        name: "Heightened Senses",
+        description:
+          "a Hunter's overall auditory, olfactory, and visual senses are enhanced exponentially, this gives them strong tracking skills",
+        type: "passive",
+      },
+      {
+        name: "Spirituality",
+        description:
+          "Their Spirituality is slightly enhanced as a Beyonder, but they are among the weakest in this field, far inferior to other Sequence 9s who excel at it",
+        type: "passive",
+      },
+      {
+        name: "Danger Intuition",
+        description: "They can passively sense ill intentions and danger",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Hunter, leaning into the pathway of red priest",
+      "Practise fire in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Hunter Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Hunter potion of the Red Priest pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Red Priest Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Hunter potion, carrying the Red Priest pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to War and Destruction, measured to the Hunter formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Provoker",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Provocation",
+        description:
+          "Provokers possess the ability of Provocation which induces a permanent state change on themselves but also requires activation in order to achieve its desired effect",
+        type: "active",
+      },
+      {
+        name: "Physical Enhancement",
+        description:
+          "A Provoker's physique becomes slightly stronger, granting them an overall increase in their strength, reflexes, speed, and agility",
+        type: "passive",
+      },
+      {
+        name: "Spirituality",
+        description: "Their Spirituality is slightly enhanced once again",
+        type: "passive",
+      },
+      {
+        name: "Spirit Vision",
+        description: "They can activate Spirit Vision smoothly using a simple gesture",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Provoker, leaning into the pathway of red priest",
+      "Practise fire in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Provoker Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Provoker potion of the Red Priest pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Red Priest Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Provoker potion, carrying the Red Priest pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to War and Destruction, measured to the Provoker formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Provoker: digest the potion through faithful acting, then perform the Red Priest pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Provoker potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to War and Destruction at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Pyromaniac",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Pyrokinesis",
+        description:
+          "They possess the ability to freely control and conjure flames within their vicinity",
+        type: "active",
+      },
+      {
+        name: "Compression",
+        description: "A Pyromaniac can Compress flames before releasing them",
+        type: "active",
+      },
+      {
+        name: "Fire Armor",
+        description:
+          "They can ignite a layer of Flame Armor over their body, affording them a measure against various forms of assault while still allowing them to breathe in air",
+        type: "active",
+      },
+      {
+        name: "Conjure Flames",
+        description:
+          "They are able to Conjure temporary weapons using flames, capable of inflicting scorching, cutting, and piercing damage",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Pyromaniac, leaning into the pathway of red priest",
+      "Practise fire in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Pyromaniac Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Pyromaniac potion of the Red Priest pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Red Priest Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Pyromaniac potion, carrying the Red Priest pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to War and Destruction, measured to the Pyromaniac formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Pyromaniac: digest the potion through faithful acting, then perform the Red Priest pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Pyromaniac potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to War and Destruction at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Conspirer",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Enhanced Mental Attributes",
+        description:
+          "Upon drinking this Sequence 6 potion, Conspirers will gain an enhanced insight, and a sharper and much more clearer thinking",
+        type: "passive",
+      },
+      {
+        name: "Incitement (Instigation)",
+        description:
+          "Conspirers can Incite certain thoughts or desires in someone’s mind through conversing with them, such as by consciously igniting the flames in their heart",
+        type: "active",
+      },
+      {
+        name: "Flame Transformation",
+        description:
+          "Conspirers are able to merge with their fire weapons conjured from Pyrokinesis and travel to the destination that their fire weapon lands",
+        type: "active",
+      },
+      {
+        name: "Pyrokinesis",
+        description: "Their precise control over flames has improved",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Conspirer, leaning into the pathway of red priest",
+      "Practise fire in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Conspirer Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Conspirer potion of the Red Priest pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Red Priest Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Conspirer potion, carrying the Red Priest pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to War and Destruction, measured to the Conspirer formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Conspirer: digest the potion through faithful acting, then perform the Red Priest pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Conspirer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to War and Destruction at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Reaper",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Weakness Investigation",
+        description:
+          "Through supernatural means, a Reaper is able to discern a target’s vulnerabilities and weak points in their defenses",
+        type: "active",
+      },
+      {
+        name: "Cull",
+        description:
+          "They can infuse any of their attacks with this Beyonder power to harvest their target's life, making each attack akin to striking an enemy's vital points and weaknesses",
+        type: "active",
+      },
+      {
+        name: "Precision",
+        description:
+          "A Reaper is able to precisely target a predetermined location and carefully manipulate Fireballs, Fire Ravens, and all sorts of Fire Spells",
+        type: "active",
+      },
+      {
+        name: "Pyrokinesis",
+        description: "Their ability to manipulate and control flames has been enhanced",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Reaper, leaning into the pathway of red priest",
+      "Practise fire in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Reaper Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Reaper potion of the Red Priest pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Red Priest Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Reaper potion, carrying the Red Priest pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to War and Destruction, measured to the Reaper formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Reaper: digest the potion through faithful acting, then perform the Red Priest pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Reaper potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to War and Destruction at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const demonessSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Assassin",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Shadow Concealment",
+        description:
+          "Assassins possess the ability to Conceal themselves within darkness and Shadows, allowing them to hide from their targets",
+        type: "active",
+      },
+      {
+        name: "Physical Enhancement",
+        description:
+          "Assassins will experience various improvements to their body, making them excel in combat, evasion, and Concealment",
+        type: "passive",
+      },
+      {
+        name: "Feather Fall",
+        description:
+          "They can be as light as a feather, descending gracefully or gliding through the air",
+        type: "active",
+      },
+      {
+        name: "Mighty Blow",
+        description:
+          "An Assassin can release all their physical strength in a single blow",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Assassin, leaning into the pathway of demoness",
+      "Practise assassination in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Assassin Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Assassin potion of the Demoness pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Demoness Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Assassin potion, carrying the Demoness pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Return of All Things to Chaos, Femininity and Charm, measured to the Assassin formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Instigator",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Instigation",
+        description:
+          "Instigators are adept at triggering the evil desires deep in people's hearts, causing them to commit violent crimes",
+        type: "active",
+      },
+      {
+        name: "Physical Enhancement",
+        description:
+          "Building on the foundation of an Assassin, their bodies become stronger, but their combat abilities, other than speed, aren't significantly improved",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Instigator, leaning into the pathway of demoness",
+      "Practise assassination in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Instigator Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Instigator potion of the Demoness pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Demoness Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Instigator potion, carrying the Demoness pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Return of All Things to Chaos, Femininity and Charm, measured to the Instigator formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Instigator: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Instigator potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Return of All Things to Chaos, Femininity and Charm at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Witch",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Charm",
+        description: "A Witch's appearance and charm will be enhanced significantly",
+        type: "active",
+      },
+      {
+        name: "Dark Magic",
+        description:
+          "A Witch will gain various forms of Dark Magic bestowed by the potion; however, they cannot delve into spell study and master new incantations like",
+        type: "active",
+      },
+      {
+        name: "Mirror Substitution",
+        description:
+          "They have the ability to utilize Mirrors as a medium to create Substitutes that can take damage in their place",
+        type: "active",
+      },
+      {
+        name: "Staff Substitution",
+        description:
+          "Similar to Mirror Substitution, Witches are able to use staves as a medium for substitutes in order to counteract fatal harm",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Witch, leaning into the pathway of demoness",
+      "Practise assassination in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Witch Potion Formula",
+        description: "The recipe for the Sequence 7 Witch potion of the Demoness pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Demoness Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Witch potion, carrying the Demoness pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Return of All Things to Chaos, Femininity and Charm, measured to the Witch formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Witch: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Witch potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Return of All Things to Chaos, Femininity and Charm at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Demoness of Pleasure",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Threads",
+        description:
+          "Demonesses of Pleasure can make thin, almost invisible Threads like spider silk, and use them to control and restrict the enemy's movements",
+        type: "active",
+      },
+      {
+        name: "Charm",
+        description:
+          "They will become more beautiful, making them better at seduction and providing unforgettable pleasure to the same or opposite gender during sex",
+        type: "active",
+      },
+      {
+        name: "Dark Magic",
+        description:
+          "Their Dark Magic capabilities as a Witch have been greatly improved",
+        type: "active",
+      },
+      {
+        name: "Physical Enhancement",
+        description: "They have strong throat control",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Demoness of Pleasure, leaning into the pathway of demoness",
+      "Practise assassination in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Demoness of Pleasure Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Demoness of Pleasure potion of the Demoness pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Demoness Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Demoness of Pleasure potion, carrying the Demoness pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Return of All Things to Chaos, Femininity and Charm, measured to the Demoness of Pleasure formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Demoness of Pleasure: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Demoness of Pleasure potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Return of All Things to Chaos, Femininity and Charm at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Demoness of Affliction",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Disease",
+        description:
+          "A Demoness of Affliction can create multiple airborne pathogens that have their infection speed and the onset of diseases supernaturally accelerated",
+        type: "active",
+      },
+      {
+        name: "Threads",
+        description:
+          "A Demoness of Affliction 's Threads have been significantly enhanced",
+        type: "active",
+      },
+      {
+        name: "Charm",
+        description:
+          "A Demoness of Affliction can now use their Charm as an active ability",
+        type: "active",
+      },
+      {
+        name: "Dark Magic",
+        description:
+          "A Demoness of Affliction's Dark Magic capabilities have also been enhanced",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Demoness of Affliction, leaning into the pathway of demoness",
+      "Practise assassination in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Demoness of Affliction Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Demoness of Affliction potion of the Demoness pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Demoness Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Demoness of Affliction potion, carrying the Demoness pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Return of All Things to Chaos, Femininity and Charm, measured to the Demoness of Affliction formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Demoness of Affliction: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Demoness of Affliction potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Return of All Things to Chaos, Femininity and Charm at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const motherSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Planter",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Physical Enhancement",
+        description:
+          "Planters possess several physical enhancements upon drinking the potion, showcased by their high physical strength",
+        type: "passive",
+      },
+      {
+        name: "Farming Proficiency",
+        description:
+          "Planters possess a high proficiency with farming tools, distinguishing among different seeds, and nurturing them",
+        type: "passive",
+      },
+      {
+        name: "Weather Forecasting",
+        description:
+          "They can predict the weather to a certain extent by observing clouds, wind, and other natural phenomenon",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Planter, leaning into the pathway of mother",
+      "Practise life in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Planter Potion Formula",
+        description: "The recipe for the Sequence 9 Planter potion of the Mother pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Mother Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Planter potion, carrying the Mother pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Life, Growth and Creation, measured to the Planter formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Doctor",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Surgical Mastery",
+        description:
+          "They are experts at surgery, possessing the corresponding skills in suturing severed limbs and transplanting internal organs, and having a fine control over medical tools",
+        type: "passive",
+      },
+      {
+        name: "Treatments",
+        description:
+          "Doctors possess a variety of Treatments and thus are rather good at healing a variety of different injuries/illnesses such Treatments as the baseline method",
+        type: "active",
+      },
+      {
+        name: "Evil Ailment Treatment",
+        description:
+          "They are able to relieve certain aliments and diseases associated with the domains of Evil and Depravity",
+        type: "active",
+      },
+      {
+        name: "Disease Treatments",
+        description:
+          "Even if the disease is not associated with the domains of Evil and Depravity, they can still heal it",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Doctor, leaning into the pathway of mother",
+      "Practise life in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Doctor Potion Formula",
+        description: "The recipe for the Sequence 8 Doctor potion of the Mother pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Mother Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Doctor potion, carrying the Mother pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Life, Growth and Creation, measured to the Doctor formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Doctor: digest the potion through faithful acting, then perform the Mother pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Doctor potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Life, Growth and Creation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Harvest Priest",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Seed Catalyzation",
+        description:
+          "Through this Beyonder power, a Harvest Priest will be able to directly Catalyze the life hidden within a seed or an already existing plant, causing it to grow faster",
+        type: "active",
+      },
+      {
+        name: "Plant & Insect Commanding",
+        description:
+          "Harvest Priests are able to directly Command plants and insects within a 30 meter radius to provide them with a certain level of support",
+        type: "active",
+      },
+      {
+        name: "Knowledge (Ritualistic Spells)",
+        description:
+          "Upon drinking the potion, a Harvest Priest will obtain several Ritualistic Spells focused on manipulating the weather",
+        type: "passive",
+      },
+      {
+        name: "Physical Enhancement",
+        description: "Their body will receive a variety of different enhancements",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Harvest Priest, leaning into the pathway of mother",
+      "Practise life in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Harvest Priest Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Harvest Priest potion of the Mother pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Mother Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Harvest Priest potion, carrying the Mother pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Life, Growth and Creation, measured to the Harvest Priest formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Harvest Priest: digest the potion through faithful acting, then perform the Mother pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Harvest Priest potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Life, Growth and Creation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Biologist",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Crossbreeding",
+        description:
+          "Biologists possess the ability to make a chimera or Crossbreed between various animals, plants, and even an object, directly leading to them creating a new species",
+        type: "active",
+      },
+      {
+        name: "Beyonder Constitution",
+        description: "A Biologist's body and spirit are strengthened beyond the mundane",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Biologist, leaning into the pathway of mother",
+      "Practise life in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Biologist Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Biologist potion of the Mother pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Mother Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Biologist potion, carrying the Mother pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Life, Growth and Creation, measured to the Biologist formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Biologist: digest the potion through faithful acting, then perform the Mother pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Biologist potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Life, Growth and Creation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Druid",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Bear Transformation",
+        description:
+          "Druids are able to transform themselves into a giant bear that was twice the height of a person and that possesses great strength and endurance",
+        type: "active",
+      },
+      {
+        name: "Underground Slink",
+        description:
+          "They can transform the ground below into a swamp and submerge themselves completely into it to avoid attacks or hide from enemies",
+        type: "active",
+      },
+      {
+        name: "Poison Hair Incineration",
+        description:
+          "Druids can incinerate their hair in a battle to produce a very toxic black gas with a variety of unknown poisonous effects",
+        type: "active",
+      },
+      {
+        name: "Physical Enhancement",
+        description:
+          "A Druid's body has undergone some inhuman changes upon advancing to this Sequence, allowing them to breathe in and take nutrients from the soil",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Druid, leaning into the pathway of mother",
+      "Practise life in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Druid Potion Formula",
+        description: "The recipe for the Sequence 5 Druid potion of the Mother pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Mother Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Druid potion, carrying the Mother pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Life, Growth and Creation, measured to the Druid formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Druid: digest the potion through faithful acting, then perform the Mother pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Druid potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Life, Growth and Creation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const moonSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Apothecary",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Physical Enhancement",
+        description:
+          "While Apothecaries don't gain massive physical improvements as some of the other Pathways at this Sequence, they do gain a few upon becoming a Sequence 9 Beyonder",
+        type: "passive",
+      },
+      {
+        name: "Medicinal Concoction",
+        description:
+          "They excel at creating and mixing various herbs as well as using animal parts to create various Medicinal Concoctions, letting them easily treat most illnesses/injuries",
+        type: "active",
+      },
+      {
+        name: "Taming",
+        description: "Apothecaries are good at Taming and domesticating plants",
+        type: "active",
+      },
+      {
+        name: "Spirituality",
+        description: "Their Spirituality gets enhanced as a Beyonder",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Apothecary, leaning into the pathway of moon",
+      "Practise potent restorative and buffing potions in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Apothecary Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Apothecary potion of the Moon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Moon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Apothecary potion, carrying the Moon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Fertility and Proliferation, measured to the Apothecary formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Beast Tamer",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Intimidation",
+        description:
+          "Beast Tamers are instinctively the natural enemies of animals, being able to Intimidate them into complete submission with just their gaze",
+        type: "active",
+      },
+      {
+        name: "Animal Senses",
+        description:
+          "Beast Tamers are able to communicate with animals, utilize those animals' senses, and read their emotions and intentions",
+        type: "passive",
+      },
+      {
+        name: "Taming",
+        description:
+          "They can Tame, domesticate, and use various unique animals rather effectively",
+        type: "active",
+      },
+      {
+        name: "Physical Enhancement",
+        description: "Their physical attributes have been greatly improved",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Beast Tamer, leaning into the pathway of moon",
+      "Practise potent restorative and buffing potions in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Beast Tamer Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Beast Tamer potion of the Moon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Moon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Beast Tamer potion, carrying the Moon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Fertility and Proliferation, measured to the Beast Tamer formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Beast Tamer: digest the potion through faithful acting, then perform the Moon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Beast Tamer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Fertility and Proliferation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Vampire",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Wings of Darkness",
+        description:
+          "Vampires are able to utilize the Darkness around them to form illusory bat wings that grant them an enhanced speed boost along with some limited flight capabilities",
+        type: "active",
+      },
+      {
+        name: "Claw of Corrosion",
+        description:
+          "Their nails can grow an extra section with mysterious symbols and patterns on it that make their nails able to cut through steel and give strong corrosion properties",
+        type: "active",
+      },
+      {
+        name: "Abyss Shackles",
+        description:
+          "If their target is within a certain range from them, a Vampire will be able to use the Darkness or Shadows around them to form shackles to bind an enemy",
+        type: "active",
+      },
+      {
+        name: "The Embrace",
+        description:
+          "If a Vampire possesses excess Beyonder Characteristics, they are able to bestow it onto a human, turning that human into one of them",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Vampire, leaning into the pathway of moon",
+      "Practise potent restorative and buffing potions in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Vampire Potion Formula",
+        description: "The recipe for the Sequence 7 Vampire potion of the Moon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Moon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Vampire potion, carrying the Moon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Fertility and Proliferation, measured to the Vampire formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Vampire: digest the potion through faithful acting, then perform the Moon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Vampire potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Fertility and Proliferation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Potions Professor",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Discerning Spiritual Materials",
+        description:
+          "Upon advancement, an influx of knowledge regarding how to discern spiritual materials needed in various concoctions will be bestowed into their mind",
+        type: "active",
+      },
+      {
+        name: "Potion & Perfume Crafting",
+        description:
+          "With the aid of their newfound knowledge, Potions Professors can mix and create Potions and Perfumes with extraordinary effects",
+        type: "active",
+      },
+      {
+        name: "Fire Breath Potion",
+        description:
+          "By pouring into one's mouth, it allows one to spit out a Fire Breath",
+        type: "active",
+      },
+      {
+        name: "Sun Water Potion",
+        description: "A Potion that is powerful against undead or vampire-type enemies",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Potions Professor, leaning into the pathway of moon",
+      "Practise potent restorative and buffing potions in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Potions Professor Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Potions Professor potion of the Moon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Moon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Potions Professor potion, carrying the Moon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Fertility and Proliferation, measured to the Potions Professor formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Potions Professor: digest the potion through faithful acting, then perform the Moon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Potions Professor potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Fertility and Proliferation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Scarlet Scholar",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Lunar Battlefield",
+        description:
+          "This Beyonder ability creates an environment that's more advantageous for themselves than for the enemy",
+        type: "active",
+      },
+      {
+        name: "Moonlight Transformation",
+        description:
+          "This Beyonder power allows a Scarlet Scholar to transform into a condensed form of Moonlight that can move around near the Moonlit area",
+        type: "active",
+      },
+      {
+        name: "Flash Teleportation",
+        description:
+          "They are able to Teleport to another location within a certain radius so long as it has the Moonlight shining on that area",
+        type: "active",
+      },
+      {
+        name: "Potion & Perfume Crafting",
+        description: "The effectiveness of Potions and Perfumes has been enhanced",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Scarlet Scholar, leaning into the pathway of moon",
+      "Practise potent restorative and buffing potions in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Scarlet Scholar Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Scarlet Scholar potion of the Moon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Moon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Scarlet Scholar potion, carrying the Moon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Fertility and Proliferation, measured to the Scarlet Scholar formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Scarlet Scholar: digest the potion through faithful acting, then perform the Moon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Scarlet Scholar potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Fertility and Proliferation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const hermitSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Mystery Pryer",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Eyes of Mystery Prying",
+        description:
+          "Their eyes are special and allow them to see things that normally aren't visible",
+        type: "active",
+      },
+      {
+        name: "Knowledge (Knowledge Pursuit)",
+        description:
+          "Mystery Pryers will occasionally be chased by knowledge brought to life, imbuing them with knowledge in random intervals",
+        type: "passive",
+      },
+      {
+        name: "Spirituality",
+        description: "Their Spirituality will get enhanced upon drinking this potion",
+        type: "passive",
+      },
+      {
+        name: "Magic & Divination Arts",
+        description:
+          "They have a comprehensive but rudimentary understanding and grasp of magic, witchcraft Divination Arts, Ritualistic Magic, and other mystical knowledge",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Mystery Pryer, leaning into the pathway of hermit",
+      "Practise ritual magic in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Mystery Pryer Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Mystery Pryer potion of the Hermit pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Hermit Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Mystery Pryer potion, carrying the Hermit pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Mystical Knowledge, measured to the Mystery Pryer formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Melee Scholar",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Combat Mastery",
+        description:
+          "Prying into the mystery behind melee combat makes them good at that field",
+        type: "passive",
+      },
+      {
+        name: "Beyonder Constitution",
+        description:
+          "A Melee Scholar's body and spirit are strengthened beyond the mundane",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Melee Scholar, leaning into the pathway of hermit",
+      "Practise ritual magic in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Melee Scholar Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Melee Scholar potion of the Hermit pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Hermit Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Melee Scholar potion, carrying the Hermit pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Mystical Knowledge, measured to the Melee Scholar formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Melee Scholar: digest the potion through faithful acting, then perform the Hermit pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Melee Scholar potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Mystical Knowledge at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Warlock",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Spellcasting",
+        description:
+          "Warlocks are able to cast Spells, using various materials to produce a variety of effects, and thus making them be extremely versatile in the process",
+        type: "active",
+      },
+      {
+        name: "Some of the Spells they can cast include",
+        description:
+          "Scene Depiction: Using some powder to display the scenes they see from their Eyes of Mystery Prying onto mirrors or directly tossing powder to form a realistic picture",
+        type: "active",
+      },
+      {
+        name: "Soul Summoning",
+        description:
+          "A supplementary Spell designed to aid spirits in separating from the flesh or to help Astral Projections find their spirits when adrift in the spirit realm",
+        type: "active",
+      },
+      {
+        name: "Invisible Hand",
+        description:
+          "Using an iron-black powder to create a strong Invisible Hand which can be used as a way to exert force on their targets from afar",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Warlock, leaning into the pathway of hermit",
+      "Practise ritual magic in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Warlock Potion Formula",
+        description: "The recipe for the Sequence 7 Warlock potion of the Hermit pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Hermit Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Warlock potion, carrying the Hermit pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Mystical Knowledge, measured to the Warlock formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Warlock: digest the potion through faithful acting, then perform the Hermit pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Warlock potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Mystical Knowledge at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Scrolls Professor",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Scroll Making",
+        description: "They can make scrolls from various materials to cast Spells",
+        type: "active",
+      },
+      {
+        name: "Secret Voice",
+        description:
+          "This Scroll Spell forms a channel linking 3 to 5 people within 50 meters, allowing for communication without distance obstruction",
+        type: "active",
+      },
+      {
+        name: "Freezing",
+        description:
+          "When released, this Scroll Spell creates a stream of crystal clear light that can travel mid-air and fall onto a target, freezing the target",
+        type: "active",
+      },
+      {
+        name: "Storm",
+        description:
+          "When released, this Scroll Spell creates a wide thunderstorm, that has both abundant wind and lightning and deals great damage",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Scrolls Professor, leaning into the pathway of hermit",
+      "Practise ritual magic in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Scrolls Professor Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Scrolls Professor potion of the Hermit pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Hermit Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Scrolls Professor potion, carrying the Hermit pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Mystical Knowledge, measured to the Scrolls Professor formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Scrolls Professor: digest the potion through faithful acting, then perform the Hermit pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Scrolls Professor potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Mystical Knowledge at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Constellations Master",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Starry Spellcasting",
+        description:
+          "The core Beyonder ability of a Constellation Master is to conjure a Star of rapidly rotating stardust in their palm and use it to achieve a variety of effects",
+        type: "active",
+      },
+      {
+        name: "Star Pillar",
+        description:
+          "A Constellation Master can scatter the Stars they create one after another and merge them into a magnificent pillar of starlight, covering a certain area of space",
+        type: "active",
+      },
+      {
+        name: "Starry Amber",
+        description:
+          "After chanting the corresponding magical incantation, the dazzling Stars around a Constellation Master will fly away one by one landing on the targets",
+        type: "active",
+      },
+      {
+        name: "Star Transformation",
+        description:
+          "Constellation Masters can conjure and transform themselves into a myriad of Stars in order to infiltrate an area and travel to a destination",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Constellations Master, leaning into the pathway of hermit",
+      "Practise ritual magic in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Constellations Master Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Constellations Master potion of the Hermit pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Hermit Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Constellations Master potion, carrying the Hermit pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Mystical Knowledge, measured to the Constellations Master formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Constellations Master: digest the potion through faithful acting, then perform the Hermit pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Constellations Master potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Mystical Knowledge at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const paragonSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Savant",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Knowledge (Mysticism and Mechanics)",
+        description:
+          "Savants believe that knowledge is power and through drinking the potion, they gain new information about mysticism and mechanics",
+        type: "passive",
+      },
+      {
+        name: "Recall (Memory)",
+        description: "This is the core ability of a Savant",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Savant, leaning into the pathway of paragon",
+      "Practise science in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Savant Potion Formula",
+        description: "The recipe for the Sequence 9 Savant potion of the Paragon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Paragon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Savant potion, carrying the Paragon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Civilisation and Craft, measured to the Savant formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Archaeologist",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Physical Enhancements",
+        description:
+          "Archaeologists possess a strong enough body and adaptable ability to face everything they may come across in their explorations",
+        type: "passive",
+      },
+      {
+        name: "Ritualistic Magic",
+        description:
+          "Besides that, Archaeologists will also gain knowledge that allows them to learn and cast some basic Ritualistic Magic",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Archaeologist, leaning into the pathway of paragon",
+      "Practise science in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Archaeologist Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Archaeologist potion of the Paragon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Paragon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Archaeologist potion, carrying the Paragon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Civilisation and Craft, measured to the Archaeologist formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Archaeologist: digest the potion through faithful acting, then perform the Paragon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Archaeologist potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Civilisation and Craft at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Appraiser",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Appraisal",
+        description:
+          "Appraisers can intuitively understand the powers and problems of most extraordinary items and can use them while keeping the danger to the minimum",
+        type: "active",
+      },
+      {
+        name: "Beyonder Constitution",
+        description: "An Appraiser's body and spirit are strengthened beyond the mundane",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Appraiser, leaning into the pathway of paragon",
+      "Practise science in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Appraiser Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Appraiser potion of the Paragon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Paragon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Appraiser potion, carrying the Paragon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Civilisation and Craft, measured to the Appraiser formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Appraiser: digest the potion through faithful acting, then perform the Paragon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Appraiser potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Civilisation and Craft at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Artisan",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Craftsmanship",
+        description:
+          "Artisans are the true masters of Craftsmanship both in the ordinary and mystical world, the extraordinary items that they create and accumulate, along with their capabilities as an Appraiser, allows them to reach the strength of a Sequence 5",
+        type: "active",
+      },
+      {
+        name: "Knowledge (Mysticism)",
+        description: "Their abilities with Ritualistic Magic are enhanced",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Artisan, leaning into the pathway of paragon",
+      "Practise science in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Artisan Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Artisan potion of the Paragon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Paragon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Artisan potion, carrying the Paragon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Civilisation and Craft, measured to the Artisan formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Artisan: digest the potion through faithful acting, then perform the Paragon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Artisan potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Civilisation and Craft at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Astronomer",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Beyonder Constitution",
+        description:
+          "An Astronomer's body and spirit are strengthened beyond the mundane",
+        type: "passive",
+      },
+      {
+        name: "Celestial Reckoning",
+        description:
+          "Read the movements of stars and heavens to chart fates, omens, and the turning of cycles",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Astronomer, leaning into the pathway of paragon",
+      "Practise science in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Astronomer Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Astronomer potion of the Paragon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Paragon Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Astronomer potion, carrying the Paragon pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Civilisation and Craft, measured to the Astronomer formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Astronomer: digest the potion through faithful acting, then perform the Paragon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Astronomer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Civilisation and Craft at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const wheelOfFortuneSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Monster",
+    classification: "Low",
+    abilities: [
+      {
+        name: "High Spirituality",
+        description:
+          "This Pathway has a higher Spirituality than most, and at Sequence 9, Monsters possess a high Spiritual Perception and Spiritual Intuition",
+        type: "passive",
+      },
+      {
+        name: "Foresight",
+        description: "A Monster is often able to hear or see things that others cannot",
+        type: "active",
+      },
+      {
+        name: "Danger Premonition",
+        description: "They have a keen intuitive premonition of danger",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Monster, leaning into the pathway of wheel of fortune",
+      "Practise high spirituality in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Monster Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Monster potion of the Wheel of Fortune pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Wheel of Fortune Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Monster potion, carrying the Wheel of Fortune pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Possibility of Fate, measured to the Monster formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Robot",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Physical Enhancement",
+        description:
+          "All aspects of their physical abilities have been significantly improved",
+        type: "active",
+      },
+      {
+        name: "Mental Enhancement",
+        description: "They have powerful calculation skills and very precise control",
+        type: "passive",
+      },
+      {
+        name: "High Spirituality",
+        description: "They gain proficiency in Divination and Anti-Divination skills",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Robot, leaning into the pathway of wheel of fortune",
+      "Practise high spirituality in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Robot Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Robot potion of the Wheel of Fortune pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Wheel of Fortune Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Robot potion, carrying the Wheel of Fortune pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Possibility of Fate, measured to the Robot formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Robot: digest the potion through faithful acting, then perform the Wheel of Fortune pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Robot potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Possibility of Fate at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Lucky One",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Passive Luck",
+        description:
+          "Lucky Ones will often encounter Lucky events in their life, such as finding money on the street, having enemies miss attacks that were aimed at them, getting desired dice rolls, and having women they happen to like coincidentally also like them back",
+        type: "passive",
+      },
+      {
+        name: "Their Luck isn't fixed and fluctuates",
+        description:
+          "at times, they are especially Lucky, while at other times, they are no different from an ordinary person",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Lucky One, leaning into the pathway of wheel of fortune",
+      "Practise high spirituality in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Lucky One Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Lucky One potion of the Wheel of Fortune pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Wheel of Fortune Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Lucky One potion, carrying the Wheel of Fortune pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Possibility of Fate, measured to the Lucky One formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Lucky One: digest the potion through faithful acting, then perform the Wheel of Fortune pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Lucky One potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Possibility of Fate at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Calamity Priest",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Calamity Attraction",
+        description: "Their body will now attract Calamities, mainly in two ways",
+        type: "active",
+      },
+      {
+        name: "Psyche Storm",
+        description:
+          "Using their Spirituality that surpassed that of other Pathways, they can directly affect their opponent’s Spirit Body, causing them to feel dizzy and lost",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Calamity Priest, leaning into the pathway of wheel of fortune",
+      "Practise high spirituality in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Calamity Priest Potion Formula",
+        description:
+          "The recipe for the Sequence 6 Calamity Priest potion of the Wheel of Fortune pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Wheel of Fortune Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Calamity Priest potion, carrying the Wheel of Fortune pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Possibility of Fate, measured to the Calamity Priest formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Calamity Priest: digest the potion through faithful acting, then perform the Wheel of Fortune pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Calamity Priest potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Possibility of Fate at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Winner",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Curse of Misfortune",
+        description:
+          "They can Curse their enemies with limited Misfortune, making them more Unlucky",
+        type: "active",
+      },
+      {
+        name: "Passive Luck",
+        description: "To an extent, they can now begin to control their own Luck",
+        type: "passive",
+      },
+      {
+        name: "High Spirituality",
+        description:
+          "Their Spirituality has been greatly enhanced, causing the improvement to their Spiritual Perception and Foresight abilities",
+        type: "passive",
+      },
+      {
+        name: "Foresight",
+        description:
+          "A Winner possesses an inexplicable strange premonition, allowing them to make the right decisions during a situation and better maximize their chance of success",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Winner, leaning into the pathway of wheel of fortune",
+      "Practise high spirituality in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Winner Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Winner potion of the Wheel of Fortune pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Wheel of Fortune Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Winner potion, carrying the Wheel of Fortune pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Possibility of Fate, measured to the Winner formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Winner: digest the potion through faithful acting, then perform the Wheel of Fortune pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Winner potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Possibility of Fate at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const abyssSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Criminal",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Physical Enhancement",
+        description: "They possess a strong body with keen instincts",
+        type: "passive",
+      },
+      {
+        name: "Beyonder Constitution",
+        description: "A Criminal's body and spirit are strengthened beyond the mundane",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Criminal, leaning into the pathway of abyss",
+      "Practise great strength and perception in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Criminal Potion Formula",
+        description: "The recipe for the Sequence 9 Criminal potion of the Abyss pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Abyss Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Criminal potion, carrying the Abyss pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Desire and Corruption, measured to the Criminal formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Unwinged Angel",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Demonic Attribute",
+        description:
+          "Upon entering this Sequence, they will undergo inhuman changes, acquiring two or three Devil Spell-like abilities in the process that vary from person to person",
+        type: "active",
+      },
+      {
+        name: "Physical Enhancements",
+        description: "Their bodies are further strengthened",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Unwinged Angel, leaning into the pathway of abyss",
+      "Practise great strength and perception in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Unwinged Angel Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Unwinged Angel potion of the Abyss pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Abyss Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Unwinged Angel potion, carrying the Abyss pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Desire and Corruption, measured to the Unwinged Angel formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Unwinged Angel: digest the potion through faithful acting, then perform the Abyss pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Unwinged Angel potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Desire and Corruption at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Serial Killer",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Knowledge (Devil Worship)",
+        description:
+          "Upon advancement, a Serial Killer will gain a wealth of and master all kinds of knowledge related to Devil worship and it's Ritualistic Magic",
+        type: "passive",
+      },
+      {
+        name: "Enhanced Mental Attributes",
+        description:
+          "Upon drinking this Sequence 7 potion, a Serial Killer's intelligence and mental capabilities will be enhanced to a certain degree",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Serial Killer, leaning into the pathway of abyss",
+      "Practise great strength and perception in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Serial Killer Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Serial Killer potion of the Abyss pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Abyss Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Serial Killer potion, carrying the Abyss pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Desire and Corruption, measured to the Serial Killer formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Serial Killer: digest the potion through faithful acting, then perform the Abyss pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Serial Killer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Desire and Corruption at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Devil",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Devil Bloodline",
+        description:
+          "Different Devils morphed from being a Serial Killer will have individual differences",
+        type: "passive",
+      },
+      {
+        name: "Shadow-Shifter",
+        description:
+          "When forced into a life-threatening situation, this type of Devil can escape with their bodies and leave only a shadow behind",
+        type: "active",
+      },
+      {
+        name: "Danger Premonition",
+        description:
+          "They can sense and grasp the place of origin of danger, as well as who this danger is from",
+        type: "passive",
+      },
+      {
+        name: "Slow",
+        description:
+          "This causes all targets within a 7-8 meter radius to instantly turn numb and slow or even come to a halt, however, it can only be maintained for 2 seconds",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Devil, leaning into the pathway of abyss",
+      "Practise great strength and perception in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Devil Potion Formula",
+        description: "The recipe for the Sequence 6 Devil potion of the Abyss pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Abyss Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Devil potion, carrying the Abyss pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Desire and Corruption, measured to the Devil formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Devil: digest the potion through faithful acting, then perform the Abyss pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Devil potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Desire and Corruption at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Desire Apostle",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Desire Mastery",
+        description:
+          "Desire Apostles can utilize and control every existence's emotions and Desires",
+        type: "passive",
+      },
+      {
+        name: "Avatar of Desire",
+        description:
+          "Desire Apostles can transform their body into being an illusionary, thick, black liquid form that is a collection of condensed emotions and Desires given a semi-visible form",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Desire Apostle, leaning into the pathway of abyss",
+      "Practise great strength and perception in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Desire Apostle Potion Formula",
+        description:
+          "The recipe for the Sequence 5 Desire Apostle potion of the Abyss pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Abyss Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Desire Apostle potion, carrying the Abyss pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Desire and Corruption, measured to the Desire Apostle formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Desire Apostle: digest the potion through faithful acting, then perform the Abyss pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Desire Apostle potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Desire and Corruption at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
+const chainedSequences: Sequence[] = [
+  {
+    level: 9,
+    name: "Prisoner",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Knowledge (Criminal)",
+        description:
+          "Upon advancement, Prisoners will gain knowledge of a variety of abilities that designate one as not only an expert convict but also a master of breaking free from prisons",
+        type: "passive",
+      },
+      {
+        name: "Physical Enhancement",
+        description:
+          "The Beyonders of this Sequence possess strong bodies and keen senses, often possessing not only a staid appearance but also a crazy heart within them",
+        type: "passive",
+      },
+      {
+        name: "Binding",
+        description:
+          "Upon advancement by drinking the Prisoner potion, they will find that their Spirituality and Desires are being constrained by reason, body, and the world",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Prisoner, leaning into the pathway of chained",
+      "Practise summoning the dead in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Prisoner Potion Formula",
+        description:
+          "The recipe for the Sequence 9 Prisoner potion of the Chained pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 9 Chained Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Prisoner potion, carrying the Chained pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Madness and Mutation, measured to the Prisoner formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: undefined,
+  },
+  {
+    level: 8,
+    name: "Lunatic",
+    classification: "Low",
+    abilities: [
+      {
+        name: "Berserk",
+        description:
+          "A Lunatic 's greatest characteristic is to be able to autonomously sacrifice their rationality and let their Desires run amok in exchange for strength and enhancements in every aspect of themselves",
+        type: "active",
+      },
+      {
+        name: "Binding",
+        description:
+          "Lunatics are Bound and restrained in both body and Soul, which makes it difficult to obtain useful information on them by just relying on Spirit Channeling and Divination",
+        type: "active",
+      },
+      {
+        name: "Lunatic's Curse",
+        description:
+          "Starting and from this Sequence onwards, they will begin to be affected by Curses",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Lunatic, leaning into the pathway of chained",
+      "Practise summoning the dead in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Lunatic Potion Formula",
+        description:
+          "The recipe for the Sequence 8 Lunatic potion of the Chained pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 8 Chained Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Lunatic potion, carrying the Chained pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Madness and Mutation, measured to the Lunatic formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Lunatic: digest the potion through faithful acting, then perform the Chained pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Lunatic potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Madness and Mutation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 7,
+    name: "Werewolf",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Werewolf Transformation",
+        description:
+          "They can turn into a Werewolf, growing short, erect hair as fur, turning their nails sharp, long, and firm, like claws, while possessing some Spell-like abilities",
+        type: "active",
+      },
+      {
+        name: "Werewolf Infection",
+        description:
+          "When their venom infiltrates a target's body over a period of time, they can gradually turn the target into a monster similar to that of a Werewolf",
+        type: "active",
+      },
+      {
+        name: "Darkness Encroachment",
+        description:
+          "They can make the Darkness grow heavier and condense like frost, slowly but firmly seeping into their target's skin, flesh, and bones",
+        type: "active",
+      },
+      {
+        name: "Physical Enhancement",
+        description:
+          "Even without transforming, a Werewolf's extreme speed will form afterimages",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Werewolf, leaning into the pathway of chained",
+      "Practise summoning the dead in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Werewolf Potion Formula",
+        description:
+          "The recipe for the Sequence 7 Werewolf potion of the Chained pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 7 Chained Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Werewolf potion, carrying the Chained pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Madness and Mutation, measured to the Werewolf formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Werewolf: digest the potion through faithful acting, then perform the Chained pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Werewolf potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Madness and Mutation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 6,
+    name: "Zombie",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Zombie Transformation",
+        description:
+          "They are able to turn into a special type of Zombie, one that possesses powerful defense, strength, and Spell-like capabilities",
+        type: "active",
+      },
+      {
+        name: "Zombie Strength",
+        description:
+          "Their strength has been raised significantly from their Werewolf state",
+        type: "active",
+      },
+      {
+        name: "Ice Control",
+        description: "They have some Ice and Frost mastery, which is different from a",
+        type: "active",
+      },
+      {
+        name: "Contact-Freeze",
+        description:
+          "Any physical attack from a Zombie that makes contact with a target's skin can Freeze their body, stiffening their flesh and blood",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Zombie, leaning into the pathway of chained",
+      "Practise summoning the dead in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Zombie Potion Formula",
+        description: "The recipe for the Sequence 6 Zombie potion of the Chained pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 6 Chained Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Zombie potion, carrying the Chained pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Madness and Mutation, measured to the Zombie formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Zombie: digest the potion through faithful acting, then perform the Chained pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Zombie potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Madness and Mutation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 5,
+    name: "Wraith",
+    classification: "Mid",
+    abilities: [
+      {
+        name: "Wraith Transformation",
+        description:
+          "They are able to turn themselves into a Spirit Body, a Wraith, thus obtaining all the general corresponding powers and special traits",
+        type: "active",
+      },
+      {
+        name: "Invisibility",
+        description:
+          "Wraiths are able to turn Invisible; however, unlike other ordinary non Chained Pathway Beyonder Wraiths and spirits, this is more effective",
+        type: "active",
+      },
+      {
+        name: "Wraith Shriek",
+        description:
+          "Wraiths are able to let out a sharp shriek that can directly attack the opponents' Spirit Body and induce spiritual damage across a huge area",
+        type: "active",
+      },
+      {
+        name: "Possession",
+        description:
+          "Wraiths have gained the supernatural ability to forcefully invade and Possess their target's body by overlapping with the opponent's eyes",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Wraith, leaning into the pathway of chained",
+      "Practise summoning the dead in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Wraith Potion Formula",
+        description: "The recipe for the Sequence 5 Wraith potion of the Chained pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Chained Beyonder Characteristic",
+        description:
+          "The core supernatural ingredient of the Wraith potion, carrying the Chained pathway's imprint",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Madness and Mutation, measured to the Wraith formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Wraith: digest the potion through faithful acting, then perform the Chained pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Wraith potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Madness and Mutation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+];
+
 const foolSequences: Sequence[] = [
   {
     level: 9,
@@ -5333,7 +9142,7 @@ export const VISIONARY_PATHWAY: Pathway = {
   name: "Visionary",
   group: "god-almighty",
   sefirah: "Chaos Sea",
-  neighboringPathways: [3, 6, 9],
+  neighboringPathways: [3, 6, 9, 10],
   sequences: visionarySequences,
 };
 
@@ -5342,7 +9151,7 @@ export const SUN_PATHWAY: Pathway = {
   name: "Sun",
   group: "god-almighty",
   sefirah: "Chaos Sea",
-  neighboringPathways: [2, 6, 9],
+  neighboringPathways: [2, 6, 9, 10],
   sequences: sunSequences,
 };
 
@@ -5351,29 +9160,29 @@ export const DEATH_PATHWAY: Pathway = {
   name: "Death",
   group: "eternal-darkness",
   sefirah: "River of Eternal Darkness",
-  neighboringPathways: [5],
+  neighboringPathways: [5, 11],
   sequences: deathSequences,
 };
 
-// Darkness, Death, and Twilight Giant make up the Eternal Darkness group; only
-// Darkness and Death are implemented, so they neighbor each other.
+// Darkness, Death, and Twilight Giant make up the Eternal Darkness group; all
+// three neighbor one another within it.
 export const DARKNESS_PATHWAY: Pathway = {
   id: 5,
   name: "Darkness",
   group: "eternal-darkness",
   sefirah: "River of Eternal Darkness",
-  neighboringPathways: [4],
+  neighboringPathways: [4, 11],
   sequences: darknessSequences,
 };
 
 // Visionary, Sun, Tyrant, White Tower, and Hanged Man make up the God Almighty
-// group. Of the implemented members, all four neighbor one another within it.
+// group; each neighbors the others within it.
 export const TYRANT_PATHWAY: Pathway = {
   id: 6,
   name: "Tyrant",
   group: "god-almighty",
   sefirah: "Chaos Sea",
-  neighboringPathways: [2, 3, 9],
+  neighboringPathways: [2, 3, 9, 10],
   sequences: tyrantSequences,
 };
 
@@ -5402,8 +9211,125 @@ export const HANGED_MAN_PATHWAY: Pathway = {
   name: "Hanged Man",
   group: "god-almighty",
   sefirah: "Chaos Sea",
-  neighboringPathways: [2, 3, 6],
+  neighboringPathways: [2, 3, 6, 10],
   sequences: hangedManSequences,
+};
+
+export const WHITE_TOWER_PATHWAY: Pathway = {
+  id: 10,
+  name: "White Tower",
+  group: "god-almighty",
+  sefirah: "Chaos Sea",
+  neighboringPathways: [2, 3, 6, 9],
+  sequences: whiteTowerSequences,
+};
+
+export const TWILIGHT_GIANT_PATHWAY: Pathway = {
+  id: 11,
+  name: "Twilight Giant",
+  group: "eternal-darkness",
+  sefirah: "River of Eternal Darkness",
+  neighboringPathways: [4, 5],
+  sequences: twilightGiantSequences,
+};
+
+export const JUSTICIAR_PATHWAY: Pathway = {
+  id: 12,
+  name: "Justiciar",
+  group: "order",
+  sefirah: "Hammer of the Hidden Sage",
+  neighboringPathways: [13],
+  sequences: justiciarSequences,
+};
+
+export const BLACK_EMPEROR_PATHWAY: Pathway = {
+  id: 13,
+  name: "Black Emperor",
+  group: "order",
+  sefirah: "Hammer of the Hidden Sage",
+  neighboringPathways: [12],
+  sequences: blackEmperorSequences,
+};
+
+export const RED_PRIEST_PATHWAY: Pathway = {
+  id: 14,
+  name: "Red Priest",
+  group: "combat",
+  sefirah: "Sefirah of the God of Combat",
+  neighboringPathways: [15],
+  sequences: redPriestSequences,
+};
+
+export const DEMONESS_PATHWAY: Pathway = {
+  id: 15,
+  name: "Demoness",
+  group: "combat",
+  sefirah: "Sefirah of the God of Combat",
+  neighboringPathways: [14],
+  sequences: demonessSequences,
+};
+
+export const MOTHER_PATHWAY: Pathway = {
+  id: 16,
+  name: "Mother",
+  group: "life",
+  sefirah: "Tree of Life",
+  neighboringPathways: [17],
+  sequences: motherSequences,
+};
+
+export const MOON_PATHWAY: Pathway = {
+  id: 17,
+  name: "Moon",
+  group: "life",
+  sefirah: "Tree of Life",
+  neighboringPathways: [16],
+  sequences: moonSequences,
+};
+
+export const HERMIT_PATHWAY: Pathway = {
+  id: 18,
+  name: "Hermit",
+  group: "knowledge",
+  sefirah: "Sefirah of the Hidden Sage",
+  neighboringPathways: [19],
+  sequences: hermitSequences,
+};
+
+export const PARAGON_PATHWAY: Pathway = {
+  id: 19,
+  name: "Paragon",
+  group: "knowledge",
+  sefirah: "Sefirah of the Hidden Sage",
+  neighboringPathways: [18],
+  sequences: paragonSequences,
+};
+
+export const WHEEL_OF_FORTUNE_PATHWAY: Pathway = {
+  id: 20,
+  name: "Wheel of Fortune",
+  group: "wheel-of-fortune",
+  sefirah: "Sefirah of Fate",
+  neighboringPathways: [],
+  sequences: wheelOfFortuneSequences,
+};
+
+export const ABYSS_PATHWAY: Pathway = {
+  id: 21,
+  name: "Abyss",
+  group: "abyss",
+  sefirah: "Tomb of the Father of Devils",
+  neighboringPathways: [22],
+  sequences: abyssSequences,
+};
+
+export const CHAINED_PATHWAY: Pathway = {
+  id: 22,
+  name: "Chained",
+  group: "abyss",
+  sefirah: "Tomb of the Father of Devils",
+  neighboringPathways: [21],
+  sequences: chainedSequences,
 };
 
 export const ALL_PATHWAYS: Pathway[] = [
@@ -5416,6 +9342,19 @@ export const ALL_PATHWAYS: Pathway[] = [
   DOOR_PATHWAY,
   ERROR_PATHWAY,
   HANGED_MAN_PATHWAY,
+  WHITE_TOWER_PATHWAY,
+  TWILIGHT_GIANT_PATHWAY,
+  JUSTICIAR_PATHWAY,
+  BLACK_EMPEROR_PATHWAY,
+  RED_PRIEST_PATHWAY,
+  DEMONESS_PATHWAY,
+  MOTHER_PATHWAY,
+  MOON_PATHWAY,
+  HERMIT_PATHWAY,
+  PARAGON_PATHWAY,
+  WHEEL_OF_FORTUNE_PATHWAY,
+  ABYSS_PATHWAY,
+  CHAINED_PATHWAY,
 ];
 
 export function getPathway(id: number): Pathway | undefined {
