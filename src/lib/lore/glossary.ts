@@ -346,8 +346,10 @@ export function getGlossaryTerm(slug: string): GlossaryTerm | undefined {
  * very existence is never leaked to a character who can never reach it.
  */
 export function sealedTermCount(sequenceLevel: number, epoch?: number): number {
-  const epochApplicable = GLOSSARY_TERMS.filter((term) =>
-    passesEpochGate(term.epoch, epoch),
-  );
-  return epochApplicable.length - glossaryForSequence(sequenceLevel, epoch).length;
+  // A single pass over the epoch-applicable universe: a term is sealed when its
+  // reveal threshold is still below the player's sequence. Counting only
+  // epoch-applicable terms keeps other-epoch entries' existence hidden.
+  return GLOSSARY_TERMS.filter(
+    (term) => passesEpochGate(term.epoch, epoch) && term.revealAtSequence < sequenceLevel,
+  ).length;
 }

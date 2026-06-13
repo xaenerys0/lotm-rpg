@@ -62,7 +62,10 @@ export function GlossaryPanel() {
     () => glossaryForSequence(sequenceLevel, epoch),
     [sequenceLevel, epoch],
   );
-  const sealed = sealedTermCount(sequenceLevel, epoch);
+  const sealed = useMemo(
+    () => sealedTermCount(sequenceLevel, epoch),
+    [sequenceLevel, epoch],
+  );
 
   const filtered = useMemo(() => {
     const lowered = query.trim().toLowerCase();

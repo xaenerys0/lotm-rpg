@@ -931,6 +931,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     session.gameState.sequenceLevel === 0
       ? trueGodName(session.gameState.pathwayId)
       : (seq?.name ?? "Unknown");
+  const epoch = getEpoch(session.gameState.epoch);
   // Combat only needs ability names; the True-God-aware derivation lives in one
   // place (sequenceAbilities) rather than running the full AI-call bundle.
   const { abilities: combatAbilities } = sequenceAbilities(
@@ -960,9 +961,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             <span className="text-border" aria-hidden="true">
               |
             </span>
-            <span title={getEpoch(session.gameState.epoch).era}>
-              {getEpoch(session.gameState.epoch).name}
-            </span>
+            <span title={epoch.era}>{epoch.name}</span>
             <span className="text-border" aria-hidden="true">
               |
             </span>

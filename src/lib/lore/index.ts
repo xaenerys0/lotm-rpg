@@ -175,6 +175,11 @@ const LORE_BY_PATHWAY = indexBy((e) =>
   e.pathway === undefined ? undefined : normalizePathwayKey(e.pathway),
 );
 const LORE_BY_CITY = indexBy((e) => e.city);
+// Epoch setting lore is selected once per turn (selectCuratedLore), so index it
+// at module load like the pathway/city maps rather than re-scanning the corpus.
+const LORE_BY_EPOCH_SETTING = indexBy((e) =>
+  e.category === "metaphysics" && e.epoch !== undefined ? e.epoch : undefined,
+);
 
 export function getLoreByPathway(pathway: string): LoreEntry[] {
   return LORE_BY_PATHWAY.get(normalizePathwayKey(pathway)) ?? [];
@@ -195,10 +200,7 @@ export function getLoreByEpoch(epoch: number): LoreEntry[] {
 // regardless of the prose `startingLocation` the city-key heuristic can't match.
 // An absent epoch defaults to the Fifth.
 export function getLoreByEpochSetting(epoch: number | undefined): LoreEntry[] {
-  const target = epoch ?? DEFAULT_EPOCH_ID;
-  return ALL_LORE_ENTRIES.filter(
-    (e) => e.epoch === target && e.category === "metaphysics",
-  );
+  return LORE_BY_EPOCH_SETTING.get(epoch ?? DEFAULT_EPOCH_ID) ?? [];
 }
 
 export function getLoreBySlug(slug: string): LoreEntry | undefined {
