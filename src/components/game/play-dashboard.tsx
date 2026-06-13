@@ -3,13 +3,11 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import type { ProviderConfig, MemoryState } from "@/lib/ai";
-import type { GameSessionSummary, JournalSyncClient } from "@/lib/game";
+import type { GameSessionSummary } from "@/lib/game";
 import {
   createSession,
   createDefaultGameState,
   sessionToSummary,
-  characterDeletionPlan,
-  deleteSessionEntriesRemote,
   PROVIDER_CONFIG_KEY,
   PROLOGUE_DRAFT_KEY,
   isActivePrologueDraft,
@@ -31,9 +29,9 @@ import {
   persistSession,
   useStoredValue,
 } from "@/lib/react/session-store";
-import { createClient } from "@/lib/supabase/client";
 import { GameLoop } from "./game-loop";
 import { CharacterCreation } from "./character-creation";
+import { purgeCharacter } from "./character-actions";
 
 type DashboardView = "home" | "character-creation" | "playing" | "manage";
 
@@ -176,31 +174,15 @@ export function PlayDashboard() {
     setSessions(loadExistingSessions());
   }, []);
 
-  // Remove a character and every scrap of its data: the local save, journal,
-  // in-progress combat, and usage estimate, plus the durable journal rows
-  // mirrored to Supabase. Cross-timeline legacies/echoes are world memory and
-  // are intentionally left untouched (the "restart timeline" path wipes those).
+  // Remove a character and every scrap of its data (shared cleanup in
+  // `purgeCharacter`), then drop it from the displayed list. Cross-timeline
+  // legacies/echoes are world memory and are intentionally left untouched (the
+  // "restart timeline" path wipes those).
   const handleDeleteCharacter = useCallback((sessionId: string) => {
-    const plan = characterDeletionPlan(sessionId, loadSessionIndex());
-    try {
-      for (const key of plan.removeKeys) localStorage.removeItem(key);
-      saveSessionIndex(plan.nextIndex);
-    } catch {
-      // Storage unavailable — the in-memory list still updates below.
-    }
-    // Best-effort durable cleanup; offline/signed-out players just keep the
-    // rows, which RLS already scopes to them.
-    void (async () => {
-      try {
-        const client = createClient() as unknown as JournalSyncClient;
-        await deleteSessionEntriesRemote(client, sessionId);
-      } catch {
-        // Network/permission failure — non-fatal, the local save is gone.
-      }
-    })();
+    purgeCharacter(sessionId);
     setPendingDeleteId(null);
-    // localStorage is already consistent (saveSessionIndex above); drop the
-    // deleted character from the displayed list without re-reading every save.
+    // localStorage is already consistent; drop the deleted character from the
+    // displayed list without re-reading every save.
     setSessions((prev) => prev.filter((s) => s.id !== sessionId));
   }, []);
 

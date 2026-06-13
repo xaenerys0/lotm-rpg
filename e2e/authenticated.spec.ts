@@ -1,4 +1,11 @@
 import { expect, test } from "@playwright/test";
+import {
+  createDefaultGameState,
+  createSession,
+  serializeSession,
+  SESSION_INDEX_KEY,
+  SESSION_KEY_PREFIX,
+} from "@/lib/game";
 
 // Authenticated-tier specs (run only with a Supabase backend; gated in
 // playwright.config.ts and seeded with a signed-in storageState). These prove
@@ -39,15 +46,38 @@ for (const route of GAME_ROUTES) {
   });
 }
 
-test("the character sheet exposes a delete control when a character exists", async ({
+test("the character sheet's delete control runs the two-step confirm", async ({
   page,
 }) => {
+  // Characters live in browser localStorage, not Supabase, so a freshly
+  // signed-in session has none. Seed one before the app's scripts run so the
+  // full sheet (and its delete danger zone) renders.
+  const session = createSession(
+    createDefaultGameState(1, "e2e-char", "Klein E2E"),
+    "e2e-delete-1",
+  );
+  await page.addInitScript(
+    ({ indexKey, sessionKey, indexValue, sessionValue }) => {
+      localStorage.setItem(indexKey, indexValue);
+      localStorage.setItem(sessionKey, sessionValue);
+    },
+    {
+      indexKey: SESSION_INDEX_KEY,
+      sessionKey: SESSION_KEY_PREFIX + session.id,
+      indexValue: JSON.stringify([session.id]),
+      sessionValue: serializeSession(session),
+    },
+  );
+
   await page.goto("/character");
-  // Only meaningful if this account has a saved character in this browser; the
-  // empty state has no delete control and that's fine. When present, the
-  // control must be reachable (not clipped) at the current viewport.
-  const deleteButton = page.getByRole("button", { name: /^Delete / });
-  if (await deleteButton.count()) {
-    await expect(deleteButton.first()).toBeVisible();
-  }
+
+  // Step 1: the delete control is present and reachable (not clipped).
+  const deleteButton = page.getByRole("button", { name: "Delete Klein E2E" });
+  await expect(deleteButton).toBeVisible();
+  await deleteButton.click();
+
+  // Step 2: the confirm appears, then deleting removes the sheet.
+  await expect(page.getByText("Delete permanently?")).toBeVisible();
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  await expect(page.getByText(/No Beyonder has been recorded yet/)).toBeVisible();
 });

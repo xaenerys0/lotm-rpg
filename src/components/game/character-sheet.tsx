@@ -4,21 +4,16 @@ import { useCallback, useState } from "react";
 
 import {
   loadAllSessions,
-  loadSessionIndex,
-  saveSessionIndex,
   persistSession as writeSession,
   useStoredValue,
 } from "@/lib/react/session-store";
 import { getPathway, getSequence } from "@/lib/rules";
 import { classifySanityTier } from "@/lib/ai";
 import { getEpoch } from "@/lib/lore";
-import { createClient } from "@/lib/supabase/client";
 import {
   activeIdentity,
-  characterDeletionPlan,
   createIdentity,
   createIdentityState,
-  deleteSessionEntriesRemote,
   discardIdentity,
   identityCapability,
   switchIdentity,
@@ -26,10 +21,10 @@ import {
   type GameSession,
   type IdentityCapability,
   type IdentityState,
-  type JournalSyncClient,
   type SocialClass,
 } from "@/lib/game";
 import type { Item } from "@/lib/types/rules";
+import { purgeCharacter } from "./character-actions";
 
 // Character sheet panel (issue #13): identity, abilities & acting
 // requirements, condition, and the inventory. Sanity is shown as an in-world
@@ -68,27 +63,11 @@ export function CharacterSheet() {
     writeSession(next);
   }, []);
 
-  // Permanently delete a character and every scrap of its data — the local
-  // save, journal, in-progress combat, and usage estimate — plus a best-effort
-  // wipe of the durable Supabase journal rows. Cross-timeline legacies/echoes
-  // are world memory and are intentionally left intact (mirrors the dashboard's
-  // Manage view).
+  // Permanently delete the selected character (shared cleanup in
+  // `purgeCharacter` — same contract as the dashboard's Manage view), then drop
+  // it from the displayed list and fall back to another Beyonder.
   const handleDelete = useCallback((sessionId: string) => {
-    const plan = characterDeletionPlan(sessionId, loadSessionIndex());
-    try {
-      for (const key of plan.removeKeys) localStorage.removeItem(key);
-      saveSessionIndex(plan.nextIndex);
-    } catch {
-      // Storage unavailable — the in-memory list still updates below.
-    }
-    void (async () => {
-      try {
-        const client = createClient() as unknown as JournalSyncClient;
-        await deleteSessionEntriesRemote(client, sessionId);
-      } catch {
-        // Network/permission failure — non-fatal, the local save is gone.
-      }
-    })();
+    purgeCharacter(sessionId);
     setSelectedId(null);
     setDeletedIds((prev) => [...prev, sessionId]);
   }, []);

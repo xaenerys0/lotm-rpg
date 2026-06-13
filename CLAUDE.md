@@ -67,6 +67,7 @@ docs/
 ├── rag-per-turn-budget.md # RAG latency/token/operator-cost budget (issue #64)
 ├── anchors-design.md      # Anchors system design (issue #35) — canon + data model
 └── rules/                 # Shared rule files (@-imported by scoped CLAUDE.md)
+e2e/                       # Playwright UI tests (real-browser responsiveness) — see e2e/README.md
 ```
 
 ## Key Conventions
