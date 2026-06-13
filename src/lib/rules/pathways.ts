@@ -9357,8 +9357,13 @@ export const ALL_PATHWAYS: Pathway[] = [
   CHAINED_PATHWAY,
 ];
 
+// Indexed by id at module load — getPathway/getSequence are called several
+// times per render and per turn, so resolve in O(1) rather than scanning the
+// 22-entry array each time.
+const PATHWAY_BY_ID = new Map<number, Pathway>(ALL_PATHWAYS.map((p) => [p.id, p]));
+
 export function getPathway(id: number): Pathway | undefined {
-  return ALL_PATHWAYS.find((p) => p.id === id);
+  return PATHWAY_BY_ID.get(id);
 }
 
 export function getSequence(pathwayId: number, level: number): Sequence | undefined {

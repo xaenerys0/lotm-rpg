@@ -129,12 +129,39 @@ export function getLoreByCategory(category: LoreEntry["category"]): LoreEntry[] 
   return ALL_LORE_ENTRIES.filter((e) => e.category === category);
 }
 
+// `pathway`/`city` are looked up once per turn (selectCuratedLore), so index
+// them at module load rather than re-scanning the whole corpus each call. The
+// pathway key is normalized (case- and separator-insensitive) so a stored
+// "hanged-man" still matches the rules-engine name "Hanged Man" → "hanged man".
+const normalizePathwayKey = (pathway: string): string =>
+  pathway
+    .toLowerCase()
+    .replace(/[\s-]+/g, " ")
+    .trim();
+
+function indexBy<K>(key: (entry: LoreEntry) => K | undefined): Map<K, LoreEntry[]> {
+  const index = new Map<K, LoreEntry[]>();
+  for (const entry of ALL_LORE_ENTRIES) {
+    const k = key(entry);
+    if (k === undefined) continue;
+    const list = index.get(k);
+    if (list) list.push(entry);
+    else index.set(k, [entry]);
+  }
+  return index;
+}
+
+const LORE_BY_PATHWAY = indexBy((e) =>
+  e.pathway === undefined ? undefined : normalizePathwayKey(e.pathway),
+);
+const LORE_BY_CITY = indexBy((e) => e.city);
+
 export function getLoreByPathway(pathway: string): LoreEntry[] {
-  return ALL_LORE_ENTRIES.filter((e) => e.pathway === pathway);
+  return LORE_BY_PATHWAY.get(normalizePathwayKey(pathway)) ?? [];
 }
 
 export function getLoreByCity(city: string): LoreEntry[] {
-  return ALL_LORE_ENTRIES.filter((e) => e.city === city);
+  return LORE_BY_CITY.get(city) ?? [];
 }
 
 export function getLoreByEpoch(epoch: number): LoreEntry[] {

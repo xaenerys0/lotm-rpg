@@ -42,6 +42,39 @@ export interface JournalEntry {
   characterName?: string;
 }
 
+/**
+ * Assemble a {@link JournalEntry} from the game state plus the event-specific
+ * fields — the single place the entry scaffold (id, timestamp, location,
+ * NPCs, arc, character) is built, so the React-layer capture sites and the
+ * deterministic detector below cannot drift. `arc` defaults to the sequence
+ * label; `id`/`now` are injectable for determinism.
+ */
+export function buildJournalEntry(
+  state: GameState,
+  turnNumber: number,
+  event: {
+    eventType: JournalEventType;
+    summary: string;
+    narrative: string;
+    arc?: string;
+  },
+  options: { id?: string; now?: number } = {},
+): JournalEntry {
+  return {
+    id: options.id ?? crypto.randomUUID(),
+    turnNumber,
+    createdAt: options.now ?? Date.now(),
+    location: state.location,
+    eventType: event.eventType,
+    summary: event.summary,
+    narrative: event.narrative,
+    involvedNpcs: state.npcsPresent,
+    arc: event.arc ?? `Sequence ${state.sequenceLevel}`,
+    characterId: state.characterId,
+    ...(state.characterName ? { characterName: state.characterName } : {}),
+  };
+}
+
 export interface JournalAnnotation {
   id: string;
   entryId: string;

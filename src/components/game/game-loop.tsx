@@ -28,6 +28,7 @@ import {
   type CombatEncounter,
   type CombatResult,
   addJournalEntries,
+  buildJournalEntry,
   createJournal,
   deriveJournalEntries,
   deserializeJournal,
@@ -50,10 +51,9 @@ import {
   attemptApotheosis,
   canAttemptApotheosis,
   drawPetition,
+  sequenceAbilities,
   trueGodName,
   APOTHEOSIS_STAGES,
-  TRUE_GOD_ABILITIES,
-  TRUE_GOD_ACTING,
   deserializeArtifacts,
   mintArtifact,
   serializeArtifacts,
@@ -264,22 +264,32 @@ function getChoiceTypeIcon(type: Choice["type"]): string {
   }
 }
 
+// The two irrevocable endings (loss-of-control permadeath, failed apotheosis)
+// share one closing-scene instruction; only the lead-in clause differs.
+function descentAction(lead: string, severity: FailureVerdict["severity"]): string {
+  const fate =
+    severity === "fatal"
+      ? "their death"
+      : "their irreversible transformation into something monstrous";
+  return `${lead} ${fate}. This ends their story: write a closing scene, no choices.`;
+}
+
 function buildAICallParams(currentSession: GameSession) {
   const pathway = getPathway(currentSession.gameState.pathwayId);
   const seq = getSequence(
     currentSession.gameState.pathwayId,
     currentSession.gameState.sequenceLevel,
   );
-  // Sequence 0 (issue #30) has no rules-engine Sequence — a True God's
-  // abilities are authority itself, framed by the apotheosis module.
-  const isTrueGod = currentSession.gameState.sequenceLevel === 0;
+  // True-God-aware abilities (issue #30): Sequence 0 has no rules `Sequence`.
+  const { abilities, acting } = sequenceAbilities(
+    currentSession.gameState.pathwayId,
+    currentSession.gameState.sequenceLevel,
+  );
   return {
     pathway,
     seq,
-    abilities: isTrueGod
-      ? [...TRUE_GOD_ABILITIES]
-      : (seq?.abilities.map((a) => a.name) ?? []),
-    actingReqs: isTrueGod ? [...TRUE_GOD_ACTING] : (seq?.actingRequirements ?? []),
+    abilities,
+    actingReqs: acting,
     // Active persona (issue #22): narrator presentation context.
     identityContext: currentSession.identityState
       ? identityPromptContext(currentSession.identityState)
@@ -463,21 +473,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       }
 
       appendJournalEntries(session.id, [
-        {
-          id: crypto.randomUUID(),
-          turnNumber: session.turnCount,
-          createdAt: Date.now(),
-          location: session.gameState.location,
+        buildJournalEntry(session.gameState, session.turnCount, {
           eventType: "death",
           summary: legacy.epitaph,
           narrative: scene,
-          involvedNpcs: session.gameState.npcsPresent,
-          arc: `Sequence ${session.gameState.sequenceLevel}`,
-          characterId: session.gameState.characterId,
-          ...(session.gameState.characterName
-            ? { characterName: session.gameState.characterName }
-            : {}),
-        },
+        }),
       ]);
 
       updateSession(endSession(session, legacy, scene));
@@ -496,11 +496,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     });
     await concludeChronicle(
       verdict,
-      `Narrate the character's final descent — sanity has collapsed entirely and this is ${
-        verdict.severity === "fatal"
-          ? "their death"
-          : "their irreversible transformation into something monstrous"
-      }. This ends their story: write a closing scene, no choices.`,
+      descentAction(
+        "Narrate the character's final descent — sanity has collapsed entirely and this is",
+        verdict.severity,
+      ),
     );
   }, [session, concludeChronicle]);
 
@@ -520,21 +519,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     const result = attemptApotheosis(session);
     if (result.outcome === "ascended") {
       appendJournalEntries(session.id, [
-        {
-          id: crypto.randomUUID(),
-          turnNumber: session.turnCount,
-          createdAt: Date.now(),
-          location: session.gameState.location,
+        buildJournalEntry(session.gameState, session.turnCount, {
           eventType: "advancement",
           summary: `Became ${result.honorific} — the Sequence 0 True God of the pathway.`,
           narrative: result.tease,
-          involvedNpcs: session.gameState.npcsPresent,
           arc: "Sequence 0",
-          characterId: session.gameState.characterId,
-          ...(session.gameState.characterName
-            ? { characterName: session.gameState.characterName }
-            : {}),
-        },
+        }),
       ]);
       setAscension({ honorific: result.honorific, tease: result.tease });
       updateSession(result.session);
@@ -546,11 +536,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     endingInFlight.current = false;
     await concludeChronicle(
       result.verdict,
-      `Narrate the apotheosis ritual collapsing at the final threshold — the pathway rejects the ascent and the character is unmade. This is ${
-        result.verdict.severity === "fatal"
-          ? "their death"
-          : "their irreversible transformation into something monstrous"
-      }. This ends their story: write a closing scene, no choices.`,
+      descentAction(
+        "Narrate the apotheosis ritual collapsing at the final threshold — the pathway rejects the ascent and the character is unmade. This is",
+        result.verdict.severity,
+      ),
     );
   }, [session, updateSession, concludeChronicle]);
 
@@ -898,21 +887,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       );
       if (exposureNarrative) {
         appendJournalEntries(session.id, [
-          {
-            id: crypto.randomUUID(),
-            turnNumber: session.turnCount,
-            createdAt: Date.now(),
-            location: gameState.location,
+          buildJournalEntry(gameState, session.turnCount, {
             eventType: "major-event",
             summary: "An identity was exposed.",
             narrative: exposureNarrative,
-            involvedNpcs: gameState.npcsPresent,
-            arc: `Sequence ${gameState.sequenceLevel}`,
-            characterId: gameState.characterId,
-            ...(gameState.characterName
-              ? { characterName: gameState.characterName }
-              : {}),
-          },
+          }),
         ]);
       }
       const updated = {
@@ -946,16 +925,17 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const seq = getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel);
   const lostControl = isLossOfControl(session.gameState);
   // Sequence 0 (issue #30) has no rules-engine Sequence — present the honorific
-  // and the True God ability framing instead of the empty "Unknown" fallback.
-  const isTrueGod = session.gameState.sequenceLevel === 0;
-  const sequenceLabel = isTrueGod
-    ? trueGodName(session.gameState.pathwayId)
-    : (seq?.name ?? "Unknown");
-  // Combat only needs ability names — derive them directly rather than running
-  // the full AI-call param bundle (which also scans/selects lore) per render.
-  const combatAbilities = isTrueGod
-    ? [...TRUE_GOD_ABILITIES]
-    : (seq?.abilities.map((a) => a.name) ?? []);
+  // instead of the empty "Unknown" fallback.
+  const sequenceLabel =
+    session.gameState.sequenceLevel === 0
+      ? trueGodName(session.gameState.pathwayId)
+      : (seq?.name ?? "Unknown");
+  // Combat only needs ability names; the True-God-aware derivation lives in one
+  // place (sequenceAbilities) rather than running the full AI-call bundle.
+  const { abilities: combatAbilities } = sequenceAbilities(
+    session.gameState.pathwayId,
+    session.gameState.sequenceLevel,
+  );
 
   return (
     <SanityEffects

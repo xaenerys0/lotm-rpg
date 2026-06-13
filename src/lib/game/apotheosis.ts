@@ -1,6 +1,6 @@
 import type { SessionFact } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
-import { getPathway } from "@/lib/rules";
+import { getPathway, getSequence } from "@/lib/rules";
 
 import { effectiveSupport, requiredSupport, anchorHighRisk } from "./anchors";
 import { evaluateFailure, type FailureVerdict } from "./death";
@@ -84,6 +84,26 @@ export const TRUE_GOD_ACTING: readonly string[] = [
   "Never act beneath your station; a god who plays mortal frays",
   "Answer faith with presence; a silent god breeds heresy and rivals",
 ];
+
+/**
+ * The ability and acting-requirement names to present for a character at this
+ * sequence. Sequence 0 has no rules-engine `Sequence`, so a True God's
+ * authority is framed here instead of resolving to an empty lookup — one place
+ * for the True-God-aware derivation the prompt and UI both need.
+ */
+export function sequenceAbilities(
+  pathwayId: number,
+  level: number,
+): { abilities: string[]; acting: string[] } {
+  if (level === 0) {
+    return { abilities: [...TRUE_GOD_ABILITIES], acting: [...TRUE_GOD_ACTING] };
+  }
+  const seq = getSequence(pathwayId, level);
+  return {
+    abilities: seq?.abilities.map((a) => a.name) ?? [],
+    acting: seq?.actingRequirements ?? [],
+  };
+}
 
 export interface ApotheosisRequirement {
   id: "sequence" | "digestion" | "uniqueness" | "anchors" | "sanity";

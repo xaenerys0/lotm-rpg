@@ -22,6 +22,20 @@ export interface Achievement {
 
 const seq = (s: GameSession): number => s.gameState.sequenceLevel;
 
+/**
+ * Whether a memory fact records a fallen predecessor (a legacy the world
+ * remembers). The substrings match the epitaphs `buildLegacy` produces in
+ * `death.ts` — kept in one place so the achievement and the divergence score
+ * never drift apart.
+ */
+function isLegacyFact(description: string): boolean {
+  return (
+    description.includes("lost control in") ||
+    description.includes("still whispered") ||
+    description.includes("quiet warning about powers")
+  );
+}
+
 export const ACHIEVEMENTS: readonly Achievement[] = [
   {
     id: "first-sip",
@@ -33,7 +47,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     id: "method-actor",
     name: "Method Actor",
     description: "Fully digest a potion through acting.",
-    check: (s) => s.gameState.digestion?.complete === true || seq(s) <= 8,
+    check: (s) => s.gameState.digestion?.complete === true,
   },
   {
     id: "sequence-8",
@@ -75,13 +89,7 @@ export const ACHIEVEMENTS: readonly Achievement[] = [
     id: "haunted-timeline",
     name: "Haunted Timeline",
     description: "Begin a chronicle in a world that remembers the fallen.",
-    check: (s) =>
-      s.memory.sessionFacts.some(
-        (fact) =>
-          fact.description.includes("lost control in") ||
-          fact.description.includes("their story is still whispered") ||
-          fact.description.includes("a quiet warning about powers"),
-      ),
+    check: (s) => s.memory.sessionFacts.some((fact) => isLegacyFact(fact.description)),
   },
   {
     id: "merchant",
@@ -120,11 +128,8 @@ export function divergenceScore(session: GameSession): number {
   const state: GameState = session.gameState;
   let score = Math.min(25, session.turnCount / 2);
 
-  const legacies = session.memory.sessionFacts.filter(
-    (fact) =>
-      fact.description.includes("lost control in") ||
-      fact.description.includes("still whispered") ||
-      fact.description.includes("quiet warning about powers"),
+  const legacies = session.memory.sessionFacts.filter((fact) =>
+    isLegacyFact(fact.description),
   ).length;
   score += Math.min(30, legacies * 10);
 

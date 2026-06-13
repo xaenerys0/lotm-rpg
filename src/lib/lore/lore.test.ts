@@ -299,8 +299,10 @@ describe("Total lore corpus", () => {
   });
 
   it("every one of the 22 pathways has retrievable overview lore (issue #28)", () => {
-    // The lowercased pathway name is the key selectCuratedLore matches on, so
-    // each pathway must expose at least one entry under that exact key.
+    // getLoreByPathway is separator/case-insensitive, so selectCuratedLore
+    // resolves a pathway by its rules-engine name (e.g. "Hanged Man" → "hanged
+    // man") even though the stored field is hyphenated. These keys mirror the
+    // lowercased ALL_PATHWAYS names selectCuratedLore passes.
     const pathwayKeys = [
       "fool",
       "visionary",
@@ -310,7 +312,7 @@ describe("Total lore corpus", () => {
       "tyrant",
       "door",
       "error",
-      "hanged-man",
+      "hanged man",
       "white tower",
       "twilight giant",
       "justiciar",

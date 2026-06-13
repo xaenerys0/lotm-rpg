@@ -9,6 +9,7 @@ import {
   attemptApotheosis,
   canAttemptApotheosis,
   drawPetition,
+  sequenceAbilities,
   trueGodName,
   uniquenessItemFor,
 } from "./apotheosis";
@@ -187,6 +188,25 @@ describe("attemptApotheosis", () => {
     const noAnchors = { ...session, anchorState: undefined };
     const result = attemptApotheosis(noAnchors, () => 0);
     expect(result.outcome).toBe("unmade");
+  });
+});
+
+describe("sequenceAbilities", () => {
+  it("returns the True God framing at Sequence 0", () => {
+    const { abilities, acting } = sequenceAbilities(1, 0);
+    expect(abilities.length).toBeGreaterThan(0);
+    expect(abilities[0]).toContain("Absolute authority");
+    expect(acting.length).toBeGreaterThan(0);
+  });
+
+  it("returns the rules-engine sequence's ability/acting names below Seq 0", () => {
+    const { abilities, acting } = sequenceAbilities(1, 9);
+    expect(abilities).toContain("Spirit Vision");
+    expect(acting.length).toBe(3);
+  });
+
+  it("is empty for an unknown sequence", () => {
+    expect(sequenceAbilities(1, 99)).toEqual({ abilities: [], acting: [] });
   });
 });
 

@@ -50,6 +50,14 @@ describe("evaluateAchievements", () => {
       { id: "i1", description: "A burned hand", severity: "minor", recoveryTurns: 2 },
     ];
     s.gameState.funds = 500;
+    // method-actor is earned by actually completing a potion's digestion,
+    // not merely by reaching a sequence.
+    s.gameState.digestion = {
+      pathwayId: s.gameState.pathwayId,
+      sequenceLevel: 7,
+      progress: 100,
+      complete: true,
+    };
     const earned = evaluateAchievements(s);
     for (const id of [
       "first-sip",
@@ -64,6 +72,13 @@ describe("evaluateAchievements", () => {
     }
     expect(earned).not.toContain("sequence-5");
     expect(earned).not.toContain("the-end");
+  });
+
+  it("earns method-actor only on completed digestion, not by sequence", () => {
+    const atSeq8 = session();
+    atSeq8.gameState.sequenceLevel = 8;
+    expect(evaluateAchievements(atSeq8)).not.toContain("method-actor");
+    expect(evaluateAchievements(atSeq8)).toContain("sequence-8");
   });
 
   it("recognizes haunted timelines and ended chronicles", () => {

@@ -6,6 +6,7 @@ import {
   addAnnotation,
   addJournalEntries,
   annotationsFor,
+  buildJournalEntry,
   createJournal,
   deleteAnnotation,
   deriveJournalEntries,
@@ -142,6 +143,41 @@ describe("deriveJournalEntries", () => {
     );
     expect(entries).toHaveLength(1);
     expect(entries[0].summary).toBe("A fateful meeting with Old Neil.");
+  });
+});
+
+describe("buildJournalEntry", () => {
+  it("assembles an entry from state with injected id/time and a default arc", () => {
+    const entry = buildJournalEntry(
+      state({ location: "Backlund", sequenceLevel: 6 }),
+      4,
+      { eventType: "major-event", summary: "A pact was struck.", narrative: "..." },
+      { id: "e-1", now: 1000 },
+    );
+    expect(entry).toEqual({
+      id: "e-1",
+      turnNumber: 4,
+      createdAt: 1000,
+      location: "Backlund",
+      eventType: "major-event",
+      summary: "A pact was struck.",
+      narrative: "...",
+      involvedNpcs: ["Dunn Smith"],
+      arc: "Sequence 6",
+      characterId: "char-1",
+      characterName: "Klein",
+    });
+  });
+
+  it("honors an explicit arc and omits an absent character name", () => {
+    const entry = buildJournalEntry(
+      state({ characterName: undefined }),
+      0,
+      { eventType: "death", summary: "x", narrative: "y", arc: "Sequence 0" },
+      { id: "e-2", now: 1 },
+    );
+    expect(entry.arc).toBe("Sequence 0");
+    expect("characterName" in entry).toBe(false);
   });
 });
 
