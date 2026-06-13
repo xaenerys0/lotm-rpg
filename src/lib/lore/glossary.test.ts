@@ -56,7 +56,48 @@ describe("glossaryForSequence (progressive disclosure)", () => {
       expect(count).toBeGreaterThanOrEqual(previous);
       previous = count;
     }
-    expect(glossaryForSequence(1)).toHaveLength(GLOSSARY_TERMS.length);
+    // At Sequence 1 every epoch-applicable term is unlocked. With no epoch given,
+    // the lexicon defaults to the Fifth, so other-epoch terms never appear.
+    const fifthApplicable = GLOSSARY_TERMS.filter(
+      (t) => t.epoch === undefined || t.epoch === 5,
+    );
+    expect(glossaryForSequence(1)).toHaveLength(fifthApplicable.length);
+  });
+});
+
+describe("epoch isolation (issue: character epoch isolation)", () => {
+  it("shows universal mechanics but hides Fifth-Epoch terms from earlier epochs", () => {
+    const firstEpoch = glossaryForSequence(9, 1).map((t) => t.slug);
+    // Universal Beyonder mechanics are shared across every era.
+    expect(firstEpoch).toContain("beyonder");
+    expect(firstEpoch).toContain("sequence");
+    // The First Epoch's own terms appear...
+    expect(firstEpoch).toContain("age-of-chaos");
+    expect(firstEpoch).toContain("original-creator");
+    // ...but the Fifth-Epoch nations and churches do not.
+    expect(firstEpoch).not.toContain("tingen");
+    expect(firstEpoch).not.toContain("loen-kingdom");
+    expect(firstEpoch).not.toContain("nighthawks");
+    // ...nor do other non-Fifth epochs' terms.
+    expect(firstEpoch).not.toContain("solomon-empire");
+  });
+
+  it("gives each non-Fifth epoch its own era terms", () => {
+    expect(glossaryForSequence(9, 2).map((t) => t.slug)).toContain("ancient-gods");
+    expect(glossaryForSequence(9, 3).map((t) => t.slug)).toContain("ancient-sun-god");
+    expect(glossaryForSequence(9, 4).map((t) => t.slug)).toContain("solomon-empire");
+  });
+
+  it("does not leak other-epoch terms through the sealed count", () => {
+    // A First-Epoch newcomer's sealed count is computed only over First-Epoch-
+    // applicable terms — never hinting that Fifth-Epoch entries exist.
+    const applicable = GLOSSARY_TERMS.filter(
+      (t) => t.epoch === undefined || t.epoch === 1,
+    );
+    expect(sealedTermCount(9, 1)).toBe(
+      applicable.length - glossaryForSequence(9, 1).length,
+    );
+    expect(sealedTermCount(1, 1)).toBe(0);
   });
 });
 
@@ -64,8 +105,11 @@ describe("getGlossaryTerm / sealedTermCount", () => {
   it("looks up by slug and counts the sealed remainder", () => {
     expect(getGlossaryTerm("beyonder")?.term).toBe("Beyonder");
     expect(getGlossaryTerm("nope")).toBeUndefined();
+    const fifthApplicable = GLOSSARY_TERMS.filter(
+      (t) => t.epoch === undefined || t.epoch === 5,
+    );
     expect(sealedTermCount(9)).toBe(
-      GLOSSARY_TERMS.length - glossaryForSequence(9).length,
+      fifthApplicable.length - glossaryForSequence(9).length,
     );
     expect(sealedTermCount(1)).toBe(0);
   });

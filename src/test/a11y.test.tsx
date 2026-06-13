@@ -399,4 +399,16 @@ describe("accessibility — stub pages", () => {
     localStorage.setItem(SESSION_KEY_PREFIX + "map-1", serializeSession(session));
     await expectNoAxeViolations(<MapPage />);
   });
+
+  it("map page for a non-Fifth epoch (region list, no travel) has no violations", async () => {
+    // A First-Epoch character sees the Age-of-Chaos gazetteer with no inter-city
+    // travel section — exercise that render path for accessibility.
+    const session = createSession(
+      createDefaultGameState(1, "char-map2", "Survivor", undefined, 1),
+      "map-2",
+    );
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["map-2"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "map-2", serializeSession(session));
+    await expectNoAxeViolations(<MapPage />);
+  });
 });

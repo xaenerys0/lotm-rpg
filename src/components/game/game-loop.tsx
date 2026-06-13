@@ -107,6 +107,7 @@ import {
   epochNarrationDirective,
   epochOpeningBeat,
   cityNarrationDirective,
+  getEpoch,
 } from "@/lib/lore";
 import { createClient } from "@/lib/supabase/client";
 import { SceneArt } from "./scene-art";
@@ -301,6 +302,7 @@ function buildAICallParams(currentSession: GameSession) {
       pathway?.name ?? "fool",
       currentSession.gameState.location,
       TOKEN_BUDGET.lore,
+      currentSession.gameState.epoch,
     ),
     // Per-city narration tone (issue #23): one tone sentence per city, null
     // for cities (incl. the Tingen start) with no specific tone.
@@ -955,6 +957,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               |
             </span>
             <span>{session.gameState.location}</span>
+            <span className="text-border" aria-hidden="true">
+              |
+            </span>
+            <span title={getEpoch(session.gameState.epoch).era}>
+              {getEpoch(session.gameState.epoch).name}
+            </span>
             <span className="text-border" aria-hidden="true">
               |
             </span>

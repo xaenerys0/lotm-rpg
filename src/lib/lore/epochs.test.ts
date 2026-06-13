@@ -4,6 +4,7 @@ import {
   epochNarrationDirective,
   epochOpeningBeat,
   getEpoch,
+  passesEpochGate,
   DEFAULT_EPOCH_ID,
   EPOCHS,
 } from "./epochs";
@@ -46,5 +47,28 @@ describe("narration & openings", () => {
       expect(epochOpeningBeat(id)).toContain("Describe the opening scene");
     }
     expect(epochNarrationDirective(2)).toContain("inhuman");
+  });
+});
+
+describe("passesEpochGate", () => {
+  it("treats untagged entries as universal — they pass for every epoch", () => {
+    for (const c of [1, 2, 3, 4, 5, undefined, null]) {
+      expect(passesEpochGate(undefined, c)).toBe(true);
+      expect(passesEpochGate(null, c)).toBe(true);
+    }
+  });
+
+  it("passes a tagged entry only on an exact epoch match", () => {
+    expect(passesEpochGate(1, 1)).toBe(true);
+    expect(passesEpochGate(1, 2)).toBe(false);
+    expect(passesEpochGate(5, 1)).toBe(false);
+    expect(passesEpochGate(3, 3)).toBe(true);
+  });
+
+  it("defaults an absent character epoch to the Fifth", () => {
+    expect(passesEpochGate(5, undefined)).toBe(true);
+    expect(passesEpochGate(5, null)).toBe(true);
+    expect(passesEpochGate(DEFAULT_EPOCH_ID, undefined)).toBe(true);
+    expect(passesEpochGate(1, undefined)).toBe(false);
   });
 });

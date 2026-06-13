@@ -5,6 +5,7 @@ import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import { noopSubscribe } from "@/lib/react";
 import { getPathway, getSequence } from "@/lib/rules";
 import { classifySanityTier } from "@/lib/ai";
+import { getEpoch } from "@/lib/lore";
 import {
   activeIdentity,
   createIdentity,
@@ -112,6 +113,7 @@ export function CharacterSheet() {
   const state = session.gameState;
   const pathway = getPathway(state.pathwayId);
   const sequence = getSequence(state.pathwayId, state.sequenceLevel);
+  const epoch = getEpoch(state.epoch);
   const tier = classifySanityTier(state.sanity, state.maxSanity);
 
   const inventoryByCategory = (
@@ -167,6 +169,11 @@ export function CharacterSheet() {
                 ? `${trueGodName(state.pathwayId)} — True God`
                 : (sequence?.name ?? "Beyonder")}{" "}
               · {pathway?.name ?? "Unknown"} Pathway
+            </p>
+            <p className="mt-2">
+              <span className="inline-flex items-center rounded-sm border border-amber/40 bg-amber/10 px-2 py-0.5 text-[11px] font-medium tracking-[0.1em] text-amber uppercase">
+                {epoch.name} · {epoch.era}
+              </span>
             </p>
           </div>
           <p className="text-xs text-muted">

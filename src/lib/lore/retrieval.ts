@@ -2,6 +2,8 @@ import type { EmbeddingProvider } from "@/lib/ai/embeddings";
 import { AIError } from "@/lib/ai/errors";
 import type { Database, SourceChunkSourceEnum } from "@/lib/types/database";
 
+import { passesEpochGate } from "./epochs";
+
 // ---------------------------------------------------------------------------
 // Runtime retrieval (issue #63, sub-issue of #57)
 // ---------------------------------------------------------------------------
@@ -17,6 +19,10 @@ import type { Database, SourceChunkSourceEnum } from "@/lib/types/database";
 //     the RPC (`canon_order <= position`), so the narrator sees past + present
 //     world-state but never the player's future. Enforced server-side; this
 //     module re-checks client-side as defense in depth.
+//   - Epoch gate: the character's epoch rides into the RPC (`sc.epoch is null OR
+//     sc.epoch = epoch`), so a non-Fifth character never retrieves Fifth-Epoch
+//     canon chunks — only universal (untagged) chunks and its own epoch's. Same
+//     server-enforced + client-rechecked shape as the timeline gate.
 //   - Concealment gate: `concealment_tier <= maxConcealmentTier`, same shape.
 //   - Per-character model lock: the embedding model is chosen at character
 //     creation and locked for that save (a query vector only compares to
@@ -65,6 +71,12 @@ export interface RetrieveChunksOptions {
    * only, never a player-visible path.
    */
   canonPosition: number | null;
+  /**
+   * The character's epoch for the epoch gate (untagged chunks always pass; a
+   * tagged chunk passes only on exact match). `null` means no limit —
+   * operator/eval use only, never a player-visible path.
+   */
+  epoch?: number | null;
   /** Concealment gate ceiling (default 0 — only unconcealed lore). */
   maxConcealmentTier?: number;
   /** Optional source filter (e.g. `["novel"]`). */
@@ -85,6 +97,10 @@ export async function retrieveChunks(
 ): Promise<RetrievedChunk[]> {
   const { embedder, rpc, lockedModelId, canonPosition } = options;
   const maxConcealmentTier = options.maxConcealmentTier ?? 0;
+  // `null` (and absent) means "no epoch limit" — mirrors the SQL `p_epoch is null`
+  // branch, used by the eval/operator path. A real character always passes a
+  // concrete epoch.
+  const epoch = options.epoch ?? null;
 
   // Per-character model lock: a query vector from any other model would be
   // searched against the wrong map and return garbage similarities.
@@ -101,6 +117,7 @@ export async function retrieveChunks(
     p_query_text: query,
     p_model_id: lockedModelId,
     p_player_position: canonPosition,
+    p_epoch: epoch,
     p_max_concealment_tier: maxConcealmentTier,
     p_sources: options.sources ?? null,
     p_tags: options.tags ?? null,
@@ -108,10 +125,12 @@ export async function retrieveChunks(
   });
 
   // Defense in depth: the gates are enforced inside the RPC, but a chunk that
-  // somehow arrives past its gate is dropped here too rather than narrated.
+  // somehow arrives past its gate is dropped here too rather than narrated. The
+  // epoch check matches the SQL exactly: a null limit lets every row through.
   return rows.filter(
     (row) =>
       passesTimelineGate(row.canon_order, canonPosition) &&
+      (epoch === null || passesEpochGate(row.epoch, epoch)) &&
       row.concealment_tier <= maxConcealmentTier,
   );
 }

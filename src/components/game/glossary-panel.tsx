@@ -15,36 +15,54 @@ import { deserializeSession, SESSION_INDEX_KEY, SESSION_KEY_PREFIX } from "@/lib
 // disclosure — entries unlock as the active character advances, so deep-game
 // concepts stay sealed until approached. Written as world-building.
 
-function loadActiveSequence(): number {
+// The active character's sequence (progressive disclosure) and epoch (content
+// isolation) together decide which lexicon entries exist. Epoch is left
+// undefined for legacy/absent saves so the glossary defaults to the Fifth.
+interface GlossaryScope {
+  sequenceLevel: number;
+  epoch?: number;
+}
+
+const DEFAULT_SCOPE: GlossaryScope = { sequenceLevel: 9 };
+
+function loadActiveScope(): GlossaryScope {
   try {
     const raw = localStorage.getItem(SESSION_INDEX_KEY);
     const ids: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(ids) || typeof ids[0] !== "string") return 9;
+    if (!Array.isArray(ids) || typeof ids[0] !== "string") return DEFAULT_SCOPE;
     const sessionRaw = localStorage.getItem(SESSION_KEY_PREFIX + ids[0]);
     const session = sessionRaw ? deserializeSession(sessionRaw) : null;
-    return session?.gameState.sequenceLevel ?? 9;
+    if (!session) return DEFAULT_SCOPE;
+    return {
+      sequenceLevel: session.gameState.sequenceLevel ?? 9,
+      epoch: session.gameState.epoch,
+    };
   } catch {
-    return 9;
+    return DEFAULT_SCOPE;
   }
 }
 
 export function GlossaryPanel() {
-  const seqCacheRef = useRef<number | undefined>(undefined);
-  const sequenceLevel = useSyncExternalStore(
+  const scopeCacheRef = useRef<GlossaryScope | undefined>(undefined);
+  const scope = useSyncExternalStore(
     noopSubscribe,
     () => {
-      if (seqCacheRef.current === undefined) {
-        seqCacheRef.current = loadActiveSequence();
+      if (scopeCacheRef.current === undefined) {
+        scopeCacheRef.current = loadActiveScope();
       }
-      return seqCacheRef.current;
+      return scopeCacheRef.current;
     },
-    () => 9,
+    () => DEFAULT_SCOPE,
   );
+  const { sequenceLevel, epoch } = scope;
 
   const [query, setQuery] = useState("");
 
-  const visible = useMemo(() => glossaryForSequence(sequenceLevel), [sequenceLevel]);
-  const sealed = sealedTermCount(sequenceLevel);
+  const visible = useMemo(
+    () => glossaryForSequence(sequenceLevel, epoch),
+    [sequenceLevel, epoch],
+  );
+  const sealed = sealedTermCount(sequenceLevel, epoch);
 
   const filtered = useMemo(() => {
     const lowered = query.trim().toLowerCase();

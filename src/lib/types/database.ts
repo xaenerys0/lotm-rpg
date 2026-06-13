@@ -109,6 +109,7 @@ export interface Database {
           arc_bucket: string | null;
           concealment_tier: number;
           in_world_date: string | null;
+          epoch: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -124,6 +125,7 @@ export interface Database {
           arc_bucket?: string | null;
           concealment_tier?: number;
           in_world_date?: string | null;
+          epoch?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -139,6 +141,7 @@ export interface Database {
           arc_bucket?: string | null;
           concealment_tier?: number;
           in_world_date?: string | null;
+          epoch?: number | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -394,6 +397,7 @@ export interface Database {
           p_query_text: string;
           p_model_id: string;
           p_player_position?: number | null;
+          p_epoch?: number | null;
           p_max_concealment_tier?: number;
           p_sources?: SourceChunkSourceEnum[] | null;
           p_tags?: string[] | null;
@@ -412,6 +416,7 @@ export interface Database {
           arc_bucket: string | null;
           concealment_tier: number;
           in_world_date: string | null;
+          epoch: number | null;
           fts_rank: number | null;
           vec_rank: number | null;
           rrf_score: number;
