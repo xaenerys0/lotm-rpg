@@ -40,8 +40,10 @@ the browser bundle anyway — a tripwire, not a bug.) Runtime retrieval goes thr
   from the arc map). Throws rather than guessing when no chapter number can be
   derived — chronology correctness is a hard requirement.
 - `novel-arcs.ts` — The hand-authored `NovelArcEntry` map (`LOTM_NOVEL_ARC_MAP`,
-  8 volumes, **approximate chapter boundaries — verify against the real file at
-  ingest**; override per-run via `pnpm rag:novel --arc-map`) and `resolveArc`.
+  8 volumes, **chapter boundaries verified against the real EPUB at ingest** —
+  Clown 1-213, Faceless 214-482, Traveler 483-732, Undying 733-946, Red Priest
+  947-1150, Lightseeker 1151-1266, Hanged Man 1267-1353, Fool 1354-1430;
+  override per-run via `pnpm rag:novel --arc-map`) and `resolveArc`.
 - `wiki.ts` — The wiki parse + normalize stages (issue #61): `createWikiXmlParser`
   (push-based **streaming** MediaWiki XML parser — the dump is never held in
   memory whole; `parseWikiXml` is the in-memory convenience), `cleanWikitext`

@@ -179,6 +179,35 @@ describe("parseEpub", () => {
     expect(() => parseEpub(epub)).toThrow(/no chapter-sized documents/);
   });
 
+  it("ignores a table of contents and converter duplicates, keeping full chapters", () => {
+    // Real EPUBs list every "Chapter N" in a TOC document and can emit a
+    // duplicate of a chapter (e.g. a `_u4` converter variant). The full body
+    // must win over the TOC stub for the same number, with no duplicate thrown.
+    const body1 = "The fog rolled down the gaslit street. ".repeat(8).trim();
+    const body2 = "The bell tolled over the grey river. ".repeat(8).trim();
+    const epub = makeEpub({
+      "META-INF/container.xml": container,
+      "OEBPS/content.opf": opf(
+        '<item id="toc" href="toc.xhtml"/>' +
+          '<item id="c1" href="one.xhtml"/>' +
+          '<item id="c2" href="two.xhtml"/>' +
+          '<item id="dup" href="two_u4.xhtml"/>',
+        '<itemref idref="toc"/><itemref idref="c1"/>' +
+          '<itemref idref="c2"/><itemref idref="dup"/>',
+      ),
+      // A TOC listing both chapters as title-only stubs.
+      "OEBPS/toc.xhtml": "<body><p>Chapter 1: Fog</p><p>Chapter 2: Bell</p></body>",
+      "OEBPS/one.xhtml": `<body><h1>Chapter 1: Fog</h1><p>${body1}</p></body>`,
+      "OEBPS/two.xhtml": `<body><h1>Chapter 2: Bell</h1><p>${body2}</p></body>`,
+      // A converter duplicate of chapter 2 with a shorter body.
+      "OEBPS/two_u4.xhtml": "<body><h1>Chapter 2: Bell</h1><p>Short.</p></body>",
+    });
+    expect(parseEpub(epub)).toEqual([
+      { chapter: 1, title: "Fog", content: body1 },
+      { chapter: 2, title: "Bell", content: body2 },
+    ]);
+  });
+
   it("throws on a zip without container.xml", () => {
     expect(() => parseEpub(makeEpub({ mimetype: "application/epub+zip" }))).toThrow(
       /missing META-INF/,
@@ -197,12 +226,14 @@ describe("parseEpub", () => {
 
 describe("resolveArc / LOTM_NOVEL_ARC_MAP", () => {
   it("maps chapters to their volume and returns null outside the map", () => {
+    // Boundaries verified against the real EPUB's volume title pages.
     expect(resolveArc(1)?.arc_bucket).toBe("clown");
-    expect(resolveArc(222)?.arc_bucket).toBe("clown");
-    expect(resolveArc(223)?.arc_bucket).toBe("faceless");
-    expect(resolveArc(1394)?.arc_bucket).toBe("fool");
+    expect(resolveArc(213)?.arc_bucket).toBe("clown");
+    expect(resolveArc(214)?.arc_bucket).toBe("faceless");
+    expect(resolveArc(1354)?.arc_bucket).toBe("fool");
+    expect(resolveArc(1430)?.arc_bucket).toBe("fool");
     expect(resolveArc(0)).toBeNull();
-    expect(resolveArc(1395)).toBeNull();
+    expect(resolveArc(1431)).toBeNull();
   });
 
   it("is contiguous, ordered, and monotonically non-decreasing in concealment", () => {

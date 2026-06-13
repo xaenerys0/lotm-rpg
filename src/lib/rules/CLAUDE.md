@@ -45,8 +45,9 @@ The three canonical god-family groups (Mysteries, God Almighty, Eternal
 Darkness) are canon-solid; the six smaller groupings for pathways 12-22 are a
 reasonable thematic partition pending novel-source verification — they feed
 only the soft kindred-pathway bonus in `computePathwayMatchup`. The Seq 9-5
-sequence **names** for the new pathways match documented canon; their abilities,
-acting requirements, and lore depth are provisional. Classification scales with
+sequence **names** for the new pathways are **verified against the novel text**
+(every sampled name appears in the source); their abilities, acting
+requirements, and lore depth remain provisional. Classification scales with
 sequence: Low (9-8), Mid (7-5), High (4-3, Saint), Demigod (2-1,
 Angel/King of Angels). The Anchors system (issues #35, #25) — required for
 Beyonders at Seq ≤ 2 — lives in `@/lib/game/anchors` with its design in

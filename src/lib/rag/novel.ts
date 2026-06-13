@@ -118,12 +118,25 @@ export function parseEpub(
   const docs = spineDocuments(opf, opfPath, read);
 
   // First pass: heading-driven chapters (the reliable chronology source).
-  const headed: NovelChapter[] = [];
+  // Real EPUBs repeat each "Chapter N" in their table of contents and can emit
+  // converter duplicates (e.g. a `_u4` variant or a TOC fragment with real
+  // trailing text). Collapse by chapter number, keeping the longest body: a
+  // full chapter (thousands of characters) always beats a TOC stub (a title
+  // line) for the same number, and unique chapters — however short — are kept.
+  const byChapter = new Map<number, NovelChapter>();
   for (const doc of docs) {
     const text = stripHtml(doc.html);
-    if (hasChapterHeading(text)) headed.push(...parseNovelText(text));
+    if (!hasChapterHeading(text)) continue;
+    for (const chapter of parseNovelText(text)) {
+      const existing = byChapter.get(chapter.chapter);
+      if (existing === undefined || chapter.content.length > existing.content.length) {
+        byChapter.set(chapter.chapter, chapter);
+      }
+    }
   }
-  if (headed.length > 0) return headed;
+  if (byChapter.size > 0) {
+    return [...byChapter.values()].sort((a, b) => a.chapter - b.chapter);
+  }
 
   // Fallback: no headings anywhere — number substantial documents in spine
   // order, skipping short front matter (cover, copyright, TOC).
