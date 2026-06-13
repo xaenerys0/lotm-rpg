@@ -25,6 +25,14 @@ export interface JournalSyncClient {
     ): PromiseLike<{
       error: { message: string } | null;
     }>;
+    delete(): {
+      eq(
+        column: "session_id",
+        value: string,
+      ): PromiseLike<{
+        error: { message: string } | null;
+      }>;
+    };
   };
   from(table: "journal_annotations"): {
     upsert(
@@ -119,6 +127,24 @@ export async function deleteAnnotationRemote(
     .delete()
     .eq("id", annotationId);
   if (error) throw new Error(`Annotation delete failed: ${error.message}`);
+}
+
+/**
+ * Delete every durable journal row for one character (session). Used when a
+ * player removes a character (issue: character management) — the local save is
+ * wiped separately. RLS scopes the delete to the caller's own rows; the
+ * `session_id` filter narrows it to this one character. `journal_annotations`
+ * rows cascade via their `entry_id` foreign key. Best-effort from the UI.
+ */
+export async function deleteSessionEntriesRemote(
+  client: JournalSyncClient,
+  sessionId: string,
+): Promise<void> {
+  const { error } = await client
+    .from("journal_entries")
+    .delete()
+    .eq("session_id", sessionId);
+  if (error) throw new Error(`Journal session delete failed: ${error.message}`);
 }
 
 /** Sync a whole journal (e.g. first login after offline play). */

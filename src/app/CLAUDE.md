@@ -41,6 +41,8 @@ The app is installable on Android and iOS ("Add to Home Screen"):
 3. `supabase.auth.signInWithPassword()` sets the session cookie
 4. OAuth callback at `/auth/callback` exchanges the code for a session
 5. Authenticated users are redirected to `/play`; auth pages redirect authenticated users away
+6. The root landing page (`page.tsx`) also checks auth server-side and redirects a signed-in player straight to `/play` (no "Begin / Sign In" choices on the base URL once logged in)
+7. Auth cookies are persistent (long `maxAge` via `@/lib/supabase/cookie-options`) so an installed PWA stays signed in after being closed and reopened
 
 ## Layouts
 

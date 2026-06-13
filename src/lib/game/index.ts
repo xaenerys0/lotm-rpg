@@ -258,6 +258,7 @@ export {
 } from "./journal";
 export {
   deleteAnnotationRemote,
+  deleteSessionEntriesRemote,
   syncAnnotation,
   syncEntries,
   syncJournal,
@@ -348,7 +349,11 @@ export {
   JOURNAL_KEY_PREFIX,
   LEGACIES_KEY,
   ECHOES_KEY,
+  COMBAT_KEY_PREFIX,
+  USAGE_KEY_PREFIX,
 } from "./constants";
+
+export { characterDeletionPlan, type CharacterDeletionPlan } from "./character-admin";
 
 export {
   SANITY_MIN,

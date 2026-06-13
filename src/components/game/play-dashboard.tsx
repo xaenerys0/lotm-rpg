@@ -3,13 +3,15 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import type { ProviderConfig, MemoryState } from "@/lib/ai";
-import type { GameSessionSummary } from "@/lib/game";
+import type { GameSessionSummary, JournalSyncClient } from "@/lib/game";
 import {
   createSession,
   createDefaultGameState,
   sessionToSummary,
   serializeSession,
   deserializeSession,
+  characterDeletionPlan,
+  deleteSessionEntriesRemote,
   SESSION_KEY_PREFIX,
   SESSION_INDEX_KEY,
   PROVIDER_CONFIG_KEY,
@@ -27,10 +29,11 @@ import {
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
+import { createClient } from "@/lib/supabase/client";
 import { GameLoop } from "./game-loop";
 import { CharacterCreation } from "./character-creation";
 
-type DashboardView = "home" | "character-creation" | "playing";
+type DashboardView = "home" | "character-creation" | "playing" | "manage";
 
 function loadConfig(): ProviderConfig | null {
   try {
@@ -151,6 +154,8 @@ export function PlayDashboard() {
   const [hasConfig] = useState(initialData.hasConfig);
   const [sessions, setSessions] = useState(initialData.sessions);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+  // Two-step confirm so a destructive delete is never a single misclick.
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const handleStartNewGame = useCallback(
     (
@@ -209,7 +214,36 @@ export function PlayDashboard() {
   const handleBackToDashboard = useCallback(() => {
     setView("home");
     setActiveSessionId(null);
+    setPendingDeleteId(null);
     setSessions(loadExistingSessions());
+  }, []);
+
+  // Remove a character and every scrap of its data: the local save, journal,
+  // in-progress combat, and usage estimate, plus the durable journal rows
+  // mirrored to Supabase. Cross-timeline legacies/echoes are world memory and
+  // are intentionally left untouched (the "restart timeline" path wipes those).
+  const handleDeleteCharacter = useCallback((sessionId: string) => {
+    const plan = characterDeletionPlan(sessionId, loadSessionIndex());
+    try {
+      for (const key of plan.removeKeys) localStorage.removeItem(key);
+      saveSessionIndex(plan.nextIndex);
+    } catch {
+      // Storage unavailable — the in-memory list still updates below.
+    }
+    // Best-effort durable cleanup; offline/signed-out players just keep the
+    // rows, which RLS already scopes to them.
+    void (async () => {
+      try {
+        const client = createClient() as unknown as JournalSyncClient;
+        await deleteSessionEntriesRemote(client, sessionId);
+      } catch {
+        // Network/permission failure — non-fatal, the local save is gone.
+      }
+    })();
+    setPendingDeleteId(null);
+    // localStorage is already consistent (saveSessionIndex above); drop the
+    // deleted character from the displayed list without re-reading every save.
+    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
   }, []);
 
   if (view === "playing" && activeSessionId) {
@@ -230,6 +264,99 @@ export function PlayDashboard() {
   if (view === "character-creation") {
     return (
       <CharacterCreation onComplete={handleStartNewGame} onBack={() => setView("home")} />
+    );
+  }
+
+  if (view === "manage") {
+    return (
+      <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in">
+        <button
+          type="button"
+          onClick={handleBackToDashboard}
+          className="mb-4 text-xs text-muted transition-colors hover:text-amber"
+        >
+          &larr; Back to Dashboard
+        </button>
+        <header className="mb-8">
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-amber md:text-4xl">
+            Manage Characters
+          </h1>
+          <p className="mt-2 max-w-xl text-muted">
+            Remove a character to permanently delete its save, journal, and all associated
+            data. This cannot be undone.
+          </p>
+        </header>
+
+        {sessions.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border/60 p-8 text-center">
+            <p className="font-serif text-sm italic text-muted">
+              No characters to manage. Start a new game to forge a Beyonder identity.
+            </p>
+          </div>
+        ) : (
+          <ul className="space-y-3">
+            {sessions.map((s) => {
+              const pathway = ALL_PATHWAYS.find((p) => p.id === s.pathwayId);
+              const seq = pathway ? getSequence(pathway.id, s.sequenceLevel) : null;
+              const confirming = pendingDeleteId === s.id;
+              const title = `${seq?.name ?? "Unknown"} — ${pathway?.name ?? "?"} pathway, Sequence ${s.sequenceLevel}`;
+              return (
+                <li
+                  key={s.id}
+                  className="rounded-lg border border-border/60 bg-surface/30 p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="font-serif text-sm font-medium text-foreground/90">
+                        {seq?.name ?? "Unknown"}{" "}
+                        <span className="text-muted">(Seq. {s.sequenceLevel})</span>
+                      </p>
+                      <p className="text-xs text-muted">
+                        {pathway?.name ?? "?"} pathway &middot; {s.location} &middot; Turn{" "}
+                        {s.turnCount}
+                      </p>
+                    </div>
+                    {confirming ? (
+                      <div
+                        className="flex items-center gap-2"
+                        role="group"
+                        aria-label={`Confirm deletion of ${title}`}
+                      >
+                        <span className="text-xs text-crimson" role="status">
+                          Delete permanently?
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteCharacter(s.id)}
+                          className="min-h-[32px] rounded border border-crimson/50 bg-crimson/10 px-3 py-1 text-xs font-medium text-crimson transition-colors hover:bg-crimson/20"
+                        >
+                          Delete
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPendingDeleteId(null)}
+                          className="min-h-[32px] rounded border border-border px-3 py-1 text-xs text-muted transition-colors hover:text-foreground"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setPendingDeleteId(s.id)}
+                        className="min-h-[32px] rounded border border-crimson/40 px-3 py-1 text-xs font-medium text-crimson transition-colors hover:border-crimson/60 hover:bg-crimson/10"
+                        aria-label={`Delete ${title}`}
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     );
   }
 
@@ -324,9 +451,20 @@ export function PlayDashboard() {
       </div>
 
       <section>
-        <h2 className="font-serif text-lg font-semibold text-foreground/70">
-          Character Summary
-        </h2>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="font-serif text-lg font-semibold text-foreground/70">
+            Character Summary
+          </h2>
+          {sessions.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setView("manage")}
+              className="min-h-[24px] rounded border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
+            >
+              Manage characters
+            </button>
+          )}
+        </div>
         {sessions.length > 0 ? (
           <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {sessions.slice(0, 3).map((s) => {
