@@ -7,6 +7,7 @@ import type {
   ProviderResponse,
 } from "./types";
 import { AIError, classifyHttpError, createNetworkError } from "./errors";
+import { CHARS_PER_TOKEN } from "./memory";
 
 export interface LLMProviderAdapter {
   readonly name: ProviderId;
@@ -423,6 +424,28 @@ export class OpenRouterAdapter implements LLMProviderAdapter {
   }
 }
 
+// Ollama runs a model at its default context window (commonly 4096) unless told
+// otherwise, and that window must hold BOTH the prompt and the generated output.
+// Once RAG retrieval fills the prompt toward the ~8,800-token assembly budget, a
+// default-context model silently truncates the prompt to fit and then has no room
+// left to generate — it emits a token or two and stops with done_reason "length"
+// (surfacing as the "unparseable provider output" / 2-3 char failure). So we size
+// num_ctx to the actual prompt plus the output cap (plus headroom), rounded up to
+// a step so the KV cache isn't re-sized for every tiny prompt change, and never
+// below the model's default window. Other providers manage context server-side;
+// only Ollama needs the client to ask.
+export const OLLAMA_MIN_NUM_CTX = 4096;
+const OLLAMA_NUM_CTX_HEADROOM = 512;
+const OLLAMA_NUM_CTX_STEP = 1024;
+
+export function ollamaNumCtx(messages: ChatMessage[], maxTokens: number): number {
+  const promptChars = messages.reduce((sum, m) => sum + m.content.length, 0);
+  const promptTokens = Math.ceil(promptChars / CHARS_PER_TOKEN);
+  const needed = promptTokens + maxTokens + OLLAMA_NUM_CTX_HEADROOM;
+  const rounded = Math.ceil(needed / OLLAMA_NUM_CTX_STEP) * OLLAMA_NUM_CTX_STEP;
+  return Math.max(OLLAMA_MIN_NUM_CTX, rounded);
+}
+
 export class OllamaAdapter implements LLMProviderAdapter {
   readonly name: ProviderId = "ollama";
   private baseUrl: string;
@@ -475,6 +498,7 @@ export class OllamaAdapter implements LLMProviderAdapter {
         options: {
           temperature: request.temperature,
           num_predict: request.maxTokens,
+          num_ctx: ollamaNumCtx(request.messages, request.maxTokens),
         },
         format: request.responseFormat ? "json" : undefined,
       }),

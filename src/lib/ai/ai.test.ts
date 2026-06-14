@@ -27,6 +27,8 @@ import {
   CustomAdapter,
   createAdapter,
   inferModelTier,
+  ollamaNumCtx,
+  OLLAMA_MIN_NUM_CTX,
 } from "./providers";
 import {
   buildSystemPrompt,
@@ -1102,6 +1104,57 @@ describe("providers", () => {
       expect(body.stream).toBe(false);
       expect(body.format).toBe("json");
       expect(body.options.temperature).toBe(0.8);
+    });
+
+    it("makeRequest sizes num_ctx to the prompt + output, not the 4096 default", async () => {
+      const adapter = new OllamaAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({ message: { content: "result" }, model: "llama3.2" }),
+          ),
+      } as Response);
+
+      // A large prompt (8000 chars ≈ 2000 tokens) plus the 3072-token output cap
+      // must not be squeezed into a default 4096-token window.
+      await adapter.makeRequest(
+        {
+          messages: [{ role: "user", content: "x".repeat(8000) }],
+          model: "llama3.2",
+          temperature: 0.5,
+          maxTokens: 3072,
+        },
+        "",
+      );
+
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body.options.num_predict).toBe(3072);
+      expect(body.options.num_ctx).toBe(6144); // 2000 + 3072 + 512 → next 1024
+      expect(body.options.num_ctx).toBeGreaterThan(OLLAMA_MIN_NUM_CTX);
+    });
+
+    describe("ollamaNumCtx", () => {
+      it("never drops below the model default for small prompts", () => {
+        const messages: ChatMessage[] = [{ role: "user", content: "hi" }];
+        expect(ollamaNumCtx(messages, 1)).toBe(OLLAMA_MIN_NUM_CTX);
+      });
+
+      it("sizes to prompt + output + headroom, rounded up to a 1024 step", () => {
+        const messages: ChatMessage[] = [{ role: "user", content: "x".repeat(8000) }];
+        // 2000 prompt + 3072 output + 512 headroom = 5584 → next 1024 = 6144.
+        expect(ollamaNumCtx(messages, 3072)).toBe(6144);
+      });
+
+      it("sums content across all messages", () => {
+        const messages: ChatMessage[] = [
+          { role: "system", content: "y".repeat(20000) },
+          { role: "user", content: "z".repeat(20000) },
+        ];
+        // 10000 prompt + 3072 output + 512 headroom = 13584 → next 1024 = 14336.
+        expect(ollamaNumCtx(messages, 3072)).toBe(14336);
+      });
     });
 
     it("makeRequest sends undefined format without responseFormat", async () => {
