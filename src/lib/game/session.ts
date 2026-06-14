@@ -69,6 +69,7 @@ export function createDefaultGameState(
   characterName?: string,
   characterBackground?: string,
   epoch?: number,
+  prologueRecap?: string,
 ): GameState {
   return {
     characterId,
@@ -84,6 +85,9 @@ export function createDefaultGameState(
     digestion: createDigestionState(pathwayId, 9),
     ...(characterName ? { characterName } : {}),
     ...(characterBackground ? { characterBackground } : {}),
+    // Durable prologue recap (the prologue → story bridge) — kept in the
+    // never-trimmed game-state layer so the narrator never loses the thread.
+    ...(prologueRecap ? { prologueRecap } : {}),
   };
 }
 
@@ -255,6 +259,11 @@ export function isValidSessionShape(obj: unknown): boolean {
   if (!Array.isArray(mem.immediateTurns)) return false;
   if (!Array.isArray(mem.recentSummaries)) return false;
   if (!Array.isArray(mem.sessionFacts)) return false;
+  // The durable running summary is optional (older saves predate it) but must
+  // be a string when present.
+  if (mem.runningSummary !== undefined && typeof mem.runningSummary !== "string") {
+    return false;
+  }
 
   return true;
 }

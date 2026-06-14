@@ -415,6 +415,8 @@ export {
   createPrologueState,
   createPrologueMemory,
   createAIPrologueMemory,
+  buildPrologueRecap,
+  RECAP_FINALE_CHAR_CAP,
 } from "./prologue";
 
 export type {
@@ -424,4 +426,5 @@ export type {
   PathwayScore,
   PrologueRecommendation,
   PrologueState,
+  PrologueRecapInput,
 } from "./prologue";

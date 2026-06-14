@@ -35,16 +35,25 @@ describe("getEpoch", () => {
 });
 
 describe("narration & openings", () => {
-  it("the Fifth is the baseline: no extra directive, default opening", () => {
+  it("the Fifth is the baseline tone, but still seeds an awakening opening", () => {
     expect(epochNarrationDirective(5)).toBeNull();
     expect(epochNarrationDirective(undefined)).toBeNull();
-    expect(epochOpeningBeat(5)).toBeNull();
+    // The Fifth no longer falls back to the generic "I begin my journey as a
+    // Sequence 9 Fool" line — it opens on an awakening from the prologue potion.
+    expect(epochOpeningBeat(5)).toContain("Describe the opening scene");
+    expect(epochOpeningBeat(5)).toContain("potion");
+    expect(epochOpeningBeat(undefined)).toContain("Describe the opening scene");
   });
 
-  it("other epochs carry a tone directive and an opening beat", () => {
+  it("every epoch seeds an awakening opening beat", () => {
+    for (const id of [1, 2, 3, 4, 5] as const) {
+      expect(epochOpeningBeat(id)).toContain("Describe the opening scene");
+    }
+  });
+
+  it("the pre-Iron-Age epochs carry a tone directive", () => {
     for (const id of [1, 2, 3, 4] as const) {
       expect(epochNarrationDirective(id)).toContain("tone:");
-      expect(epochOpeningBeat(id)).toContain("Describe the opening scene");
     }
     expect(epochNarrationDirective(2)).toContain("inhuman");
   });

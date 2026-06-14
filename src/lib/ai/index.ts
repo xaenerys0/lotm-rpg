@@ -66,6 +66,10 @@ export {
   trimMemoryForBudget,
   formatMemoryForPrompt,
   buildTurnRecord,
+  capRunningSummary,
+  capWithEllipsis,
+  RUNNING_SUMMARY_CHAR_CAP,
+  CHARS_PER_TOKEN,
 } from "./memory";
 
 export { parseAIResponse, validateAIResponse, sanitizeAIResponse } from "./validation";

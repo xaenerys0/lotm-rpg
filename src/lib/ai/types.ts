@@ -93,6 +93,15 @@ export interface AIResponse {
    * validation point before anything reaches the journal.
    */
   journalEntry?: { summary: string; eventType: string };
+  /**
+   * Durable rolling "story so far" the narrator maintains each turn (amortized
+   * into this response — no extra API call). It is fed back in next turn so the
+   * model recursively prunes and extends it, and persisted on `MemoryState`
+   * where it is never trimmed. Optional: when absent the prior summary is kept.
+   * Capped on sanitize (`RUNNING_SUMMARY_CHAR_CAP`). Prior art: AI Dungeon's
+   * auto Story Summary, NovelAI's pinned Memory, MemGPT's recursive summary.
+   */
+  runningSummary?: string;
 }
 
 export interface ValidatedAIResponse {
@@ -132,6 +141,15 @@ export interface GameState {
   npcsPresent: string[];
   characterName?: string;
   characterBackground?: string;
+  /**
+   * A compact, durable recap of the AI prologue (the life the character led and
+   * the encounter that made them a Beyonder). The prologue runs on a separate
+   * prompt the story narrator never sees, so this is pinned into the
+   * never-trimmed game-state layer to keep the prologue → story transition
+   * seamless. Set at character creation; absent on the manual path. Built by
+   * `buildPrologueRecap` (`@/lib/game`).
+   */
+  prologueRecap?: string;
   /**
    * Starting epoch (issues #26/#29). Optional — absent means the Fifth.
    * Set at character creation; rules-engine-only (never AI-mutable).
@@ -184,6 +202,14 @@ export interface MemoryState {
   immediateTurns: TurnRecord[];
   recentSummaries: BulletSummary[];
   sessionFacts: SessionFact[];
+  /**
+   * Durable rolling synopsis of the chronicle ("story so far"), maintained by
+   * the narrator each turn and pinned at the top of the history layer. Unlike
+   * `recentSummaries` (FIFO-evicted) it is never trimmed, so lasting context
+   * survives the whole game. Optional for back-compat with saves that predate
+   * it; treated as `""` when absent.
+   */
+  runningSummary?: string;
 }
 
 export interface PromptLayer {

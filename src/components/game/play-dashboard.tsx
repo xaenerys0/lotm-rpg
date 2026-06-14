@@ -126,6 +126,7 @@ export function PlayDashboard() {
       characterBackground: string,
       initialMemory: MemoryState,
       epoch: number,
+      prologueRecap: string,
     ) => {
       const gameState = createDefaultGameState(
         pathwayId,
@@ -133,6 +134,7 @@ export function PlayDashboard() {
         characterName,
         characterBackground,
         epoch,
+        prologueRecap,
       );
       // Cross-epoch echoes (issue #31): a fallen predecessor's artifact may
       // begin the chronicle in this character's possession, and the narrator

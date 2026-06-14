@@ -14,6 +14,31 @@ const TOKEN_PER_TURN_ESTIMATE = 150;
 const TOKEN_PER_SUMMARY_ESTIMATE = 30;
 const TOKEN_PER_FACT_ESTIMATE = 20;
 
+/** Rough chars-per-token heuristic shared by every prompt/budget estimate. */
+export const CHARS_PER_TOKEN = 4;
+
+/**
+ * Hard cap (chars) on the durable running summary. Bounds prompt growth — the
+ * narrator recursively prunes its own synopsis to stay under it (best practice
+ * across LangChain summary-buffer / MemGPT recursive summaries). ~375 tokens.
+ */
+export const RUNNING_SUMMARY_CHAR_CAP = 1500;
+
+/**
+ * Bound a string to `maxChars`, appending an ellipsis when it overflows. The
+ * one place durable text (running summary, prologue recap) is length-capped.
+ * Pure; does not trim — the caller decides whether leading/trailing space
+ * matters before capping.
+ */
+export function capWithEllipsis(text: string, maxChars: number): string {
+  return text.length > maxChars ? text.slice(0, maxChars).trimEnd() + "…" : text;
+}
+
+/** Trim then bound the running summary. The single cap for the durable synopsis. */
+export function capRunningSummary(summary: string): string {
+  return capWithEllipsis(summary.trim(), RUNNING_SUMMARY_CHAR_CAP);
+}
+
 export function createMemoryState(): MemoryState {
   return {
     immediateTurns: [],
@@ -102,6 +127,17 @@ export function addTurn(state: MemoryState, turn: TurnRecord): MemoryState {
     next.sessionFacts.shift();
   }
 
+  // Adopt the narrator's updated rolling summary when it supplied a non-blank
+  // one this turn; otherwise keep the prior synopsis so a turn that omits or
+  // blanks it never erases the chronicle's durable memory. This is the single
+  // cap for the persisted summary (the only path into durable memory).
+  if (typeof turn.aiResponse.runningSummary === "string") {
+    const capped = capRunningSummary(turn.aiResponse.runningSummary);
+    if (capped !== "") {
+      next.runningSummary = capped;
+    }
+  }
+
   return next;
 }
 
@@ -124,7 +160,8 @@ export function estimateMemoryTokens(state: MemoryState): number {
   return (
     state.immediateTurns.length * TOKEN_PER_TURN_ESTIMATE +
     state.recentSummaries.length * TOKEN_PER_SUMMARY_ESTIMATE +
-    state.sessionFacts.length * TOKEN_PER_FACT_ESTIMATE
+    state.sessionFacts.length * TOKEN_PER_FACT_ESTIMATE +
+    Math.ceil((state.runningSummary?.length ?? 0) / CHARS_PER_TOKEN)
   );
 }
 
@@ -159,6 +196,13 @@ export function trimMemoryForBudget(
 
 export function formatMemoryForPrompt(state: MemoryState): string {
   const sections: string[] = [];
+
+  // Pinned at the top, before facts and recent turns: the durable synopsis the
+  // narrator both reads (to stay consistent) and rewrites (to keep it current).
+  if (state.runningSummary && state.runningSummary.trim() !== "") {
+    sections.push("## Story So Far");
+    sections.push(state.runningSummary.trim());
+  }
 
   if (state.sessionFacts.length > 0) {
     sections.push("## Session Facts");

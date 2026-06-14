@@ -139,6 +139,16 @@ export function parseAIResponse(raw: string): AIResponse {
     });
   }
 
+  // Durable rolling summary — stored trimmed and only when non-blank, so a turn
+  // that omits it leaves the prior synopsis untouched. Length-capping is owned
+  // solely by the persistence boundary (`addTurn`), the only path into memory.
+  if (typeof obj.runningSummary === "string") {
+    const trimmed = obj.runningSummary.trim();
+    if (trimmed !== "") {
+      response.runningSummary = trimmed;
+    }
+  }
+
   return response;
 }
 
