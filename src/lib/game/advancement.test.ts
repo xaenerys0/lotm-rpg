@@ -73,10 +73,10 @@ describe("range helpers", () => {
 });
 
 describe("advancementRequirements", () => {
-  it("is fully met (hard gates) for a prepared low-Sequence Beyonder", () => {
+  it("is fully met for a prepared low-Sequence Beyonder", () => {
     const session = readyToAdvance(7); // target 6 — no ritual, no anchors
     const reqs = advancementRequirements(session);
-    expect(reqs.filter((r) => r.hard).every((r) => r.met)).toBe(true);
+    expect(reqs.every((r) => r.met)).toBe(true);
     expect(canAdvance(session)).toBe(true);
   });
 
@@ -115,12 +115,12 @@ describe("advancementRequirements", () => {
     expect(canAdvance(empty)).toBe(false);
   });
 
-  it("adds a soft ritual requirement from Sequence 5 onward", () => {
+  it("requires the Advancement Ritual from Sequence 5 onward (mandatory)", () => {
     const session = readyToAdvance(6); // target 5 — ritual tier
     const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
     expect(ritualReq).toBeDefined();
-    expect(ritualReq?.hard).toBe(false);
-    // A soft requirement never blocks the attempt's hard gating.
+    // A canon pathway defines the rite, so it is met and the climb is allowed.
+    expect(ritualReq?.met).toBe(true);
     expect(canAdvance(session)).toBe(true);
   });
 
@@ -136,7 +136,6 @@ describe("advancementRequirements", () => {
     const reqs = advancementRequirements(session);
     const anchorReq = reqs.find((r) => r.id === "anchors");
     expect(anchorReq).toBeDefined();
-    expect(anchorReq?.hard).toBe(true);
     expect(anchorReq?.met).toBe(false); // no anchorState
     expect(canAdvance(session)).toBe(false);
     // With anchors consecrated past the requirement, the gate clears.
@@ -174,20 +173,13 @@ describe("advancementSuccessChance", () => {
     expect(low).toBeGreaterThan(high);
   });
 
-  it("is gouged when a Sequence-5+ ritual is skipped", () => {
-    const session = readyToAdvance(6); // target 5
-    const withRitual = advancementSuccessChance(session);
-    // Strip the ritual from the canon data path by pointing at a pathway/seq
-    // whose ritual is absent: emulate a skipped ritual via a missing definition.
-    const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
-    if (ritualReq?.met) {
-      // The fixture's sequence has a ritual; a frayed-but-eligible character who
-      // cannot perform it should still see a lower chance than one who can.
-      expect(withRitual).toBeGreaterThan(0);
-    } else {
-      // No canon ritual present → counts as skipped → heavy penalty already.
-      expect(withRitual).toBeLessThanOrEqual(0.5);
-    }
+  it("rises with anchor surplus at the Saint tier", () => {
+    const base = readyToAdvance(5); // target 4 — anchors relevant
+    const anchored = withAnchors(base, targetSequence(5));
+    // Anchors past the requirement steady the climb vs. the un-anchored case.
+    expect(advancementSuccessChance(anchored)).toBeGreaterThanOrEqual(
+      advancementSuccessChance(base),
+    );
   });
 
   it("rises with a fuller mind", () => {
@@ -341,6 +333,8 @@ describe("canon-data fallbacks", () => {
     const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
     expect(ritualReq?.label).toMatch(/Advancement Ritual/i);
     expect(ritualReq?.met).toBe(false);
+    // A mandatory ritual the pathway does not define is a hard block.
+    expect(canAdvance(session)).toBe(false);
   });
 });
 
@@ -361,8 +355,8 @@ describe("anchor-gated advancement", () => {
 
   it("flags high risk and factors anchors into the odds when under-anchored", () => {
     const session = saintSession();
-    // Ritual canon present (so not skipped) and a steady mind, leaving the
-    // anchor branch to decide: an empty anchor state is under-supported.
+    // A steady mind, leaving the anchor branch to decide: an empty anchor state
+    // is under-supported at the Saint tier.
     expect(advancementHighRisk(session)).toBe(true);
     const chance = advancementSuccessChance(session);
     expect(chance).toBeGreaterThanOrEqual(0.05);
@@ -383,10 +377,9 @@ describe("advancementHighRisk", () => {
     expect(advancementHighRisk(frayed)).toBe(true);
   });
 
-  it("is true when a ritual-tier advancement lacks its ritual", () => {
-    const session = readyToAdvance(6); // target 5
-    const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
-    // High risk iff the canon ritual is missing (skipped).
-    expect(advancementHighRisk(session)).toBe(ritualReq?.met === false);
+  it("is false for a steady-minded climb below the Saint tier", () => {
+    // Seq 6 → 5: anchors are not yet relevant and the mind is clear, so neither
+    // high-risk lever trips.
+    expect(advancementHighRisk(readyToAdvance(6))).toBe(false);
   });
 });

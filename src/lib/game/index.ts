@@ -231,6 +231,7 @@ export {
   attemptAdvancement,
   canAdvance,
   isAdvanceableSequence,
+  meetsRequirements,
   ritualRequiredFor,
   targetSequence,
   ADVANCEMENT_SANITY_RATIO,
@@ -242,6 +243,7 @@ export {
   type AdvancementRequirement,
   type AdvancementResult,
 } from "./advancement";
+export { removeItemsByName } from "./inventory";
 export {
   artifactToItem,
   deserializeArtifacts,

@@ -1,7 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react";
 import type { GameSession, GameplayPillar } from "@/lib/game";
 import {
   transition,
@@ -55,6 +62,7 @@ import {
   advancementSuccessChance,
   attemptAdvancement,
   canAdvance,
+  meetsRequirements,
   targetSequence,
   deserializeArtifacts,
   mintArtifact,
@@ -536,84 +544,90 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     scene: string;
   } | null>(null);
   const [advancing, setAdvancing] = useState(false);
+  // Synchronous re-entry lock — `advancing` is async React state, so a rapid
+  // second click can pass the check before it commits. The ref is set before the
+  // roll so the climb is rolled exactly once (mirrors `endingInFlight`).
+  const advancingRef = useRef(false);
 
   const handleAdvancement = useCallback(async () => {
-    // Roll exactly once — take the lock before the roll so a rapid second click
-    // cannot re-roll the climb.
-    if (!session || endingInFlight.current || advancing) return;
-    const result = attemptAdvancement(session);
+    if (!session || endingInFlight.current || advancingRef.current) return;
+    advancingRef.current = true;
+    try {
+      const result = attemptAdvancement(session);
 
-    if (result.outcome === "advanced") {
-      setAdvancing(true);
-      const advanced = result.session;
-      // The ritual / digestion plays out in narration (best-effort; a
-      // deterministic scene covers a missing provider).
-      let scene = `You drink the Sequence ${result.newSequenceLevel} potion${
-        result.ritual ? ` and complete the rite — ${result.ritual.description}` : ""
-      }. The role sinks into your bones until it is indistinguishable from you: you are a ${result.roleName} now.`;
-      if (providerConfig) {
-        try {
-          const { abilities, actingReqs, loreContext } = buildAICallParams(advanced);
-          const res = await generate({
-            config: providerConfig,
-            gameState: advanced.gameState,
-            memory: advanced.memory,
-            loreContext,
-            instruction: "advancement",
-            playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
-              result.ritual ? `, performing the ritual: ${result.ritual.description}` : ""
-            }. I have fully digested the previous potion through the Acting Method.`,
-            abilities,
-            actingRequirements: actingReqs,
-          });
-          if (res.response.narrative) scene = res.response.narrative;
-          recordUsage(res.usage);
-        } catch {
-          // Deterministic scene already set.
+      if (result.outcome === "advanced") {
+        setAdvancing(true);
+        const advanced = result.session;
+        // The ritual / digestion plays out in narration (best-effort; a
+        // deterministic scene covers a missing provider).
+        let scene = `You drink the Sequence ${result.newSequenceLevel} potion${
+          result.ritual ? ` and complete the rite — ${result.ritual.description}` : ""
+        }. The role sinks into your bones until it is indistinguishable from you: you are a ${result.roleName} now.`;
+        if (providerConfig) {
+          try {
+            const { abilities, actingReqs, loreContext } = buildAICallParams(advanced);
+            const res = await generate({
+              config: providerConfig,
+              gameState: advanced.gameState,
+              memory: advanced.memory,
+              loreContext,
+              instruction: "advancement",
+              playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
+                result.ritual
+                  ? `, performing the ritual: ${result.ritual.description}`
+                  : ""
+              }. I have fully digested the previous potion through the Acting Method.`,
+              abilities,
+              actingRequirements: actingReqs,
+            });
+            if (res.response.narrative) scene = res.response.narrative;
+            recordUsage(res.usage);
+          } catch {
+            // Deterministic scene already set.
+          }
         }
+        appendJournalEntries(session.id, [
+          buildJournalEntry(advanced.gameState, advanced.turnCount, {
+            eventType: "advancement",
+            summary: `Advanced to Sequence ${result.newSequenceLevel}, ${result.roleName}.`,
+            narrative: scene,
+            arc: `Sequence ${result.newSequenceLevel}`,
+          }),
+        ]);
+        setAdvancement({
+          sequenceLevel: result.newSequenceLevel,
+          roleName: result.roleName,
+          scene,
+        });
+        updateSession(advanced);
+        setAdvancing(false);
+        return;
       }
-      appendJournalEntries(session.id, [
-        buildJournalEntry(advanced.gameState, advanced.turnCount, {
-          eventType: "advancement",
-          summary: `Advanced to Sequence ${result.newSequenceLevel}, ${result.roleName}.`,
-          narrative: scene,
-          arc: `Sequence ${result.newSequenceLevel}`,
-        }),
-      ]);
-      setAdvancement({
-        sequenceLevel: result.newSequenceLevel,
-        roleName: result.roleName,
-        scene,
-      });
-      updateSession(advanced);
-      setAdvancing(false);
-      return;
-    }
 
-    // Lost control: a survivable setback is endured in place; permadeath routes
-    // through the shared ending path.
-    if (result.verdict.outcome === "permadeath") {
-      await concludeChronicle(
-        result.verdict,
-        descentAction(
-          "Narrate the advancement turning on the character — the potion overwhelms the mind and control is lost. This is",
-          result.verdict.severity,
-        ),
-      );
-      return;
+      // Lost control: a survivable setback is endured in place (shared with the
+      // zero-sanity path); permadeath routes through the shared ending path.
+      if (result.verdict.outcome === "permadeath") {
+        await concludeChronicle(
+          result.verdict,
+          descentAction(
+            "Narrate the advancement turning on the character — the potion overwhelms the mind and control is lost. This is",
+            result.verdict.severity,
+          ),
+        );
+        return;
+      }
+      handleSetback();
+    } finally {
+      advancingRef.current = false;
     }
-    const applied = applySetback(session.gameState, Math.random, session.turnCount);
-    setSetbackNotes(applied.notes);
-    updateSession({
-      ...session,
-      gameState: applied.state,
-      memory: {
-        ...session.memory,
-        sessionFacts: [...session.memory.sessionFacts, ...applied.facts],
-      },
-      updatedAt: Date.now(),
-    });
-  }, [session, advancing, providerConfig, recordUsage, updateSession, concludeChronicle]);
+  }, [
+    session,
+    providerConfig,
+    recordUsage,
+    updateSession,
+    concludeChronicle,
+    handleSetback,
+  ]);
 
   const handleFullRestart = useCallback(() => {
     // Full restart: fresh timeline — the canonical baseline is restored by
@@ -1100,46 +1114,22 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
         {/* Apotheosis achieved (issue #30) — the glimpse above the sequences. */}
         {ascension && (
-          <div
-            role="status"
-            className="mb-6 rounded-md border border-occult/40 bg-occult/[0.08] p-5 animate-fade-in"
-          >
-            <p className="gaslit font-serif text-base font-semibold text-occult-bright">
-              You are {ascension.honorific} now. Sequence 0. A True God.
-            </p>
-            <p className="mt-2 font-serif text-sm italic leading-relaxed text-foreground/85">
-              {ascension.tease}
-            </p>
-            <button
-              type="button"
-              onClick={() => setAscension(null)}
-              className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-occult-bright hover:underline"
-            >
-              Take the throne
-            </button>
-          </div>
+          <AscentBanner
+            title={`You are ${ascension.honorific} now. Sequence 0. A True God.`}
+            body={ascension.tease}
+            dismissLabel="Take the throne"
+            onDismiss={() => setAscension(null)}
+          />
         )}
 
         {/* Advancement succeeded — the climb to the next Sequence held. */}
         {advancement && (
-          <div
-            role="status"
-            className="mb-6 rounded-md border border-occult/40 bg-occult/[0.08] p-5 animate-fade-in"
-          >
-            <p className="gaslit font-serif text-base font-semibold text-occult-bright">
-              You are a {advancement.roleName} now — Sequence {advancement.sequenceLevel}.
-            </p>
-            <p className="mt-2 font-serif text-sm italic leading-relaxed text-foreground/85">
-              {advancement.scene}
-            </p>
-            <button
-              type="button"
-              onClick={() => setAdvancement(null)}
-              className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-occult-bright hover:underline"
-            >
-              Take your new measure
-            </button>
-          </div>
+          <AscentBanner
+            title={`You are a ${advancement.roleName} now — Sequence ${advancement.sequenceLevel}.`}
+            body={advancement.scene}
+            dismissLabel="Take your new measure"
+            onDismiss={() => setAdvancement(null)}
+          />
         )}
 
         {/* Loss of control — sanity has bottomed out (issue #12). */}
@@ -1795,11 +1785,159 @@ function CombatLauncher({ onStart }: { onStart: (ambush: boolean) => void }) {
   );
 }
 
+// A success banner shared by the apotheosis ascent and a held advancement —
+// same occult-glow card, different copy.
+function AscentBanner({
+  title,
+  body,
+  dismissLabel,
+  onDismiss,
+}: {
+  title: string;
+  body: string;
+  dismissLabel: string;
+  onDismiss: () => void;
+}) {
+  return (
+    <div
+      role="status"
+      className="mb-6 rounded-md border border-occult/40 bg-occult/[0.08] p-5 animate-fade-in"
+    >
+      <p className="gaslit font-serif text-base font-semibold text-occult-bright">
+        {title}
+      </p>
+      <p className="mt-2 font-serif text-sm italic leading-relaxed text-foreground/85">
+        {body}
+      </p>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-occult-bright hover:underline"
+      >
+        {dismissLabel}
+      </button>
+    </div>
+  );
+}
+
+// The engine's requirement checklist, shared by the ritual-attempt panels.
+function RitualRequirementList({
+  requirements,
+}: {
+  requirements: readonly { id: string; label: string; met: boolean }[];
+}) {
+  return (
+    <ul className="mt-3 space-y-1.5">
+      {requirements.map((req) => (
+        <li key={req.id} className="flex items-start gap-2 text-sm">
+          <span
+            aria-hidden="true"
+            className={req.met ? "text-occult-bright" : "text-muted"}
+          >
+            {req.met ? "✦" : "◇"}
+          </span>
+          <span className={req.met ? "text-foreground/85" : "text-muted"}>
+            {req.label}
+            <span className="sr-only">{req.met ? " — met" : " — not yet met"}</span>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+// The shared arm-then-confirm ritual panel used by both advancement (Seq 9 → 2)
+// and apotheosis (Seq 1 → 0). The checklist is the engine's own requirement
+// verdicts; the two-step confirm makes an irreversible attempt deliberate. The
+// confirm disarms on click, so a panel that survives a resolution (e.g. a
+// survivable setback) returns to the un-armed state rather than re-firing.
+function RitualAttemptPanel({
+  headingId,
+  heading,
+  intro,
+  requirements,
+  ready,
+  busy,
+  armLabel,
+  confirmLabel,
+  confirmBusyLabel,
+  cancelLabel,
+  oddsText,
+  onAttempt,
+  children,
+}: {
+  headingId: string;
+  heading: string;
+  intro: string;
+  requirements: readonly { id: string; label: string; met: boolean }[];
+  ready: boolean;
+  busy: boolean;
+  armLabel: string;
+  confirmLabel: string;
+  confirmBusyLabel: string;
+  cancelLabel: string;
+  oddsText: string;
+  onAttempt: () => void;
+  children?: ReactNode;
+}) {
+  const [armed, setArmed] = useState(false);
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+    >
+      <h2
+        id={headingId}
+        className="gaslit font-serif text-base font-semibold text-occult-bright"
+      >
+        {heading}
+      </h2>
+      <p className="mt-1 text-sm leading-relaxed text-muted">{intro}</p>
+      <RitualRequirementList requirements={requirements} />
+      {ready && children}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {!armed ? (
+          <button
+            type="button"
+            onClick={() => setArmed(true)}
+            disabled={!ready || busy}
+            className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-4 py-2 text-sm font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {armLabel}
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => {
+                onAttempt();
+                setArmed(false);
+              }}
+              disabled={busy}
+              className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-crimson/60 disabled:opacity-40"
+            >
+              {busy ? confirmBusyLabel : confirmLabel}
+            </button>
+            <button
+              type="button"
+              onClick={() => setArmed(false)}
+              disabled={busy}
+              className="min-h-[24px] rounded px-2 py-1 text-xs text-muted hover:text-foreground/80"
+            >
+              {cancelLabel}
+            </button>
+          </>
+        )}
+        {ready && <span className="text-xs text-muted">{oddsText}</span>}
+      </div>
+    </section>
+  );
+}
+
 // Sequence advancement (Seq 9 → 2): shown once the current potion is fully
-// digested. The checklist is the engine's own requirement verdicts (the canon
-// ingredients and, from Sequence 5, the Advancement Ritual); the attempt is
-// two-step because a loss of control is always possible — and catastrophic at
-// the higher rungs.
+// digested. A loss of control is always possible — and catastrophic at the
+// higher rungs — so the attempt is deliberate.
 function AdvancementPanel({
   session,
   busy,
@@ -1809,94 +1947,33 @@ function AdvancementPanel({
   busy: boolean;
   onAttempt: () => void;
 }) {
-  const [armed, setArmed] = useState(false);
   const requirements = advancementRequirements(session);
-  const ready = canAdvance(session);
+  const ready = meetsRequirements(requirements);
   const chance = Math.round(advancementSuccessChance(session) * 100);
   const target = targetSequence(session.gameState.sequenceLevel);
   const roleName =
     getSequence(session.gameState.pathwayId, target)?.name ?? `Sequence ${target}`;
 
   return (
-    <section
-      aria-labelledby="advancement-heading"
-      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
-    >
-      <h2
-        id="advancement-heading"
-        className="gaslit font-serif text-base font-semibold text-occult-bright"
-      >
-        The next rung: Sequence {target}, {roleName}
-      </h2>
-      <p className="mt-1 text-sm leading-relaxed text-muted">
-        The potion is digested and the role is yours. Drink the next Sequence&apos;s
-        potion to climb — but a Beyonder who forgets they are only acting can lose
-        themselves in the ascent.
-      </p>
-      <ul className="mt-3 space-y-1.5">
-        {requirements.map((req) => (
-          <li key={req.id} className="flex items-start gap-2 text-sm">
-            <span
-              aria-hidden="true"
-              className={req.met ? "text-occult-bright" : "text-muted"}
-            >
-              {req.met ? "✦" : req.hard ? "◇" : "◈"}
-            </span>
-            <span className={req.met ? "text-foreground/85" : "text-muted"}>
-              {req.label}
-              {!req.hard && !req.met && (
-                <span className="ml-1 text-xs text-amber">
-                  (skipping this sharply raises the risk)
-                </span>
-              )}
-              <span className="sr-only">{req.met ? " — met" : " — not yet met"}</span>
-            </span>
-          </li>
-        ))}
-      </ul>
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        {!armed ? (
-          <button
-            type="button"
-            onClick={() => setArmed(true)}
-            disabled={!ready || busy}
-            className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-4 py-2 text-sm font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Prepare to advance
-          </button>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={onAttempt}
-              disabled={busy}
-              className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-crimson/60 disabled:opacity-40"
-            >
-              {busy ? "The potion takes hold…" : "Drink and undergo the advancement"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setArmed(false)}
-              disabled={busy}
-              className="min-h-[24px] rounded px-2 py-1 text-xs text-muted hover:text-foreground/80"
-            >
-              Not yet
-            </button>
-          </>
-        )}
-        {ready && (
-          <span className="text-xs text-muted">
-            You judge your odds of holding control near {chance}%.
-          </span>
-        )}
-      </div>
-    </section>
+    <RitualAttemptPanel
+      headingId="advancement-heading"
+      heading={`The next rung: Sequence ${target}, ${roleName}`}
+      intro="The potion is digested and the role is yours. Drink the next Sequence's potion to climb — but a Beyonder who forgets they are only acting can lose themselves in the ascent."
+      requirements={requirements}
+      ready={ready}
+      busy={busy}
+      armLabel="Prepare to advance"
+      confirmLabel="Drink and undergo the advancement"
+      confirmBusyLabel="The potion takes hold…"
+      cancelLabel="Not yet"
+      oddsText={`You judge your odds of holding control near ${chance}%.`}
+      onAttempt={onAttempt}
+    />
   );
 }
 
-// Apotheosis (issue #30): shown to a Sequence 1 King of Angels. The checklist
-// is the engine's own requirement verdicts; the attempt is two-step (arm, then
-// confirm) because failure at this height is permadeath.
+// Apotheosis (issue #30): shown to a Sequence 1 King of Angels. Failure at this
+// height is permadeath, so the staged ceremony is previewed once ready.
 function ApotheosisPanel({
   session,
   busy,
@@ -1906,87 +1983,32 @@ function ApotheosisPanel({
   busy: boolean;
   onAttempt: () => void;
 }) {
-  const [armed, setArmed] = useState(false);
   const requirements = apotheosisRequirements(session);
   const ready = canAttemptApotheosis(session);
   const chance = Math.round(apotheosisSuccessChance(session) * 100);
   const honorific = trueGodName(session.gameState.pathwayId);
 
   return (
-    <section
-      aria-labelledby="apotheosis-heading"
-      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+    <RitualAttemptPanel
+      headingId="apotheosis-heading"
+      heading={`The throne of ${honorific} stands empty`}
+      intro="One rung remains. Sequence 0 is not climbed — it is seized, once, by the one the pathway accepts."
+      requirements={requirements}
+      ready={ready}
+      busy={busy}
+      armLabel="Begin the apotheosis ritual"
+      confirmLabel="Seize the throne — irrevocably"
+      confirmBusyLabel="The world holds its breath…"
+      cancelLabel="Step back"
+      oddsText={`The augurs put your odds near ${chance}%. Failure is not survivable.`}
+      onAttempt={onAttempt}
     >
-      <h2
-        id="apotheosis-heading"
-        className="gaslit font-serif text-base font-semibold text-occult-bright"
-      >
-        The throne of {honorific} stands empty
-      </h2>
-      <p className="mt-1 text-sm leading-relaxed text-muted">
-        One rung remains. Sequence 0 is not climbed — it is seized, once, by the one the
-        pathway accepts.
-      </p>
-      <ul className="mt-3 space-y-1.5">
-        {requirements.map((req) => (
-          <li key={req.id} className="flex items-start gap-2 text-sm">
-            <span
-              aria-hidden="true"
-              className={req.met ? "text-occult-bright" : "text-muted"}
-            >
-              {req.met ? "✦" : "◇"}
-            </span>
-            <span className={req.met ? "text-foreground/85" : "text-muted"}>
-              {req.label}
-              <span className="sr-only">{req.met ? " — met" : " — not yet met"}</span>
-            </span>
-          </li>
+      <ol className="mt-4 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-foreground/75">
+        {APOTHEOSIS_STAGES.map((stage) => (
+          <li key={stage}>{stage}</li>
         ))}
-      </ul>
-      {ready && (
-        <ol className="mt-4 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-foreground/75">
-          {APOTHEOSIS_STAGES.map((stage) => (
-            <li key={stage}>{stage}</li>
-          ))}
-        </ol>
-      )}
-      <div className="mt-4 flex flex-wrap items-center gap-3">
-        {!armed ? (
-          <button
-            type="button"
-            onClick={() => setArmed(true)}
-            disabled={!ready || busy}
-            className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-4 py-2 text-sm font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Begin the apotheosis ritual
-          </button>
-        ) : (
-          <>
-            <button
-              type="button"
-              onClick={onAttempt}
-              disabled={busy}
-              className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-crimson/60 disabled:opacity-40"
-            >
-              {busy ? "The world holds its breath…" : "Seize the throne — irrevocably"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setArmed(false)}
-              disabled={busy}
-              className="min-h-[24px] rounded px-2 py-1 text-xs text-muted hover:text-foreground/80"
-            >
-              Step back
-            </button>
-          </>
-        )}
-        {ready && (
-          <span className="text-xs text-muted">
-            The augurs put your odds near {chance}%. Failure is not survivable.
-          </span>
-        )}
-      </div>
-    </section>
+      </ol>
+    </RitualAttemptPanel>
   );
 }
 

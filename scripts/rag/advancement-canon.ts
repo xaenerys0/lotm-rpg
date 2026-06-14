@@ -191,6 +191,19 @@ function main(): void {
   process.stderr.write(
     `Wrote ${OUTPUT}: ${byPathway.size} pathways, ${total} ritual entries.\n`,
   );
+
+  // Surface any pathway the extractor produced NOTHING for, so a parsing/name
+  // mismatch can't silently hide behind the rules-engine's placeholder fallback.
+  const missing = Object.entries(PATHWAY_IDS)
+    .filter(([, id]) => !byPathway.has(id))
+    .map(([name, id]) => `${name} (#${id})`);
+  if (missing.length > 0) {
+    process.stderr.write(
+      `WARNING: no canon ritual extracted for ${missing.length} pathway(s): ${missing.join(
+        ", ",
+      )}. They fall back to hand-authored placeholders — check the wiki page names / parser.\n`,
+    );
+  }
 }
 
 main();

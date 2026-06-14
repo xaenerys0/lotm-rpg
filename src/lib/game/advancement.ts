@@ -1,5 +1,5 @@
 import type { SessionFact } from "@/lib/ai";
-import type { Item, Ritual } from "@/lib/types/rules";
+import type { Ritual } from "@/lib/types/rules";
 import { getPathway, getSequence } from "@/lib/rules";
 
 import {
@@ -10,9 +10,11 @@ import {
 } from "./anchors";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
+import { removeItemsByName } from "./inventory";
 import { clamp } from "./math";
 import { sanityDelta } from "./sanity";
 import type { GameSession } from "./types";
+import { applySanityImpact } from "./world-state";
 
 // ---------------------------------------------------------------------------
 // Sequence advancement (Seq 9 → 2) — climbing a pathway one rung at a time.
@@ -27,11 +29,13 @@ import type { GameSession } from "./types";
 //
 // Canon (novel + wiki): each potion needs its formula, a main ingredient (a
 // Beyonder characteristic) and supplementary ingredients; **from Sequence 5
-// onward an Advancement Ritual is also required**, without which the chance of
-// losing control is extreme even with a fully digested potion. The key to the
-// Acting Method is to "remember you're only acting" — over-immersion (a frayed
-// mind) makes losing control far more likely. Advancement is therefore never
-// certain: there is always a chance of losing control, and it plays out here.
+// onward an Advancement Ritual is also mandatory** — without it the chance of
+// losing control is extreme. We model that as a *hard* requirement: the rite is
+// performed as part of the attempt (and narrated), so reaching Seq ≤ 5 demands
+// the pathway define one. The key to the Acting Method is to "remember you're
+// only acting" — over-immersion (a frayed mind) makes losing control far more
+// likely. Advancement is therefore never certain: there is always a chance of
+// losing control, and it plays out here.
 //
 // Sequence 1 → 0 (True God) is the apotheosis endgame and lives in
 // `apotheosis.ts`; this module deliberately stops at Sequence 2 → 1.
@@ -71,14 +75,12 @@ export interface AdvancementRequirement {
   id: "sequence" | "digestion" | "ingredients" | "ritual" | "anchors" | "sanity";
   label: string;
   met: boolean;
-  /** A hard gate blocks the attempt; a soft requirement only warns + raises risk. */
-  hard: boolean;
 }
 
 /**
  * The requirement checklist for advancing to the next Sequence, built entirely
  * from data the session already carries (and the rules engine's canon sequence
- * data) — nothing here trusts the AI.
+ * data) — nothing here trusts the AI. Every requirement is a hard gate.
  */
 export function advancementRequirements(session: GameSession): AdvancementRequirement[] {
   const state = session.gameState;
@@ -90,14 +92,12 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
     id: "sequence",
     label: "Stand on a rung you can still climb from (Sequence 9 – 2)",
     met: isAdvanceableSequence(state.sequenceLevel),
-    hard: true,
   });
 
   requirements.push({
     id: "digestion",
     label: "Your current potion is fully digested — the role acted to its end",
     met: state.digestion?.complete === true,
-    hard: true,
   });
 
   // Canon ingredients for the target potion: formula + main ingredient
@@ -114,13 +114,11 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
           ? "Carry the formula and every ingredient for the next potion"
           : `Still need: ${missingItems.map((i) => i.name).join(", ")}`,
       met: missingItems.length === 0,
-      hard: true,
     });
   }
 
-  // From Sequence 5 onward an Advancement Ritual is canon. It is narrated and
-  // performed as part of the attempt, so it is a soft requirement: skipping it
-  // does not block the ritual, it makes losing control far more likely.
+  // From Sequence 5 onward an Advancement Ritual is canon and mandatory: the
+  // pathway must define one (it is performed and narrated during the attempt).
   if (ritualRequiredFor(target)) {
     const ritual = targetSeq?.advancementRitual;
     requirements.push({
@@ -129,7 +127,6 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
         ? `Perform the Advancement Ritual: ${ritual.description}`
         : "Perform the Sequence's Advancement Ritual",
       met: ritual !== undefined,
-      hard: false,
     });
   }
 
@@ -141,7 +138,6 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
       id: "anchors",
       label: `Anchors hold ${needed} support — enough to keep your new shape`,
       met: support >= needed,
-      hard: true,
     });
   }
 
@@ -149,30 +145,27 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
     id: "sanity",
     label: "Enter with a steady mind — at least a quarter of your sanity intact",
     met: state.sanity >= state.maxSanity * ADVANCEMENT_SANITY_RATIO,
-    hard: true,
   });
 
   return requirements;
 }
 
-/** Every *hard* requirement is met and the sequence is in range. */
-export function canAdvance(session: GameSession): boolean {
-  if (!isAdvanceableSequence(session.gameState.sequenceLevel)) return false;
-  return advancementRequirements(session).every((req) => !req.hard || req.met);
+/** Every requirement in a prebuilt checklist is met. */
+export function meetsRequirements(requirements: AdvancementRequirement[]): boolean {
+  return requirements.every((req) => req.met);
 }
 
-/** True when the canon Advancement Ritual for the next rung is unmet. */
-function ritualSkipped(session: GameSession): boolean {
-  const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
-  return ritualReq !== undefined && !ritualReq.met;
+/** Every requirement is met and the sequence is in range. */
+export function canAdvance(session: GameSession): boolean {
+  if (!isAdvanceableSequence(session.gameState.sequenceLevel)) return false;
+  return meetsRequirements(advancementRequirements(session));
 }
 
 /**
  * Success odds for the next advancement: high at the low Sequences, falling as
  * the rungs get higher (a lower number), and **never certain** — the chance of
- * losing control is permanent. A skipped ritual gouges the odds (canon: extreme
- * loss-of-control risk even with full digestion); anchor surplus and a fuller
- * mind steady the climb.
+ * losing control is permanent. Anchor surplus and a fuller mind steady the
+ * climb.
  */
 export function advancementSuccessChance(session: GameSession): number {
   const state = session.gameState;
@@ -191,8 +184,6 @@ export function advancementSuccessChance(session: GameSession): number {
     );
     chance += Math.min(0.1, surplus / 400);
   }
-
-  if (ritualSkipped(session)) chance -= 0.5;
 
   // Always leave a real chance of losing control, and never a sure thing.
   return clamp(chance, 0.05, 0.95);
@@ -216,15 +207,6 @@ export interface AdvancementLostControl {
 
 export type AdvancementResult = AdvancementAdvanced | AdvancementLostControl;
 
-function consumeItems(inventory: Item[], consumed: Item[]): Item[] {
-  const remaining = [...inventory];
-  for (const item of consumed) {
-    const idx = remaining.findIndex((carried) => carried.name === item.name);
-    if (idx !== -1) remaining.splice(idx, 1);
-  }
-  return remaining;
-}
-
 /**
  * Attempt the advancement. Deterministic under the injected randomness. On
  * success the engine — not the AI — writes the new `sequenceLevel`, consumes the
@@ -243,8 +225,10 @@ export function attemptAdvancement(
 
   // A flagrantly unready attempt (the UI gates this, but guard anyway) is itself
   // a loss of control — the body rejects a potion it was never prepared for.
-  const highRisk = advancementHighRisk(session);
-  if (!canAdvance(session)) {
+  if (
+    !isAdvanceableSequence(state.sequenceLevel) ||
+    !meetsRequirements(advancementRequirements(session))
+  ) {
     return {
       outcome: "lost-control",
       verdict: evaluateFailure({
@@ -261,7 +245,7 @@ export function attemptAdvancement(
       verdict: evaluateFailure({
         cause: "loss-of-control",
         sequenceLevel: state.sequenceLevel,
-        highRisk,
+        highRisk: advancementHighRisk(session),
       }),
     };
   }
@@ -273,11 +257,7 @@ export function attemptAdvancement(
   const prerequisiteItems = targetSeq?.prerequisiteItems ?? [];
 
   // Advancement is a violent upheaval of the self — it always drains sanity.
-  const newSanity = clamp(
-    state.sanity + sanityDelta({ type: "advancement" }),
-    0,
-    state.maxSanity,
-  );
+  const drained = applySanityImpact(state, sanityDelta({ type: "advancement" }));
 
   const facts: SessionFact[] = [
     {
@@ -302,10 +282,9 @@ export function attemptAdvancement(
     session: {
       ...session,
       gameState: {
-        ...state,
+        ...drained,
         sequenceLevel: target,
-        sanity: newSanity,
-        inventory: consumeItems(state.inventory, prerequisiteItems),
+        inventory: removeItemsByName(state.inventory, prerequisiteItems),
         digestion: createDigestionState(state.pathwayId, target),
       },
       memory: {
@@ -319,13 +298,12 @@ export function attemptAdvancement(
 
 /**
  * Whether the attempt is a fragile, high-risk moment that escalates a loss of
- * control by one step (a skipped ritual, an under-anchored high form, or a
- * frayed mind from over-immersion in the role).
+ * control by one step — an under-anchored high form, or a frayed mind from
+ * over-immersion in the role ("remember you're only acting").
  */
 export function advancementHighRisk(session: GameSession): boolean {
   const state = session.gameState;
   const target = targetSequence(state.sequenceLevel);
-  if (ritualSkipped(session)) return true;
   if (
     anchorsRelevant(target) &&
     session.anchorState &&
@@ -333,6 +311,5 @@ export function advancementHighRisk(session: GameSession): boolean {
   ) {
     return true;
   }
-  // "Remember you're only acting" — a frayed mind means dangerous immersion.
   return state.sanity < state.maxSanity * ADVANCEMENT_SANITY_RATIO;
 }
