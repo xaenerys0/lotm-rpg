@@ -51,6 +51,15 @@ model without re-parsing or re-chunking.
   - Flags: `--concealment-tier <n>` (default 0), `--base-url <url>` (default the
     LOTM Fandom wiki), `--min-chars <n>` (stub threshold, default 40).
 
+- `advancement-canon.ts` (`pnpm rag:advancement-canon`) — extracts the canon
+  **Advancement Ritual** text + material lists from the committed wiki dump's
+  `Module:Sequence/standard` and writes `src/lib/rules/advancement-canon.ts`
+  (`ADVANCEMENT_RITUALS`, keyed by pathway id → sequence level 5-1). Canon: a
+  ritual is mandatory only from Sequence 5, so only levels 5-1 are emitted. Run a
+  `pnpm format` pass afterwards (the emitted file is committed).
+  - `pnpm rag:advancement-canon` (reads `corpus/wiki/…xml`)
+  - `pnpm rag:advancement-canon <pages.xml>` (explicit dump path)
+
 - `eval.ts` (`pnpm rag:eval`) — the **evaluation + leakage harness** (issue #64).
   Runs the labeled `EvalCase` set against the offline lexical retriever over a
   chunk corpus and prints recall@k + a leakage report. **Advisory**: always exits

@@ -114,7 +114,13 @@ export function PlayDashboard() {
   const [view, setView] = useState<DashboardView>(
     initialData.hasPrologueDraft ? "character-creation" : "home",
   );
-  const [hasConfig] = useState(initialData.hasConfig);
+  // Read the provider-config flag reactively from `useStoredValue` rather than
+  // freezing it in `useState`. During SSR and the first hydration render
+  // `useStoredValue` returns the server fallback (`hasConfig: false`); freezing
+  // that value left the "configure your provider" banner stuck after a full
+  // page reload even when a provider was configured. Consuming the reactive
+  // snapshot lets it correct to the real localStorage value after hydration.
+  const hasConfig = initialData.hasConfig;
   const [sessions, setSessions] = useState(initialData.sessions);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   // Two-step confirm so a destructive delete is never a single misclick.

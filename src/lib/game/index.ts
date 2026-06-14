@@ -225,6 +225,24 @@ export {
   type ApotheosisUnmade,
 } from "./apotheosis";
 export {
+  advancementHighRisk,
+  advancementRequirements,
+  advancementSuccessChance,
+  attemptAdvancement,
+  canAdvance,
+  isAdvanceableSequence,
+  ritualRequiredFor,
+  targetSequence,
+  ADVANCEMENT_SANITY_RATIO,
+  MAX_ADVANCEABLE_SEQUENCE,
+  MIN_ADVANCEABLE_SEQUENCE,
+  RITUAL_REQUIRED_AT_OR_BELOW,
+  type AdvancementAdvanced,
+  type AdvancementLostControl,
+  type AdvancementRequirement,
+  type AdvancementResult,
+} from "./advancement";
+export {
   artifactToItem,
   deserializeArtifacts,
   discoverableArtifacts,

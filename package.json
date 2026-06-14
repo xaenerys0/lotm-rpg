@@ -19,7 +19,8 @@
     "rag:novel": "tsx scripts/rag/novel.ts",
     "rag:wiki": "tsx scripts/rag/wiki.ts",
     "rag:eval": "tsx scripts/rag/eval.ts",
-    "rag:load": "tsx scripts/rag/load.ts"
+    "rag:load": "tsx scripts/rag/load.ts",
+    "rag:advancement-canon": "tsx scripts/rag/advancement-canon.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",

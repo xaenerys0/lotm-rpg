@@ -51,6 +51,11 @@ import {
   sequenceAbilities,
   trueGodName,
   APOTHEOSIS_STAGES,
+  advancementRequirements,
+  advancementSuccessChance,
+  attemptAdvancement,
+  canAdvance,
+  targetSequence,
   deserializeArtifacts,
   mintArtifact,
   serializeArtifacts,
@@ -521,6 +526,94 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       ),
     );
   }, [session, updateSession, concludeChronicle]);
+
+  // Sequence advancement (Seq 9 → 2): the engine — not the AI — decides whether
+  // the climb holds. Success rewrites `sequenceLevel`; a loss of control routes
+  // through the same setback / permadeath machinery as any other failure.
+  const [advancement, setAdvancement] = useState<{
+    sequenceLevel: number;
+    roleName: string;
+    scene: string;
+  } | null>(null);
+  const [advancing, setAdvancing] = useState(false);
+
+  const handleAdvancement = useCallback(async () => {
+    // Roll exactly once — take the lock before the roll so a rapid second click
+    // cannot re-roll the climb.
+    if (!session || endingInFlight.current || advancing) return;
+    const result = attemptAdvancement(session);
+
+    if (result.outcome === "advanced") {
+      setAdvancing(true);
+      const advanced = result.session;
+      // The ritual / digestion plays out in narration (best-effort; a
+      // deterministic scene covers a missing provider).
+      let scene = `You drink the Sequence ${result.newSequenceLevel} potion${
+        result.ritual ? ` and complete the rite — ${result.ritual.description}` : ""
+      }. The role sinks into your bones until it is indistinguishable from you: you are a ${result.roleName} now.`;
+      if (providerConfig) {
+        try {
+          const { abilities, actingReqs, loreContext } = buildAICallParams(advanced);
+          const res = await generate({
+            config: providerConfig,
+            gameState: advanced.gameState,
+            memory: advanced.memory,
+            loreContext,
+            instruction: "advancement",
+            playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
+              result.ritual ? `, performing the ritual: ${result.ritual.description}` : ""
+            }. I have fully digested the previous potion through the Acting Method.`,
+            abilities,
+            actingRequirements: actingReqs,
+          });
+          if (res.response.narrative) scene = res.response.narrative;
+          recordUsage(res.usage);
+        } catch {
+          // Deterministic scene already set.
+        }
+      }
+      appendJournalEntries(session.id, [
+        buildJournalEntry(advanced.gameState, advanced.turnCount, {
+          eventType: "advancement",
+          summary: `Advanced to Sequence ${result.newSequenceLevel}, ${result.roleName}.`,
+          narrative: scene,
+          arc: `Sequence ${result.newSequenceLevel}`,
+        }),
+      ]);
+      setAdvancement({
+        sequenceLevel: result.newSequenceLevel,
+        roleName: result.roleName,
+        scene,
+      });
+      updateSession(advanced);
+      setAdvancing(false);
+      return;
+    }
+
+    // Lost control: a survivable setback is endured in place; permadeath routes
+    // through the shared ending path.
+    if (result.verdict.outcome === "permadeath") {
+      await concludeChronicle(
+        result.verdict,
+        descentAction(
+          "Narrate the advancement turning on the character — the potion overwhelms the mind and control is lost. This is",
+          result.verdict.severity,
+        ),
+      );
+      return;
+    }
+    const applied = applySetback(session.gameState, Math.random, session.turnCount);
+    setSetbackNotes(applied.notes);
+    updateSession({
+      ...session,
+      gameState: applied.state,
+      memory: {
+        ...session.memory,
+        sessionFacts: [...session.memory.sessionFacts, ...applied.facts],
+      },
+      updatedAt: Date.now(),
+    });
+  }, [session, advancing, providerConfig, recordUsage, updateSession, concludeChronicle]);
 
   const handleFullRestart = useCallback(() => {
     // Full restart: fresh timeline — the canonical baseline is restored by
@@ -1027,6 +1120,28 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           </div>
         )}
 
+        {/* Advancement succeeded — the climb to the next Sequence held. */}
+        {advancement && (
+          <div
+            role="status"
+            className="mb-6 rounded-md border border-occult/40 bg-occult/[0.08] p-5 animate-fade-in"
+          >
+            <p className="gaslit font-serif text-base font-semibold text-occult-bright">
+              You are a {advancement.roleName} now — Sequence {advancement.sequenceLevel}.
+            </p>
+            <p className="mt-2 font-serif text-sm italic leading-relaxed text-foreground/85">
+              {advancement.scene}
+            </p>
+            <button
+              type="button"
+              onClick={() => setAdvancement(null)}
+              className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-occult-bright hover:underline"
+            >
+              Take your new measure
+            </button>
+          </div>
+        )}
+
         {/* Loss of control — sanity has bottomed out (issue #12). */}
         {lostControl && !session.ended && (
           <FailurePanel
@@ -1071,6 +1186,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   freeTextNotice={freeTextNotice}
                 />
                 <CombatLauncher onStart={startCombat} />
+                {canAdvance(session) && (
+                  <AdvancementPanel
+                    session={session}
+                    busy={advancing || facingFate}
+                    onAttempt={() => void handleAdvancement()}
+                  />
+                )}
                 {session.gameState.sequenceLevel === 1 && (
                   <ApotheosisPanel
                     session={session}
@@ -1673,6 +1795,105 @@ function CombatLauncher({ onStart }: { onStart: (ambush: boolean) => void }) {
   );
 }
 
+// Sequence advancement (Seq 9 → 2): shown once the current potion is fully
+// digested. The checklist is the engine's own requirement verdicts (the canon
+// ingredients and, from Sequence 5, the Advancement Ritual); the attempt is
+// two-step because a loss of control is always possible — and catastrophic at
+// the higher rungs.
+function AdvancementPanel({
+  session,
+  busy,
+  onAttempt,
+}: {
+  session: GameSession;
+  busy: boolean;
+  onAttempt: () => void;
+}) {
+  const [armed, setArmed] = useState(false);
+  const requirements = advancementRequirements(session);
+  const ready = canAdvance(session);
+  const chance = Math.round(advancementSuccessChance(session) * 100);
+  const target = targetSequence(session.gameState.sequenceLevel);
+  const roleName =
+    getSequence(session.gameState.pathwayId, target)?.name ?? `Sequence ${target}`;
+
+  return (
+    <section
+      aria-labelledby="advancement-heading"
+      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+    >
+      <h2
+        id="advancement-heading"
+        className="gaslit font-serif text-base font-semibold text-occult-bright"
+      >
+        The next rung: Sequence {target}, {roleName}
+      </h2>
+      <p className="mt-1 text-sm leading-relaxed text-muted">
+        The potion is digested and the role is yours. Drink the next Sequence&apos;s
+        potion to climb — but a Beyonder who forgets they are only acting can lose
+        themselves in the ascent.
+      </p>
+      <ul className="mt-3 space-y-1.5">
+        {requirements.map((req) => (
+          <li key={req.id} className="flex items-start gap-2 text-sm">
+            <span
+              aria-hidden="true"
+              className={req.met ? "text-occult-bright" : "text-muted"}
+            >
+              {req.met ? "✦" : req.hard ? "◇" : "◈"}
+            </span>
+            <span className={req.met ? "text-foreground/85" : "text-muted"}>
+              {req.label}
+              {!req.hard && !req.met && (
+                <span className="ml-1 text-xs text-amber">
+                  (skipping this sharply raises the risk)
+                </span>
+              )}
+              <span className="sr-only">{req.met ? " — met" : " — not yet met"}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {!armed ? (
+          <button
+            type="button"
+            onClick={() => setArmed(true)}
+            disabled={!ready || busy}
+            className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-4 py-2 text-sm font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Prepare to advance
+          </button>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onAttempt}
+              disabled={busy}
+              className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-4 py-2 text-sm font-medium text-foreground transition-colors hover:border-crimson/60 disabled:opacity-40"
+            >
+              {busy ? "The potion takes hold…" : "Drink and undergo the advancement"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setArmed(false)}
+              disabled={busy}
+              className="min-h-[24px] rounded px-2 py-1 text-xs text-muted hover:text-foreground/80"
+            >
+              Not yet
+            </button>
+          </>
+        )}
+        {ready && (
+          <span className="text-xs text-muted">
+            You judge your odds of holding control near {chance}%.
+          </span>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // Apotheosis (issue #30): shown to a Sequence 1 King of Angels. The checklist
 // is the engine's own requirement verdicts; the attempt is two-step (arm, then
 // confirm) because failure at this height is permadeath.
@@ -1918,8 +2139,8 @@ function ConsequencesPhase({
       {(digestionState?.complete ?? session.gameState.digestion?.complete) && (
         <div className="mb-6 rounded-md border border-occult/40 bg-occult/[0.06] p-4 text-center">
           <p className="font-serif text-sm text-occult-bright">
-            <span aria-hidden="true">✦ </span>The potion is fully digested. Advancement to
-            the next Sequence is now within reach.
+            <span aria-hidden="true">✦ </span>The potion is fully digested. Continue, and
+            you may undergo the advancement to the next Sequence when you are ready.
           </p>
         </div>
       )}

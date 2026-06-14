@@ -130,17 +130,26 @@ describe("pathway definitions", () => {
     }
   });
 
-  it("sequences 8-5 have advancement rituals, sequence 9 does not", () => {
+  // Canon (novel + wiki Module:Sequence/standard): an Advancement Ritual is
+  // mandatory only from Sequence 5 onward. Higher rungs (Seq 9-6) carry none.
+  it("sequences 5-1 have advancement rituals, sequences 9-6 do not", () => {
     for (const pathway of ALL_PATHWAYS) {
-      const seq9 = pathway.sequences.find((s) => s.level === 9);
-      expect(seq9?.advancementRitual).toBeUndefined();
-
       for (const seq of pathway.sequences) {
-        if (seq.level < 9) {
+        if (seq.level >= 6) {
+          expect(seq.advancementRitual).toBeUndefined();
+        } else {
           expect(seq.advancementRitual).toBeDefined();
         }
       }
     }
+  });
+
+  it("draws Sequence 5 advancement rituals from the canon corpus", () => {
+    // The Fool's Sequence 5 (Marionettist) rite is the canonical reference.
+    const marionettist = ALL_PATHWAYS.find((p) => p.id === 1)?.sequences.find(
+      (s) => s.level === 5,
+    );
+    expect(marionettist?.advancementRitual?.description).toMatch(/mermaid/i);
   });
 
   it("classifications scale with sequence: Low (9-8), Mid (7-5), High (4-3), Demigod (2-1)", () => {
@@ -672,13 +681,15 @@ describe("prerequisite validation", () => {
   });
 
   it("rejects when ritual is not completed for sequences that require it", () => {
+    // Canon: rituals are mandatory from Sequence 5, so advancing 6 → 5 requires
+    // one (advancing to Seq 8 does not).
     const attempt: AdvancementAttempt = {
       characterId: "player-1",
       currentPathwayId: 1,
-      currentSequence: 9,
-      targetSequence: 8,
-      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 9, quantity: 1 }],
-      availableItems: makeItems(1, 8),
+      currentSequence: 6,
+      targetSequence: 5,
+      consumedCharacteristics: [{ pathwayId: 1, sequenceLevel: 6, quantity: 1 }],
+      availableItems: makeItems(1, 5),
       ritualCompleted: false,
     };
     const result = validatePrerequisites(attempt);
