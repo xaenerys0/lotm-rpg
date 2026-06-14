@@ -13,6 +13,7 @@ export type {
 } from "./types";
 export {
   DEFAULT_CONCEALMENT_TIER,
+  MAX_CONCEALMENT_TIER,
   RAG_CHUNK_MAX_TOKENS,
   RAG_CHUNK_MIN_TOKENS,
   RAG_CHUNK_OVERLAP_RATIO,
@@ -26,7 +27,12 @@ export {
   type ChunkEmbedder,
   type EmbedChunksOptions,
 } from "./embed";
-export { chunkUuid, toEmbeddingRow, toSourceChunkRow } from "./load";
+export {
+  chunkUuid,
+  toEmbeddingRow,
+  toSourceChunkRow,
+  validateChunkMetadata,
+} from "./load";
 export { countTokens } from "./tokenizer";
 export { iterateJsonl, parseJsonl, toJsonl } from "./jsonl";
 

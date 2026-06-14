@@ -1,6 +1,6 @@
 export type { LoreCategory, LoreEntry } from "./types";
 
-export { selectCuratedLore } from "./selection";
+export { selectCuratedLore, passesSequenceGate } from "./selection";
 export {
   epochNarrationDirective,
   epochOpeningBeat,
@@ -22,6 +22,7 @@ export {
 
 export {
   createSupabaseChunkMatcher,
+  concealmentTierForSequence,
   DEFAULT_RETRIEVAL_COUNT,
   retrievalChunkIds,
   retrieveChunks,

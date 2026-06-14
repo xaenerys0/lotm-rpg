@@ -27,6 +27,7 @@ export function selectCuratedLore(
   location: string,
   budgetTokens: number,
   epoch?: number,
+  sequenceLevel?: number,
 ): LoreContext {
   const pathwayLore = getLoreByPathway(pathwayName.toLowerCase());
   const epochLore = getLoreByEpochSetting(epoch);
@@ -45,9 +46,30 @@ export function selectCuratedLore(
   const selected: LoreEntry[] = [];
   for (const entry of combined) {
     if (!passesEpochGate(entry.epoch, epoch)) continue;
+    if (!passesSequenceGate(entry.sequences, sequenceLevel)) continue;
     if (totalTokens + entry.tokenCount > budgetTokens) break;
     selected.push(entry);
     totalTokens += entry.tokenCount;
   }
   return { entries: selected, totalTokens };
+}
+
+/**
+ * Progressive disclosure for curated lore (mirrors the glossary's
+ * `revealAtSequence`). Sequence-tagged entries describe a specific rung of a
+ * pathway; an entry is revealed only once the character has actually reached
+ * its EARLIEST (highest-numbered, lowest-power) sequence — so a fresh Seq 9
+ * Seer gets the pathway overview and the Seq 9 entry, but not the Seq 8/7/6/5
+ * write-ups of abilities they have not yet earned. An entry with no `sequences`
+ * (geography, era context, organizations) carries no rung restriction and
+ * always passes; an absent `sequenceLevel` (callers/tests that don't track it)
+ * also passes everything, preserving prior behaviour.
+ */
+export function passesSequenceGate(
+  entrySequences: readonly number[],
+  sequenceLevel: number | undefined,
+): boolean {
+  if (sequenceLevel === undefined) return true;
+  if (entrySequences.length === 0) return true;
+  return sequenceLevel <= Math.max(...entrySequences);
 }

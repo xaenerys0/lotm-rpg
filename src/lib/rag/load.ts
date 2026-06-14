@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import type { Database } from "@/lib/types/database";
 
-import type { ChunkRecord } from "./types";
+import { MAX_CONCEALMENT_TIER, type ChunkRecord } from "./types";
 
 // ---------------------------------------------------------------------------
 // Load stage (closes the #57 stage contract)
@@ -39,8 +39,43 @@ export function chunkUuid(pipelineId: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
 }
 
-/** Map a pipeline record onto a `source_chunks` upsert row. */
+/**
+ * Validate the chronology/concealment metadata a chunk carries before it is
+ * loaded (issue: ingestion metadata guard). The retrieval timeline + concealment
+ * gates trust these columns, so a mistyped tier or a negative/fractional canon
+ * order must fail fast at load rather than silently leak corpus past a gate.
+ * Throws with the offending chunk id; pure (no I/O), so it stays testable.
+ */
+export function validateChunkMetadata(record: ChunkRecord): void {
+  const { id, canon_order, concealment_tier, tokenCount } = record;
+  if (canon_order !== null && (!Number.isInteger(canon_order) || canon_order < 0)) {
+    throw new Error(
+      `Chunk "${id}" has an invalid canon_order (${canon_order}); expected a non-negative integer or null.`,
+    );
+  }
+  if (
+    !Number.isInteger(concealment_tier) ||
+    concealment_tier < 0 ||
+    concealment_tier > MAX_CONCEALMENT_TIER
+  ) {
+    throw new Error(
+      `Chunk "${id}" has an out-of-range concealment_tier (${concealment_tier}); expected an integer in [0, ${MAX_CONCEALMENT_TIER}].`,
+    );
+  }
+  if (!Number.isInteger(tokenCount) || tokenCount <= 0) {
+    throw new Error(
+      `Chunk "${id}" has an invalid tokenCount (${tokenCount}); expected a positive integer.`,
+    );
+  }
+}
+
+/**
+ * Map a pipeline record onto a `source_chunks` upsert row. Validates the
+ * timeline/concealment metadata first ({@link validateChunkMetadata}) so a
+ * malformed chunk cannot reach the gated corpus.
+ */
 export function toSourceChunkRow(record: ChunkRecord): SourceChunkInsert {
+  validateChunkMetadata(record);
   return {
     id: chunkUuid(record.id),
     source: record.source,

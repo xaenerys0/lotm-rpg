@@ -92,6 +92,12 @@ export const RAG_CHUNK_MAX_TOKENS = 800;
 export const RAG_CHUNK_OVERLAP_RATIO = 0.125;
 /** Default spoiler tier when a source document does not specify one. */
 export const DEFAULT_CONCEALMENT_TIER = 0;
+/**
+ * Highest valid spoiler tier. The novel arc map runs 0 (public) → 4 (the final
+ * Fool arc); the load stage rejects anything outside [0, this] so a mistyped
+ * tier can never silently leak deep-spoiler corpus past the concealment gate.
+ */
+export const MAX_CONCEALMENT_TIER = 4;
 
 /** Counts tokens in a string. Injectable so the chunker stays pure/testable. */
 export type TokenCounter = (text: string) => number;

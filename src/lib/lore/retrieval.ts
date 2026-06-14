@@ -140,6 +140,26 @@ export function retrievalChunkIds(chunks: readonly RetrievedChunk[]): string[] {
   return chunks.map((chunk) => chunk.id);
 }
 
+/**
+ * Per-character concealment ceiling from the character's current sequence
+ * (progressive spoiler disclosure). A fresh, low-power Beyonder (Seq 9-8) only
+ * ever retrieves unconcealed (tier-0) corpus; deeper, more dangerous knowledge
+ * unlocks as they climb toward godhood, so the narrator can ground later-game
+ * scenes in canon the player has effectively "earned" without spoiling a
+ * beginner. Mirrors the glossary's `revealAtSequence` philosophy but for the
+ * RAG corpus. Tiers rise 0 → 4 as sequence falls 9 → 0:
+ *   Seq 9-8 → 0, 7-5 → 1, 4-2 → 2, 1 → 3, 0 (True God) → 4.
+ * Defends against a malformed (out-of-range) sequence by clamping to tier 0.
+ */
+export function concealmentTierForSequence(sequenceLevel: number): number {
+  if (!Number.isFinite(sequenceLevel)) return 0;
+  if (sequenceLevel <= 0) return 4;
+  if (sequenceLevel === 1) return 3;
+  if (sequenceLevel <= 4) return 2;
+  if (sequenceLevel <= 7) return 1;
+  return 0;
+}
+
 /** Wrap a Supabase client into the injectable RPC seam. */
 export function createSupabaseChunkMatcher(
   client: SupabaseRpcClient,
