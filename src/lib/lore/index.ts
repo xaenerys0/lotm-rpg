@@ -33,6 +33,13 @@ export {
 } from "./retrieval";
 export { cityNarrationDirective } from "./narration";
 export {
+  selectStartScenario,
+  startScenariosForEpoch,
+  getStartScenario,
+  START_SCENARIOS,
+  type StartScenario,
+} from "./start-scenarios";
+export {
   gazetteerForEpoch,
   type EpochGazetteer,
   type GazetteerDistrict,

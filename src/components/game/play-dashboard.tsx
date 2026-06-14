@@ -22,6 +22,7 @@ import {
   ECHOES_KEY,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
+import { selectStartScenario } from "@/lib/lore";
 import {
   loadAllSessions,
   loadSessionIndex,
@@ -128,6 +129,10 @@ export function PlayDashboard() {
       epoch: number,
       prologueRecap: string,
     ) => {
+      // Varied story openings: draw a random start scenario for this epoch so
+      // the chronicle's opening location and first scene differ run to run
+      // (e.g. not always Tingen). Pathway does not bias the draw.
+      const startScenario = selectStartScenario(epoch);
       const gameState = createDefaultGameState(
         pathwayId,
         undefined,
@@ -135,6 +140,7 @@ export function PlayDashboard() {
         characterBackground,
         epoch,
         prologueRecap,
+        startScenario,
       );
       // Cross-epoch echoes (issue #31): a fallen predecessor's artifact may
       // begin the chronicle in this character's possession, and the narrator

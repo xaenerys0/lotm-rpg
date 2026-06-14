@@ -14,6 +14,12 @@ const CITY_TONE: Record<string, string> = {
     "Trier is the sunlit capital of the Intis Republic: render it through bright boulevards and golden sun-worship, bohemian arts and fashion, the simmering ferment of revolutionary politics, and the labyrinthine dark of the quarries and catacombs beneath the gated quartiers.",
   bayam:
     "Bayam is the colonial City of Generosity in the Rorsted Archipelago: render it through salt air and spice, crowded harbour bars thick with pirates and adventurers, the uneasy mingling of Loen rulers and island natives, and the drowned, hunted superstition of the Sea God beneath the curfewed nights.",
+  pritz:
+    "Pritz Harbor is the Loen Kingdom's chief naval port beneath the Hornacis range: render it through cold fog off grey water, anchored ironclads and the bustle of dockyards, marching sailors and marines, and the mountain wilds at the city's back where the old monasteries keep their watch.",
+  enmat:
+    "Enmat Harbor is a small, fog-drowned Loen coastal town: render it through narrow lamplit lanes and creaking fishing boats, close-mouthed locals and old sea-superstition, and a sense that the mist rolling off the water hides more than weather.",
+  feysac:
+    "Feysac is the frozen militarist empire of the God of Combat: render it through bitter cold and iron discipline, devout soldiers and martial faith, frontier towns walled against the northern wilds, and the ever-present threat of evil spirits and monsters beyond the firelight.",
 };
 
 /**

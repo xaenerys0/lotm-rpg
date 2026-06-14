@@ -616,7 +616,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
       const playerAction =
         currentSession.turnCount === 0
-          ? (epochOpeningBeat(currentSession.gameState.epoch) ??
+          ? (currentSession.gameState.openingBeat ??
+            epochOpeningBeat(currentSession.gameState.epoch) ??
             `I begin my journey as a Sequence ${currentSession.gameState.sequenceLevel} ${seq?.name ?? "Beyonder"} in ${currentSession.gameState.location}. Describe the opening scene and give me choices.`)
           : "Continue from the previous scene. Describe what happens next and give me choices.";
 

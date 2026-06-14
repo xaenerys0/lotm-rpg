@@ -10,6 +10,7 @@ import { createDigestionState } from "./digestion";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidSocietyShape } from "./society";
 import { DEFAULT_EPOCH_ID, getEpoch } from "@/lib/lore/epochs";
+import type { StartScenario } from "@/lib/lore/start-scenarios";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
 
 const VALID_PHASES: GamePhase[] = [
@@ -70,6 +71,7 @@ export function createDefaultGameState(
   characterBackground?: string,
   epoch?: number,
   prologueRecap?: string,
+  startScenario?: StartScenario,
 ): GameState {
   return {
     characterId,
@@ -78,7 +80,10 @@ export function createDefaultGameState(
     sanity: 100,
     maxSanity: 100,
     inventory: [],
-    location: getEpoch(epoch).startingLocation,
+    // Varied story openings: a chosen start scenario sets the (randomly varied)
+    // starting location; absent (manual fallback / legacy callers) it falls back
+    // to the epoch's default starting location.
+    location: startScenario?.location ?? getEpoch(epoch).startingLocation,
     ...(epoch !== undefined && epoch !== DEFAULT_EPOCH_ID ? { epoch } : {}),
     activeQuests: [],
     npcsPresent: [],
@@ -88,6 +93,9 @@ export function createDefaultGameState(
     // Durable prologue recap (the prologue → story bridge) — kept in the
     // never-trimmed game-state layer so the narrator never loses the thread.
     ...(prologueRecap ? { prologueRecap } : {}),
+    // The first-turn opening beat for the chosen start scenario, so the opening
+    // scene matches the varied starting location (consumed only at turn 0).
+    ...(startScenario ? { openingBeat: startScenario.openingBeat } : {}),
   };
 }
 

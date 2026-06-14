@@ -284,6 +284,12 @@ describe("cityNarrationDirective", () => {
     expect(cityNarrationDirective("Bayam Harbour")).toContain("Archipelago");
   });
 
+  it("gives the farther start regions their own tone", () => {
+    expect(cityNarrationDirective("Pritz Harbor")).toContain("naval");
+    expect(cityNarrationDirective("Enmat Harbor")).toContain("coastal");
+    expect(cityNarrationDirective("Feysac")).toContain("God of Combat");
+  });
+
   it("returns null for unknown or unmapped locations", () => {
     expect(cityNarrationDirective("Tingen City")).toBeNull();
     expect(cityNarrationDirective("Backwater Village")).toBeNull();
