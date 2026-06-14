@@ -1,12 +1,18 @@
 "use client";
 
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
-import type { ProviderId, ProviderConfig, ModelOption } from "@/lib/ai";
+import type {
+  ProviderId,
+  ProviderConfig,
+  ModelOption,
+  ModelAccessResult,
+} from "@/lib/ai";
 import {
   PROVIDER_MODELS,
   validateProviderConfig,
   listProviderModels,
   findUnservedModels,
+  probeModelAccess,
 } from "@/lib/ai";
 import { PROVIDER_CONFIG_KEY, MODELS_CACHE_KEY } from "@/lib/game";
 import { noopSubscribe } from "@/lib/react";
@@ -211,6 +217,8 @@ export function ProviderConfig() {
     initialModels,
   );
   const [modelsStatus, setModelsStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [modelAccess, setModelAccess] = useState<ModelAccessResult[] | null>(null);
+  const [accessStatus, setAccessStatus] = useState<"idle" | "checking" | "error">("idle");
 
   const providerMeta = PROVIDERS.find((p) => p.id === form.providerId)!;
   const isCustom = form.providerId === "custom";
@@ -238,12 +246,22 @@ export function ProviderConfig() {
           availableModels,
         )
       : [];
+  // Models the live catalog lists but the account can't actually RUN. Ollama
+  // Cloud lists its whole catalog regardless of plan, so a selected model can
+  // 403 ("requires a subscription") only at chat time — probeModelAccess
+  // test-calls the two selected models to catch that before gameplay.
+  const inaccessibleModels = (modelAccess ?? []).filter((m) => !m.accessible);
+  const accessReason = inaccessibleModels.find((m) => m.reason)?.reason;
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
       setForm((prev) => ({ ...prev, [field]: value }));
       setSaveStatus("unsaved");
       setConnectionStatus("idle");
+      // Any field edit (key, base URL, or a model pick) invalidates a prior
+      // entitlement probe — clear it so a stale "can't run" warning never lingers.
+      setModelAccess(null);
+      setAccessStatus("idle");
     },
     [],
   );
@@ -256,6 +274,8 @@ export function ProviderConfig() {
 
     setAvailableModels(cached);
     setModelsStatus("idle");
+    setModelAccess(null);
+    setAccessStatus("idle");
     setForm({
       providerId: newId,
       apiKey: "",
@@ -292,6 +312,25 @@ export function ProviderConfig() {
     }
   }, [buildConfig, form.providerId, form.baseUrl]);
 
+  // Verify the account can actually RUN the two selected models, not just that
+  // they're listed. Scoped to Ollama Cloud: there the live /models catalog spans
+  // every cloud model regardless of plan, so a selectable model can still 403
+  // ("requires a subscription") at chat time. A minimal probe call per model
+  // surfaces that here instead of mid-game.
+  const handleCheckModels = useCallback(async () => {
+    setAccessStatus("checking");
+    try {
+      const results = await probeModelAccess(buildConfig(), [
+        form.routineModel,
+        form.premiumModel,
+      ]);
+      setModelAccess(results);
+      setAccessStatus("idle");
+    } catch {
+      setAccessStatus("error");
+    }
+  }, [buildConfig, form.routineModel, form.premiumModel]);
+
   const handleTestConnection = useCallback(async () => {
     setConnectionStatus("testing");
     setConnectionError("");
@@ -301,6 +340,9 @@ export function ProviderConfig() {
         setConnectionStatus("valid");
         // Best-effort: refresh the live model list once the key is known good.
         if (!isCustom) void handleRefreshModels();
+        // Ollama Cloud lists models it won't run on the account's plan; probe the
+        // selected pair so a gated pick is caught now, not on a premium turn.
+        if (form.providerId === "ollama-cloud") void handleCheckModels();
       } else {
         setConnectionStatus("invalid");
         setConnectionError(result.error ?? "Connection failed");
@@ -309,7 +351,7 @@ export function ProviderConfig() {
       setConnectionStatus("invalid");
       setConnectionError(err instanceof Error ? err.message : "Unexpected error");
     }
-  }, [buildConfig, isCustom, handleRefreshModels]);
+  }, [buildConfig, isCustom, handleRefreshModels, handleCheckModels, form.providerId]);
 
   // Key removal/rotation (issue #15): wipe the key from the form AND from the
   // persisted config immediately — no save step where a stale key lingers.
@@ -465,14 +507,26 @@ export function ProviderConfig() {
                   ? "Live list from your provider."
                   : "Built-in list — refresh to fetch the latest."}
             </p>
-            <button
-              type="button"
-              onClick={handleRefreshModels}
-              disabled={modelsStatus === "loading" || !canTest}
-              className="shrink-0 rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30"
-            >
-              {modelsStatus === "loading" ? "Refreshing..." : "Refresh list"}
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              {form.providerId === "ollama-cloud" && (
+                <button
+                  type="button"
+                  onClick={handleCheckModels}
+                  disabled={accessStatus === "checking" || !canTest}
+                  className="shrink-0 rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30"
+                >
+                  {accessStatus === "checking" ? "Checking..." : "Check models"}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleRefreshModels}
+                disabled={modelsStatus === "loading" || !canTest}
+                className="shrink-0 rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30"
+              >
+                {modelsStatus === "loading" ? "Refreshing..." : "Refresh list"}
+              </button>
+            </div>
           </div>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
@@ -551,6 +605,40 @@ export function ProviderConfig() {
             will likely be rejected (HTTP 403). Pick a listed model above.
           </p>
         )}
+        {accessStatus === "error" && (
+          <p role="status" className="mt-3 text-xs text-muted">
+            Couldn&apos;t check model access just now — try again.
+          </p>
+        )}
+        {inaccessibleModels.length > 0 && (
+          <p
+            role="alert"
+            className="mt-3 rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-2 text-xs leading-relaxed text-sanity-low"
+          >
+            <strong className="font-semibold">Your plan can&apos;t run:</strong>{" "}
+            <span className="font-mono">
+              {inaccessibleModels.map((m) => m.model).join(", ")}
+            </span>
+            . {accessReason ? `${accessReason} ` : ""}Pick a model your ollama.com plan
+            includes, or upgrade at{" "}
+            <a
+              href="https://ollama.com/settings/billing"
+              target="_blank"
+              rel="noreferrer"
+              className="underline hover:text-amber"
+            >
+              ollama.com
+            </a>
+            .
+          </p>
+        )}
+        {accessStatus === "idle" &&
+          modelAccess !== null &&
+          inaccessibleModels.length === 0 && (
+            <p role="status" className="mt-3 text-xs text-sanity-high">
+              Your plan can run both selected models.
+            </p>
+          )}
       </fieldset>
 
       {/* Connection Status & Actions */}
