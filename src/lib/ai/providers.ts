@@ -319,9 +319,17 @@ export class AnthropicAdapter implements LLMProviderAdapter {
       return { valid: true };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
+      // The key authenticated unless Anthropic returned a 401. A rate limit or
+      // provider hiccup (RATE_LIMITED / PROVIDER_ERROR), or a 400/404 against the
+      // hardcoded probe model (the model is gated/unavailable on the account, not
+      // a bad key — these classify as AUTH_ERROR but carry their HTTP status),
+      // all mean the key itself is fine, so they must not be reported as invalid.
       if (
         err instanceof AIError &&
-        (err.code === "RATE_LIMITED" || err.code === "PROVIDER_ERROR")
+        (err.code === "RATE_LIMITED" ||
+          err.code === "PROVIDER_ERROR" ||
+          err.status === 400 ||
+          err.status === 404)
       ) {
         return { valid: true };
       }

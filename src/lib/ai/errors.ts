@@ -76,12 +76,43 @@ function pluckMessage(value: unknown): string | undefined {
 
 export function classifyHttpError(status: number, body: string): AIError {
   // Extract the provider's reason once and carry it on every error, so consumers
-  // (e.g. the model-access probe) read `err.reason` instead of re-parsing.
+  // (e.g. the model-access probe) read `err.reason` instead of re-parsing. The
+  // same reason is appended to the human-readable message via `withReason` so
+  // the provider's own wording surfaces in the UI — critical for the
+  // browser-direct providers (Anthropic, OpenAI, …), which have no server-side
+  // log to inspect, so a bare "Unexpected HTTP 400" would otherwise be a
+  // dead end.
   const reason = extractProviderMessage(body);
+  // Cap the reason spliced into the human-readable message: a structured
+  // `{ message }` body is returned uncapped by `extractProviderMessage`, and the
+  // full text still lives on `err.reason` for programmatic consumers — but the
+  // UI string shouldn't balloon on a multi-KB provider message.
+  const withReason = (base: string): string =>
+    reason ? `${base} Provider said: ${reason.slice(0, 300)}` : base;
+
   if (status === 401) {
     return new AIError(
       "AUTH_ERROR",
-      "Invalid or expired API key. Please check your provider settings.",
+      withReason("Invalid or expired API key. Please check your provider settings."),
+      body,
+      status,
+      reason,
+    );
+  }
+  // A 400 (bad request) or 404 (not found) is a deterministic, client-side
+  // configuration problem — almost always a selected model id this provider
+  // doesn't recognize, or a wrong base URL — not a transient fault. Retrying
+  // sends the identical request and fails identically, so these must NOT be
+  // retryable (a bare PROVIDER_ERROR would burn the full 2s/4s/8s backoff before
+  // surfacing). AUTH_ERROR keeps the "Go to Settings" recovery CTA without
+  // blaming the key (mirroring the 403 treatment), and the provider's own
+  // wording (e.g. Anthropic's "model: … not found") is surfaced.
+  if (status === 400 || status === 404) {
+    return new AIError(
+      "AUTH_ERROR",
+      withReason(
+        `The provider rejected the request (HTTP ${status}). The selected model id may be invalid or unavailable on this provider, or the base URL is wrong. Check your models and base URL in Settings.`,
+      ),
       body,
       status,
       reason,
@@ -95,11 +126,11 @@ export function classifyHttpError(status: number, body: string): AIError {
   // reason (e.g. ollama.com's "this model requires a subscription, upgrade for
   // access: …"), surface it verbatim instead of guessing.
   if (status === 403) {
-    const base =
-      "The provider accepted your key but refused this request (HTTP 403). The selected model may be unavailable on your plan, or you may have hit a usage limit. Check the model in Settings or your provider's dashboard.";
     return new AIError(
       "AUTH_ERROR",
-      reason ? `${base} Provider said: ${reason}` : base,
+      withReason(
+        "The provider accepted your key but refused this request (HTTP 403). The selected model may be unavailable on your plan, or you may have hit a usage limit. Check the model in Settings or your provider's dashboard.",
+      ),
       body,
       status,
       reason,
@@ -108,7 +139,7 @@ export function classifyHttpError(status: number, body: string): AIError {
   if (status === 429) {
     return new AIError(
       "RATE_LIMITED",
-      "Rate limited by provider. Retrying with backoff.",
+      withReason("Rate limited by provider. Retrying with backoff."),
       body,
       status,
       reason,
@@ -117,7 +148,7 @@ export function classifyHttpError(status: number, body: string): AIError {
   if (status === 402) {
     return new AIError(
       "QUOTA_EXCEEDED",
-      "API quota exceeded. Check your provider billing dashboard.",
+      withReason("API quota exceeded. Check your provider billing dashboard."),
       body,
       status,
       reason,
@@ -126,13 +157,19 @@ export function classifyHttpError(status: number, body: string): AIError {
   if (status >= 500) {
     return new AIError(
       "PROVIDER_ERROR",
-      "Provider is experiencing issues. Retrying.",
+      withReason("Provider is experiencing issues. Retrying."),
       body,
       status,
       reason,
     );
   }
-  return new AIError("PROVIDER_ERROR", `Unexpected HTTP ${status}`, body, status, reason);
+  return new AIError(
+    "PROVIDER_ERROR",
+    withReason(`Unexpected HTTP ${status}`),
+    body,
+    status,
+    reason,
+  );
 }
 
 export function createMalformedOutputError(rawOutput: string): AIError {
