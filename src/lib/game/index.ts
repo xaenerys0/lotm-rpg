@@ -292,6 +292,12 @@ export {
 } from "./travel";
 
 export {
+  buildRetrievalQuery,
+  toRetrievedLoreChunks,
+  RETRIEVAL_QUERY_CHAR_CAP,
+} from "./lore-retrieval";
+
+export {
   AMBUSH_PREP_CAP,
   VICTORY_THRESHOLD,
   DEFEAT_THRESHOLD,

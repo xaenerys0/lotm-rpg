@@ -67,8 +67,13 @@ the browser bundle anyway — a tripwire, not a bug.) Runtime retrieval goes thr
   `chunkUuid` (deterministic RFC-4122 v5-style uuid from the pipeline chunk id —
   idempotent upserts, no schema change; the pipeline id is preserved in
   `ref.chunk_key`), `toSourceChunkRow`, and `toEmbeddingRow` (throws on
-  unembedded records / wrong dims). The Supabase write loop is the
-  `scripts/rag/load.ts` driver (service-role, operator-side only).
+  unembedded records / wrong dims). `validateChunkMetadata` (called by
+  `toSourceChunkRow`) fails fast on chronology/concealment metadata the gates
+  trust — `canon_order` must be a non-negative integer or null, `concealment_tier`
+  an integer in `[0, MAX_CONCEALMENT_TIER]` (`types.ts`), `tokenCount` positive —
+  so a mistyped tier can never silently leak deep-spoiler corpus past the
+  concealment gate. The Supabase write loop is the `scripts/rag/load.ts` driver
+  (service-role, operator-side only).
 - `jsonl.ts` — `parseJsonl` / `iterateJsonl` / `toJsonl` — the JSONL read/write seam
   shared by every pipeline stage.
 - `index.ts` — Public exports.

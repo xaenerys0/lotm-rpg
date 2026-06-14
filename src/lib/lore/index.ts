@@ -1,6 +1,6 @@
 export type { LoreCategory, LoreEntry } from "./types";
 
-export { selectCuratedLore } from "./selection";
+export { selectCuratedLore, passesSequenceGate } from "./selection";
 export {
   epochNarrationDirective,
   epochOpeningBeat,
@@ -22,6 +22,7 @@ export {
 
 export {
   createSupabaseChunkMatcher,
+  concealmentTierForSequence,
   DEFAULT_RETRIEVAL_COUNT,
   retrievalChunkIds,
   retrieveChunks,
@@ -33,6 +34,16 @@ export {
 } from "./retrieval";
 export { cityNarrationDirective } from "./narration";
 export {
+  selectStartScenario,
+  selectStartScenarioForLocation,
+  startScenariosForEpoch,
+  startLocationsForEpoch,
+  getStartScenario,
+  START_SCENARIOS,
+  type StartScenario,
+  type StartLocationOption,
+} from "./start-scenarios";
+export {
   gazetteerForEpoch,
   type EpochGazetteer,
   type GazetteerDistrict,
@@ -43,6 +54,7 @@ export { TINGEN_LORE } from "./tingen";
 export { BACKLUND_LORE } from "./backlund";
 export { TRIER_LORE } from "./trier";
 export { BAYAM_LORE } from "./bayam";
+export { REGIONS_LORE } from "./regions";
 export { FIRST_EPOCH_LORE } from "./epoch-first";
 export { SECOND_EPOCH_LORE } from "./epoch-second";
 export { THIRD_EPOCH_LORE } from "./epoch-third";
@@ -79,6 +91,7 @@ import { TINGEN_LORE } from "./tingen";
 import { BACKLUND_LORE } from "./backlund";
 import { TRIER_LORE } from "./trier";
 import { BAYAM_LORE } from "./bayam";
+import { REGIONS_LORE } from "./regions";
 import { FIRST_EPOCH_LORE } from "./epoch-first";
 import { SECOND_EPOCH_LORE } from "./epoch-second";
 import { THIRD_EPOCH_LORE } from "./epoch-third";
@@ -114,6 +127,7 @@ export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...BACKLUND_LORE,
   ...TRIER_LORE,
   ...BAYAM_LORE,
+  ...REGIONS_LORE,
   ...FIRST_EPOCH_LORE,
   ...SECOND_EPOCH_LORE,
   ...THIRD_EPOCH_LORE,

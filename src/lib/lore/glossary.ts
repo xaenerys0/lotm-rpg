@@ -130,6 +130,33 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     epoch: 5,
   },
   {
+    slug: "pritz-harbor",
+    term: "Pritz Harbor",
+    category: "Geography",
+    definition:
+      "Loen's chief naval port beneath the Hornacis range — dry-docks, warships, and fog. A heavy garrison watches the mountain passes, and a great deal moves through a port that busy unseen.",
+    revealAtSequence: 9,
+    epoch: 5,
+  },
+  {
+    slug: "enmat-harbor",
+    term: "Enmat Harbor",
+    category: "Geography",
+    definition:
+      "A small Loen fishing town the sea-fog swallows most nights. Old charms over the doorways, strangers counted, and the nearest real authority a long road away.",
+    revealAtSequence: 9,
+    epoch: 5,
+  },
+  {
+    slug: "feysac-empire",
+    term: "Feysac Empire",
+    category: "Geography",
+    definition:
+      "The cold militarist empire to the north, beyond the Hornacis range, devoted to the God of Combat. Discipline, martial honour, and a dangerous frontier where monsters press at the walls.",
+    revealAtSequence: 9,
+    epoch: 5,
+  },
+  {
     slug: "fifth-epoch",
     term: "The Fifth Epoch",
     category: "History",

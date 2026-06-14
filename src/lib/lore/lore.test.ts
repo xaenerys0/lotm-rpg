@@ -38,6 +38,7 @@ import {
   CHAINED_PATHWAY_LORE,
   NPC_LORE,
   ORGANIZATION_LORE,
+  REGIONS_LORE,
   SUN_PATHWAY_LORE,
   TINGEN_LORE,
   TRIER_LORE,
@@ -122,6 +123,15 @@ describe("Lore content coverage", () => {
       expect(lore.every((e) => e.city === city)).toBe(true);
       // Each set leads with an overview entry.
       expect(lore.some((e) => e.slug === `${city}-city-overview`)).toBe(true);
+    }
+  });
+
+  it("has the farther Fifth-Epoch start regions with city-keyed overviews", () => {
+    expect(REGIONS_LORE.length).toBeGreaterThanOrEqual(3);
+    expect(REGIONS_LORE.every((e) => e.category === "location")).toBe(true);
+    expect(REGIONS_LORE.every((e) => e.epoch === 5)).toBe(true);
+    for (const city of ["pritz", "enmat", "feysac"]) {
+      expect(REGIONS_LORE.some((e) => e.city === city)).toBe(true);
     }
   });
 
@@ -284,6 +294,12 @@ describe("cityNarrationDirective", () => {
     expect(cityNarrationDirective("Bayam Harbour")).toContain("Archipelago");
   });
 
+  it("gives the farther start regions their own tone", () => {
+    expect(cityNarrationDirective("Pritz Harbor")).toContain("naval");
+    expect(cityNarrationDirective("Enmat Harbor")).toContain("coastal");
+    expect(cityNarrationDirective("Feysac")).toContain("God of Combat");
+  });
+
   it("returns null for unknown or unmapped locations", () => {
     expect(cityNarrationDirective("Tingen City")).toBeNull();
     expect(cityNarrationDirective("Backwater Village")).toBeNull();
@@ -303,6 +319,7 @@ describe("Total lore corpus", () => {
       BACKLUND_LORE.length +
       TRIER_LORE.length +
       BAYAM_LORE.length +
+      REGIONS_LORE.length +
       FIRST_EPOCH_LORE.length +
       SECOND_EPOCH_LORE.length +
       THIRD_EPOCH_LORE.length +

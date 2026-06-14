@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { chunkUuid, toEmbeddingRow, toSourceChunkRow } from "./load";
-import { type ChunkRecord } from "./types";
+import {
+  chunkUuid,
+  toEmbeddingRow,
+  toSourceChunkRow,
+  validateChunkMetadata,
+} from "./load";
+import { MAX_CONCEALMENT_TIER, type ChunkRecord } from "./types";
 
 const record = (overrides: Partial<ChunkRecord> = {}): ChunkRecord => ({
   id: "novel-ch1-0000",
@@ -46,6 +51,44 @@ describe("toSourceChunkRow", () => {
       concealment_tier: 0,
       in_world_date: "1349",
     });
+  });
+
+  it("rejects a chunk with out-of-range metadata before it can reach the corpus", () => {
+    expect(() => toSourceChunkRow(record({ concealment_tier: 9 }))).toThrow(
+      /concealment_tier/,
+    );
+  });
+});
+
+describe("validateChunkMetadata", () => {
+  it("accepts a well-formed chunk (including a timeless null canon_order)", () => {
+    expect(() => validateChunkMetadata(record())).not.toThrow();
+    expect(() => validateChunkMetadata(record({ canon_order: null }))).not.toThrow();
+    expect(() =>
+      validateChunkMetadata(record({ concealment_tier: MAX_CONCEALMENT_TIER })),
+    ).not.toThrow();
+  });
+
+  it("rejects a negative or fractional canon_order", () => {
+    expect(() => validateChunkMetadata(record({ canon_order: -1 }))).toThrow(
+      /canon_order/,
+    );
+    expect(() => validateChunkMetadata(record({ canon_order: 1.5 }))).toThrow(
+      /canon_order/,
+    );
+  });
+
+  it("rejects an out-of-range or non-integer concealment_tier", () => {
+    expect(() => validateChunkMetadata(record({ concealment_tier: -1 }))).toThrow(
+      /concealment_tier/,
+    );
+    expect(() =>
+      validateChunkMetadata(record({ concealment_tier: MAX_CONCEALMENT_TIER + 1 })),
+    ).toThrow(/concealment_tier/);
+  });
+
+  it("rejects a non-positive token count", () => {
+    expect(() => validateChunkMetadata(record({ tokenCount: 0 }))).toThrow(/tokenCount/);
   });
 });
 

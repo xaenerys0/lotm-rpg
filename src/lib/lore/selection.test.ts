@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { selectCuratedLore } from "./selection";
+import { selectCuratedLore, passesSequenceGate } from "./selection";
 
 describe("selectCuratedLore", () => {
   it("selects pathway lore, the epoch setting, then city lore, deduped by slug", () => {
@@ -63,5 +63,48 @@ describe("selectCuratedLore", () => {
       const ctx = selectCuratedLore("nonexistent", "Nowhere", 100000, epoch);
       expect(ctx.entries.map((e) => e.slug)).toContain(slug);
     }
+  });
+
+  it("sequence-gates pathway lore: a fresh Seq 9 character sees the overview and Seq 9 entry but not deeper rungs", () => {
+    const atNine = selectCuratedLore("fool", "Tingen City", 100000, 5, 9);
+    const slugs = atNine.entries.map((e) => e.slug);
+    // Overview (sequences [9,8,7,6,5], earliest rung is 9) and the Seq 9 entry pass.
+    expect(slugs).toContain("fool-pathway-overview");
+    expect(slugs).toContain("fool-seq9-seer");
+    // The Seq 8 write-up describes a rung not yet reached — gated out.
+    expect(slugs).not.toContain("fool-seq8-clown");
+  });
+
+  it("reveals a deeper rung once the character has reached it", () => {
+    const atEight = selectCuratedLore("fool", "Tingen City", 100000, 5, 8);
+    const slugs = atEight.entries.map((e) => e.slug);
+    expect(slugs).toContain("fool-seq8-clown");
+  });
+
+  it("omitting sequenceLevel preserves prior behaviour (no rung gating)", () => {
+    const ungated = selectCuratedLore("fool", "Tingen City", 100000, 5);
+    const slugs = ungated.entries.map((e) => e.slug);
+    expect(slugs).toContain("fool-seq8-clown");
+  });
+});
+
+describe("passesSequenceGate", () => {
+  it("passes everything when the character sequence is unknown", () => {
+    expect(passesSequenceGate([8], undefined)).toBe(true);
+  });
+
+  it("passes entries with no sequence tag (geography, era, organizations)", () => {
+    expect(passesSequenceGate([], 9)).toBe(true);
+  });
+
+  it("reveals a rung only once the character has reached its earliest sequence", () => {
+    // entry covers Seq 8; you start at 9 and descend.
+    expect(passesSequenceGate([8], 9)).toBe(false);
+    expect(passesSequenceGate([8], 8)).toBe(true);
+    expect(passesSequenceGate([8], 7)).toBe(true);
+  });
+
+  it("uses the highest-numbered (earliest) sequence of a multi-rung entry", () => {
+    expect(passesSequenceGate([9, 8, 7, 6, 5], 9)).toBe(true);
   });
 });

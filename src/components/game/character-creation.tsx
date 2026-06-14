@@ -16,7 +16,7 @@ import {
   clearDraft,
   TUTORIAL_SCENES,
 } from "@/lib/game";
-import { DEFAULT_EPOCH_ID, EPOCHS } from "@/lib/lore";
+import { DEFAULT_EPOCH_ID, EPOCHS, startLocationsForEpoch } from "@/lib/lore";
 import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
@@ -73,6 +73,8 @@ interface CharacterCreationProps {
     initialMemory: MemoryState,
     epoch: number,
     prologueRecap: string,
+    /** Preferred starting location, or null for a random ("Surprise me") start. */
+    startLocation: string | null,
   ) => void;
   onBack: () => void;
 }
@@ -124,6 +126,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const [tutorialIndex, setTutorialIndex] = useState(0);
   const [epoch, setEpoch] = useState(DEFAULT_EPOCH_ID);
   const [skipPrologue, setSkipPrologue] = useState(false);
+  // Preferred starting location (varied story openings). null = "Surprise me"
+  // (a random start). The picker on the final step surfaces, per place, which
+  // pathways it thematically suits — a suggestion only, never an auto-bias.
+  const [startLocation, setStartLocation] = useState<string | null>(null);
 
   // Character identity — restored from draft when available
   const [characterName, setCharacterName] = useState(savedDraft?.characterName ?? "");
@@ -343,7 +349,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           )?.text,
         });
     clearDraft();
-    onComplete(selectedPathwayId, name, bg, memory, epoch, prologueRecap);
+    onComplete(selectedPathwayId, name, bg, memory, epoch, prologueRecap, startLocation);
   }, [
     epoch,
     selectedPathwayId,
@@ -352,6 +358,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     skipPrologue,
     prologueHistory,
     finale,
+    startLocation,
     onComplete,
   ]);
 
@@ -973,7 +980,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   </div>
                   <div>
                     <p className="text-[10px] text-muted">Location</p>
-                    <p className="font-serif text-sm text-foreground/70">Tingen City</p>
+                    <p className="font-serif text-sm text-foreground/70">Chosen next</p>
                   </div>
                 </div>
               </div>
@@ -1007,6 +1014,59 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 </p>
               ))}
           </div>
+
+          {/* Where the chronicle begins (varied story openings). "Surprise me"
+              keeps it random; choosing a place sets a preferred start (the scene
+              still varies). Places that thematically suit the chosen pathway are
+              flagged as a suggestion — never an automatic bias. */}
+          {(() => {
+            const options = startLocationsForEpoch(epoch);
+            const pathwayName = ALL_PATHWAYS.find(
+              (p) => p.id === selectedPathwayId,
+            )?.name;
+            const selected = options.find((o) => o.location === startLocation);
+            const suitsSelected =
+              selected?.pathwayAffinity.includes(selectedPathwayId) ?? false;
+            return (
+              <div className="mb-8">
+                <label
+                  htmlFor="start-location"
+                  className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                >
+                  Where Your Chronicle Begins
+                </label>
+                <select
+                  id="start-location"
+                  value={startLocation ?? ""}
+                  onChange={(e) =>
+                    setStartLocation(e.target.value === "" ? null : e.target.value)
+                  }
+                  className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                >
+                  <option value="">Surprise me — a random start</option>
+                  {options.map((o) => {
+                    const suits = o.pathwayAffinity.includes(selectedPathwayId);
+                    return (
+                      <option key={o.location} value={o.location}>
+                        {o.location}
+                        {suits && pathwayName ? ` · suits the ${pathwayName}` : ""}
+                      </option>
+                    );
+                  })}
+                </select>
+                <p className="mt-1.5 text-xs leading-relaxed text-muted" role="status">
+                  {selected
+                    ? `${selected.blurb}${
+                        suitsSelected && pathwayName
+                          ? ` A fitting start for the ${pathwayName} pathway.`
+                          : ""
+                      }`
+                    : "The fog will decide where you wake — a different place, and a different opening, each time."}
+                </p>
+              </div>
+            );
+          })()}
+
           <button
             type="button"
             onClick={handleBeginChronicle}

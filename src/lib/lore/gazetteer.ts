@@ -116,6 +116,27 @@ const FIFTH_FARTHER_CITIES: GazetteerFartherCity[] = [
     blurb:
       "A colonial port-capital far out in the Sonia Sea, built on a forested island and named the City of Generosity for its gold and spice. Its harbour bars are loud with sailors and adventurers; a curfew falls hard at nightfall.",
   },
+  {
+    id: "pritz",
+    name: "Pritz Harbor",
+    realm: "Loen Kingdom — the chief naval port",
+    blurb:
+      "Loen's great navy town on the cold northern coast, under the shadow of the Hornacis range. Fog, dry-docks, and anchored ironclads; smugglers work the mountain passes at its back, so the garrison is heavy and the night watch real.",
+  },
+  {
+    id: "enmat",
+    name: "Enmat Harbor",
+    realm: "Loen Kingdom — a coastal town",
+    blurb:
+      "A small fishing town the sea-fog swallows most nights — net-lofts, lamplit lanes, and old charms over the doorways. Quiet enough that strangers are counted, and quiet enough to hide the kind of business that wants no neighbours.",
+  },
+  {
+    id: "feysac",
+    name: "Feysac",
+    realm: "Feysac Empire — the militarist north",
+    blurb:
+      "The cold northern empire of the God of Combat, beyond the Hornacis range: walled towns, drilled militias, and martial faith. The winters are long and the frontier dangerous, where monsters press at the walls and strength commands open respect.",
+  },
 ];
 
 // ── Earlier epochs — static, public region lists drawn from the lore. ──

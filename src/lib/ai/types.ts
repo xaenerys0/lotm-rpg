@@ -156,6 +156,14 @@ export interface GameState {
    */
   epoch?: number;
   /**
+   * The first-turn opening beat for this chronicle (varied story openings).
+   * Set at character creation from the chosen start scenario so the first scene
+   * matches the (randomly varied) starting location. Optional — absent saves
+   * (and the manual fallback) fall back to the epoch's default opening beat.
+   * Only meaningful at `turnCount === 0`.
+   */
+  openingBeat?: string;
+  /**
    * Funds in pence (issue #16 — the marketplace introduced currency).
    * Optional for saves that predate it; `getFunds` seeds the default.
    */

@@ -4,6 +4,7 @@ import type { EmbeddingProvider } from "@/lib/ai/embeddings";
 import { AIError } from "@/lib/ai/errors";
 import {
   createSupabaseChunkMatcher,
+  concealmentTierForSequence,
   DEFAULT_RETRIEVAL_COUNT,
   retrievalChunkIds,
   retrieveChunks,
@@ -297,5 +298,34 @@ describe("createSupabaseChunkMatcher", () => {
     await expect(
       matcher({ p_query_embedding: "[]", p_query_text: "", p_model_id: MODEL_ID }),
     ).rejects.toThrow(/Chunk retrieval failed: boom/);
+  });
+});
+
+describe("concealmentTierForSequence", () => {
+  it("keeps fresh, low-power Beyonders at tier 0", () => {
+    expect(concealmentTierForSequence(9)).toBe(0);
+    expect(concealmentTierForSequence(8)).toBe(0);
+  });
+
+  it("unlocks deeper tiers as the sequence falls toward godhood", () => {
+    expect(concealmentTierForSequence(7)).toBe(1);
+    expect(concealmentTierForSequence(5)).toBe(1);
+    expect(concealmentTierForSequence(4)).toBe(2);
+    expect(concealmentTierForSequence(2)).toBe(2);
+    expect(concealmentTierForSequence(1)).toBe(3);
+    expect(concealmentTierForSequence(0)).toBe(4);
+  });
+
+  it("never decreases as the character advances (monotonic in power)", () => {
+    let previous = -1;
+    for (let seq = 9; seq >= 0; seq--) {
+      const tier = concealmentTierForSequence(seq);
+      expect(tier).toBeGreaterThanOrEqual(previous);
+      previous = tier;
+    }
+  });
+
+  it("clamps a malformed sequence to tier 0", () => {
+    expect(concealmentTierForSequence(NaN)).toBe(0);
   });
 });

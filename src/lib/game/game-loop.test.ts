@@ -20,6 +20,7 @@ import {
   isValidDigestionShape,
   isValidInjuriesShape,
 } from "./session";
+import { selectStartScenario } from "@/lib/lore";
 import { VALID_TRANSITIONS, PILLAR_INSTRUCTION_MAP, CHOICE_PILLAR_MAP } from "./types";
 import type { GameSession, GamePhase, GameplayPillar } from "./types";
 import type { GameState, Choice, ValidatedAIResponse, StateChange } from "@/lib/ai";
@@ -1230,6 +1231,19 @@ describe("createDefaultGameState", () => {
   it("omits prologueRecap when empty string provided", () => {
     const state = createDefaultGameState(1, "c1", "Klein", "", 5, "");
     expect(state.prologueRecap).toBeUndefined();
+  });
+
+  it("applies a start scenario's location and opening beat", () => {
+    const scenario = selectStartScenario(5, () => 0.5);
+    const state = createDefaultGameState(1, "c1", "Klein", "", 5, "", scenario);
+    expect(state.location).toBe(scenario.location);
+    expect(state.openingBeat).toBe(scenario.openingBeat);
+  });
+
+  it("falls back to the epoch's default location and no opening beat without a scenario", () => {
+    const state = createDefaultGameState(1, "c1", "Klein", "", 5);
+    expect(state.location).toBe("Tingen City");
+    expect(state.openingBeat).toBeUndefined();
   });
 });
 

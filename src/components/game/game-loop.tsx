@@ -107,6 +107,7 @@ import {
   getEpoch,
 } from "@/lib/lore";
 import { createClient } from "@/lib/supabase/client";
+import { retrieveLoreForTurn } from "./lore-retrieval-client";
 import { SceneArt } from "./scene-art";
 import { WorldMessages } from "./world-messages";
 import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
@@ -287,6 +288,9 @@ function buildAICallParams(currentSession: GameSession) {
       currentSession.gameState.location,
       TOKEN_BUDGET.lore,
       currentSession.gameState.epoch,
+      // Progressive disclosure: a character only sees curated lore for rungs of
+      // the pathway they have actually reached (issue: P2 sequence gate).
+      currentSession.gameState.sequenceLevel,
     ),
     // Per-city narration tone (issue #23): one tone sentence per city, null
     // for cities (incl. the Tingen start) with no specific tone.
@@ -616,9 +620,16 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
       const playerAction =
         currentSession.turnCount === 0
-          ? (epochOpeningBeat(currentSession.gameState.epoch) ??
+          ? (currentSession.gameState.openingBeat ??
+            epochOpeningBeat(currentSession.gameState.epoch) ??
             `I begin my journey as a Sequence ${currentSession.gameState.sequenceLevel} ${seq?.name ?? "Beyonder"} in ${currentSession.gameState.location}. Describe the opening scene and give me choices.`)
           : "Continue from the previous scene. Describe what happens next and give me choices.";
+
+      // Best-effort gated retrieval (issues #63/#64): extends the curated lore
+      // with novel/wiki chunks the character may canonically know. Never blocks
+      // the turn — resolves to [] when retrieval is unavailable.
+      const retrievedChunks = await retrieveLoreForTurn(currentSession, config);
+      if (generationRef.current !== gen) return;
 
       try {
         const result = await generate({
@@ -626,6 +637,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           gameState: currentSession.gameState,
           memory: currentSession.memory,
           loreContext,
+          retrievedChunks,
           identityContext,
           epochContext,
           cityNarration,
@@ -705,12 +717,16 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         cityNarration,
       } = buildAICallParams(currentSession);
 
+      const retrievedChunks = await retrieveLoreForTurn(currentSession, config);
+      if (generationRef.current !== gen) return;
+
       try {
         const result = await generate({
           config,
           gameState: currentSession.gameState,
           memory: currentSession.memory,
           loreContext,
+          retrievedChunks,
           identityContext,
           epochContext,
           cityNarration,
