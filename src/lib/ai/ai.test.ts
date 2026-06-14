@@ -5,6 +5,7 @@ import {
   classifyHttpError,
   createMalformedOutputError,
   createNetworkError,
+  extractProviderMessage,
 } from "./errors";
 import type {
   AIResponse,
@@ -66,6 +67,7 @@ import {
   validateProviderConfig,
   listProviderModels,
   findUnservedModels,
+  probeModelAccess,
   MAX_RETRIES,
   RETRY_DELAYS,
   MAX_OUTPUT_TOKENS,
@@ -254,6 +256,92 @@ describe("errors", () => {
       const err = classifyHttpError(418, "teapot");
       expect(err.code).toBe("PROVIDER_ERROR");
       expect(err.message).toContain("418");
+    });
+
+    it("records the originating HTTP status on the error", () => {
+      expect(classifyHttpError(401, "x").status).toBe(401);
+      expect(classifyHttpError(403, "x").status).toBe(403);
+      expect(classifyHttpError(429, "x").status).toBe(429);
+      expect(classifyHttpError(402, "x").status).toBe(402);
+      expect(classifyHttpError(503, "x").status).toBe(503);
+      expect(classifyHttpError(418, "x").status).toBe(418);
+    });
+
+    it("surfaces the provider's own 403 reason in the message", () => {
+      const err = classifyHttpError(
+        403,
+        JSON.stringify({
+          error: "this model requires a subscription, upgrade for access",
+        }),
+      );
+      expect(err.message).toContain("Provider said:");
+      expect(err.message).toContain("requires a subscription");
+    });
+
+    it("stores the extracted provider reason on the error for any status", () => {
+      const body = JSON.stringify({ error: "model not found" });
+      expect(classifyHttpError(404, body).reason).toBe("model not found");
+      expect(classifyHttpError(403, body).reason).toBe("model not found");
+      expect(classifyHttpError(401, "").reason).toBeUndefined();
+    });
+
+    it("omits the 'Provider said' clause when the 403 body is empty", () => {
+      const err = classifyHttpError(403, "");
+      expect(err.message).not.toContain("Provider said:");
+      expect(err.message).toContain("403");
+    });
+  });
+
+  describe("extractProviderMessage", () => {
+    it("returns undefined for missing or blank bodies", () => {
+      expect(extractProviderMessage(undefined)).toBeUndefined();
+      expect(extractProviderMessage("")).toBeUndefined();
+      expect(extractProviderMessage("   ")).toBeUndefined();
+    });
+
+    it("reads a string `error` field", () => {
+      expect(extractProviderMessage(JSON.stringify({ error: "nope" }))).toBe("nope");
+    });
+
+    it("reads a nested `error.message` field", () => {
+      expect(
+        extractProviderMessage(JSON.stringify({ error: { message: "gated" } })),
+      ).toBe("gated");
+    });
+
+    it("reads a top-level `message` field", () => {
+      expect(extractProviderMessage(JSON.stringify({ message: "hello" }))).toBe("hello");
+    });
+
+    it("handles a bare JSON string body", () => {
+      expect(extractProviderMessage(JSON.stringify("plain reason"))).toBe("plain reason");
+    });
+
+    it("falls back to capped raw text for non-JSON bodies", () => {
+      const raw = "x".repeat(400);
+      const out = extractProviderMessage(raw);
+      expect(out).toBe("x".repeat(300));
+    });
+
+    it("returns undefined when JSON has no recognizable message field", () => {
+      expect(extractProviderMessage(JSON.stringify({ foo: "bar" }))).toBeUndefined();
+      expect(
+        extractProviderMessage(JSON.stringify({ error: { code: 1 } })),
+      ).toBeUndefined();
+    });
+
+    it("does not let a blank nested error.message shadow a real top-level message", () => {
+      expect(
+        extractProviderMessage(
+          JSON.stringify({ error: { message: "" }, message: "real" }),
+        ),
+      ).toBe("real");
+    });
+
+    it("does not let a blank string error shadow a real top-level message", () => {
+      expect(
+        extractProviderMessage(JSON.stringify({ error: "  ", message: "real" })),
+      ).toBe("real");
     });
   });
 
@@ -3541,6 +3629,102 @@ describe("client", () => {
         premiumModel: "gpt-oss:20b",
       });
       expect(findUnservedModels(config, catalog)).toEqual([]);
+    });
+  });
+
+  describe("probeModelAccess", () => {
+    beforeEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const cloudConfig = makeProviderConfig({ providerId: "ollama-cloud", apiKey: "key" });
+
+    function mockChat(status: number, body: unknown) {
+      const text = typeof body === "string" ? body : JSON.stringify(body);
+      return {
+        ok: status >= 200 && status < 300,
+        status,
+        text: () => Promise.resolve(text),
+      } as Response;
+    }
+
+    const okResponse = {
+      choices: [{ message: { content: "ok" } }],
+      model: "m",
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+    };
+
+    it("marks a model accessible when a minimal chat call succeeds", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(mockChat(200, okResponse));
+      const [result] = await probeModelAccess(cloudConfig, ["gpt-oss:20b"]);
+      expect(result).toEqual({ model: "gpt-oss:20b", accessible: true });
+    });
+
+    it("flags a 403-gated model with the provider's reason", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        mockChat(403, {
+          error: "this model requires a subscription, upgrade for access",
+        }),
+      );
+      const [result] = await probeModelAccess(cloudConfig, ["deepseek-v3.2"]);
+      expect(result.accessible).toBe(false);
+      expect(result.model).toBe("deepseek-v3.2");
+      expect(result.reason).toContain("requires a subscription");
+    });
+
+    it("flags a 404 (model not found) as inaccessible", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        mockChat(404, { error: "model not found" }),
+      );
+      const [result] = await probeModelAccess(cloudConfig, ["ghost"]);
+      expect(result.accessible).toBe(false);
+      expect(result.reason).toBe("model not found");
+    });
+
+    it("treats a 401 (bad key) as inconclusive, not the model's fault", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(mockChat(401, "nope"));
+      const [result] = await probeModelAccess(cloudConfig, ["gpt-oss:20b"]);
+      expect(result.accessible).toBe(true);
+    });
+
+    it("treats a network error as inconclusive", async () => {
+      vi.spyOn(globalThis, "fetch").mockRejectedValueOnce(new Error("down"));
+      const [result] = await probeModelAccess(cloudConfig, ["gpt-oss:20b"]);
+      expect(result.accessible).toBe(true);
+    });
+
+    it("dedupes and drops blank ids", async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(mockChat(200, okResponse));
+      const results = await probeModelAccess(cloudConfig, ["m", "m", "  ", ""]);
+      expect(results.map((r) => r.model)).toEqual(["m"]);
+      expect(fetchSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it("probes an empty selection without any network call", async () => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+      const results = await probeModelAccess(cloudConfig, ["", "  "]);
+      expect(results).toEqual([]);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("probes both selected models in order", async () => {
+      vi.spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(mockChat(200, okResponse))
+        .mockResolvedValueOnce(mockChat(403, { error: "requires a subscription" }));
+      const results = await probeModelAccess(cloudConfig, [
+        "gpt-oss:20b",
+        "deepseek-v3.2",
+      ]);
+      expect(results).toEqual([
+        { model: "gpt-oss:20b", accessible: true },
+        {
+          model: "deepseek-v3.2",
+          accessible: false,
+          reason: "requires a subscription",
+        },
+      ]);
     });
   });
 

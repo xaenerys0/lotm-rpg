@@ -28,7 +28,7 @@ export type {
 
 export { PROVIDER_MODELS } from "./types";
 
-export { AIError, type AIErrorCode } from "./errors";
+export { AIError, type AIErrorCode, extractProviderMessage } from "./errors";
 
 export { createAdapter, inferModelTier, type LLMProviderAdapter } from "./providers";
 
@@ -77,7 +77,9 @@ export {
   validateProviderConfig,
   listProviderModels,
   findUnservedModels,
+  probeModelAccess,
   type GenerateOptions,
+  type ModelAccessResult,
 } from "./client";
 
 export {

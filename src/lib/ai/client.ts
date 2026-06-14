@@ -233,4 +233,62 @@ export function findUnservedModels(
   return [...new Set(configured)].filter((id) => !served.has(id));
 }
 
+export interface ModelAccessResult {
+  /** The model id that was probed. */
+  model: string;
+  /** True when a minimal chat call succeeded — the account can actually run it. */
+  accessible: boolean;
+  /** When inaccessible, the provider's own reason (e.g. the subscription notice). */
+  reason?: string;
+}
+
+/**
+ * Verify that the account can actually RUN the given models, not just that they
+ * are listed. ollama.com's `/v1/models` returns its whole cloud catalog
+ * regardless of plan, so a listed (and selectable) model can still 403 — "this
+ * model requires a subscription, upgrade for access" — the first time a chat
+ * call hits it mid-game. A minimal `max_tokens: 1` chat probe is the only way to
+ * learn entitlement up front.
+ *
+ * A model is flagged inaccessible only on a definitive per-model refusal: 403
+ * (gated / not on plan) or 404 (not found). A 401 (bad key), 429 (rate limit),
+ * 5xx, or network error is inconclusive — it isn't this model's fault — so the
+ * model stays accessible and we never warn on a transient or key-wide failure.
+ * Never throws; blank ids are dropped and duplicates collapse.
+ */
+export async function probeModelAccess(
+  config: ProviderConfig,
+  modelIds: string[],
+): Promise<ModelAccessResult[]> {
+  const adapter = createAdapter(config.providerId, config.baseUrl);
+  const unique = [
+    ...new Set(modelIds.map((id) => id.trim()).filter((id) => id.length > 0)),
+  ];
+  return Promise.all(unique.map((model) => probeOne(adapter, config.apiKey, model)));
+}
+
+async function probeOne(
+  adapter: LLMProviderAdapter,
+  apiKey: string,
+  model: string,
+): Promise<ModelAccessResult> {
+  try {
+    await adapter.makeRequest(
+      {
+        model,
+        messages: [{ role: "user", content: "ping" }],
+        temperature: 0,
+        maxTokens: 1,
+      },
+      apiKey,
+    );
+    return { model, accessible: true };
+  } catch (err) {
+    if (err instanceof AIError && (err.status === 403 || err.status === 404)) {
+      return { model, accessible: false, reason: err.reason };
+    }
+    return { model, accessible: true };
+  }
+}
+
 export { MAX_RETRIES, RETRY_DELAYS, MAX_OUTPUT_TOKENS, MAX_PARSE_ATTEMPTS };
