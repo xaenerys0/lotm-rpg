@@ -220,9 +220,14 @@ export function ProviderConfig() {
   // Once a LIVE catalog is fetched, flag any selected model the provider won't
   // serve. This is the silent failure behind the Ollama-Cloud 403s: a premium
   // model (advancement/combat) absent from the account's catalog 403s only
-  // mid-game. Skip for custom (free-text ids, no catalog) and the static list.
+  // mid-game. Scoped to Ollama Cloud: there the live /models ids are exactly the
+  // ids chat requests use AND a missing model genuinely 403s. Other providers'
+  // catalogs can list ids in a different shape than the configured/default id
+  // (e.g. Anthropic's dated ids vs. our short ids), and a truly-missing model
+  // returns 404, not 403 — so a blanket check there would warn on working
+  // configs. The dropdown's withSelected() already accommodates that case.
   const unservedModels =
-    !isCustom && availableModels
+    form.providerId === "ollama-cloud" && availableModels
       ? findUnservedModels(
           {
             providerId: form.providerId,
