@@ -212,4 +212,25 @@ export async function listProviderModels(config: ProviderConfig): Promise<ModelO
   return adapter.listModels(config.apiKey);
 }
 
+/**
+ * Return the configured model ids (`routineModel`/`premiumModel`) that are NOT
+ * present in the provider's live catalog. A non-empty result means a turn using
+ * that model will likely be rejected upstream — e.g. an Ollama-Cloud account
+ * that does not serve `gpt-oss:120b` returns a 403 only when a premium
+ * (advancement/combat) call is made. Surfacing it at config time turns that
+ * mid-game failure into an actionable Settings warning. Pure: blank ids and an
+ * empty catalog (catalog unavailable) yield no findings, and duplicates collapse.
+ */
+export function findUnservedModels(
+  config: ProviderConfig,
+  catalog: ModelOption[],
+): string[] {
+  if (catalog.length === 0) return [];
+  const served = new Set(catalog.map((m) => m.id));
+  const configured = [config.routineModel, config.premiumModel].filter(
+    (id) => id.trim().length > 0,
+  );
+  return [...new Set(configured)].filter((id) => !served.has(id));
+}
+
 export { MAX_RETRIES, RETRY_DELAYS, MAX_OUTPUT_TOKENS, MAX_PARSE_ATTEMPTS };

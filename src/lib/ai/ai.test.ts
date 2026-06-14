@@ -65,6 +65,7 @@ import {
   generate,
   validateProviderConfig,
   listProviderModels,
+  findUnservedModels,
   MAX_RETRIES,
   RETRY_DELAYS,
   MAX_OUTPUT_TOKENS,
@@ -205,14 +206,28 @@ describe("errors", () => {
   });
 
   describe("classifyHttpError", () => {
-    it("classifies 401 as AUTH_ERROR", () => {
+    it("classifies 401 as AUTH_ERROR blaming the key", () => {
       const err = classifyHttpError(401, "unauthorized");
       expect(err.code).toBe("AUTH_ERROR");
+      expect(err.message).toContain("Invalid or expired API key");
+      expect(err.providerMessage).toBe("unauthorized");
     });
 
-    it("classifies 403 as AUTH_ERROR", () => {
+    it("classifies 403 as AUTH_ERROR but with a model/quota message, not a key one", () => {
       const err = classifyHttpError(403, "forbidden");
       expect(err.code).toBe("AUTH_ERROR");
+      // A 403 means the key worked but the request was refused — must NOT tell
+      // the user their key is invalid/expired (the original bug).
+      expect(err.message).not.toContain("Invalid or expired API key");
+      expect(err.message).toContain("403");
+      expect(err.message).toMatch(/model|usage limit/i);
+      expect(err.providerMessage).toBe("forbidden");
+    });
+
+    it("gives 401 and 403 distinct messages", () => {
+      expect(classifyHttpError(401, "").message).not.toBe(
+        classifyHttpError(403, "").message,
+      );
     });
 
     it("classifies 429 as RATE_LIMITED", () => {
@@ -3482,6 +3497,50 @@ describe("client", () => {
 
       const models = await listProviderModels(makeProviderConfig());
       expect(models.map((m) => m.id)).toEqual(["gpt-4o", "gpt-4o-mini"]);
+    });
+  });
+
+  describe("findUnservedModels", () => {
+    const catalog = [
+      { id: "gpt-oss:20b", name: "GPT-OSS 20B", tier: "routine" as const },
+      { id: "gpt-oss:120b", name: "GPT-OSS 120B", tier: "premium" as const },
+    ];
+
+    it("returns nothing when both models are in the catalog", () => {
+      const config = makeProviderConfig({
+        routineModel: "gpt-oss:20b",
+        premiumModel: "gpt-oss:120b",
+      });
+      expect(findUnservedModels(config, catalog)).toEqual([]);
+    });
+
+    it("flags a premium model absent from the catalog (the 403 case)", () => {
+      const config = makeProviderConfig({
+        routineModel: "gpt-oss:20b",
+        premiumModel: "gpt-oss:120b-cloud",
+      });
+      expect(findUnservedModels(config, catalog)).toEqual(["gpt-oss:120b-cloud"]);
+    });
+
+    it("flags both models and collapses duplicates", () => {
+      const config = makeProviderConfig({
+        routineModel: "phantom",
+        premiumModel: "phantom",
+      });
+      expect(findUnservedModels(config, catalog)).toEqual(["phantom"]);
+    });
+
+    it("returns nothing when the catalog is empty (unavailable)", () => {
+      const config = makeProviderConfig({ routineModel: "whatever" });
+      expect(findUnservedModels(config, [])).toEqual([]);
+    });
+
+    it("ignores blank model ids", () => {
+      const config = makeProviderConfig({
+        routineModel: "  ",
+        premiumModel: "gpt-oss:20b",
+      });
+      expect(findUnservedModels(config, catalog)).toEqual([]);
     });
   });
 
