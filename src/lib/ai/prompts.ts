@@ -9,7 +9,7 @@ import type {
   PromptLayer,
   RetrievedLoreChunk,
 } from "./types";
-import { formatMemoryForPrompt, trimMemoryForBudget } from "./memory";
+import { formatMemoryForPrompt, trimMemoryForBudget, CHARS_PER_TOKEN } from "./memory";
 import { classifySanityTier, sanityNarrationDirective } from "./sanity";
 
 // Lore raised 2,500 -> 4,000 for retrieved source chunks (issue #64) — a
@@ -23,8 +23,6 @@ const TOKEN_BUDGET = {
   instruction: 300,
   total: 8800,
 };
-
-const CHARS_PER_TOKEN = 4;
 
 function estimateTokens(text: string): number {
   return Math.ceil(text.length / CHARS_PER_TOKEN);

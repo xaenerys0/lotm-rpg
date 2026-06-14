@@ -2936,10 +2936,10 @@ describe("validation", () => {
       expect(result.choices![2].type).toBe("ritual");
     });
 
-    it("extracts a non-empty running summary", () => {
+    it("extracts and trims a non-empty running summary", () => {
       const json = JSON.stringify({
         narrative: "x",
-        runningSummary: "Klein owes Welch a favour.",
+        runningSummary: "  Klein owes Welch a favour.  ",
       });
       expect(parseAIResponse(json).runningSummary).toBe("Klein owes Welch a favour.");
     });
@@ -3238,23 +3238,6 @@ describe("validation", () => {
       const response: AIResponse = { narrative: "test" };
       const sanitized = sanitizeAIResponse(response);
       expect(sanitized.actingEvaluation).toBeUndefined();
-    });
-
-    it("caps an over-long running summary", () => {
-      const response: AIResponse = {
-        narrative: "test",
-        runningSummary: "w".repeat(RUNNING_SUMMARY_CHAR_CAP + 300),
-      };
-      const sanitized = sanitizeAIResponse(response);
-      expect(sanitized.runningSummary!.length).toBeLessThanOrEqual(
-        RUNNING_SUMMARY_CHAR_CAP + 1,
-      );
-    });
-
-    it("drops a running summary that is only whitespace", () => {
-      const response: AIResponse = { narrative: "test", runningSummary: "   " };
-      const sanitized = sanitizeAIResponse(response);
-      expect(sanitized.runningSummary).toBeUndefined();
     });
 
     it("removes items with empty name", () => {

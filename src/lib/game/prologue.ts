@@ -1,4 +1,4 @@
-import { createMemoryState } from "@/lib/ai";
+import { createMemoryState, capWithEllipsis } from "@/lib/ai";
 import type { MemoryState, SessionFact } from "@/lib/ai";
 
 export interface PrologueChoice {
@@ -389,11 +389,9 @@ export function buildPrologueRecap(input: PrologueRecapInput): string {
     );
   }
   if (finale !== "") {
-    const capped =
-      finale.length > RECAP_FINALE_CHAR_CAP
-        ? finale.slice(0, RECAP_FINALE_CHAR_CAP).trimEnd() + "…"
-        : finale;
-    parts.push(`The encounter that changed everything: ${capped}`);
+    parts.push(
+      `The encounter that changed everything: ${capWithEllipsis(finale, RECAP_FINALE_CHAR_CAP)}`,
+    );
   }
   if (potion !== "") {
     parts.push(

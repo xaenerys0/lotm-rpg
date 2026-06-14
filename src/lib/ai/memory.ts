@@ -13,7 +13,9 @@ const SESSION_FACTS_MAX = 40;
 const TOKEN_PER_TURN_ESTIMATE = 150;
 const TOKEN_PER_SUMMARY_ESTIMATE = 30;
 const TOKEN_PER_FACT_ESTIMATE = 20;
-const CHARS_PER_TOKEN = 4;
+
+/** Rough chars-per-token heuristic shared by every prompt/budget estimate. */
+export const CHARS_PER_TOKEN = 4;
 
 /**
  * Hard cap (chars) on the durable running summary. Bounds prompt growth — the
@@ -22,12 +24,19 @@ const CHARS_PER_TOKEN = 4;
  */
 export const RUNNING_SUMMARY_CHAR_CAP = 1500;
 
-/** Cap the running summary defensively (sanitize does this too). Pure. */
+/**
+ * Bound a string to `maxChars`, appending an ellipsis when it overflows. The
+ * one place durable text (running summary, prologue recap) is length-capped.
+ * Pure; does not trim — the caller decides whether leading/trailing space
+ * matters before capping.
+ */
+export function capWithEllipsis(text: string, maxChars: number): string {
+  return text.length > maxChars ? text.slice(0, maxChars).trimEnd() + "…" : text;
+}
+
+/** Trim then bound the running summary. The single cap for the durable synopsis. */
 export function capRunningSummary(summary: string): string {
-  const trimmed = summary.trim();
-  return trimmed.length > RUNNING_SUMMARY_CHAR_CAP
-    ? trimmed.slice(0, RUNNING_SUMMARY_CHAR_CAP).trimEnd() + "…"
-    : trimmed;
+  return capWithEllipsis(summary.trim(), RUNNING_SUMMARY_CHAR_CAP);
 }
 
 export function createMemoryState(): MemoryState {
@@ -35,7 +44,6 @@ export function createMemoryState(): MemoryState {
     immediateTurns: [],
     recentSummaries: [],
     sessionFacts: [],
-    runningSummary: "",
   };
 }
 
@@ -119,12 +127,15 @@ export function addTurn(state: MemoryState, turn: TurnRecord): MemoryState {
     next.sessionFacts.shift();
   }
 
-  // Adopt the narrator's updated rolling summary when it supplied one this
-  // turn; otherwise keep the prior synopsis so a turn that omits it never
-  // erases the chronicle's durable memory.
-  const incoming = turn.aiResponse.runningSummary;
-  if (typeof incoming === "string" && incoming.trim() !== "") {
-    next.runningSummary = capRunningSummary(incoming);
+  // Adopt the narrator's updated rolling summary when it supplied a non-blank
+  // one this turn; otherwise keep the prior synopsis so a turn that omits or
+  // blanks it never erases the chronicle's durable memory. This is the single
+  // cap for the persisted summary (the only path into durable memory).
+  if (typeof turn.aiResponse.runningSummary === "string") {
+    const capped = capRunningSummary(turn.aiResponse.runningSummary);
+    if (capped !== "") {
+      next.runningSummary = capped;
+    }
   }
 
   return next;
