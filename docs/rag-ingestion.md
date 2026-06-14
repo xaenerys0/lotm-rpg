@@ -30,11 +30,11 @@ the sources.
 
 Run on the real sources, these counts are the expected, correct result:
 
-| Source | Parsed | Chunks |
-| ------ | ------ | ------ |
-| Novel  | 1430 chapters | 5,684 |
-| Wiki   | 1,509 articles (of 13,379 pages) | 2,203 |
-| Total  | | **7,887** |
+| Source | Parsed                           | Chunks    |
+| ------ | -------------------------------- | --------- |
+| Novel  | 1430 chapters                    | 5,684     |
+| Wiki   | 1,509 articles (of 13,379 pages) | 2,203     |
+| Total  |                                  | **7,887** |
 
 ## Commands
 
