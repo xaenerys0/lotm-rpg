@@ -43,12 +43,99 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         body: responseText.slice(0, 1000),
       }),
     );
+  } else {
+    // Diagnostic for reasoning models (gpt-oss / Harmony): ollama.com returns 200
+    // but the body may not be the strict game JSON the client parses — reasoning
+    // can pollute `content`, land in a separate `reasoning`/`thinking` field, or
+    // eat the token budget and truncate the answer (finish_reason "length"). When
+    // a 2xx body doesn't look like our JSON, log a structured summary so the real
+    // shape is visible in Vercel logs. Logs only the AI's own output (never the
+    // Authorization header/key or the player's request text), and only on the
+    // failing turns (a clean, parseable body logs nothing).
+    const diag = summarizeUnparseableChat(responseText);
+    if (diag) {
+      console.error(
+        "[ollama-cloud proxy] chat/completions unparseable 2xx body",
+        JSON.stringify({ model: extractModel(body), ...diag }),
+      );
+    }
   }
 
   return new NextResponse(responseText, {
     status: upstream.status,
     headers: { "Content-Type": "application/json" },
   });
+}
+
+interface ChatDiag {
+  finishReason: string | null;
+  contentLength: number;
+  contentEmpty: boolean;
+  hasNarrativeKey: boolean;
+  reasoningField: "none" | "reasoning" | "thinking";
+  reasoningLength: number;
+  contentHead: string;
+  contentTail: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+// Summarize a 2xx chat body when it does NOT look like the game's structured
+// JSON, so the real gpt-oss/Harmony output shape surfaces in logs. Returns null
+// for a clean body (non-empty content carrying a `"narrative"` key and not
+// truncated) so working turns log nothing. Never throws.
+function summarizeUnparseableChat(responseText: string): ChatDiag | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(responseText);
+  } catch {
+    // Upstream returned non-JSON entirely — definitely unparseable.
+    return {
+      finishReason: null,
+      contentLength: responseText.length,
+      contentEmpty: responseText.trim().length === 0,
+      hasNarrativeKey: false,
+      reasoningField: "none",
+      reasoningLength: 0,
+      contentHead: responseText.slice(0, 400),
+      contentTail: responseText.slice(-200),
+    };
+  }
+
+  const choices = isRecord(parsed) && Array.isArray(parsed.choices) ? parsed.choices : [];
+  const choice: unknown = choices[0];
+  const message = isRecord(choice) && isRecord(choice.message) ? choice.message : {};
+  const content = typeof message.content === "string" ? message.content : "";
+  const reasoning = typeof message.reasoning === "string" ? message.reasoning : undefined;
+  const thinking = typeof message.thinking === "string" ? message.thinking : undefined;
+  const finishReason =
+    isRecord(choice) && typeof choice.finish_reason === "string"
+      ? choice.finish_reason
+      : null;
+  const hasNarrativeKey = content.includes('"narrative"');
+
+  // Looks fine: real content, carries our JSON key, finished normally.
+  if (content.length > 0 && hasNarrativeKey && finishReason !== "length") {
+    return null;
+  }
+
+  return {
+    finishReason,
+    contentLength: content.length,
+    contentEmpty: content.trim().length === 0,
+    hasNarrativeKey,
+    reasoningField:
+      reasoning !== undefined
+        ? "reasoning"
+        : thinking !== undefined
+          ? "thinking"
+          : "none",
+    reasoningLength: (reasoning ?? thinking ?? "").length,
+    contentHead: content.slice(0, 400),
+    contentTail: content.slice(-200),
+  };
 }
 
 // Best-effort pull of the requested model id from the OpenAI-style request body,
