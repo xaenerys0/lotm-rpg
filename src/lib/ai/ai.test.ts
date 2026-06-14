@@ -836,6 +836,36 @@ describe("providers", () => {
       ]);
     });
 
+    it("makeRequest omits temperature (newer Claude models 400 on it)", async () => {
+      const adapter = new AnthropicAdapter();
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              content: [{ type: "text", text: "result" }],
+              model: "claude-opus-4-8",
+              usage: { input_tokens: 10, output_tokens: 5 },
+            }),
+          ),
+      } as Response);
+
+      await adapter.makeRequest(
+        {
+          messages: [{ role: "user", content: "hi" }],
+          model: "claude-opus-4-8",
+          temperature: 0.8,
+          maxTokens: 500,
+        },
+        "key",
+      );
+
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body).not.toHaveProperty("temperature");
+      expect(body.max_tokens).toBe(500);
+    });
+
     it("validateKey returns valid on successful API call", async () => {
       const adapter = new AnthropicAdapter();
       vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({

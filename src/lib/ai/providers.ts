@@ -297,7 +297,12 @@ export class AnthropicAdapter implements LLMProviderAdapter {
             }
           : {}),
         messages,
-        temperature: request.temperature,
+        // `temperature` is deliberately omitted. Newer Claude models (Opus 4.7+,
+        // Fable 5) reject any sampling parameter with HTTP 400 ("temperature is
+        // deprecated for this model"), and it is optional (defaulted) on every
+        // older model — so leaving it off is the one portable choice that works
+        // across the whole BYO Claude catalog. The client's corrective retry
+        // loop steers output via the prompt, not temperature.
         max_tokens: request.maxTokens,
       }),
     });
