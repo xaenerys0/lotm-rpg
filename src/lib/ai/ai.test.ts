@@ -290,6 +290,40 @@ describe("errors", () => {
       expect(err.message).not.toContain("Provider said:");
       expect(err.message).toContain("403");
     });
+
+    it("classifies 400 as a non-retryable AUTH_ERROR pointing at model/Settings", () => {
+      const err = classifyHttpError(
+        400,
+        JSON.stringify({ error: { message: "model: claude-x not found" } }),
+      );
+      expect(err.code).toBe("AUTH_ERROR");
+      // A 400 is deterministic — retrying sends the identical body — so it must
+      // not burn the retry backoff before surfacing.
+      expect(err.retryable).toBe(false);
+      expect(err.status).toBe(400);
+      expect(err.message).toContain("400");
+      expect(err.message).toMatch(/model|Settings/i);
+      // Must not wrongly blame the key (the 403/401 regression guard).
+      expect(err.message).not.toContain("Invalid or expired API key");
+      // Surfaces the provider's own wording so the cause is visible in the UI.
+      expect(err.message).toContain("model: claude-x not found");
+      expect(err.reason).toBe("model: claude-x not found");
+    });
+
+    it("classifies 404 as a non-retryable AUTH_ERROR (model/base URL problem)", () => {
+      const err = classifyHttpError(404, "not found");
+      expect(err.code).toBe("AUTH_ERROR");
+      expect(err.retryable).toBe(false);
+      expect(err.status).toBe(404);
+      expect(err.message).toContain("404");
+    });
+
+    it("surfaces the provider's reason in the generic fallback message", () => {
+      const err = classifyHttpError(418, JSON.stringify({ error: "I'm a teapot" }));
+      expect(err.code).toBe("PROVIDER_ERROR");
+      expect(err.message).toContain("418");
+      expect(err.message).toContain("I'm a teapot");
+    });
   });
 
   describe("extractProviderMessage", () => {
@@ -3274,6 +3308,70 @@ describe("client", () => {
           actingRequirements: [],
         }),
       ).rejects.toThrow(AIError);
+    });
+
+    it("logs every failed provider call with provider/status/code for any provider", async () => {
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: false,
+        status: 401,
+        text: () => Promise.resolve("unauthorized"),
+      } as Response);
+
+      await expect(
+        generate({
+          config: makeProviderConfig(),
+          gameState: makeGameState(),
+          memory: makeMemoryState(),
+          loreContext: makeLoreContext(),
+          instruction: "narrative",
+          playerAction: "test",
+          abilities: [],
+          actingRequirements: [],
+        }),
+      ).rejects.toThrow(AIError);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("provider call failed"),
+        expect.stringContaining('"status":401'),
+      );
+      // The API key is never part of the logged payload.
+      const logged = consoleSpy.mock.calls.map((c) => String(c[1])).join("");
+      expect(logged).not.toContain("sk-test-key");
+    });
+
+    it("logs unparseable provider output (head/tail) so the cause is visible", async () => {
+      const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+      vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content: "I will produce the JSON now" } }],
+              model: "gpt-4o-mini",
+              usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+            }),
+          ),
+      } as Response);
+
+      await expect(
+        generate({
+          config: makeProviderConfig(),
+          gameState: makeGameState(),
+          memory: makeMemoryState(),
+          loreContext: makeLoreContext(),
+          instruction: "narrative",
+          playerAction: "test",
+          abilities: [],
+          actingRequirements: [],
+        }),
+      ).rejects.toThrow(AIError);
+
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining("unparseable provider output"),
+        expect.stringContaining("contentHead"),
+      );
     });
 
     it("uses premium model for advancement", async () => {

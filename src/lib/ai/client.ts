@@ -48,6 +48,36 @@ async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Every provider (Anthropic, OpenAI, OpenRouter, Ollama, Ollama-Cloud, Custom)
+// is called browser-direct or through a thin proxy, so a failed turn has no
+// server-side log — it otherwise vanishes into a generic "Something went wrong"
+// in the UI. Logging here, the single seam both the main turn loop and the
+// prologue funnel through, makes every provider failure visible in devtools with
+// the status, error code, and the provider's own reason/body. The intentional
+// probe/validate paths (`probeModelAccess`, `validateKey`) call adapters
+// directly and bypass this, so expected probe errors don't add noise. The API
+// key is never logged — only the response/error carried on the AIError is.
+function logProviderFailure(
+  provider: string,
+  model: string,
+  attempt: number,
+  err: AIError,
+): void {
+  console.error(
+    "[ai] provider call failed",
+    JSON.stringify({
+      provider,
+      model,
+      attempt,
+      code: err.code,
+      status: err.status,
+      retryable: err.retryable,
+      reason: err.reason,
+      body: err.providerMessage?.slice(0, 500),
+    }),
+  );
+}
+
 export async function executeWithRetry(
   adapter: LLMProviderAdapter,
   request: Parameters<LLMProviderAdapter["makeRequest"]>[0],
@@ -61,6 +91,7 @@ export async function executeWithRetry(
     } catch (err) {
       if (err instanceof AIError) {
         lastError = err;
+        logProviderFailure(adapter.name, request.model, attempt, err);
         if (!err.retryable || attempt >= RETRY_DELAYS.length) {
           throw err;
         }
@@ -150,6 +181,27 @@ function correctiveMessage(truncated: boolean): string {
   return "Your previous response was not valid JSON. Please respond with ONLY a valid JSON object matching the required schema. No markdown, no code blocks, just the JSON object.";
 }
 
+function logUnparseableOutput(
+  provider: string,
+  model: string,
+  attempt: number,
+  response: ProviderResponse,
+): void {
+  const content = response.content ?? "";
+  console.error(
+    "[ai] unparseable provider output",
+    JSON.stringify({
+      provider,
+      model,
+      attempt,
+      truncated: response.truncated ?? false,
+      contentLength: content.length,
+      contentHead: content.slice(0, 400),
+      contentTail: content.slice(-200),
+    }),
+  );
+}
+
 /**
  * Request structured output and parse it, retrying with a corrective prompt
  * when the JSON is malformed or truncated. Each retry lowers temperature and
@@ -180,6 +232,14 @@ async function requestAndParse(
     try {
       return parseAIResponse(providerResponse.content);
     } catch (parseError) {
+      // The client-side complement to the ollama-cloud proxy diagnostic: when a
+      // 2xx body fails to parse into the game's JSON (the gpt-oss/Harmony failure
+      // mode, but reachable on any provider), log the provider, model, truncation
+      // flag, and head/tail of the raw output so the real shape is visible in
+      // devtools rather than just surfacing as MALFORMED_OUTPUT.
+      if (parseError instanceof AIError && parseError.code === "MALFORMED_OUTPUT") {
+        logUnparseableOutput(adapter.name, model, attempt, providerResponse);
+      }
       if (
         !(parseError instanceof AIError) ||
         parseError.code !== "MALFORMED_OUTPUT" ||
