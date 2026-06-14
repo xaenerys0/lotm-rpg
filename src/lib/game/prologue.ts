@@ -349,6 +349,60 @@ export function createAIPrologueMemory(
   return { ...memory, sessionFacts: [...memory.sessionFacts, ...facts] };
 }
 
+/** Inputs for {@link buildPrologueRecap}. */
+export interface PrologueRecapInput {
+  /** The defining choices the character made during the prologue, in order. */
+  choices: readonly string[];
+  /** The finale scene — the chance encounter where potions were offered. */
+  finaleNarrative?: string;
+  /** The potion the character chose to drink (player-facing description). */
+  chosenPotion?: string;
+}
+
+/** Hard cap (chars) so the durable recap stays small in every per-turn prompt. */
+export const RECAP_FINALE_CHAR_CAP = 600;
+
+/**
+ * Compose a compact, durable recap of the AI prologue for the main narrator.
+ * The prologue runs on a separate prompt (`prologue-client.ts`) that the story
+ * narrator never sees, so without this the chronicle opens cold — no memory of
+ * the life the character led or the encounter that made them a Beyonder. The
+ * recap is pinned into the never-trimmed game-state layer (`buildGameStatePrompt`
+ * via `GameState.prologueRecap`), so it keeps the prologue → story transition
+ * seamless instead of fading as session facts age out of the history window.
+ *
+ * Returns `""` when there is nothing to recap (e.g. the manual path), so callers
+ * can leave `prologueRecap` unset.
+ */
+export function buildPrologueRecap(input: PrologueRecapInput): string {
+  const choices = input.choices.map((c) => c.trim()).filter((c) => c.length > 0);
+  const finale = input.finaleNarrative?.trim() ?? "";
+  const potion = input.chosenPotion?.trim() ?? "";
+
+  if (choices.length === 0 && finale === "" && potion === "") return "";
+
+  const parts: string[] = [];
+  if (choices.length > 0) {
+    parts.push(
+      "Before becoming a Beyonder, the character lived through these defining moments (earliest first):",
+      ...choices.map((c) => `- ${c}`),
+    );
+  }
+  if (finale !== "") {
+    const capped =
+      finale.length > RECAP_FINALE_CHAR_CAP
+        ? finale.slice(0, RECAP_FINALE_CHAR_CAP).trimEnd() + "…"
+        : finale;
+    parts.push(`The encounter that changed everything: ${capped}`);
+  }
+  if (potion !== "") {
+    parts.push(
+      `They drank: ${potion} — not knowing what it was. The chronicle opens in the moments after, as the change takes hold.`,
+    );
+  }
+  return parts.join("\n");
+}
+
 export function createPrologueState(): PrologueState {
   return {
     currentScene: 0,

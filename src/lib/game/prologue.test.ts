@@ -13,6 +13,8 @@ import {
   createPrologueState,
   createPrologueMemory,
   createAIPrologueMemory,
+  buildPrologueRecap,
+  RECAP_FINALE_CHAR_CAP,
 } from "./prologue";
 import type { PrologueSelection } from "./prologue";
 
@@ -523,5 +525,83 @@ describe("createAIPrologueMemory", () => {
   it("all facts have turnNumber 0", () => {
     const memory = createAIPrologueMemory(["Chose path A"], "Klein", "");
     expect(memory.sessionFacts.every((f) => f.turnNumber === 0)).toBe(true);
+  });
+});
+
+// buildPrologueRecap
+describe("buildPrologueRecap", () => {
+  it("returns empty string when there is nothing to recap", () => {
+    expect(buildPrologueRecap({ choices: [] })).toBe("");
+    expect(
+      buildPrologueRecap({
+        choices: ["  ", ""],
+        finaleNarrative: "  ",
+        chosenPotion: "",
+      }),
+    ).toBe("");
+  });
+
+  it("lists the defining choices in order", () => {
+    const recap = buildPrologueRecap({
+      choices: ["Followed the thief", "Confronted the stranger"],
+    });
+    expect(recap).toContain("defining moments");
+    expect(recap).toContain("- Followed the thief");
+    expect(recap).toContain("- Confronted the stranger");
+    // earliest first — preserves the order the player chose them
+    expect(recap.indexOf("Followed the thief")).toBeLessThan(
+      recap.indexOf("Confronted the stranger"),
+    );
+  });
+
+  it("drops blank choices and trims whitespace", () => {
+    const recap = buildPrologueRecap({ choices: ["  Took the book  ", "", "   "] });
+    expect(recap).toContain("- Took the book");
+    expect(recap).not.toContain("- \n");
+  });
+
+  it("includes the finale narrative", () => {
+    const recap = buildPrologueRecap({
+      choices: [],
+      finaleNarrative: "A stranger in a grey coat offered a tray of vials.",
+    });
+    expect(recap).toContain("The encounter that changed everything:");
+    expect(recap).toContain("grey coat");
+  });
+
+  it("caps an over-long finale narrative", () => {
+    const long = "x".repeat(RECAP_FINALE_CHAR_CAP + 200);
+    const recap = buildPrologueRecap({ choices: [], finaleNarrative: long });
+    expect(recap).toContain("…");
+    expect(recap.length).toBeLessThan(long.length + 100);
+  });
+
+  it("does not cap a finale narrative within the limit", () => {
+    const recap = buildPrologueRecap({
+      choices: [],
+      finaleNarrative: "Short and sweet.",
+    });
+    expect(recap).toContain("Short and sweet.");
+    expect(recap).not.toContain("…");
+  });
+
+  it("records the potion the character drank", () => {
+    const recap = buildPrologueRecap({
+      choices: [],
+      chosenPotion: "the vial that smelled of cold rain",
+    });
+    expect(recap).toContain("They drank: the vial that smelled of cold rain");
+    expect(recap).toContain("not knowing what it was");
+  });
+
+  it("combines all three parts into one recap", () => {
+    const recap = buildPrologueRecap({
+      choices: ["Helped the widow"],
+      finaleNarrative: "The vials glimmered.",
+      chosenPotion: "the amber one",
+    });
+    expect(recap).toContain("- Helped the widow");
+    expect(recap).toContain("The vials glimmered.");
+    expect(recap).toContain("the amber one");
   });
 });

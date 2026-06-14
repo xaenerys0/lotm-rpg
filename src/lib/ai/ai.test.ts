@@ -1831,6 +1831,48 @@ describe("prompts", () => {
     });
   });
 
+  describe("buildGameStatePrompt character grounding", () => {
+    it("pins the backstory into the durable game-state layer", () => {
+      const state = makeGameState({
+        characterBackground: "A grave-digger from East Borough.",
+      });
+      const layer = buildGameStatePrompt(state);
+      expect(layer.content).toContain("## Character & Origin");
+      expect(layer.content).toContain("Background: A grave-digger from East Borough.");
+    });
+
+    it("pins the prologue recap into the durable game-state layer", () => {
+      const state = makeGameState({
+        prologueRecap: "They drank: the amber vial — not knowing what it was.",
+      });
+      const layer = buildGameStatePrompt(state);
+      expect(layer.content).toContain("## Character & Origin");
+      expect(layer.content).toContain("the amber vial");
+    });
+
+    it("includes both background and recap when both are present", () => {
+      const state = makeGameState({
+        characterBackground: "A clerk.",
+        prologueRecap: "A stranger offered potions.",
+      });
+      const layer = buildGameStatePrompt(state);
+      expect(layer.content).toContain("Background: A clerk.");
+      expect(layer.content).toContain("A stranger offered potions.");
+    });
+
+    it("omits the origin section entirely when neither is present", () => {
+      const layer = buildGameStatePrompt(makeGameState());
+      expect(layer.content).not.toContain("## Character & Origin");
+    });
+
+    it("includes the character name in the state JSON when present", () => {
+      const layer = buildGameStatePrompt(
+        makeGameState({ characterName: "Klein Moretti" }),
+      );
+      expect(layer.content).toContain("Klein Moretti");
+    });
+  });
+
   describe("buildHistoryPrompt", () => {
     it("returns empty for fresh memory", () => {
       const layer = buildHistoryPrompt(makeMemoryState());

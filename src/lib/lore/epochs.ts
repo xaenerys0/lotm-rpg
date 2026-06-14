@@ -86,7 +86,8 @@ export const EPOCHS: readonly Epoch[] = [
       "Steam, gaslight, and secrecy — the classic setting. The churches police the hidden world and Beyonders walk unseen.",
     toneDirective: "",
     startingLocation: "Tingen City",
-    openingBeat: "",
+    openingBeat:
+      "The strange potion still burns on my tongue as I move through Tingen City's gaslit fog, certain of only one thing: whatever I have just become, I must keep it hidden. Describe the opening scene and give me choices.",
     dangerModifier: 1,
   },
 ] as const;
@@ -103,8 +104,14 @@ export function epochNarrationDirective(epochId: number | undefined): string | n
   return directive === "" ? null : directive;
 }
 
-/** The opening player action for a fresh character in this epoch; null for
- * the Fifth (the game loop's default opening already covers it). */
+/**
+ * The opening player action for a fresh character in this epoch. Every epoch —
+ * including the Fifth — now seeds the first turn with an "awakening" beat that
+ * continues directly from the prologue's final moment (drinking the potion),
+ * so the chronicle never opens by abruptly announcing the character's pathway.
+ * Returns null only for the (impossible) empty-beat case, leaving the game
+ * loop's generic fallback as defence in depth.
+ */
 export function epochOpeningBeat(epochId: number | undefined): string | null {
   const beat = getEpoch(epochId).openingBeat;
   return beat === "" ? null : beat;

@@ -69,6 +69,7 @@ export function createDefaultGameState(
   characterName?: string,
   characterBackground?: string,
   epoch?: number,
+  prologueRecap?: string,
 ): GameState {
   return {
     characterId,
@@ -84,6 +85,9 @@ export function createDefaultGameState(
     digestion: createDigestionState(pathwayId, 9),
     ...(characterName ? { characterName } : {}),
     ...(characterBackground ? { characterBackground } : {}),
+    // Durable prologue recap (the prologue → story bridge) — kept in the
+    // never-trimmed game-state layer so the narrator never loses the thread.
+    ...(prologueRecap ? { prologueRecap } : {}),
   };
 }
 

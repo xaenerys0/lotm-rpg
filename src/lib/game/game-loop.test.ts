@@ -1216,6 +1216,21 @@ describe("createDefaultGameState", () => {
     const state = createDefaultGameState(1, "c1", "Klein", "");
     expect(state.characterBackground).toBeUndefined();
   });
+
+  it("stores prologueRecap when provided", () => {
+    const state = createDefaultGameState(1, "c1", "Klein", "", 5, "A vivid recap.");
+    expect(state.prologueRecap).toBe("A vivid recap.");
+  });
+
+  it("omits prologueRecap when not provided", () => {
+    const state = createDefaultGameState(1, "c1", "Klein", "", 5);
+    expect(state.prologueRecap).toBeUndefined();
+  });
+
+  it("omits prologueRecap when empty string provided", () => {
+    const state = createDefaultGameState(1, "c1", "Klein", "", 5, "");
+    expect(state.prologueRecap).toBeUndefined();
+  });
 });
 
 describe("createSession with initialMemory", () => {

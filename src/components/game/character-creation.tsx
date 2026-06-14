@@ -6,6 +6,7 @@ import {
   FIRST_POTION_NARRATIVE,
   createPrologueMemory,
   createAIPrologueMemory,
+  buildPrologueRecap,
   tallyAffinities,
   selectTopCandidates,
   dominantAffinity,
@@ -71,6 +72,7 @@ interface CharacterCreationProps {
     characterBackground: string,
     initialMemory: MemoryState,
     epoch: number,
+    prologueRecap: string,
   ) => void;
   onBack: () => void;
 }
@@ -326,8 +328,22 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           name,
           bg,
         );
+    // Carry the prologue forward (the prologue → story bridge): the story
+    // narrator runs on a different prompt and never sees these scenes, so a
+    // compact recap of the defining choices, the finale encounter, and the
+    // potion the character drank is pinned into the durable game state. Empty
+    // on the manual path (no AI prologue to recap).
+    const prologueRecap = skipPrologue
+      ? ""
+      : buildPrologueRecap({
+          choices: prologueHistory.map((t) => t.selectedChoiceText),
+          finaleNarrative: finale?.narrative,
+          chosenPotion: finale?.choices.find(
+            (c) => dominantAffinity(c.affinities) === selectedPathwayId,
+          )?.text,
+        });
     clearDraft();
-    onComplete(selectedPathwayId, name, bg, memory, epoch);
+    onComplete(selectedPathwayId, name, bg, memory, epoch, prologueRecap);
   }, [
     epoch,
     selectedPathwayId,
@@ -335,6 +351,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     characterBackground,
     skipPrologue,
     prologueHistory,
+    finale,
     onComplete,
   ]);
 

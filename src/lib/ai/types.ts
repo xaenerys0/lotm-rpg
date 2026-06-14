@@ -133,6 +133,15 @@ export interface GameState {
   characterName?: string;
   characterBackground?: string;
   /**
+   * A compact, durable recap of the AI prologue (the life the character led and
+   * the encounter that made them a Beyonder). The prologue runs on a separate
+   * prompt the story narrator never sees, so this is pinned into the
+   * never-trimmed game-state layer to keep the prologue → story transition
+   * seamless. Set at character creation; absent on the manual path. Built by
+   * `buildPrologueRecap` (`@/lib/game`).
+   */
+  prologueRecap?: string;
+  /**
    * Starting epoch (issues #26/#29). Optional — absent means the Fifth.
    * Set at character creation; rules-engine-only (never AI-mutable).
    */

@@ -189,6 +189,7 @@ export function buildGameStatePrompt(gameState: GameState): PromptLayer {
   const stateJson = JSON.stringify(
     {
       character: gameState.characterId,
+      name: gameState.characterName,
       pathway: gameState.pathwayId,
       sequence: gameState.sequenceLevel,
       sanity: `${gameState.sanity}/${gameState.maxSanity}`,
@@ -202,10 +203,25 @@ export function buildGameStatePrompt(gameState: GameState): PromptLayer {
     2,
   );
 
-  return {
-    role: "user",
-    content: `## Current Game State\n\`\`\`json\n${stateJson}\n\`\`\``,
-  };
+  const parts = [`## Current Game State\n\`\`\`json\n${stateJson}\n\`\`\``];
+
+  // Durable character grounding. This lives in the game-state layer (never
+  // trimmed) on purpose: the backstory and the prologue the character just
+  // lived through must keep shaping the narration for the whole chronicle, not
+  // just the opening turns. Session facts age out of the history window; this
+  // does not — closing the prologue → story seam.
+  const origin: string[] = [];
+  if (gameState.characterBackground) {
+    origin.push(`Background: ${gameState.characterBackground}`);
+  }
+  if (gameState.prologueRecap) {
+    origin.push(gameState.prologueRecap);
+  }
+  if (origin.length > 0) {
+    parts.push(`## Character & Origin\n${origin.join("\n\n")}`);
+  }
+
+  return { role: "user", content: parts.join("\n\n") };
 }
 
 export function buildHistoryPrompt(memory: MemoryState): PromptLayer {
