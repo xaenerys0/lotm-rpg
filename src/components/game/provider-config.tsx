@@ -22,13 +22,54 @@ const PROVIDERS: {
   label: string;
   needsBaseUrl: boolean;
   requiresAuth: boolean;
+  // The provider lists models its `/models` catalog won't necessarily RUN on the
+  // account's plan (Ollama Cloud lists every cloud model regardless of plan), so
+  // a selectable model can still 403 at chat time. When true, Settings probes the
+  // selected models for real entitlement (`probeModelAccess`) and warns up front.
+  needsAccessProbe: boolean;
 }[] = [
-  { id: "anthropic", label: "Anthropic", needsBaseUrl: false, requiresAuth: true },
-  { id: "openai", label: "OpenAI", needsBaseUrl: false, requiresAuth: true },
-  { id: "openrouter", label: "OpenRouter", needsBaseUrl: false, requiresAuth: true },
-  { id: "ollama", label: "Ollama (local)", needsBaseUrl: true, requiresAuth: false },
-  { id: "ollama-cloud", label: "Ollama Cloud", needsBaseUrl: false, requiresAuth: true },
-  { id: "custom", label: "Custom Provider", needsBaseUrl: true, requiresAuth: true },
+  {
+    id: "anthropic",
+    label: "Anthropic",
+    needsBaseUrl: false,
+    requiresAuth: true,
+    needsAccessProbe: false,
+  },
+  {
+    id: "openai",
+    label: "OpenAI",
+    needsBaseUrl: false,
+    requiresAuth: true,
+    needsAccessProbe: false,
+  },
+  {
+    id: "openrouter",
+    label: "OpenRouter",
+    needsBaseUrl: false,
+    requiresAuth: true,
+    needsAccessProbe: false,
+  },
+  {
+    id: "ollama",
+    label: "Ollama (local)",
+    needsBaseUrl: true,
+    requiresAuth: false,
+    needsAccessProbe: false,
+  },
+  {
+    id: "ollama-cloud",
+    label: "Ollama Cloud",
+    needsBaseUrl: false,
+    requiresAuth: true,
+    needsAccessProbe: true,
+  },
+  {
+    id: "custom",
+    label: "Custom Provider",
+    needsBaseUrl: true,
+    requiresAuth: true,
+    needsAccessProbe: false,
+  },
 ];
 
 type ConnectionStatus = "idle" | "testing" | "valid" | "invalid";
@@ -219,6 +260,10 @@ export function ProviderConfig() {
   const [modelsStatus, setModelsStatus] = useState<"idle" | "loading" | "error">("idle");
   const [modelAccess, setModelAccess] = useState<ModelAccessResult[] | null>(null);
   const [accessStatus, setAccessStatus] = useState<"idle" | "checking" | "error">("idle");
+  // Monotonic id for the latest entitlement probe. Bumped whenever a probe starts
+  // OR its result is invalidated (field edit / provider switch); a probe whose id
+  // no longer matches discards its (now stale) result instead of overwriting state.
+  const probeIdRef = useRef(0);
 
   const providerMeta = PROVIDERS.find((p) => p.id === form.providerId)!;
   const isCustom = form.providerId === "custom";
@@ -235,7 +280,7 @@ export function ProviderConfig() {
   // returns 404, not 403 — so a blanket check there would warn on working
   // configs. The dropdown's withSelected() already accommodates that case.
   const unservedModels =
-    form.providerId === "ollama-cloud" && availableModels
+    providerMeta.needsAccessProbe && availableModels
       ? findUnservedModels(
           {
             providerId: form.providerId,
@@ -249,9 +294,12 @@ export function ProviderConfig() {
   // Models the live catalog lists but the account can't actually RUN. Ollama
   // Cloud lists its whole catalog regardless of plan, so a selected model can
   // 403 ("requires a subscription") only at chat time — probeModelAccess
-  // test-calls the two selected models to catch that before gameplay.
-  const inaccessibleModels = (modelAccess ?? []).filter((m) => !m.accessible);
-  const accessReason = inaccessibleModels.find((m) => m.reason)?.reason;
+  // test-calls the two selected models to catch that before gameplay. Gated on
+  // needsAccessProbe so a probe resolving after a provider switch can't paint an
+  // Ollama-specific warning onto a different provider.
+  const inaccessibleModels = providerMeta.needsAccessProbe
+    ? (modelAccess ?? []).filter((m) => !m.accessible)
+    : [];
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
@@ -259,7 +307,9 @@ export function ProviderConfig() {
       setSaveStatus("unsaved");
       setConnectionStatus("idle");
       // Any field edit (key, base URL, or a model pick) invalidates a prior
-      // entitlement probe — clear it so a stale "can't run" warning never lingers.
+      // entitlement probe — clear it and bump the id so an in-flight probe's late
+      // result is discarded rather than resurrecting a stale "can't run" warning.
+      probeIdRef.current++;
       setModelAccess(null);
       setAccessStatus("idle");
     },
@@ -274,6 +324,7 @@ export function ProviderConfig() {
 
     setAvailableModels(cached);
     setModelsStatus("idle");
+    probeIdRef.current++;
     setModelAccess(null);
     setAccessStatus("idle");
     setForm({
@@ -318,15 +369,20 @@ export function ProviderConfig() {
   // ("requires a subscription") at chat time. A minimal probe call per model
   // surfaces that here instead of mid-game.
   const handleCheckModels = useCallback(async () => {
+    const probeId = ++probeIdRef.current;
     setAccessStatus("checking");
     try {
       const results = await probeModelAccess(buildConfig(), [
         form.routineModel,
         form.premiumModel,
       ]);
+      // Discard if the selection/provider changed (or another probe started)
+      // while this one was in flight.
+      if (probeId !== probeIdRef.current) return;
       setModelAccess(results);
       setAccessStatus("idle");
     } catch {
+      if (probeId !== probeIdRef.current) return;
       setAccessStatus("error");
     }
   }, [buildConfig, form.routineModel, form.premiumModel]);
@@ -340,9 +396,13 @@ export function ProviderConfig() {
         setConnectionStatus("valid");
         // Best-effort: refresh the live model list once the key is known good.
         if (!isCustom) void handleRefreshModels();
-        // Ollama Cloud lists models it won't run on the account's plan; probe the
-        // selected pair so a gated pick is caught now, not on a premium turn.
-        if (form.providerId === "ollama-cloud") void handleCheckModels();
+        // Providers whose catalog lists un-runnable models (Ollama Cloud) get the
+        // selected pair probed so a gated pick is caught now, not on a premium
+        // turn. Skip when the current selection already has a result — re-testing
+        // an unchanged selection shouldn't re-spend billed probe calls.
+        if (providerMeta.needsAccessProbe && modelAccess === null) {
+          void handleCheckModels();
+        }
       } else {
         setConnectionStatus("invalid");
         setConnectionError(result.error ?? "Connection failed");
@@ -351,7 +411,14 @@ export function ProviderConfig() {
       setConnectionStatus("invalid");
       setConnectionError(err instanceof Error ? err.message : "Unexpected error");
     }
-  }, [buildConfig, isCustom, handleRefreshModels, handleCheckModels, form.providerId]);
+  }, [
+    buildConfig,
+    isCustom,
+    handleRefreshModels,
+    handleCheckModels,
+    providerMeta.needsAccessProbe,
+    modelAccess,
+  ]);
 
   // Key removal/rotation (issue #15): wipe the key from the form AND from the
   // persisted config immediately — no save step where a stale key lingers.
@@ -508,7 +575,7 @@ export function ProviderConfig() {
                   : "Built-in list — refresh to fetch the latest."}
             </p>
             <div className="flex shrink-0 items-center gap-2">
-              {form.providerId === "ollama-cloud" && (
+              {providerMeta.needsAccessProbe && (
                 <button
                   type="button"
                   onClick={handleCheckModels}
@@ -611,32 +678,44 @@ export function ProviderConfig() {
           </p>
         )}
         {inaccessibleModels.length > 0 && (
-          <p
+          <div
             role="alert"
             className="mt-3 rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-2 text-xs leading-relaxed text-sanity-low"
           >
-            <strong className="font-semibold">Your plan can&apos;t run:</strong>{" "}
-            <span className="font-mono">
-              {inaccessibleModels.map((m) => m.model).join(", ")}
-            </span>
-            . {accessReason ? `${accessReason} ` : ""}Pick a model your ollama.com plan
-            includes, or upgrade at{" "}
-            <a
-              href="https://ollama.com/settings/billing"
-              target="_blank"
-              rel="noreferrer"
-              className="underline hover:text-amber"
-            >
-              ollama.com
-            </a>
-            .
-          </p>
+            <p className="font-semibold">
+              Your ollama.com plan can&apos;t run{" "}
+              {inaccessibleModels.length === 1 ? "this model" : "these models"}:
+            </p>
+            <ul className="mt-1 list-disc space-y-0.5 pl-5">
+              {inaccessibleModels.map((m) => (
+                <li key={m.model}>
+                  <span className="font-mono">{m.model}</span>
+                  {m.reason ? ` — ${m.reason}` : ""}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5">
+              Pick a model your plan includes, or upgrade at{" "}
+              <a
+                href="https://ollama.com/settings/billing"
+                target="_blank"
+                rel="noreferrer"
+                className="underline hover:text-amber"
+              >
+                ollama.com
+              </a>
+              .
+            </p>
+          </div>
         )}
-        {accessStatus === "idle" &&
+        {providerMeta.needsAccessProbe &&
+          accessStatus === "idle" &&
           modelAccess !== null &&
           inaccessibleModels.length === 0 && (
             <p role="status" className="mt-3 text-xs text-sanity-high">
-              Your plan can run both selected models.
+              {modelAccess.length === 1
+                ? "Your plan can run the selected model."
+                : "Your plan can run both selected models."}
             </p>
           )}
       </fieldset>

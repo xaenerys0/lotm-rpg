@@ -16,18 +16,24 @@ export class AIError extends Error {
    *  `classifyHttpError`). Lets callers distinguish 401 (bad key) from 403
    *  (key fine, request/model refused) without string-matching the message. */
   readonly status?: number;
+  /** The provider's own human-readable reason, already extracted from the body
+   *  (see `extractProviderMessage`). Consumers that want just the reason read
+   *  this instead of re-parsing `providerMessage`. */
+  readonly reason?: string;
 
   constructor(
     code: AIErrorCode,
     message: string,
     providerMessage?: string,
     status?: number,
+    reason?: string,
   ) {
     super(message);
     this.name = "AIError";
     this.code = code;
     this.providerMessage = providerMessage;
     this.status = status;
+    this.reason = reason;
     this.retryable =
       code === "RATE_LIMITED" || code === "PROVIDER_ERROR" || code === "MALFORMED_OUTPUT";
   }
@@ -56,23 +62,29 @@ function pluckMessage(value: unknown): string | undefined {
   if (typeof value === "string") return value.trim() || undefined;
   if (value && typeof value === "object") {
     const obj = value as Record<string, unknown>;
-    if (typeof obj.error === "string") return obj.error.trim() || undefined;
+    // Try each shape in order; a blank candidate falls through to the next so an
+    // empty `error.message` never shadows a meaningful top-level `message`.
+    if (typeof obj.error === "string" && obj.error.trim()) return obj.error.trim();
     if (obj.error && typeof obj.error === "object") {
       const nested = (obj.error as Record<string, unknown>).message;
-      if (typeof nested === "string") return nested.trim() || undefined;
+      if (typeof nested === "string" && nested.trim()) return nested.trim();
     }
-    if (typeof obj.message === "string") return obj.message.trim() || undefined;
+    if (typeof obj.message === "string" && obj.message.trim()) return obj.message.trim();
   }
   return undefined;
 }
 
 export function classifyHttpError(status: number, body: string): AIError {
+  // Extract the provider's reason once and carry it on every error, so consumers
+  // (e.g. the model-access probe) read `err.reason` instead of re-parsing.
+  const reason = extractProviderMessage(body);
   if (status === 401) {
     return new AIError(
       "AUTH_ERROR",
       "Invalid or expired API key. Please check your provider settings.",
       body,
       status,
+      reason,
     );
   }
   // A 403 is distinct from a 401: the provider accepted the key but refused
@@ -83,7 +95,6 @@ export function classifyHttpError(status: number, body: string): AIError {
   // reason (e.g. ollama.com's "this model requires a subscription, upgrade for
   // access: …"), surface it verbatim instead of guessing.
   if (status === 403) {
-    const reason = extractProviderMessage(body);
     const base =
       "The provider accepted your key but refused this request (HTTP 403). The selected model may be unavailable on your plan, or you may have hit a usage limit. Check the model in Settings or your provider's dashboard.";
     return new AIError(
@@ -91,6 +102,7 @@ export function classifyHttpError(status: number, body: string): AIError {
       reason ? `${base} Provider said: ${reason}` : base,
       body,
       status,
+      reason,
     );
   }
   if (status === 429) {
@@ -99,6 +111,7 @@ export function classifyHttpError(status: number, body: string): AIError {
       "Rate limited by provider. Retrying with backoff.",
       body,
       status,
+      reason,
     );
   }
   if (status === 402) {
@@ -107,6 +120,7 @@ export function classifyHttpError(status: number, body: string): AIError {
       "API quota exceeded. Check your provider billing dashboard.",
       body,
       status,
+      reason,
     );
   }
   if (status >= 500) {
@@ -115,9 +129,10 @@ export function classifyHttpError(status: number, body: string): AIError {
       "Provider is experiencing issues. Retrying.",
       body,
       status,
+      reason,
     );
   }
-  return new AIError("PROVIDER_ERROR", `Unexpected HTTP ${status}`, body, status);
+  return new AIError("PROVIDER_ERROR", `Unexpected HTTP ${status}`, body, status, reason);
 }
 
 export function createMalformedOutputError(rawOutput: string): AIError {

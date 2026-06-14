@@ -10,7 +10,7 @@ import type {
   ValidatedAIResponse,
   RetrievedLoreChunk,
 } from "./types";
-import { AIError, extractProviderMessage } from "./errors";
+import { AIError } from "./errors";
 import { createAdapter, type LLMProviderAdapter } from "./providers";
 import { assemblePrompt, promptToMessages } from "./prompts";
 import type { MemoryState, LoreContext } from "./types";
@@ -285,11 +285,7 @@ async function probeOne(
     return { model, accessible: true };
   } catch (err) {
     if (err instanceof AIError && (err.status === 403 || err.status === 404)) {
-      return {
-        model,
-        accessible: false,
-        reason: extractProviderMessage(err.providerMessage),
-      };
+      return { model, accessible: false, reason: err.reason };
     }
     return { model, accessible: true };
   }

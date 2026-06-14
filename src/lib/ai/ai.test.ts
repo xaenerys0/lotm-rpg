@@ -278,6 +278,13 @@ describe("errors", () => {
       expect(err.message).toContain("requires a subscription");
     });
 
+    it("stores the extracted provider reason on the error for any status", () => {
+      const body = JSON.stringify({ error: "model not found" });
+      expect(classifyHttpError(404, body).reason).toBe("model not found");
+      expect(classifyHttpError(403, body).reason).toBe("model not found");
+      expect(classifyHttpError(401, "").reason).toBeUndefined();
+    });
+
     it("omits the 'Provider said' clause when the 403 body is empty", () => {
       const err = classifyHttpError(403, "");
       expect(err.message).not.toContain("Provider said:");
@@ -321,6 +328,20 @@ describe("errors", () => {
       expect(
         extractProviderMessage(JSON.stringify({ error: { code: 1 } })),
       ).toBeUndefined();
+    });
+
+    it("does not let a blank nested error.message shadow a real top-level message", () => {
+      expect(
+        extractProviderMessage(
+          JSON.stringify({ error: { message: "" }, message: "real" }),
+        ),
+      ).toBe("real");
+    });
+
+    it("does not let a blank string error shadow a real top-level message", () => {
+      expect(
+        extractProviderMessage(JSON.stringify({ error: "  ", message: "real" })),
+      ).toBe("real");
     });
   });
 
