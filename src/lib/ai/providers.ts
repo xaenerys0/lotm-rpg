@@ -211,6 +211,15 @@ interface AnthropicMessage {
   content: string;
 }
 
+// Anthropic has no `response_format` JSON mode. Newer Claude models (Opus 4.6+,
+// Sonnet 4.6, Fable 5) also reject the old assistant-prefill trick — prefilling
+// the assistant turn with "{" returns HTTP 400 ("does not support assistant
+// message prefill"). The portable replacement that works on every model is a
+// system-prompt directive; the layered system prompt already asks for JSON, and
+// the client's forgiving parser + corrective retry loop back it up.
+const ANTHROPIC_JSON_DIRECTIVE =
+  "Respond with only a single valid JSON object. Do not wrap it in markdown code fences, and do not write any prose before or after the JSON.";
+
 export class AnthropicAdapter implements LLMProviderAdapter {
   readonly name: ProviderId = "anthropic";
   private baseUrl: string;
@@ -263,13 +272,13 @@ export class AnthropicAdapter implements LLMProviderAdapter {
 
   async makeRequest(request: ProviderRequest, apiKey: string): Promise<ProviderResponse> {
     const { system, messages } = this.formatMessages(request.messages);
-    // Anthropic has no `response_format` JSON mode; instead we prefill the
-    // assistant turn with "{" so the model must continue valid JSON rather
-    // than wrapping it in prose or markdown.
-    const prefillJson = request.responseFormat?.type === "json_object";
-    const requestMessages = prefillJson
-      ? [...messages, { role: "assistant" as const, content: "{" }]
-      : messages;
+    // Force JSON via a system directive rather than an assistant prefill, which
+    // newer Claude models reject with a 400. The conversation must end with a
+    // user turn, so we leave `messages` untouched.
+    const wantsJson = request.responseFormat?.type === "json_object";
+    const systemText = wantsJson
+      ? [system, ANTHROPIC_JSON_DIRECTIVE].filter(Boolean).join("\n\n")
+      : system;
     const raw = await fetchWithErrorHandling(`${this.baseUrl}/messages`, {
       method: "POST",
       headers: {
@@ -280,24 +289,19 @@ export class AnthropicAdapter implements LLMProviderAdapter {
       },
       body: JSON.stringify({
         model: request.model,
-        ...(system
+        ...(systemText
           ? {
               system: [
-                { type: "text", text: system, cache_control: { type: "ephemeral" } },
+                { type: "text", text: systemText, cache_control: { type: "ephemeral" } },
               ],
             }
           : {}),
-        messages: requestMessages,
+        messages,
         temperature: request.temperature,
         max_tokens: request.maxTokens,
       }),
     });
-    const response = this.parseResponse(raw);
-    // Re-attach the prefilled "{" unless the model already echoed it.
-    if (prefillJson && !response.content.trimStart().startsWith("{")) {
-      response.content = `{${response.content}`;
-    }
-    return response;
+    return this.parseResponse(raw);
   }
 
   async validateKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
