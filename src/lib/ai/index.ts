@@ -76,6 +76,7 @@ export {
   selectModel,
   validateProviderConfig,
   listProviderModels,
+  findUnservedModels,
   type GenerateOptions,
 } from "./client";
 

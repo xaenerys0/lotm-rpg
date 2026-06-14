@@ -2,7 +2,12 @@
 
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 import type { ProviderId, ProviderConfig, ModelOption } from "@/lib/ai";
-import { PROVIDER_MODELS, validateProviderConfig, listProviderModels } from "@/lib/ai";
+import {
+  PROVIDER_MODELS,
+  validateProviderConfig,
+  listProviderModels,
+  findUnservedModels,
+} from "@/lib/ai";
 import { PROVIDER_CONFIG_KEY, MODELS_CACHE_KEY } from "@/lib/game";
 import { noopSubscribe } from "@/lib/react";
 
@@ -212,6 +217,22 @@ export function ProviderConfig() {
   const canTest = !!form.apiKey || !providerMeta.requiresAuth;
   // Live catalog when available, otherwise the curated built-in list.
   const displayModels = availableModels ?? PROVIDER_MODELS[form.providerId];
+  // Once a LIVE catalog is fetched, flag any selected model the provider won't
+  // serve. This is the silent failure behind the Ollama-Cloud 403s: a premium
+  // model (advancement/combat) absent from the account's catalog 403s only
+  // mid-game. Skip for custom (free-text ids, no catalog) and the static list.
+  const unservedModels =
+    !isCustom && availableModels
+      ? findUnservedModels(
+          {
+            providerId: form.providerId,
+            apiKey: form.apiKey,
+            routineModel: form.routineModel,
+            premiumModel: form.premiumModel,
+          },
+          availableModels,
+        )
+      : [];
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
@@ -512,6 +533,19 @@ export function ProviderConfig() {
             )}
           </div>
         </div>
+        {unservedModels.length > 0 && (
+          <p
+            role="alert"
+            className="mt-3 rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-2 text-xs leading-relaxed text-sanity-low"
+          >
+            <strong className="font-semibold">Heads up:</strong>{" "}
+            {unservedModels.length === 1 ? "Model" : "Models"}{" "}
+            <span className="font-mono">{unservedModels.join(", ")}</span>{" "}
+            {unservedModels.length === 1 ? "isn't" : "aren't"} in your provider&apos;s
+            live catalog, so calls using {unservedModels.length === 1 ? "it" : "them"}{" "}
+            will likely be rejected (HTTP 403). Pick a listed model above.
+          </p>
+        )}
       </fieldset>
 
       {/* Connection Status & Actions */}

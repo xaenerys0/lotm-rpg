@@ -25,6 +25,16 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   const responseText = await upstream.text();
+
+  // Surface upstream failures in Vercel logs (status + body) without ever
+  // logging the Authorization header / key. See the chat/completions route.
+  if (upstream.status >= 400) {
+    console.error(
+      "[ollama-cloud proxy] models upstream error",
+      JSON.stringify({ status: upstream.status, body: responseText.slice(0, 1000) }),
+    );
+  }
+
   return new NextResponse(responseText, {
     status: upstream.status,
     headers: { "Content-Type": "application/json" },

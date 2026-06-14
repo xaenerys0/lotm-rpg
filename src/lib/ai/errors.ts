@@ -24,10 +24,22 @@ export class AIError extends Error {
 }
 
 export function classifyHttpError(status: number, body: string): AIError {
-  if (status === 401 || status === 403) {
+  if (status === 401) {
     return new AIError(
       "AUTH_ERROR",
       "Invalid or expired API key. Please check your provider settings.",
+      body,
+    );
+  }
+  // A 403 is distinct from a 401: the provider accepted the key but refused
+  // this specific request — most often the selected model is unavailable on the
+  // account/plan, or a usage quota was hit (some providers return 403, not 429,
+  // for quota). Reusing AUTH_ERROR keeps the "Go to Settings" recovery CTA, but
+  // the message no longer wrongly blames the key.
+  if (status === 403) {
+    return new AIError(
+      "AUTH_ERROR",
+      "The provider accepted your key but refused this request (HTTP 403). The selected model may be unavailable on your plan, or you may have hit a usage limit. Check the model in Settings or your provider's dashboard.",
       body,
     );
   }
