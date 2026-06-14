@@ -9,7 +9,14 @@ describe("gazetteerForEpoch", () => {
     expect(fifth.travelEnabled).toBe(true);
     expect(fifth.intro).toContain("Tingen");
     expect(fifth.districts.some((d) => d.slug === "iron-cross-district")).toBe(true);
-    expect(fifth.fartherCities.map((c) => c.id)).toEqual(["backlund", "trier", "bayam"]);
+    expect(fifth.fartherCities.map((c) => c.id)).toEqual([
+      "backlund",
+      "trier",
+      "bayam",
+      "pritz",
+      "enmat",
+      "feysac",
+    ]);
   });
 
   it("defaults an absent epoch to the Fifth", () => {

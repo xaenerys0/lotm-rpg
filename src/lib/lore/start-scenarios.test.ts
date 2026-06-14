@@ -3,7 +3,9 @@ import { EPOCHS } from "./epochs";
 import {
   START_SCENARIOS,
   startScenariosForEpoch,
+  startLocationsForEpoch,
   selectStartScenario,
+  selectStartScenarioForLocation,
   getStartScenario,
   type StartScenario,
 } from "./start-scenarios";
@@ -114,6 +116,56 @@ describe("selectStartScenario", () => {
 
   it("resolves an unknown epoch to a Fifth-Epoch start", () => {
     expect(selectStartScenario(999, () => 0).epoch).toBe(5);
+  });
+});
+
+describe("startLocationsForEpoch", () => {
+  it("collapses scenarios that share a location into one picker option", () => {
+    const options = startLocationsForEpoch(5);
+    const tingen = options.find((o) => o.location === "Tingen City");
+    expect(tingen).toBeDefined();
+    // Tingen has several distinct opening scenes.
+    expect(tingen!.sceneCount).toBeGreaterThan(1);
+    // One option per distinct location (no duplicates).
+    expect(new Set(options.map((o) => o.location)).size).toBe(options.length);
+  });
+
+  it("unions and sorts the pathway affinities across a location's scenes", () => {
+    const options = startLocationsForEpoch(5);
+    const trier = options.find((o) => o.location === "Trier");
+    expect(trier!.pathwayAffinity).toEqual([2, 3]);
+    // A neutral place suits no pathway in particular.
+    const tingen = options.find((o) => o.location === "Tingen City");
+    expect(tingen!.pathwayAffinity).toEqual([]);
+  });
+
+  it("includes the farther canon regions as their own options", () => {
+    const locations = startLocationsForEpoch(5).map((o) => o.location);
+    expect(locations).toEqual(
+      expect.arrayContaining(["Pritz Harbor", "Enmat Harbor", "Feysac"]),
+    );
+  });
+});
+
+describe("selectStartScenarioForLocation", () => {
+  it("returns a scenario at the chosen location", () => {
+    const picked = selectStartScenarioForLocation(5, "Bayam", () => 0);
+    expect(picked.location).toBe("Bayam");
+  });
+
+  it("still varies the scene among a location's several openings", () => {
+    const reached = new Set<string>();
+    // Tingen has multiple scenes; spanning [0,1) should reach more than one.
+    for (let i = 0; i < 6; i++) {
+      reached.add(selectStartScenarioForLocation(5, "Tingen City", () => i / 6).id);
+    }
+    expect(reached.size).toBeGreaterThan(1);
+  });
+
+  it("falls back to a random epoch start when the location is unknown", () => {
+    const picked = selectStartScenarioForLocation(5, "Atlantis", () => 0);
+    expect(picked.epoch).toBe(5);
+    expect(startScenariosForEpoch(5)).toContain(picked);
   });
 });
 

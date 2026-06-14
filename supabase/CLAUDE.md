@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Thirteen migrations in order:
+Migrations live in `migrations/`. Fourteen migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -64,6 +64,8 @@ Migrations live in `migrations/`. Thirteen migrations in order:
 12. `20260614000000_source_chunks_epoch.sql` — Epoch gate for the RAG corpus (character epoch isolation). Adds a nullable `source_chunks.epoch smallint` column (+ partial index; `NULL` = universal, mirroring a null `canon_order`), backfills the loaded novel/wiki corpus to `epoch = 5`, and **re-creates** `match_source_chunks` with a new `p_epoch smallint default null` argument + an `epoch` return column and the gate clause `(p_epoch is null or sc.epoch is null or sc.epoch = p_epoch)`. The old 9-arg overload is dropped and the new signature re-granted to `authenticated`. Keep `database.ts` in sync.
 
 13. `20260614010000_seed_epoch_lore.sql` — Seed the four pre-Iron-Age epochs' curated lore (First-Fourth, 16 entries), generated from `src/lib/lore/epoch-{first,second,third,fourth}.ts` (TS source is canonical). Same `lore_entries` INSERT format as migration 3. The Fifth-Epoch rows were already seeded and epoch-tagged by the earlier migrations.
+
+14. `20260614020000_seed_region_lore.sql` — Seed lore for the farther Fifth-Epoch start regions (varied story openings): Pritz Harbor, Enmat Harbor, and the Feysac Empire (3 entries). Generated from `src/lib/lore/regions.ts` (TS source is canonical). Same `lore_entries` INSERT format as migration 3.
 
 ## Auth Session Persistence
 

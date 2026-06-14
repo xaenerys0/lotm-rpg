@@ -22,7 +22,7 @@ import {
   ECHOES_KEY,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
-import { selectStartScenario } from "@/lib/lore";
+import { selectStartScenario, selectStartScenarioForLocation } from "@/lib/lore";
 import {
   loadAllSessions,
   loadSessionIndex,
@@ -128,11 +128,15 @@ export function PlayDashboard() {
       initialMemory: MemoryState,
       epoch: number,
       prologueRecap: string,
+      startLocation: string | null,
     ) => {
-      // Varied story openings: draw a random start scenario for this epoch so
-      // the chronicle's opening location and first scene differ run to run
-      // (e.g. not always Tingen). Pathway does not bias the draw.
-      const startScenario = selectStartScenario(epoch);
+      // Varied story openings: a chosen preferred location sets the start (the
+      // scene still varies among that place's openings); "Surprise me" (null)
+      // draws a fully random start for the epoch. Pathway never biases the draw.
+      const startScenario =
+        startLocation === null
+          ? selectStartScenario(epoch)
+          : selectStartScenarioForLocation(epoch, startLocation);
       const gameState = createDefaultGameState(
         pathwayId,
         undefined,

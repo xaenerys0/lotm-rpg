@@ -51,6 +51,26 @@ export const CITIES: City[] = [
     blurb:
       "The colonial port-capital of the Rorsted Archipelago, the salt-and-spice City of Generosity.",
   },
+  {
+    id: "pritz",
+    name: "Pritz Harbor",
+    kingdom: "Loen Kingdom",
+    blurb:
+      "The Loen navy's chief port below the Hornacis range — fog, dry-docks, and warships.",
+  },
+  {
+    id: "enmat",
+    name: "Enmat Harbor",
+    kingdom: "Loen Kingdom",
+    blurb: "A small, fog-drowned Loen coastal town of fishing boats and old sea-charms.",
+  },
+  {
+    id: "feysac",
+    name: "Feysac",
+    kingdom: "Feysac Empire",
+    blurb:
+      "The cold militarist empire of the God of Combat, north beyond the Hornacis range.",
+  },
 ];
 
 /**
@@ -60,10 +80,13 @@ export const CITIES: City[] = [
  * or from it is the longest.
  */
 const TRAVEL_DAYS: Record<string, Record<string, number>> = {
-  tingen: { backlund: 2, trier: 6, bayam: 14 },
-  backlund: { tingen: 2, trier: 5, bayam: 12 },
-  trier: { tingen: 6, backlund: 5, bayam: 16 },
-  bayam: { tingen: 14, backlund: 12, trier: 16 },
+  tingen: { backlund: 2, trier: 6, bayam: 14, pritz: 3, enmat: 4, feysac: 12 },
+  backlund: { tingen: 2, trier: 5, bayam: 12, pritz: 2, enmat: 3, feysac: 11 },
+  trier: { tingen: 6, backlund: 5, bayam: 16, pritz: 7, enmat: 8, feysac: 14 },
+  bayam: { tingen: 14, backlund: 12, trier: 16, pritz: 10, enmat: 11, feysac: 18 },
+  pritz: { tingen: 3, backlund: 2, trier: 7, bayam: 10, enmat: 2, feysac: 13 },
+  enmat: { tingen: 4, backlund: 3, trier: 8, bayam: 11, pritz: 2, feysac: 14 },
+  feysac: { tingen: 12, backlund: 11, trier: 14, bayam: 18, pritz: 13, enmat: 14 },
 };
 
 /** Look up a city by id. Returns `undefined` for an unknown id. */
