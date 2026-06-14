@@ -1409,8 +1409,8 @@ describe("providers", () => {
     });
   });
 
-  // ── Anthropic JSON prefill ──
-  describe("AnthropicAdapter JSON prefill", () => {
+  // ── Anthropic JSON output ──
+  describe("AnthropicAdapter JSON output", () => {
     function mockOnce(value: unknown) {
       return vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
         ok: true,
@@ -1419,15 +1419,21 @@ describe("providers", () => {
       } as Response);
     }
 
-    it("prefills the assistant turn with '{' and reattaches it", async () => {
+    it("forces JSON via a system directive, never an assistant prefill", async () => {
+      // Newer Claude models (Opus 4.6+, Sonnet 4.6, Fable 5) return HTTP 400 if
+      // the conversation ends with an assistant turn — so the request must end
+      // with the user turn and steer JSON through the system prompt instead.
       const fetchSpy = mockOnce({
-        content: [{ type: "text", text: '"narrative":"hi"}' }],
+        content: [{ type: "text", text: '{"narrative":"hi"}' }],
         model: "claude-sonnet-4-6",
         usage: { input_tokens: 10, output_tokens: 5 },
       });
       const result = await new AnthropicAdapter().makeRequest(
         {
-          messages: [{ role: "user", content: "go" }],
+          messages: [
+            { role: "system", content: "You narrate." },
+            { role: "user", content: "go" },
+          ],
           model: "claude-sonnet-4-6",
           temperature: 0.7,
           maxTokens: 100,
@@ -1437,13 +1443,36 @@ describe("providers", () => {
       );
       expect(result.content).toBe('{"narrative":"hi"}');
       const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
-      expect(body.messages[body.messages.length - 1]).toEqual({
-        role: "assistant",
-        content: "{",
-      });
+      expect(body.messages[body.messages.length - 1].role).toBe("user");
+      expect(body.messages.some((m: { role: string }) => m.role === "assistant")).toBe(
+        false,
+      );
+      // The JSON directive rides along in the system block.
+      expect(body.system[0].text).toContain("You narrate.");
+      expect(body.system[0].text).toContain("single valid JSON object");
     });
 
-    it("does not prefill when responseFormat is absent", async () => {
+    it("adds the JSON directive even when there is no caller system prompt", async () => {
+      const fetchSpy = mockOnce({
+        content: [{ type: "text", text: '{"narrative":"hi"}' }],
+        model: "claude-sonnet-4-6",
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+      await new AnthropicAdapter().makeRequest(
+        {
+          messages: [{ role: "user", content: "go" }],
+          model: "claude-sonnet-4-6",
+          temperature: 0.7,
+          maxTokens: 100,
+          responseFormat: { type: "json_object" },
+        },
+        "sk-ant",
+      );
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body.system[0].text).toContain("single valid JSON object");
+    });
+
+    it("omits the JSON directive and system block when responseFormat is absent", async () => {
       const fetchSpy = mockOnce({
         content: [{ type: "text", text: '{"narrative":"hi"}' }],
         model: "claude-sonnet-4-6",
@@ -1461,25 +1490,7 @@ describe("providers", () => {
       expect(result.content).toBe('{"narrative":"hi"}');
       const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
       expect(body.messages[body.messages.length - 1].role).toBe("user");
-    });
-
-    it("does not double-prepend when the model echoes the opening brace", async () => {
-      mockOnce({
-        content: [{ type: "text", text: '{"narrative":"hi"}' }],
-        model: "claude-sonnet-4-6",
-        usage: { input_tokens: 1, output_tokens: 1 },
-      });
-      const result = await new AnthropicAdapter().makeRequest(
-        {
-          messages: [{ role: "user", content: "go" }],
-          model: "claude-sonnet-4-6",
-          temperature: 0.7,
-          maxTokens: 100,
-          responseFormat: { type: "json_object" },
-        },
-        "sk-ant",
-      );
-      expect(result.content).toBe('{"narrative":"hi"}');
+      expect(body.system).toBeUndefined();
     });
   });
 
