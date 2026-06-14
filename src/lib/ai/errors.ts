@@ -83,8 +83,12 @@ export function classifyHttpError(status: number, body: string): AIError {
   // log to inspect, so a bare "Unexpected HTTP 400" would otherwise be a
   // dead end.
   const reason = extractProviderMessage(body);
+  // Cap the reason spliced into the human-readable message: a structured
+  // `{ message }` body is returned uncapped by `extractProviderMessage`, and the
+  // full text still lives on `err.reason` for programmatic consumers — but the
+  // UI string shouldn't balloon on a multi-KB provider message.
   const withReason = (base: string): string =>
-    reason ? `${base} Provider said: ${reason}` : base;
+    reason ? `${base} Provider said: ${reason.slice(0, 300)}` : base;
 
   if (status === 401) {
     return new AIError(

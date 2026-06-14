@@ -887,6 +887,22 @@ describe("providers", () => {
       const result = await adapter.validateKey("key");
       expect(result.valid).toBe(false);
     });
+
+    it("validateKey returns valid when the probe model is unavailable (404/400)", async () => {
+      // A 404/400 against the hardcoded probe model means the key authenticated
+      // but the model is gated/unavailable — it must NOT be reported as a bad key
+      // (these classify as AUTH_ERROR but carry their HTTP status).
+      const fetchSpy = vi.spyOn(globalThis, "fetch");
+      for (const status of [404, 400] as const) {
+        fetchSpy.mockResolvedValueOnce({
+          ok: false,
+          status,
+          text: () => Promise.resolve(JSON.stringify({ error: { message: "model: x" } })),
+        } as Response);
+        const result = await new AnthropicAdapter().validateKey("good-key");
+        expect(result.valid).toBe(true);
+      }
+    });
   });
 
   describe("OpenRouterAdapter", () => {
