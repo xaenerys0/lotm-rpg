@@ -1440,6 +1440,31 @@ describe("deserializeSession", () => {
     modified.gameState.digestion = { pathwayId: 1, sequenceLevel: 9, progress: 150 };
     expect(deserializeSession(JSON.stringify(modified))).toBeNull();
   });
+
+  it("preserves the durable running summary on round-trip", () => {
+    const session = makeSession();
+    session.memory.runningSummary = "Klein is hunting a rogue Beyonder in the East End.";
+    const restored = deserializeSession(serializeSession(session));
+    expect(restored!.memory.runningSummary).toBe(
+      "Klein is hunting a rogue Beyonder in the East End.",
+    );
+  });
+
+  it("returns null when the running summary is not a string", () => {
+    const session = makeSession();
+    const modified = JSON.parse(serializeSession(session));
+    modified.memory.runningSummary = 123;
+    expect(deserializeSession(JSON.stringify(modified))).toBeNull();
+  });
+
+  it("accepts a legacy save with no running summary", () => {
+    const session = makeSession();
+    const modified = JSON.parse(serializeSession(session));
+    delete modified.memory.runningSummary;
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored).not.toBeNull();
+    expect(restored!.memory.runningSummary).toBeUndefined();
+  });
 });
 
 // ─── isValidSessionShape ───────────────────────────────────────────

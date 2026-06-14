@@ -259,6 +259,11 @@ export function isValidSessionShape(obj: unknown): boolean {
   if (!Array.isArray(mem.immediateTurns)) return false;
   if (!Array.isArray(mem.recentSummaries)) return false;
   if (!Array.isArray(mem.sessionFacts)) return false;
+  // The durable running summary is optional (older saves predate it) but must
+  // be a string when present.
+  if (mem.runningSummary !== undefined && typeof mem.runningSummary !== "string") {
+    return false;
+  }
 
   return true;
 }

@@ -93,6 +93,15 @@ export interface AIResponse {
    * validation point before anything reaches the journal.
    */
   journalEntry?: { summary: string; eventType: string };
+  /**
+   * Durable rolling "story so far" the narrator maintains each turn (amortized
+   * into this response — no extra API call). It is fed back in next turn so the
+   * model recursively prunes and extends it, and persisted on `MemoryState`
+   * where it is never trimmed. Optional: when absent the prior summary is kept.
+   * Capped on sanitize (`RUNNING_SUMMARY_CHAR_CAP`). Prior art: AI Dungeon's
+   * auto Story Summary, NovelAI's pinned Memory, MemGPT's recursive summary.
+   */
+  runningSummary?: string;
 }
 
 export interface ValidatedAIResponse {
@@ -193,6 +202,14 @@ export interface MemoryState {
   immediateTurns: TurnRecord[];
   recentSummaries: BulletSummary[];
   sessionFacts: SessionFact[];
+  /**
+   * Durable rolling synopsis of the chronicle ("story so far"), maintained by
+   * the narrator each turn and pinned at the top of the history layer. Unlike
+   * `recentSummaries` (FIFO-evicted) it is never trimmed, so lasting context
+   * survives the whole game. Optional for back-compat with saves that predate
+   * it; treated as `""` when absent.
+   */
+  runningSummary?: string;
 }
 
 export interface PromptLayer {

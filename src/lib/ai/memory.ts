@@ -13,12 +13,29 @@ const SESSION_FACTS_MAX = 40;
 const TOKEN_PER_TURN_ESTIMATE = 150;
 const TOKEN_PER_SUMMARY_ESTIMATE = 30;
 const TOKEN_PER_FACT_ESTIMATE = 20;
+const CHARS_PER_TOKEN = 4;
+
+/**
+ * Hard cap (chars) on the durable running summary. Bounds prompt growth — the
+ * narrator recursively prunes its own synopsis to stay under it (best practice
+ * across LangChain summary-buffer / MemGPT recursive summaries). ~375 tokens.
+ */
+export const RUNNING_SUMMARY_CHAR_CAP = 1500;
+
+/** Cap the running summary defensively (sanitize does this too). Pure. */
+export function capRunningSummary(summary: string): string {
+  const trimmed = summary.trim();
+  return trimmed.length > RUNNING_SUMMARY_CHAR_CAP
+    ? trimmed.slice(0, RUNNING_SUMMARY_CHAR_CAP).trimEnd() + "…"
+    : trimmed;
+}
 
 export function createMemoryState(): MemoryState {
   return {
     immediateTurns: [],
     recentSummaries: [],
     sessionFacts: [],
+    runningSummary: "",
   };
 }
 
@@ -102,6 +119,14 @@ export function addTurn(state: MemoryState, turn: TurnRecord): MemoryState {
     next.sessionFacts.shift();
   }
 
+  // Adopt the narrator's updated rolling summary when it supplied one this
+  // turn; otherwise keep the prior synopsis so a turn that omits it never
+  // erases the chronicle's durable memory.
+  const incoming = turn.aiResponse.runningSummary;
+  if (typeof incoming === "string" && incoming.trim() !== "") {
+    next.runningSummary = capRunningSummary(incoming);
+  }
+
   return next;
 }
 
@@ -124,7 +149,8 @@ export function estimateMemoryTokens(state: MemoryState): number {
   return (
     state.immediateTurns.length * TOKEN_PER_TURN_ESTIMATE +
     state.recentSummaries.length * TOKEN_PER_SUMMARY_ESTIMATE +
-    state.sessionFacts.length * TOKEN_PER_FACT_ESTIMATE
+    state.sessionFacts.length * TOKEN_PER_FACT_ESTIMATE +
+    Math.ceil((state.runningSummary?.length ?? 0) / CHARS_PER_TOKEN)
   );
 }
 
@@ -159,6 +185,13 @@ export function trimMemoryForBudget(
 
 export function formatMemoryForPrompt(state: MemoryState): string {
   const sections: string[] = [];
+
+  // Pinned at the top, before facts and recent turns: the durable synopsis the
+  // narrator both reads (to stay consistent) and rewrites (to keep it current).
+  if (state.runningSummary && state.runningSummary.trim() !== "") {
+    sections.push("## Story So Far");
+    sections.push(state.runningSummary.trim());
+  }
 
   if (state.sessionFacts.length > 0) {
     sections.push("## Session Facts");

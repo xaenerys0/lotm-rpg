@@ -58,6 +58,8 @@ import {
   trimMemoryForBudget,
   formatMemoryForPrompt,
   buildTurnRecord,
+  capRunningSummary,
+  RUNNING_SUMMARY_CHAR_CAP,
 } from "./memory";
 import { parseAIResponse, validateAIResponse, sanitizeAIResponse } from "./validation";
 import {
@@ -2464,6 +2466,58 @@ describe("memory", () => {
       }
       expect(state.sessionFacts.length).toBeLessThanOrEqual(40);
     });
+
+    it("adopts the narrator's running summary when supplied", () => {
+      let state = createMemoryState();
+      const turn = makeTurnRecord(1);
+      turn.aiResponse.runningSummary = "Klein is investigating a haunted manor.";
+      state = addTurn(state, turn);
+      expect(state.runningSummary).toBe("Klein is investigating a haunted manor.");
+    });
+
+    it("keeps the prior running summary when a turn omits it", () => {
+      let state = createMemoryState();
+      const first = makeTurnRecord(1);
+      first.aiResponse.runningSummary = "Established the Tarot Club.";
+      state = addTurn(state, first);
+      // A later turn with no summary must not erase the durable memory.
+      state = addTurn(state, makeTurnRecord(2));
+      expect(state.runningSummary).toBe("Established the Tarot Club.");
+    });
+
+    it("ignores a blank running summary rather than erasing the prior one", () => {
+      let state = createMemoryState();
+      const first = makeTurnRecord(1);
+      first.aiResponse.runningSummary = "A standing debt to Welch.";
+      state = addTurn(state, first);
+      const blank = makeTurnRecord(2);
+      blank.aiResponse.runningSummary = "   ";
+      state = addTurn(state, blank);
+      expect(state.runningSummary).toBe("A standing debt to Welch.");
+    });
+
+    it("caps an over-long running summary on adoption", () => {
+      let state = createMemoryState();
+      const turn = makeTurnRecord(1);
+      turn.aiResponse.runningSummary = "x".repeat(RUNNING_SUMMARY_CHAR_CAP + 500);
+      state = addTurn(state, turn);
+      expect(state.runningSummary!.length).toBeLessThanOrEqual(
+        RUNNING_SUMMARY_CHAR_CAP + 1,
+      );
+      expect(state.runningSummary!.endsWith("…")).toBe(true);
+    });
+  });
+
+  describe("capRunningSummary", () => {
+    it("trims whitespace and leaves a short summary intact", () => {
+      expect(capRunningSummary("  the story so far  ")).toBe("the story so far");
+    });
+
+    it("truncates and ellipsises an over-long summary", () => {
+      const capped = capRunningSummary("y".repeat(RUNNING_SUMMARY_CHAR_CAP + 100));
+      expect(capped.length).toBeLessThanOrEqual(RUNNING_SUMMARY_CHAR_CAP + 1);
+      expect(capped.endsWith("…")).toBe(true);
+    });
   });
 
   describe("estimateMemoryTokens", () => {
@@ -2575,6 +2629,41 @@ describe("memory", () => {
       state = addTurn(state, turn);
       const formatted = formatMemoryForPrompt(state);
       expect(formatted).not.toContain("Choices offered:");
+    });
+
+    it("pins the running summary at the top under 'Story So Far'", () => {
+      let state = createMemoryState();
+      const turn = makeTurnRecord(1);
+      turn.aiResponse.runningSummary = "Klein joined the Nighthawks.";
+      state = addTurn(state, turn);
+      const formatted = formatMemoryForPrompt(state);
+      expect(formatted).toContain("## Story So Far");
+      expect(formatted).toContain("Klein joined the Nighthawks.");
+      // It leads the memory block, ahead of the recent turns.
+      expect(formatted.indexOf("Story So Far")).toBeLessThan(formatted.indexOf("Turn 1"));
+    });
+
+    it("omits the Story So Far section when there is no running summary", () => {
+      let state = createMemoryState();
+      state = addTurn(state, makeTurnRecord(1));
+      expect(formatMemoryForPrompt(state)).not.toContain("Story So Far");
+    });
+
+    it("returns a non-empty block for a summary-only memory", () => {
+      const state = { ...createMemoryState(), runningSummary: "Origin: a clerk." };
+      const formatted = formatMemoryForPrompt(state);
+      expect(formatted).toContain("## Story So Far");
+      expect(formatted).toContain("Origin: a clerk.");
+    });
+  });
+
+  describe("estimateMemoryTokens with running summary", () => {
+    it("counts the running summary toward the estimate", () => {
+      const base = createMemoryState();
+      const withSummary = { ...base, runningSummary: "z".repeat(400) };
+      expect(estimateMemoryTokens(withSummary)).toBeGreaterThan(
+        estimateMemoryTokens(base),
+      );
     });
   });
 });
@@ -2845,6 +2934,25 @@ describe("validation", () => {
       expect(result.choices![0].type).toBe("dialogue");
       expect(result.choices![1].type).toBe("investigation");
       expect(result.choices![2].type).toBe("ritual");
+    });
+
+    it("extracts a non-empty running summary", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        runningSummary: "Klein owes Welch a favour.",
+      });
+      expect(parseAIResponse(json).runningSummary).toBe("Klein owes Welch a favour.");
+    });
+
+    it("drops a blank or non-string running summary", () => {
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", runningSummary: "   " }))
+          .runningSummary,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", runningSummary: 42 }))
+          .runningSummary,
+      ).toBeUndefined();
     });
   });
 
@@ -3130,6 +3238,23 @@ describe("validation", () => {
       const response: AIResponse = { narrative: "test" };
       const sanitized = sanitizeAIResponse(response);
       expect(sanitized.actingEvaluation).toBeUndefined();
+    });
+
+    it("caps an over-long running summary", () => {
+      const response: AIResponse = {
+        narrative: "test",
+        runningSummary: "w".repeat(RUNNING_SUMMARY_CHAR_CAP + 300),
+      };
+      const sanitized = sanitizeAIResponse(response);
+      expect(sanitized.runningSummary!.length).toBeLessThanOrEqual(
+        RUNNING_SUMMARY_CHAR_CAP + 1,
+      );
+    });
+
+    it("drops a running summary that is only whitespace", () => {
+      const response: AIResponse = { narrative: "test", runningSummary: "   " };
+      const sanitized = sanitizeAIResponse(response);
+      expect(sanitized.runningSummary).toBeUndefined();
     });
 
     it("removes items with empty name", () => {

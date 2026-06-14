@@ -1,6 +1,7 @@
 import type { Item, ValidationResult, Violation } from "@/lib/types/rules";
 import type { AIResponse } from "./types";
 import { createMalformedOutputError } from "./errors";
+import { capRunningSummary } from "./memory";
 
 const SANITY_IMPACT_MIN = -20;
 const SANITY_IMPACT_MAX = 10;
@@ -139,6 +140,12 @@ export function parseAIResponse(raw: string): AIResponse {
     });
   }
 
+  // Durable rolling summary — kept only when the model supplied a non-empty
+  // string, so a turn that omits it leaves the prior synopsis untouched.
+  if (typeof obj.runningSummary === "string" && obj.runningSummary.trim() !== "") {
+    response.runningSummary = obj.runningSummary;
+  }
+
   return response;
 }
 
@@ -252,6 +259,17 @@ export function sanitizeAIResponse(response: AIResponse): AIResponse {
     sanitized.worldStateChanges = sanitized.worldStateChanges.filter(
       (change) => change.field && change.reason,
     );
+  }
+
+  // Bound the durable summary; drop it entirely if it collapses to nothing so
+  // the prior synopsis is preserved rather than overwritten with a blank.
+  if (sanitized.runningSummary !== undefined) {
+    const capped = capRunningSummary(sanitized.runningSummary);
+    if (capped === "") {
+      delete sanitized.runningSummary;
+    } else {
+      sanitized.runningSummary = capped;
+    }
   }
 
   return sanitized;
