@@ -4,17 +4,23 @@ How to load the Lord of the Mysteries **novel** and **wiki** into the private
 `source_chunks` / `chunk_embeddings` tables so the runtime retrieval path
 (`match_source_chunks`, wired into the game loop) returns real canon.
 
-The corpus is **never committed to git** by design (copyright + size); it lives
-only in the private, RLS-denied Supabase tables. This runbook reproduces it from
-the sources.
+The corpus feeds the private, RLS-denied Supabase tables. For this private repo
+the raw sources are **also committed under `corpus/` via Git LFS** (the
+`.gitattributes` patterns cover `corpus/**/*.{epub,xml,7z}` and their uppercase
+forms) so canon is reproducible in-session without an out-of-band fetch. Anyone
+cloning needs `git lfs install` + `git lfs pull` to materialize them.
 
-## Sources
+## Sources (committed under `corpus/`)
 
-- **Novel**: the EPUB (`Lord of Mysteries`, Cuttlefish That Loves Diving).
-  Supplied out-of-band; not in the repo.
+- **Novel**: `corpus/novel/LordofMysteriesCuttlefishTha1.EPUB`
+  (`Lord of Mysteries`, Cuttlefish That Loves Diving).
 - **Wiki**: the Fandom dump
-  `https://s3.amazonaws.com/wikia_xml_dumps/l/lo/lordofthemystery_pages_current.xml.7z`
-  (a `.7z` — extract with `7z`/`py7zr`/`bsdtar`).
+  `https://s3.amazonaws.com/wikia_xml_dumps/l/lo/lordofthemystery_pages_current.xml.7z`,
+  committed as `corpus/wiki/lordofthemystery_pages_current.xml.7z` plus the
+  extracted `corpus/wiki/lordofthemystery_pages_current.xml` (extract with
+  `7z x <dump>.7z`). This XML is the source for the canon Advancement Ritual data
+  — regenerate `src/lib/rules/advancement-canon.ts` with `pnpm rag:advancement-canon`
+  (then `pnpm format`).
 
 ## Prerequisites
 

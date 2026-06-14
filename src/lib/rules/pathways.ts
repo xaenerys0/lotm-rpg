@@ -1,5 +1,7 @@
 import type { Pathway, Sequence } from "@/lib/types/rules";
 
+import { ADVANCEMENT_RITUALS, RITUAL_FROM_SEQUENCE } from "./advancement-canon";
+
 const whiteTowerSequences: Sequence[] = [
   {
     level: 9,
@@ -9332,7 +9334,7 @@ export const CHAINED_PATHWAY: Pathway = {
   sequences: chainedSequences,
 };
 
-export const ALL_PATHWAYS: Pathway[] = [
+const RAW_PATHWAYS: Pathway[] = [
   FOOL_PATHWAY,
   VISIONARY_PATHWAY,
   SUN_PATHWAY,
@@ -9356,6 +9358,30 @@ export const ALL_PATHWAYS: Pathway[] = [
   ABYSS_PATHWAY,
   CHAINED_PATHWAY,
 ];
+
+/**
+ * Overlay the canon Advancement Rituals (extracted from the novel+wiki corpus,
+ * `advancement-canon.ts`) onto the hand-authored sequence data. Canon: an
+ * Advancement Ritual is mandatory only from Sequence 5 onward, so higher rungs
+ * (Seq 9-6) carry NO ritual, while Seq 5-1 take the corpus ritual when one was
+ * extracted and otherwise keep the existing hand-authored placeholder. This is
+ * the single point where the engine's per-sequence advancement requirements are
+ * reconciled with the source material.
+ */
+function applyCanonAdvancement(pathway: Pathway): Pathway {
+  const canon = ADVANCEMENT_RITUALS[pathway.id] ?? {};
+  return {
+    ...pathway,
+    sequences: pathway.sequences.map((seq) => {
+      if (seq.level > RITUAL_FROM_SEQUENCE || seq.level < 1) {
+        return { ...seq, advancementRitual: undefined };
+      }
+      return { ...seq, advancementRitual: canon[seq.level] ?? seq.advancementRitual };
+    }),
+  };
+}
+
+export const ALL_PATHWAYS: Pathway[] = RAW_PATHWAYS.map(applyCanonAdvancement);
 
 // Indexed by id at module load — getPathway/getSequence are called several
 // times per render and per turn, so resolve in O(1) rather than scanning the

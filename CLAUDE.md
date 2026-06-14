@@ -69,6 +69,7 @@ docs/
 ├── anchors-design.md      # Anchors system design (issue #35) — canon + data model
 └── rules/                 # Shared rule files (@-imported by scoped CLAUDE.md)
 e2e/                       # Playwright UI tests (real-browser responsiveness) — see e2e/README.md
+corpus/                     # Canon source material, committed via Git LFS (novel EPUB + wiki XML dump). The grounding for RAG ingestion and the canon advancement data — see docs/rag-ingestion.md
 ```
 
 ## Key Conventions

@@ -18,6 +18,7 @@ import type {
 import { getGroupForPathway } from "@/lib/rules";
 import { sanityDelta } from "./sanity";
 import { clamp } from "./math";
+import { removeItemsByName } from "./inventory";
 
 /**
  * Combat engine (issue #10).
@@ -1026,17 +1027,6 @@ export function resolveEncounter(encounter: CombatEncounter): CombatEncounter {
 
 // ─── Applying Results to Game State ──────────────────────────────────
 
-function removeItems(inventory: Item[], lost: Item[]): Item[] {
-  const remaining = [...inventory];
-  for (const item of lost) {
-    const index = remaining.findIndex((i) => i.name === item.name);
-    if (index !== -1) {
-      remaining.splice(index, 1);
-    }
-  }
-  return remaining;
-}
-
 /**
  * Apply a combat result to the game state: clamp the sanity drain, drop spent
  * materials/artifacts, add loot, and record any new injuries. Dropped enemy
@@ -1047,7 +1037,7 @@ export function applyCombatResult(state: GameState, result: CombatResult): GameS
   const sanity = clamp(state.sanity + result.sanityImpact, 0, state.maxSanity);
   let inventory = state.inventory;
   if (result.itemsLost.length > 0) {
-    inventory = removeItems(inventory, result.itemsLost);
+    inventory = removeItemsByName(inventory, result.itemsLost);
   }
   if (result.itemsGained.length > 0) {
     inventory = [...inventory, ...result.itemsGained];

@@ -6,7 +6,8 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 
 ## Structure
 
-- `pathways.ts` — Pathway and sequence definitions (abilities, ingredients, rituals) for all 22 pathways. Large block of game data.
+- `pathways.ts` — Pathway and sequence definitions (abilities, ingredients, rituals) for all 22 pathways. Large block of game data. At module load `applyCanonAdvancement` overlays the corpus-derived `ADVANCEMENT_RITUALS` (`advancement-canon.ts`) so `ALL_PATHWAYS` reflects canon: an **Advancement Ritual exists only from Sequence 5 onward** — higher rungs (Seq 9-6) carry `advancementRitual: undefined`, Seq 5-1 take the canon ritual text + material list (falling back to the hand-authored placeholder where the corpus lacked one).
+- `advancement-canon.ts` — **AUTO-GENERATED** (`pnpm rag:advancement-canon`, do not hand-edit). `ADVANCEMENT_RITUALS[pathwayId][level]` (levels 5-1) and `RITUAL_FROM_SEQUENCE`, extracted from the committed wiki dump's `Module:Sequence/standard` (`corpus/wiki/`). The single source of canon Advancement Ritual data.
 - `groups.ts` — Pathway group clustering (nine groups partitioning all 22 pathways) and neighbor relationships.
 - `laws.ts` — Three cosmic laws: indestructibility (conservation of total characteristic weight), conservation (sequential advancement only), convergence (same/neighboring pathway attraction).
 - `validation.ts` — High-level validation API: `validateAdvancement()` and `validateTransfer()`.
