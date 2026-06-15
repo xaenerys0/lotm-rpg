@@ -61,9 +61,14 @@ import {
   advancementRequirements,
   advancementSuccessChance,
   attemptAdvancement,
-  canAdvance,
+  isAdvanceableSequence,
   meetsRequirements,
   targetSequence,
+  deliverHuntedItem,
+  getFunds,
+  potionPreparationPlan,
+  purchasePotionItem,
+  type PotionItemStatus,
   deserializeArtifacts,
   mintArtifact,
   serializeArtifacts,
@@ -549,6 +554,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // roll so the climb is rolled exactly once (mirrors `endingInFlight`).
   const advancingRef = useRef(false);
 
+  // Potion preparation (issue #84): gathering the next potion's reagents so the
+  // advancement gate can actually be met. `huntTarget` remembers which
+  // prerequisite a launched combat is hunting; `prepNotice` surfaces a refused
+  // purchase (e.g. unaffordable) in-world.
+  const [huntTarget, setHuntTarget] = useState<string | null>(null);
+  const [prepNotice, setPrepNotice] = useState<string | null>(null);
+
   const handleAdvancement = useCallback(async () => {
     if (!session || endingInFlight.current || advancingRef.current) return;
     advancingRef.current = true;
@@ -678,11 +690,32 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         narrative: result.narrativeSummary,
       });
       const memory = addTurn(session.memory, turn);
-      updateSession({ ...session, gameState, memory, updatedAt: Date.now() });
+      let next: GameSession = { ...session, gameState, memory, updatedAt: Date.now() };
+
+      // A hunt (issue #84) that ended in victory yields the Beyonder
+      // Characteristic it was after — the engine grants it plus spoils, and
+      // records it as a discovery.
+      if (huntTarget && result.outcome === "victory") {
+        const hunted = deliverHuntedItem(next, huntTarget);
+        if (hunted.outcome === "delivered" && hunted.session) {
+          next = hunted.session;
+          appendJournalEntries(session.id, [
+            buildJournalEntry(next.gameState, next.turnCount, {
+              eventType: "discovery",
+              summary: `Hunted and claimed ${huntTarget} for the next potion.`,
+              narrative: `You hunted down and claimed ${huntTarget}, taking its spoils for the climb ahead.`,
+              arc: `Sequence ${next.gameState.sequenceLevel}`,
+            }),
+          ]);
+        }
+      }
+      setHuntTarget(null);
+
+      updateSession(next);
       clearCombatFromStorage(session.id);
       setCombat(null);
     },
-    [session, combat, updateSession],
+    [session, combat, updateSession, huntTarget],
   );
 
   const handleCombatExit = useCallback(() => {
@@ -690,6 +723,45 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     clearCombatFromStorage(session.id);
     setCombat(null);
   }, [session]);
+
+  // Potion preparation (issue #84). Buying a prerequisite spends funds; the
+  // engine validates and delivers. An unaffordable buy is surfaced in-world
+  // rather than silently failing.
+  const handlePurchaseItem = useCallback(
+    (itemName: string) => {
+      if (!session) return;
+      const result = purchasePotionItem(session, itemName);
+      if (result.outcome === "purchased" && result.session) {
+        appendJournalEntries(session.id, [
+          buildJournalEntry(result.session.gameState, result.session.turnCount, {
+            eventType: "discovery",
+            summary: `Acquired ${itemName} for the next potion.`,
+            narrative: `You secured ${itemName}, one step closer to the next Sequence's potion.`,
+            arc: `Sequence ${result.session.gameState.sequenceLevel}`,
+          }),
+        ]);
+        updateSession(result.session);
+        setPrepNotice(null);
+      } else if (result.outcome === "unaffordable") {
+        setPrepNotice(
+          `You cannot yet afford ${itemName} (${result.cost} pence). Hunt the Characteristic for spoils, or sell what you carry.`,
+        );
+      }
+    },
+    [session, updateSession],
+  );
+
+  // Hunting a Beyonder Characteristic launches a combat encounter; the kill is
+  // resolved in `handleCombatResult`, which grants the item on victory.
+  const handleHuntItem = useCallback(
+    (itemName: string) => {
+      if (!session) return;
+      setHuntTarget(itemName);
+      setPrepNotice(null);
+      startCombat(false);
+    },
+    [session, startCombat],
+  );
 
   const dispatchMissingConfig = useCallback(
     (currentSession: GameSession, gen: number) => {
@@ -1176,13 +1248,23 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   freeTextNotice={freeTextNotice}
                 />
                 <CombatLauncher onStart={startCombat} />
-                {canAdvance(session) && (
-                  <AdvancementPanel
-                    session={session}
-                    busy={advancing || facingFate}
-                    onAttempt={() => void handleAdvancement()}
-                  />
-                )}
+                {session.gameState.digestion?.complete === true &&
+                  isAdvanceableSequence(session.gameState.sequenceLevel) && (
+                    <>
+                      <PotionPreparationPanel
+                        session={session}
+                        busy={advancing || facingFate}
+                        notice={prepNotice}
+                        onPurchase={handlePurchaseItem}
+                        onHunt={handleHuntItem}
+                      />
+                      <AdvancementPanel
+                        session={session}
+                        busy={advancing || facingFate}
+                        onAttempt={() => void handleAdvancement()}
+                      />
+                    </>
+                  )}
                 {session.gameState.sequenceLevel === 1 && (
                   <ApotheosisPanel
                     session={session}
@@ -1931,6 +2013,102 @@ function RitualAttemptPanel({
         )}
         {ready && <span className="text-xs text-muted">{oddsText}</span>}
       </div>
+    </section>
+  );
+}
+
+// Potion preparation (issue #84): once the current potion is digested, the next
+// Sequence's potion must be assembled before the engine will let the Beyonder
+// climb. Each prerequisite is bought with funds or — for a Beyonder
+// Characteristic — hunted via a combat encounter; deeper rungs cost more and the
+// Characteristic becomes hunt-only. Hides itself once everything is in hand.
+function PotionPreparationPanel({
+  session,
+  busy,
+  notice,
+  onPurchase,
+  onHunt,
+}: {
+  session: GameSession;
+  busy: boolean;
+  notice: string | null;
+  onPurchase: (itemName: string) => void;
+  onHunt: (itemName: string) => void;
+}) {
+  const plan = potionPreparationPlan(session);
+  const funds = getFunds(session.gameState);
+  const missing = plan.items.filter((status) => !status.owned);
+  if (missing.length === 0) return null;
+
+  return (
+    <section
+      aria-labelledby="potion-prep-heading"
+      className="mt-8 rounded-lg border border-amber/30 bg-amber/[0.04] p-5"
+    >
+      <h2
+        id="potion-prep-heading"
+        className="gaslit font-serif text-base font-semibold text-amber"
+      >
+        Prepare the Sequence {plan.targetSeq} potion
+      </h2>
+      <p className="mt-1 text-sm leading-relaxed text-muted">
+        Your potion is digested. Gather the formula and ingredients for the next Sequence
+        before you can attempt the climb. Your purse holds {funds} pence.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {plan.items.map((status: PotionItemStatus) => (
+          <li
+            key={status.item.name}
+            className="flex flex-wrap items-center justify-between gap-2 text-sm"
+          >
+            <span className="flex items-start gap-2">
+              <span
+                aria-hidden="true"
+                className={status.owned ? "text-occult-bright" : "text-muted"}
+              >
+                {status.owned ? "✦" : "◇"}
+              </span>
+              <span
+                className={status.owned ? "text-foreground/85" : "text-foreground/80"}
+              >
+                {status.item.name}
+                <span className="sr-only">
+                  {status.owned ? " — in hand" : " — still needed"}
+                </span>
+              </span>
+            </span>
+            {!status.owned && (
+              <span className="flex flex-wrap items-center gap-2">
+                {status.methods.includes("purchase") && (
+                  <button
+                    type="button"
+                    onClick={() => onPurchase(status.item.name)}
+                    disabled={busy || funds < status.cost}
+                    className="min-h-[24px] rounded-md border border-amber/40 bg-amber/[0.08] px-3 py-1 text-xs font-medium text-amber transition-colors hover:border-amber/60 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Buy ({status.cost} pence)
+                  </button>
+                )}
+                {status.methods.includes("hunt") && (
+                  <button
+                    type="button"
+                    onClick={() => onHunt(status.item.name)}
+                    disabled={busy}
+                    className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-crimson/60 disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Hunt the Characteristic
+                  </button>
+                )}
+              </span>
+            )}
+          </li>
+        ))}
+      </ul>
+      {notice && (
+        <p role="status" className="mt-3 text-xs text-amber">
+          {notice}
+        </p>
+      )}
     </section>
   );
 }

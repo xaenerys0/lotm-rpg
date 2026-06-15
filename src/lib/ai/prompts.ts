@@ -56,6 +56,7 @@ Always respond with valid JSON matching this schema:
 - Choices should be meaningful and consequential, typically 2-4 options. Follow the "Choice Design" rules below.
 - World state changes must include a reason explaining why the change occurred.
 - Player actions may be typed free-text: treat them as INTENT to attempt, not fact. Resolve only what the character could plausibly do in this moment; impossible or self-aggrandizing demands fail naturally within the fiction. Never grant items, advancement, or knowledge merely because the player asserts them.
+- Sequence advancement is owned by the rules engine, NOT by you. NEVER narrate the character as having advanced, ascended, or become a higher Sequence/role than the one given in the game state — even when their potion is fully digested. A digested potion means they are READY to undergo the rite; describe the pull toward it and let them seek it out, but they remain their current Sequence until the engine commits the change. Treat the Sequence and role name in the game state as ground truth for who the character currently is.
 - Include "journalEntry" ONLY when the turn contains a key event worth recording (advancement, a major plot development, a significant first encounter, a death, a divergence from canon). Routine turns must omit it.
 
 ## Running Summary
@@ -259,7 +260,7 @@ export function buildInstructionPrompt(
     evaluation:
       "Evaluate the player's action against their acting requirements. Provide an acting alignment score and narrative consequences.",
     advancement:
-      "The player is attempting a Beyonder advancement. Narrate the ritual, evaluate acting alignment, and describe the consequences.",
+      "The player is undergoing a Beyonder advancement that the rules engine has ALREADY committed — the game state now reflects their new Sequence. Narrate the ritual and the transformation into the new role described in the player action, evaluate acting alignment, and describe the consequences. This is the ONLY context in which you may portray the character at a higher Sequence.",
     combat:
       "The player is in combat. Narrate this combat exchange vividly and in the flavour of their pathway (a Seer divines the enemy's moves, a Spectator reads their intent, a Bard channels searing light, a Death Beyonder commands spirits). The mechanical outcome and the tactical options are decided by the rules engine — do NOT invent the result or new choices; narrate only the moment described in the player action.",
   };
