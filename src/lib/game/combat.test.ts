@@ -431,6 +431,28 @@ describe("createEncounter", () => {
     });
     expect(encounter.injuryPenalty).toBeCloseTo(0.12, 5);
   });
+
+  it("carries a potion-hunt objective when one is supplied, omitting it otherwise", () => {
+    const hunt = createEncounter({
+      id: "hunt-1",
+      enemy: makeEnemy(),
+      playerPathwayId: 1,
+      playerSequence: 9,
+      randomFactor: 0.5,
+      huntTarget: "Sequence 8 Demoness Beyonder Characteristic",
+    });
+    expect(hunt.huntTarget).toBe("Sequence 8 Demoness Beyonder Characteristic");
+
+    const plain = createEncounter({
+      id: "plain-1",
+      enemy: makeEnemy(),
+      playerPathwayId: 1,
+      playerSequence: 9,
+      randomFactor: 0.5,
+    });
+    expect(plain.huntTarget).toBeUndefined();
+    expect("huntTarget" in plain).toBe(false);
+  });
 });
 
 describe("deriveEncounterEnemy", () => {
@@ -506,6 +528,14 @@ describe("isValidEncounterShape", () => {
     expect(isValidEncounterShape({ ...valid, playerPathwayId: "one" })).toBe(false);
     expect(isValidEncounterShape({ ...valid, playerSequence: null })).toBe(false);
     expect(isValidEncounterShape({ ...valid, decisionIndex: "x" })).toBe(false);
+  });
+
+  it("accepts a string hunt objective and rejects a non-string one", () => {
+    expect(isValidEncounterShape({ ...valid, huntTarget: "a Characteristic" })).toBe(
+      true,
+    );
+    expect(isValidEncounterShape({ ...valid, huntTarget: undefined })).toBe(true);
+    expect(isValidEncounterShape({ ...valid, huntTarget: 42 })).toBe(false);
   });
 
   it("rejects non-array decision points or chosen ids", () => {

@@ -563,11 +563,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // roll so the climb is rolled exactly once (mirrors `endingInFlight`).
   const advancingRef = useRef(false);
 
-  // Potion preparation (issue #84): gathering the next potion's reagents so the
-  // advancement gate can actually be met. `huntTarget` remembers which
-  // prerequisite a launched combat is hunting; `prepNotice` surfaces a refused
-  // purchase (e.g. unaffordable) in-world.
-  const [huntTarget, setHuntTarget] = useState<string | null>(null);
+  // Potion preparation (issue #84): `prepNotice` surfaces a refused purchase
+  // (e.g. unaffordable) in-world. The hunt objective rides on the persisted
+  // CombatEncounter (`combat.huntTarget`), not React state, so a mid-hunt reload
+  // still grants the Characteristic on victory.
   const [prepNotice, setPrepNotice] = useState<string | null>(null);
 
   const handleAdvancement = useCallback(async () => {
@@ -665,7 +664,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   }, []);
 
   const startCombat = useCallback(
-    (ambush: boolean) => {
+    (ambush: boolean, huntTarget?: string) => {
       if (!session) return;
       const encounter = createEncounter({
         id: crypto.randomUUID(),
@@ -674,6 +673,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         playerSequence: session.gameState.sequenceLevel,
         ambush,
         injuries: session.gameState.injuries ?? [],
+        huntTarget,
       });
       setCombat(encounter);
       saveCombatToStorage(session.id, encounter);
@@ -703,7 +703,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
       // A hunt (issue #84) that ended in victory yields the Beyonder
       // Characteristic it was after — the engine grants it plus spoils, and
-      // records it as a discovery.
+      // records it as a discovery. The objective rides on the persisted
+      // encounter, so this survives a mid-hunt reload.
+      const huntTarget = combat.huntTarget;
       if (huntTarget && result.outcome === "victory") {
         const hunted = deliverHuntedItem(next, huntTarget);
         if (hunted.outcome === "delivered" && hunted.session) {
@@ -718,13 +720,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           ]);
         }
       }
-      setHuntTarget(null);
 
       updateSession(next);
       clearCombatFromStorage(session.id);
       setCombat(null);
     },
-    [session, combat, updateSession, huntTarget],
+    [session, combat, updateSession],
   );
 
   const handleCombatExit = useCallback(() => {
@@ -765,9 +766,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const handleHuntItem = useCallback(
     (itemName: string) => {
       if (!session) return;
-      setHuntTarget(itemName);
       setPrepNotice(null);
-      startCombat(false);
+      startCombat(false, itemName);
     },
     [session, startCombat],
   );
