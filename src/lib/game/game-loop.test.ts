@@ -811,9 +811,14 @@ describe("partitionDiscoveredItems", () => {
     expect(partitionDiscoveredItems([])).toEqual({ carried: [], blocked: [] });
   });
 
-  it("carries only mundane items", () => {
-    expect(partitionDiscoveredItems([mundane])).toEqual({
-      carried: [mundane],
+  it("carries mundane and uniqueness items (narrator-grantable, not reagents)", () => {
+    const uniqueness: Item = {
+      name: "Fool Uniqueness",
+      description: "singular",
+      category: "uniqueness",
+    };
+    expect(partitionDiscoveredItems([mundane, uniqueness])).toEqual({
+      carried: [mundane, uniqueness],
       blocked: [],
     });
   });

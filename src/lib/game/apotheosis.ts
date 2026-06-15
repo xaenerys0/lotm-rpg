@@ -51,10 +51,11 @@ export function uniquenessItemFor(pathwayId: number): Item {
   return {
     name: `${pathway} Uniqueness`,
     description: `The singular, indivisible core characteristic of the ${pathway} pathway. There is exactly one in all the world.`,
-    // Mundane (not an advancement-ladder reagent): the Uniqueness is the
-    // endgame McGuffin the narrator grants through play, deliberately outside
-    // the engine-only reagent categories the AI may not mint (issue #90).
-    category: "mundane",
+    // Its own category, not lumped with mundane loot or the advancement-ladder
+    // reagents: the Uniqueness is the singular endgame artifact the narrator
+    // grants through play (so it stays outside the engine-only reagent block,
+    // issue #90) and is never sold by any channel.
+    category: "uniqueness",
   };
 }
 

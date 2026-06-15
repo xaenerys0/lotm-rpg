@@ -25,7 +25,12 @@ export interface Ability {
 export interface Item {
   name: string;
   description: string;
-  category: "main-ingredient" | "supplementary-ingredient" | "potion-formula" | "mundane";
+  category:
+    | "main-ingredient"
+    | "supplementary-ingredient"
+    | "potion-formula"
+    | "mundane"
+    | "uniqueness";
 }
 
 export interface Ritual {

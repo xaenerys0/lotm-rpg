@@ -11,6 +11,7 @@ const VALID_ITEM_CATEGORIES = [
   "supplementary-ingredient",
   "potion-formula",
   "mundane",
+  "uniqueness",
 ];
 
 /**

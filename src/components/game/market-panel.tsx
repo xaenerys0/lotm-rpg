@@ -21,8 +21,12 @@ import {
   getFunds,
   purchase,
   removeItemForListing,
+  sellItemToVendor,
   validateListing,
+  vendorSaleValue,
   PRICE_GUIDANCE,
+  SELLABLE_CATEGORIES,
+  VENDOR_SALE_CATEGORIES,
   type GameSession,
   type ListingFilter,
   type MarketListing,
@@ -188,8 +192,29 @@ export function MarketPanel() {
     [session, persist, refresh],
   );
 
+  // Sell a mundane belonging to a fence — local, no other player, works offline.
+  const handleFence = useCallback(
+    (item: Item) => {
+      if (!session) return;
+      const result = sellItemToVendor(session.gameState, item.name);
+      if (!result.ok || !result.state) {
+        setNotice(result.reason ?? "The fence waves you off.");
+        return;
+      }
+      persist({ ...session, gameState: result.state, updatedAt: Date.now() });
+      setNotice(`The fence takes "${item.name}" for ${result.proceeds}p.`);
+    },
+    [session, persist],
+  );
+
   const visible = filterListings(listings, filter);
   const funds = session ? getFunds(session.gameState) : 0;
+  // The player market lists reagents; mundane belongings go to the fence instead.
+  const listableInventory =
+    session?.gameState.inventory.filter((i) => SELLABLE_CATEGORIES.has(i.category)) ?? [];
+  const fenceable =
+    session?.gameState.inventory.filter((i) => VENDOR_SALE_CATEGORIES.has(i.category)) ??
+    [];
 
   return (
     <div className="space-y-8">
@@ -327,8 +352,10 @@ export function MarketPanel() {
           >
             Offer something
           </h2>
-          {session.gameState.inventory.length === 0 ? (
-            <p className="mt-2 text-sm text-muted">Your satchel has nothing to spare.</p>
+          {listableInventory.length === 0 ? (
+            <p className="mt-2 text-sm text-muted">
+              You carry nothing the market would take.
+            </p>
           ) : (
             <form onSubmit={handleList} className="mt-3 flex flex-wrap items-end gap-3">
               <div>
@@ -342,7 +369,7 @@ export function MarketPanel() {
                   className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
                 >
                   <option value="">choose…</option>
-                  {session.gameState.inventory.map((item: Item, index: number) => (
+                  {listableInventory.map((item: Item, index: number) => (
                     <option key={`${item.name}-${index}`} value={item.name}>
                       {item.name}
                     </option>
@@ -379,6 +406,42 @@ export function MarketPanel() {
               </button>
             </form>
           )}
+        </section>
+      )}
+
+      {/* Fence — sell mundane belongings to a vendor (not to other players) */}
+      {session && fenceable.length > 0 && (
+        <section aria-labelledby="market-fence">
+          <h2
+            id="market-fence"
+            className="gaslit font-serif text-lg font-semibold text-amber/90"
+          >
+            The fence
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            A back-room dealer who quietly buys ordinary oddments — no questions, modest
+            coin.
+          </p>
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {fenceable.map((item: Item, index: number) => (
+              <li
+                key={`${item.name}-${index}`}
+                className="parchment flex items-center justify-between gap-3 rounded-md p-4"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{item.name}</p>
+                  <p className="mt-1 text-xs text-muted">{vendorSaleValue(item)}p</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleFence(item)}
+                  className="min-h-[24px] rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber hover:border-amber/50"
+                >
+                  Sell
+                </button>
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 

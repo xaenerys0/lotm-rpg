@@ -51,6 +51,7 @@ const ITEM_CATEGORY_LABELS: Record<Item["category"], string> = {
   "main-ingredient": "Main Ingredients",
   "supplementary-ingredient": "Supplementary Ingredients",
   "potion-formula": "Potion Formulas",
+  uniqueness: "Uniqueness",
   mundane: "Belongings",
 };
 
@@ -58,6 +59,7 @@ const ITEM_CATEGORY_GLYPHS: Record<Item["category"], string> = {
   "main-ingredient": "◉",
   "supplementary-ingredient": "❖",
   "potion-formula": "✦",
+  uniqueness: "❂",
   mundane: "❀",
 };
 

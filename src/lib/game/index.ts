@@ -88,12 +88,17 @@ export {
   getFunds,
   removeItemForListing,
   validateListing,
+  vendorSaleValue,
+  sellItemToVendor,
   LISTING_DAYS,
   PRICE_GUIDANCE,
+  SELLABLE_CATEGORIES,
+  VENDOR_SALE_CATEGORIES,
   STARTING_FUNDS,
   type ListingFilter,
   type ListingStatus,
   type MarketListing,
+  type VendorSaleResult,
 } from "./marketplace";
 export {
   createListing,
