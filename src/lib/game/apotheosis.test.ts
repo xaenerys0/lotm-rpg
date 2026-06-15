@@ -205,6 +205,20 @@ describe("sequenceAbilities", () => {
     expect(acting.length).toBe(3);
   });
 
+  it("accumulates earlier-rung abilities, tagging them enhanced, at deeper rungs", () => {
+    const seq9 = sequenceAbilities(1, 9).abilities;
+    const { abilities, acting } = sequenceAbilities(1, 7);
+    // Every Sequence 9 power is retained at Sequence 7, marked enhanced.
+    for (const name of seq9) {
+      expect(abilities).toContain(`${name} (enhanced)`);
+    }
+    // The current rung's powers are present without the enhanced tag.
+    expect(abilities.some((a) => !a.endsWith("(enhanced)"))).toBe(true);
+    // Acting requirements stay scoped to the current rung (the role being acted).
+    expect(acting).toEqual(sequenceAbilities(1, 7).acting);
+    expect(acting.length).toBe(3);
+  });
+
   it("is empty for an unknown sequence", () => {
     expect(sequenceAbilities(1, 99)).toEqual({ abilities: [], acting: [] });
   });

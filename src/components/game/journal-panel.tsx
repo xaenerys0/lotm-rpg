@@ -159,8 +159,8 @@ export function JournalPanel() {
     <div className="space-y-6">
       {/* Controls */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div>
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end">
+          <div className="min-w-0">
             <label htmlFor="journal-session" className="mb-1.5 block text-xs text-muted">
               Chronicle
             </label>
@@ -168,7 +168,7 @@ export function JournalPanel() {
               id="journal-session"
               value={activeSessionId ?? ""}
               onChange={(e) => setSessionId(e.target.value)}
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+              className="w-full max-w-full truncate rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
             >
               {sessionOptions.map((option) => (
                 <option key={option.id} value={option.id}>
@@ -177,7 +177,7 @@ export function JournalPanel() {
               ))}
             </select>
           </div>
-          <div>
+          <div className="min-w-0">
             <label htmlFor="journal-search" className="mb-1.5 block text-xs text-muted">
               Search
             </label>
@@ -187,10 +187,10 @@ export function JournalPanel() {
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
               placeholder="Search events…"
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
             />
           </div>
-          <div>
+          <div className="min-w-0">
             <label htmlFor="journal-type" className="mb-1.5 block text-xs text-muted">
               Event type
             </label>
@@ -198,7 +198,7 @@ export function JournalPanel() {
               id="journal-type"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as JournalEventType | "")}
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
             >
               <option value="">All events</option>
               {JOURNAL_EVENT_TYPES.map((type) => (
