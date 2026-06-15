@@ -42,7 +42,7 @@ describe("screen hydration — frozen-snapshot regression", () => {
     expect(frozen.container.querySelector('[data-testid="v"]')?.textContent).toBe(
       "fallback",
     );
-    frozen.cleanup();
+    await frozen.cleanup();
 
     // The FIX: read the snapshot reactively, layer edits via an override. It
     // corrects to the live value after hydration.
@@ -53,7 +53,7 @@ describe("screen hydration — frozen-snapshot regression", () => {
     }
     const fixed = await renderThenHydrate(<Fixed />);
     expect(fixed.container.querySelector('[data-testid="v"]')?.textContent).toBe("live");
-    fixed.cleanup();
+    await fixed.cleanup();
   });
 
   it("SanityPreferences reflects stored prefs after hydration, not the SSR default", async () => {
@@ -78,7 +78,7 @@ describe("screen hydration — frozen-snapshot regression", () => {
     );
     expect(toggle?.getAttribute("aria-checked")).toBe("true");
 
-    cleanup();
+    await cleanup();
   });
 
   it("PlayDashboard lists existing characters after hydration, not a blank list", async () => {
@@ -97,6 +97,6 @@ describe("screen hydration — frozen-snapshot regression", () => {
     // …but the saved character's summary appears once the client snapshot is read.
     expect(container.textContent).toContain("Fool pathway");
 
-    cleanup();
+    await cleanup();
   });
 });

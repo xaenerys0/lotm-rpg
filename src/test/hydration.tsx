@@ -30,8 +30,8 @@ export interface HydrationResult {
   ssrHtml: string;
   /** The hydrated DOM container, reflecting the post-hydration (live) state. */
   container: HTMLElement;
-  /** Tear down the React root and detach the container. */
-  cleanup: () => void;
+  /** Tear down the React root and detach the container. Await it. */
+  cleanup: () => Promise<void>;
 }
 
 export async function renderThenHydrate(ui: ReactElement): Promise<HydrationResult> {
@@ -52,8 +52,10 @@ export async function renderThenHydrate(ui: ReactElement): Promise<HydrationResu
   return {
     ssrHtml,
     container,
-    cleanup: () => {
-      act(() => root?.unmount());
+    cleanup: async () => {
+      await act(async () => {
+        root?.unmount();
+      });
       container.remove();
     },
   };

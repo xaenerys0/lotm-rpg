@@ -308,7 +308,9 @@ export function ProviderConfig() {
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
-      setFormOverride({ ...form, [field]: value });
+      // Functional updater so batched multi-field edits compose; resolve against
+      // the post-hydration snapshot when no edit has overridden it yet.
+      setFormOverride((prev) => ({ ...(prev ?? initialState), [field]: value }));
       setSaveStatus("unsaved");
       setConnectionStatus("idle");
       // Any field edit (key, base URL, or a model pick) invalidates a prior
@@ -318,7 +320,7 @@ export function ProviderConfig() {
       setModelAccess(null);
       setAccessStatus("idle");
     },
-    [form],
+    [initialState],
   );
 
   const handleProviderChange = useCallback((newId: ProviderId) => {
@@ -428,7 +430,7 @@ export function ProviderConfig() {
   // Key removal/rotation (issue #15): wipe the key from the form AND from the
   // persisted config immediately — no save step where a stale key lingers.
   const handleRemoveKey = useCallback(() => {
-    setFormOverride({ ...form, apiKey: "" });
+    setFormOverride((prev) => ({ ...(prev ?? initialState), apiKey: "" }));
     setConnectionStatus("idle");
     try {
       const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
@@ -443,7 +445,7 @@ export function ProviderConfig() {
       // Storage unavailable — the in-memory form is still cleared.
     }
     setSaveStatus("unsaved");
-  }, [form]);
+  }, [initialState]);
 
   const handleSave = useCallback(() => {
     setSaveStatus("saving");

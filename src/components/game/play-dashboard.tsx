@@ -208,10 +208,14 @@ export function PlayDashboard() {
       purgeCharacter(sessionId);
       setPendingDeleteId(null);
       // localStorage is already consistent; drop the deleted character from the
-      // displayed list without re-reading every save.
-      setSessionsOverride(sessions.filter((s) => s.id !== sessionId));
+      // displayed list without re-reading every save. Functional updater against
+      // the post-hydration snapshot so the first delete (before any override) is
+      // based on the real roster, not a stale capture.
+      setSessionsOverride((prev) =>
+        (prev ?? initialData.sessions).filter((s) => s.id !== sessionId),
+      );
     },
-    [sessions],
+    [initialData.sessions],
   );
 
   if (view === "playing" && activeSessionId) {
