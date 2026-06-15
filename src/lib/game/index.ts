@@ -243,7 +243,27 @@ export {
   type AdvancementRequirement,
   type AdvancementResult,
 } from "./advancement";
-export { removeItemsByName } from "./inventory";
+export {
+  acquisitionCost,
+  acquisitionDepthFactor,
+  acquisitionMethodsFor,
+  deliverHuntedItem,
+  huntLootReward,
+  nextPotionItems,
+  potionPreparationPlan,
+  purchasePotionItem,
+  ACQUISITION_DEPTH_STEP,
+  HUNT_LOOT_BASE,
+  MAIN_INGREDIENT_HUNT_ONLY_AT_OR_BELOW,
+  type AcquisitionMethod,
+  type HuntOutcome,
+  type HuntResult,
+  type PotionItemStatus,
+  type PotionPreparationPlan,
+  type PurchaseOutcome,
+  type PurchaseResult,
+} from "./potion-preparation";
+export { hasItem, removeItemsByName } from "./inventory";
 export {
   artifactToItem,
   deserializeArtifacts,

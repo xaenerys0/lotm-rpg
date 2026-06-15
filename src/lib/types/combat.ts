@@ -160,4 +160,12 @@ export interface CombatEncounter {
   accumulatedModifier: number;
   outcome: CombatOutcome | null;
   result: CombatResult | null;
+  /**
+   * Potion-preparation hunt objective (issue #84): the name of the Beyonder
+   * Characteristic this fight is hunting for. Set when the encounter is launched
+   * from the PotionPreparationPanel; on victory the engine grants the item.
+   * Lives on the (persisted) encounter rather than React state so a mid-hunt
+   * reload still knows the fight's purpose. Absent for ordinary combat.
+   */
+  huntTarget?: string;
 }

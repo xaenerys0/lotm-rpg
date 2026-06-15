@@ -35,7 +35,12 @@ import {
 
 export function SocietyPanel() {
   const initialSession = useStoredValue(loadActiveSession, null);
-  const [session, setSession] = useState<GameSession | null>(initialSession);
+  // Derive from the reactive store snapshot until a local mutation overrides it.
+  // `useState(initialSession)` would freeze on the server-fallback (null) captured
+  // at the hydration render and never pick up the real session on a full page
+  // load; the override pattern (see character-sheet.tsx) corrects after hydration.
+  const [sessionOverride, setSession] = useState<GameSession | null>(null);
+  const session = sessionOverride ?? initialSession;
   const [name, setName] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [lastOutcome, setLastOutcome] = useState<GatheringOutcome | null>(null);

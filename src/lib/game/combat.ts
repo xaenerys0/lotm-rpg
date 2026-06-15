@@ -707,6 +707,8 @@ export interface CreateEncounterOptions {
   randomFactor?: number;
   /** The player's active injuries, which penalise their advantage. */
   injuries?: Injury[];
+  /** Potion-preparation hunt objective (issue #84): the Characteristic sought. */
+  huntTarget?: string;
 }
 
 /**
@@ -744,6 +746,7 @@ export function createEncounter(options: CreateEncounterOptions): CombatEncounte
     accumulatedModifier: 0,
     outcome: null,
     result: null,
+    ...(options.huntTarget !== undefined ? { huntTarget: options.huntTarget } : {}),
   };
 
   if (ambush) {
@@ -1074,6 +1077,7 @@ export function isValidEncounterShape(obj: unknown): boolean {
   if (!Number.isFinite(e.decisionIndex)) return false;
   if (!Array.isArray(e.decisionPoints)) return false;
   if (!Array.isArray(e.chosenOptionIds)) return false;
+  if (e.huntTarget !== undefined && typeof e.huntTarget !== "string") return false;
   return true;
 }
 

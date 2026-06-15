@@ -15,3 +15,13 @@ export function removeItemsByName(inventory: Item[], items: Item[]): Item[] {
   }
   return remaining;
 }
+
+/**
+ * Whether an inventory carries an item with the given name. The read-side
+ * counterpart of `removeItemsByName` — the single shared name-equality check the
+ * advancement, apotheosis, and potion-preparation gates use, so they all match
+ * carried items the same way.
+ */
+export function hasItem(inventory: Item[], name: string): boolean {
+  return inventory.some((item) => item.name === name);
+}
