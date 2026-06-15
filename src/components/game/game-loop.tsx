@@ -480,12 +480,26 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       let scene = fallbackDescentScene(verdict.severity, session.gameState);
       if (providerConfig) {
         try {
-          const { abilities, actingReqs, loreContext } = buildAICallParams(session);
+          const {
+            abilities,
+            actingReqs,
+            loreContext,
+            identityContext,
+            profileContext,
+            recognitionContext,
+            epochContext,
+            cityNarration,
+          } = buildAICallParams(session);
           const result = await generate({
             config: providerConfig,
             gameState: session.gameState,
             memory: session.memory,
             loreContext,
+            identityContext,
+            profileContext,
+            recognitionContext,
+            epochContext,
+            cityNarration,
             instruction: "narrative",
             playerAction: descentAction,
             abilities,
@@ -605,12 +619,26 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         }. The role sinks into your bones until it is indistinguishable from you: you are a ${result.roleName} now.`;
         if (providerConfig) {
           try {
-            const { abilities, actingReqs, loreContext } = buildAICallParams(advanced);
+            const {
+              abilities,
+              actingReqs,
+              loreContext,
+              identityContext,
+              profileContext,
+              recognitionContext,
+              epochContext,
+              cityNarration,
+            } = buildAICallParams(advanced);
             const res = await generate({
               config: providerConfig,
               gameState: advanced.gameState,
               memory: advanced.memory,
               loreContext,
+              identityContext,
+              profileContext,
+              recognitionContext,
+              epochContext,
+              cityNarration,
               instruction: "advancement",
               playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
                 result.ritual
