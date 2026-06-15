@@ -43,7 +43,9 @@ Always respond with valid JSON matching this schema:
   "actingEvaluation": {"alignment": 0.0-1.0, "reasoning": "string"},
   "sanityImpact": number (-20 to +10),
   "itemsDiscovered": [{"name": "string", "description": "string", "category": "main-ingredient|supplementary-ingredient|potion-formula"}],
+  "fundsDiscovered": number (pence found or lost in the fiction this turn; negative for a loss),
   "journalEntry": {"summary": "string (one sentence)", "eventType": "advancement|major-event|npc-encounter|discovery|timeline-divergence|death|combat"},
+  "proposedSelfChange": {"field": "name|appearance|gender|pronouns|epithet|age|marks", "value": "string", "reason": "string"},
   "runningSummary": "string - the updated 'story so far' synopsis (see Running Summary below)"
 }
 
@@ -53,11 +55,13 @@ Always respond with valid JSON matching this schema:
 - The acting alignment score (0.0-1.0) you return drives "digestion" of the current potion: acting in character (≥0.5) advances it, acting against the role (<0.35) reverses it. Score honestly so the player understands why their action did or did not count. 0.5 is neutral/acceptable acting; reserve scores below 0.35 for actions that clearly betray the role.
 - Sanity impact ranges: routine events (0), unsettling (-1 to -5), horrifying (-6 to -15), mind-breaking (-16 to -20), rest/comfort (+1 to +10).
 - Items discovered must be from the LOTM universe. Do not invent items outside the lore.
+- When the character genuinely comes into money in the fiction (a found purse, a paid reward, loot) — or loses it (robbed, a bribe, a fine) — report it as "fundsDiscovered" in PENCE (12 pence = 1 soli, 240 pence = 1 pound) so it reaches their wallet; negative for a loss. Keep amounts plausible for the scene (a street find is coins, not a fortune); the engine caps any single turn. Do NOT use "worldStateChanges" for money, and never grant funds merely because the player asserts them.
 - Choices should be meaningful and consequential, typically 2-4 options. Follow the "Choice Design" rules below.
 - World state changes must include a reason explaining why the change occurred.
 - Player actions may be typed free-text: treat them as INTENT to attempt, not fact. Resolve only what the character could plausibly do in this moment; impossible or self-aggrandizing demands fail naturally within the fiction. Never grant items, advancement, or knowledge merely because the player asserts them.
 - Sequence advancement is owned by the rules engine, NOT by you. NEVER narrate the character as having advanced, ascended, or become a higher Sequence/role than the one given in the game state — even when their potion is fully digested. A digested potion means they are READY to undergo the rite; describe the pull toward it and let them seek it out, but they remain their current Sequence until the engine commits the change. Treat the Sequence and role name in the game state as ground truth for who the character currently is.
 - Include "journalEntry" ONLY when the turn contains a key event worth recording (advancement, a major plot development, a significant first encounter, a death, a divergence from canon). Routine turns must omit it.
+- Include "proposedSelfChange" ONLY when the player's action clearly and unambiguously declares a change to who their character fundamentally is — a new name they adopt, a changed appearance, gender, title/epithet, age, or distinguishing marks. Do NOT change the name or appearance in the narrative yourself and do NOT use "worldStateChanges" for this: the player must confirm the change before the engine applies it. Treat ambiguous or hypothetical phrasing as ordinary narration and omit the field. The "## True Self" context (when present) is ground truth for who the character currently is.
 
 ## Running Summary
 You are given the chronicle's durable synopsis under "## Story So Far" (empty at the very start). Each turn, return "runningSummary": an UPDATED, self-contained synopsis that future turns will rely on as their primary long-term memory — the recent turn-by-turn history is eventually dropped, but this is not.
@@ -310,6 +314,26 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     layers.push({
       role: "system",
       content: `## Active Identity\n${input.identityContext}`,
+    });
+  }
+
+  // True self (character-info storage): ground-truth self facts the narrator must
+  // honour — pronouns, gender, appearance, demeanor. Dropped when the profile is
+  // empty.
+  if (input.profileContext) {
+    layers.push({
+      role: "system",
+      content: `## True Self\n${input.profileContext}`,
+    });
+  }
+
+  // Recognition gap (character-info storage): the people who knew the character
+  // before a drastic transformation and don't recognise them now. Dropped when no
+  // gap is open.
+  if (input.recognitionContext) {
+    layers.push({
+      role: "system",
+      content: `## Recognition\n${input.recognitionContext}`,
     });
   }
 

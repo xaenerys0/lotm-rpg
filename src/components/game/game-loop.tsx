@@ -79,8 +79,17 @@ import {
   FREE_TEXT_MAX_LENGTH,
   applyExposure,
   checkExposure,
+  identityCapability,
   identityPromptContext,
+  applyProfileChange,
+  isDrasticChange,
+  pierceRecognition,
+  profilePromptContext,
+  proposalToChange,
+  recognitionPromptContext,
   recordIdentityUse,
+  resolveProfileState,
+  validateSelfChangeProposal,
   validateJournalFlag,
   composeDeduction,
   composeDialogueAction,
@@ -306,6 +315,17 @@ function buildAICallParams(currentSession: GameSession) {
     identityContext: currentSession.identityState
       ? identityPromptContext(currentSession.identityState)
       : null,
+    // True-self ground truth (character-info storage): pronouns/appearance/etc.
+    profileContext: currentSession.profileState
+      ? profilePromptContext(currentSession.profileState, currentSession.gameState)
+      : null,
+    // Recognition gap (character-info storage): only while showing the TRUE
+    // face — a worn persona already presents as someone else entirely.
+    recognitionContext:
+      currentSession.profileState &&
+      (currentSession.identityState?.activeIdentityId ?? null) === null
+        ? recognitionPromptContext(currentSession.profileState)
+        : null,
     // Epoch tone (issues #26/#29): null for the Fifth-Epoch baseline.
     epochContext: epochNarrationDirective(currentSession.gameState.epoch),
     // Curated guardrail selection lives in @/lib/lore (tested); the component
@@ -460,12 +480,26 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       let scene = fallbackDescentScene(verdict.severity, session.gameState);
       if (providerConfig) {
         try {
-          const { abilities, actingReqs, loreContext } = buildAICallParams(session);
+          const {
+            abilities,
+            actingReqs,
+            loreContext,
+            identityContext,
+            profileContext,
+            recognitionContext,
+            epochContext,
+            cityNarration,
+          } = buildAICallParams(session);
           const result = await generate({
             config: providerConfig,
             gameState: session.gameState,
             memory: session.memory,
             loreContext,
+            identityContext,
+            profileContext,
+            recognitionContext,
+            epochContext,
+            cityNarration,
             instruction: "narrative",
             playerAction: descentAction,
             abilities,
@@ -585,12 +619,26 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         }. The role sinks into your bones until it is indistinguishable from you: you are a ${result.roleName} now.`;
         if (providerConfig) {
           try {
-            const { abilities, actingReqs, loreContext } = buildAICallParams(advanced);
+            const {
+              abilities,
+              actingReqs,
+              loreContext,
+              identityContext,
+              profileContext,
+              recognitionContext,
+              epochContext,
+              cityNarration,
+            } = buildAICallParams(advanced);
             const res = await generate({
               config: providerConfig,
               gameState: advanced.gameState,
               memory: advanced.memory,
               loreContext,
+              identityContext,
+              profileContext,
+              recognitionContext,
+              epochContext,
+              cityNarration,
               instruction: "advancement",
               playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
                 result.ritual
@@ -798,6 +846,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         actingReqs,
         loreContext,
         identityContext,
+        profileContext,
+        recognitionContext,
         epochContext,
         cityNarration,
       } = buildAICallParams(currentSession);
@@ -827,6 +877,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           loreContext,
           retrievedChunks,
           identityContext,
+          profileContext,
+          recognitionContext,
           epochContext,
           cityNarration,
           instruction,
@@ -901,6 +953,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         actingReqs,
         loreContext,
         identityContext,
+        profileContext,
+        recognitionContext,
         epochContext,
         cityNarration,
       } = buildAICallParams(currentSession);
@@ -916,6 +970,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           loreContext,
           retrievedChunks,
           identityContext,
+          profileContext,
+          recognitionContext,
           epochContext,
           cityNarration,
           instruction,
@@ -984,6 +1040,35 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // journal) runs unchanged. Rejections are narrated, never errored.
   const [freeTextNotice, setFreeTextNotice] = useState<string | null>(null);
 
+  // In-turn true-self change (character-info storage): the AI may flag a
+  // declaration the player made; it is NEVER applied without this confirm.
+  const [selfChangeHandledTurn, setSelfChangeHandledTurn] = useState<number | null>(null);
+
+  const handleConfirmSelfChange = useCallback(
+    (createGap: boolean) => {
+      if (!session) return;
+      const proposal = validateSelfChangeProposal(
+        session.lastResolution?.response.proposedSelfChange,
+      );
+      if (!proposal) return;
+      const profileState = resolveProfileState(session.profileState);
+      const result = applyProfileChange(
+        profileState,
+        session.gameState,
+        proposalToChange(proposal),
+        { createGap, npcsPresent: session.gameState.npcsPresent },
+      );
+      updateSession({
+        ...session,
+        gameState: result.gameState,
+        profileState: result.profileState,
+        updatedAt: Date.now(),
+      });
+      setSelfChangeHandledTurn(session.turnCount);
+    },
+    [session, updateSession],
+  );
+
   const handleFreeText = useCallback(
     (input: string) => {
       if (!session) return;
@@ -1038,6 +1123,23 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         }
       }
 
+      // Recognition gap (character-info storage): while showing the TRUE face,
+      // a present NPC who knew the prior self may deduce this is the same person
+      // (the inverse of identity exposure — it re-links rather than penalises).
+      let profileState = session.profileState;
+      if (
+        profileState?.recognition &&
+        (identityState?.activeIdentityId ?? null) === null
+      ) {
+        const result = pierceRecognition(profileState, gameState.npcsPresent);
+        profileState = result.state;
+        if (result.pierced.length > 0) {
+          setFreeTextNotice(
+            `${result.pierced.join(", ")} ${result.pierced.length === 1 ? "studies" : "study"} your changed face — and the recognition lands. They know who you were.`,
+          );
+        }
+      }
+
       // Divine petitions (issue #30): a True God hears worshippers — some
       // turns a petition arrives as a memory fact the narrator weaves in.
       let memoryAfterPetitions = memory;
@@ -1078,6 +1180,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         gameState,
         memory: memoryAfterPetitions,
         ...(identityState ? { identityState } : {}),
+        ...(profileState ? { profileState } : {}),
       };
       const next = transition(updated, { type: "APPLY_CONSEQUENCES" });
       updateSession(next);
@@ -1286,12 +1389,21 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             )}
             {session.phase === "resolution" && <ResolutionPhase />}
             {session.phase === "consequences" && (
-              <ConsequencesPhase
-                session={session}
-                onContinue={handleContinue}
-                config={providerConfig}
-                sceneArtEnabled={preferences.sceneArtEnabled}
-              />
+              <>
+                {selfChangeHandledTurn !== session.turnCount && (
+                  <SelfChangeConfirm
+                    session={session}
+                    onConfirm={handleConfirmSelfChange}
+                    onDismiss={() => setSelfChangeHandledTurn(session.turnCount)}
+                  />
+                )}
+                <ConsequencesPhase
+                  session={session}
+                  onContinue={handleContinue}
+                  config={providerConfig}
+                  sceneArtEnabled={preferences.sceneArtEnabled}
+                />
+              </>
             )}
             {session.phase === "error" && (
               <ErrorPhase
@@ -1304,6 +1416,93 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         )}
       </div>
     </SanityEffects>
+  );
+}
+
+const SELF_CHANGE_LABELS: Record<string, string> = {
+  name: "name",
+  appearance: "appearance",
+  gender: "gender",
+  pronouns: "pronouns",
+  epithet: "title",
+  age: "age",
+  marks: "distinguishing marks",
+};
+
+function SelfChangeConfirm({
+  session,
+  onConfirm,
+  onDismiss,
+}: {
+  session: GameSession;
+  onConfirm: (createGap: boolean) => void;
+  onDismiss: () => void;
+}) {
+  const proposal = validateSelfChangeProposal(
+    session.lastResolution?.response.proposedSelfChange,
+  );
+  const profileState = resolveProfileState(session.profileState);
+  const flawlessCapable =
+    identityCapability(session.gameState.pathwayId, session.gameState.sequenceLevel) ===
+    "flawless";
+  const change = proposal ? proposalToChange(proposal) : null;
+  const suggestedGap = change
+    ? isDrasticChange(
+        profileState.profile,
+        { ...profileState.profile, ...(change.edits ?? {}) },
+        { flawlessCapable },
+      )
+    : false;
+  const [gap, setGap] = useState(suggestedGap);
+
+  if (!proposal) return null;
+
+  return (
+    <section
+      role="status"
+      aria-labelledby="self-change-confirm"
+      className="mb-6 rounded-lg border border-occult/40 bg-occult/[0.06] p-5"
+    >
+      <h3
+        id="self-change-confirm"
+        className="font-serif text-base font-semibold text-occult-bright"
+      >
+        A change in who you are
+      </h3>
+      <p className="mt-1 text-sm leading-relaxed text-foreground/85">
+        You declared a new {SELF_CHANGE_LABELS[proposal.field] ?? proposal.field}:{" "}
+        <span className="font-medium text-foreground">{proposal.value}</span>. Make it
+        truly so?
+      </p>
+      <div className="mt-3 flex items-start gap-2">
+        <input
+          id="self-change-gap"
+          type="checkbox"
+          checked={gap}
+          onChange={(e) => setGap(e.target.checked)}
+          className="mt-1 h-4 w-4"
+        />
+        <label htmlFor="self-change-gap" className="text-xs leading-relaxed text-muted">
+          People who knew me won&rsquo;t recognise this face.
+        </label>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => onConfirm(gap)}
+          className="rounded-md bg-amber/90 px-4 py-2 text-sm font-medium text-background hover:bg-amber"
+        >
+          Yes — this is who I am now
+        </button>
+        <button
+          type="button"
+          onClick={onDismiss}
+          className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+        >
+          Not yet
+        </button>
+      </div>
+    </section>
   );
 }
 

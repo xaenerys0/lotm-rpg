@@ -12,16 +12,26 @@ import { classifySanityTier } from "@/lib/ai";
 import { getEpoch } from "@/lib/lore";
 import {
   activeIdentity,
+  addProfileNote,
+  applyProfileChange,
   createIdentity,
   createIdentityState,
   discardIdentity,
   identityCapability,
+  isDrasticChange,
+  isFateProof,
+  removeProfileNote,
+  resolveProfileState,
   switchIdentity,
+  transformationRiteFor,
   trueGodName,
+  type DemeanorTrait,
   type GameSession,
   type IdentityCapability,
   type IdentityState,
+  type ProfileState,
   type SocialClass,
+  type TrueSelfProfile,
 } from "@/lib/game";
 import type { Item } from "@/lib/types/rules";
 import { purgeCharacter } from "./character-actions";
@@ -268,6 +278,9 @@ export function CharacterSheet() {
         </section>
       </div>
 
+      {/* True self (character-info storage) */}
+      <TrueSelfSection session={session} onUpdate={persistSession} />
+
       {/* Identities (issue #22) */}
       <IdentitySection session={session} onUpdate={persistSession} />
 
@@ -422,6 +435,9 @@ function IdentitySection({
           identityState,
           { name, appearance, socialClass, backstory },
           capability,
+          undefined,
+          undefined,
+          isFateProof(session.gameState.pathwayId, session.gameState.sequenceLevel),
         ),
       );
       setShowForm(false);
@@ -443,9 +459,11 @@ function IdentitySection({
         Identities
       </h2>
       <p className="mt-1 text-xs leading-relaxed text-muted">
-        {capability === "full"
-          ? "Your abilities let you live as other people entirely — separate names, reputations, and lives. NPCs treat each face as its own person until something connects them."
-          : "Without the right abilities you can manage one surface-level disguise at a time. It frays quickly, and sharp eyes may see through it."}
+        {capability === "flawless"
+          ? "Your transformation is flawless — each persona is a wholly separate, real person. No one sees a disguise, and nothing connects your faces to one another or to your true self."
+          : capability === "full"
+            ? "Your abilities let you live as other people entirely — separate names, reputations, and lives. NPCs treat each face as its own person until something connects them."
+            : "Without the right abilities you can manage one surface-level disguise at a time. It frays quickly, and sharp eyes may see through it."}
       </p>
 
       {active && (
@@ -468,6 +486,11 @@ function IdentitySection({
                       disguise
                     </span>
                   )}
+                  {identity.flawless && (
+                    <span className="ml-2 text-[10px] tracking-[0.15em] text-amber/90 uppercase">
+                      {identity.fateProof ? "fate-proof" : "flawless"}
+                    </span>
+                  )}
                 </p>
                 <span className="text-xs text-muted">{identity.socialClass} class</span>
               </div>
@@ -476,25 +499,31 @@ function IdentitySection({
                   {identity.appearance}
                 </p>
               )}
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-[11px] text-muted">
-                  <span id={`risk-${identity.id}`}>Exposure risk</span>
-                  <span>{identity.exposureRisk}%</span>
-                </div>
-                <div
-                  role="progressbar"
-                  aria-labelledby={`risk-${identity.id}`}
-                  aria-valuenow={identity.exposureRisk}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  className="mt-1 h-1.5 overflow-hidden rounded-full bg-border/60"
-                >
+              {identity.flawless ? (
+                <p className="mt-3 text-[11px] text-amber/80">
+                  A real, separate person — no exposure risk.
+                </p>
+              ) : (
+                <div className="mt-3">
+                  <div className="flex items-center justify-between text-[11px] text-muted">
+                    <span id={`risk-${identity.id}`}>Exposure risk</span>
+                    <span>{identity.exposureRisk}%</span>
+                  </div>
                   <div
-                    className={`h-full ${identity.exposureRisk >= 60 ? "bg-sanity-low" : identity.exposureRisk >= 30 ? "bg-sanity-mid" : "bg-sanity-high"}`}
-                    style={{ width: `${identity.exposureRisk}%` }}
-                  />
+                    role="progressbar"
+                    aria-labelledby={`risk-${identity.id}`}
+                    aria-valuenow={identity.exposureRisk}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    className="mt-1 h-1.5 overflow-hidden rounded-full bg-border/60"
+                  >
+                    <div
+                      className={`h-full ${identity.exposureRisk >= 60 ? "bg-sanity-low" : identity.exposureRisk >= 30 ? "bg-sanity-mid" : "bg-sanity-high"}`}
+                      style={{ width: `${identity.exposureRisk}%` }}
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
               <p className="mt-2 text-[11px] text-muted">
                 Known by {identity.knownBy.length}{" "}
                 {identity.knownBy.length === 1 ? "person" : "people"}
@@ -617,9 +646,388 @@ function IdentitySection({
           onClick={() => setShowForm(true)}
           className="mt-4 rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber hover:border-amber/50"
         >
-          {capability === "full" ? "Craft a new identity" : "Prepare a disguise"}
+          {capability === "basic" ? "Prepare a disguise" : "Craft a new identity"}
         </button>
       )}
+    </section>
+  );
+}
+
+interface SelfFormFields {
+  name: string;
+  gender: string;
+  pronouns: string;
+  appearance: string;
+  epithet: string;
+  age: string;
+  marks: string;
+  demeanor: DemeanorTrait[];
+}
+
+function fieldsFromProfile(
+  profile: TrueSelfProfile,
+  currentName: string,
+): SelfFormFields {
+  return {
+    name: currentName,
+    gender: profile.gender ?? "",
+    pronouns: profile.pronouns ?? "",
+    appearance: profile.appearance ?? "",
+    epithet: profile.epithet ?? "",
+    age: profile.age ?? "",
+    marks: profile.marks ?? "",
+    demeanor: profile.demeanor,
+  };
+}
+
+function nextProfileFromFields(
+  base: TrueSelfProfile,
+  fields: SelfFormFields,
+): TrueSelfProfile {
+  return {
+    ...base,
+    gender: fields.gender.trim() || undefined,
+    pronouns: fields.pronouns.trim() || undefined,
+    appearance: fields.appearance.trim() || undefined,
+    epithet: fields.epithet.trim() || undefined,
+    age: fields.age.trim() || undefined,
+    marks: fields.marks.trim() || undefined,
+    demeanor: fields.demeanor,
+  };
+}
+
+const SELF_TEXT_FIELDS: {
+  key: keyof Omit<SelfFormFields, "demeanor">;
+  label: string;
+  multiline?: boolean;
+}[] = [
+  { key: "name", label: "Name" },
+  { key: "gender", label: "Gender" },
+  { key: "pronouns", label: "Pronouns" },
+  { key: "epithet", label: "Epithet / title" },
+  { key: "age", label: "Age" },
+  { key: "appearance", label: "Appearance", multiline: true },
+  { key: "marks", label: "Distinguishing marks", multiline: true },
+];
+
+function TrueSelfSection({
+  session,
+  onUpdate,
+}: {
+  session: GameSession;
+  onUpdate: (next: GameSession) => void;
+}) {
+  const profileState: ProfileState = resolveProfileState(session.profileState);
+  const currentName = session.gameState.characterName ?? "";
+  const flawlessCapable =
+    identityCapability(session.gameState.pathwayId, session.gameState.sequenceLevel) ===
+    "flawless";
+  const rite = transformationRiteFor(
+    session.gameState.pathwayId,
+    session.gameState.sequenceLevel,
+  );
+
+  const [showForm, setShowForm] = useState(false);
+  const [fields, setFields] = useState<SelfFormFields>(() =>
+    fieldsFromProfile(profileState.profile, currentName),
+  );
+  const [newTrait, setNewTrait] = useState("");
+  const [gapManual, setGapManual] = useState(false);
+  const [gapChecked, setGapChecked] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [newNote, setNewNote] = useState("");
+
+  const suggestedGap = isDrasticChange(
+    profileState.profile,
+    nextProfileFromFields(profileState.profile, fields),
+    { flawlessCapable },
+  );
+  const effectiveGap = gapManual ? gapChecked : suggestedGap;
+
+  const openForm = (seed?: Partial<SelfFormFields>) => {
+    setFields({ ...fieldsFromProfile(profileState.profile, currentName), ...seed });
+    setGapManual(false);
+    setFormError(null);
+    setNewTrait("");
+    setShowForm(true);
+  };
+
+  const setField = (key: keyof Omit<SelfFormFields, "demeanor">, value: string) =>
+    setFields((prev) => ({ ...prev, [key]: value }));
+
+  const addTrait = () => {
+    const label = newTrait.trim();
+    if (label === "") return;
+    setFields((prev) => ({
+      ...prev,
+      demeanor: [...prev.demeanor, { id: crypto.randomUUID(), label }],
+    }));
+    setNewTrait("");
+  };
+
+  const removeTrait = (id: string) =>
+    setFields((prev) => ({
+      ...prev,
+      demeanor: prev.demeanor.filter((t) => t.id !== id),
+    }));
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const trimmedName = fields.name.trim();
+      const result = applyProfileChange(
+        profileState,
+        session.gameState,
+        {
+          ...(trimmedName && trimmedName !== currentName ? { name: trimmedName } : {}),
+          edits: {
+            gender: fields.gender,
+            pronouns: fields.pronouns,
+            appearance: fields.appearance,
+            epithet: fields.epithet,
+            age: fields.age,
+            marks: fields.marks,
+            demeanor: fields.demeanor,
+          },
+        },
+        { createGap: effectiveGap, npcsPresent: session.gameState.npcsPresent },
+      );
+      onUpdate({
+        ...session,
+        gameState: result.gameState,
+        profileState: result.profileState,
+        updatedAt: Date.now(),
+      });
+      setShowForm(false);
+      setFormError(null);
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "That change will not hold.");
+    }
+  };
+
+  // Event-handler only (never during render) — useCallback marks it as such
+  // for the purity lint, mirroring IdentitySection's `apply`.
+  const persistProfile = useCallback(
+    (next: ProfileState) =>
+      onUpdate({ ...session, profileState: next, updatedAt: Date.now() }),
+    [session, onUpdate],
+  );
+
+  const handleAddNote = () => {
+    const text = newNote.trim();
+    if (text === "") return;
+    persistProfile(addProfileNote(profileState, text));
+    setNewNote("");
+  };
+
+  return (
+    <section aria-labelledby="sheet-trueself">
+      <h2
+        id="sheet-trueself"
+        className="gaslit font-serif text-lg font-semibold text-amber/90"
+      >
+        True Self
+      </h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        Who you truly are — the narrator honours these from your next turn. Renaming or
+        transforming carries your reputation with you; only a drastic change leaves those
+        who knew you unsure it is the same person.
+      </p>
+
+      {profileState.profile.formerNames.length > 0 && (
+        <p className="mt-2 text-xs text-muted">
+          Formerly {profileState.profile.formerNames.join(", ")}.
+        </p>
+      )}
+      {profileState.recognition && (
+        <p className="mt-2 text-xs text-amber/80" role="status">
+          {profileState.recognition.pendingNpcs.length}{" "}
+          {profileState.recognition.pendingNpcs.length === 1 ? "person" : "people"} who
+          knew you have not yet recognised your new face.
+        </p>
+      )}
+
+      {rite && !showForm && (
+        <button
+          type="button"
+          onClick={() =>
+            openForm({
+              appearance: rite.appearanceSuggestion ?? fields.appearance,
+              demeanor: [
+                ...profileState.profile.demeanor,
+                ...rite.demeanorSuggestions.map((t) => ({
+                  id: crypto.randomUUID(),
+                  label: t.label,
+                })),
+              ],
+            })
+          }
+          className="mt-3 mr-2 rounded-md border border-occult/40 bg-occult/[0.08] px-4 py-2 text-sm font-medium text-occult-bright hover:border-occult/60"
+        >
+          Begin the rite of the {rite.riteName}
+        </button>
+      )}
+
+      {showForm ? (
+        <form onSubmit={handleSubmit} className="mt-4 max-w-md space-y-3">
+          {SELF_TEXT_FIELDS.map(({ key, label, multiline }) => (
+            <div key={key}>
+              <label htmlFor={`self-${key}`} className="mb-1 block text-xs text-muted">
+                {label}
+              </label>
+              {multiline ? (
+                <textarea
+                  id={`self-${key}`}
+                  rows={2}
+                  value={fields[key]}
+                  onChange={(e) => setField(key, e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                />
+              ) : (
+                <input
+                  id={`self-${key}`}
+                  type="text"
+                  value={fields[key]}
+                  onChange={(e) => setField(key, e.target.value)}
+                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                />
+              )}
+            </div>
+          ))}
+
+          <div>
+            <label htmlFor="self-trait" className="mb-1 block text-xs text-muted">
+              Demeanor / allure traits
+            </label>
+            {fields.demeanor.length > 0 && (
+              <ul className="mb-2 flex flex-wrap gap-2">
+                {fields.demeanor.map((trait) => (
+                  <li key={trait.id}>
+                    <button
+                      type="button"
+                      onClick={() => removeTrait(trait.id)}
+                      className="inline-flex min-h-[24px] items-center gap-1 rounded-full border border-amber/30 bg-amber/[0.06] px-3 py-1 text-xs text-amber hover:border-crimson/50 hover:text-sanity-low"
+                      aria-label={`Remove trait ${trait.label}`}
+                    >
+                      {trait.label}
+                      <span aria-hidden="true">×</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2">
+              <input
+                id="self-trait"
+                type="text"
+                value={newTrait}
+                onChange={(e) => setNewTrait(e.target.value)}
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={addTrait}
+                className="rounded-md border border-amber/30 px-3 py-1.5 text-sm text-amber hover:border-amber/50"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-2">
+            <input
+              id="self-gap"
+              type="checkbox"
+              checked={effectiveGap}
+              onChange={(e) => {
+                setGapManual(true);
+                setGapChecked(e.target.checked);
+              }}
+              className="mt-1 h-4 w-4"
+            />
+            <label htmlFor="self-gap" className="text-xs leading-relaxed text-muted">
+              People who knew me won&rsquo;t recognise this face (they must re-recognise
+              me or deduce it).
+            </label>
+          </div>
+
+          {formError && (
+            <p role="alert" className="text-xs text-sanity-low">
+              {formError}
+            </p>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="submit"
+              className="rounded-md bg-amber/90 px-4 py-2 text-sm font-medium text-background hover:bg-amber"
+            >
+              Become who you are
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowForm(false)}
+              className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => openForm()}
+          className="mt-3 rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber hover:border-amber/50"
+        >
+          Edit true self
+        </button>
+      )}
+
+      {/* Personal log — player-authored, never fed to the narrator. */}
+      <div className="mt-6">
+        <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">
+          Personal log
+        </h3>
+        {profileState.profile.notes.length > 0 && (
+          <ul className="mt-2 space-y-2">
+            {profileState.profile.notes.map((note) => (
+              <li
+                key={note.id}
+                className="flex items-start justify-between gap-2 parchment rounded-md p-3"
+              >
+                <span className="text-sm text-foreground/85">{note.text}</span>
+                <button
+                  type="button"
+                  onClick={() => persistProfile(removeProfileNote(profileState, note.id))}
+                  className="min-h-[24px] shrink-0 rounded border border-border px-2 py-1 text-xs text-muted hover:border-crimson/40 hover:text-sanity-low"
+                  aria-label="Delete note"
+                >
+                  Delete
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-2 flex gap-2">
+          <label htmlFor="self-note" className="sr-only">
+            Add a note
+          </label>
+          <input
+            id="self-note"
+            type="text"
+            value={newNote}
+            onChange={(e) => setNewNote(e.target.value)}
+            placeholder="Record an oath, an event, a memory…"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={handleAddNote}
+            className="rounded-md border border-amber/30 px-3 py-1.5 text-sm text-amber hover:border-amber/50"
+          >
+            Add
+          </button>
+        </div>
+      </div>
     </section>
   );
 }

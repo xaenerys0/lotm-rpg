@@ -20,6 +20,16 @@ import type { Item } from "@/lib/types/rules";
 
 export const STARTING_FUNDS = 120;
 
+/**
+ * Per-turn cap (in pence) on funds the narrator may grant or take in a single
+ * turn via `AIResponse.fundsDiscovered` (issue #16 follow-up: money found in the
+ * fiction must reach the wallet, but bounded so a player cannot simply declare a
+ * fortune to buy a deep-Sequence ingredient outright). 2400 pence = 10 pounds —
+ * a plausible purse or reward; larger sums accrue over multiple turns. Signed:
+ * negative covers a robbery, bribe, or loss narrated in-fiction.
+ */
+export const FUNDS_DISCOVERED_CAP = 2400;
+
 /** Read a session's funds; older saves predate currency and start fresh. */
 export function getFunds(state: GameState): number {
   return state.funds ?? STARTING_FUNDS;

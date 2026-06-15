@@ -149,6 +149,27 @@ export function parseAIResponse(raw: string): AIResponse {
     }
   }
 
+  // Currency found/lost in the fiction (issue #16 follow-up) — whitelisted as a
+  // finite number; the engine clamps it to the per-turn cap before applying.
+  if (obj.fundsDiscovered !== undefined && obj.fundsDiscovered !== null) {
+    const rawFunds = Number(obj.fundsDiscovered);
+    if (Number.isFinite(rawFunds)) {
+      response.fundsDiscovered = rawFunds;
+    }
+  }
+
+  // Optional true-self change proposal (character-info storage) — whitelisted
+  // through; `validateSelfChangeProposal` is the single validation point and the
+  // change is never applied without an explicit player confirm.
+  if (typeof obj.proposedSelfChange === "object" && obj.proposedSelfChange !== null) {
+    const p = obj.proposedSelfChange as Record<string, unknown>;
+    response.proposedSelfChange = {
+      field: String(p.field ?? ""),
+      value: String(p.value ?? ""),
+      ...(typeof p.reason === "string" ? { reason: p.reason } : {}),
+    };
+  }
+
   return response;
 }
 

@@ -114,6 +114,10 @@ export interface GenerateOptions {
   retrievedChunks?: RetrievedLoreChunk[];
   /** Active-persona context (issue #22), from `identityPromptContext`. */
   identityContext?: string | null;
+  /** True-self ground-truth context, from `profilePromptContext`. */
+  profileContext?: string | null;
+  /** Recognition-gap context, from `recognitionPromptContext`. */
+  recognitionContext?: string | null;
   /** Epoch tone directive (issues #26/#29), from `epochNarrationDirective`. */
   epochContext?: string | null;
   /** Per-city narration tone (issue #23), from `cityNarrationDirective`. */
@@ -136,6 +140,8 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     loreContext: options.loreContext,
     retrievedChunks: options.retrievedChunks,
     identityContext: options.identityContext,
+    profileContext: options.profileContext,
+    recognitionContext: options.recognitionContext,
     epochContext: options.epochContext,
     cityNarration: options.cityNarration,
     instruction: options.instruction,

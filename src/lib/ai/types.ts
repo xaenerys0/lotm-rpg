@@ -88,11 +88,29 @@ export interface AIResponse {
   sanityImpact?: number;
   itemsDiscovered?: Item[];
   /**
+   * Currency found (or lost) in the fiction this turn, in pence (issue #16
+   * follow-up). Like `itemsDiscovered`, the wallet is not on the AI-mutable
+   * `worldStateChanges` allowlist, so this is the dedicated, bounded channel for
+   * money the narrative grants. The engine clamps it to `FUNDS_DISCOVERED_CAP`
+   * per turn (signed — negative for a robbery/bribe/loss) before applying.
+   */
+  fundsDiscovered?: number;
+  /**
    * Optional journal-worthy flag (issue #11). Loosely typed at the AI
    * boundary; `validateJournalFlag` (@/lib/game/journal) is the single
    * validation point before anything reaches the journal.
    */
   journalEntry?: { summary: string; eventType: string };
+  /**
+   * The narrator detected the player declaring a change to their TRUE self
+   * (a new name they adopt, a changed appearance/gender/title). Loosely typed at
+   * the boundary, like `journalEntry`. NEVER applied automatically — the UI
+   * surfaces a one-tap confirm and only then does the engine apply it next turn.
+   * Deliberately distinct from `worldStateChanges` (the AI-mutable allowlist):
+   * name/gender/appearance are NOT AI-mutable. Validated by
+   * `validateSelfChangeProposal` (@/lib/game/profile) before use.
+   */
+  proposedSelfChange?: { field: string; value: string; reason?: string };
   /**
    * Durable rolling "story so far" the narrator maintains each turn (amortized
    * into this response — no extra API call). It is fed back in next turn so the
@@ -263,6 +281,19 @@ export interface PromptInput {
    * line from `identityPromptContext`; null/absent when wearing the true face.
    */
   identityContext?: string | null;
+  /**
+   * True-self ground-truth context (character-info storage) — one narrator-facing
+   * line from `profilePromptContext` (pronouns, gender, appearance, demeanor);
+   * null/absent when the profile is empty.
+   */
+  profileContext?: string | null;
+  /**
+   * Recognition-gap context (character-info storage) — from
+   * `recognitionPromptContext`: the people who knew the character before a drastic
+   * change and don't recognise them now. null/absent when no gap is open (or while
+   * a persona is worn — the gap is about the TRUE face).
+   */
+  recognitionContext?: string | null;
   /**
    * Gated chunks from `retrieveChunks` (issue #64), in retrieval-rank order.
    * They fill whatever lore budget the curated entries leave — authored lore
