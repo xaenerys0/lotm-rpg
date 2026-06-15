@@ -4,6 +4,7 @@ import type { ActingEvaluation, StateChange } from "@/lib/ai";
 import { addTurn, buildTurnRecord } from "@/lib/ai";
 import { applyDigestionProgress, createDigestionState } from "./digestion";
 import { tickInjuries } from "./combat";
+import { adjustFunds, FUNDS_DISCOVERED_CAP } from "./marketplace";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
 
@@ -94,6 +95,16 @@ export function applyResolution(
 
   if (response.itemsDiscovered && response.itemsDiscovered.length > 0) {
     updated = addDiscoveredItems(updated, response.itemsDiscovered);
+  }
+
+  // Money found (or lost) in the fiction reaches the wallet, bounded per turn so
+  // it cannot be conjured to buy a deep-Sequence ingredient outright.
+  if (response.fundsDiscovered) {
+    const clamped = Math.max(
+      -FUNDS_DISCOVERED_CAP,
+      Math.min(FUNDS_DISCOVERED_CAP, Math.trunc(response.fundsDiscovered)),
+    );
+    updated = adjustFunds(updated, clamped);
   }
 
   let digestionDelta = 0;

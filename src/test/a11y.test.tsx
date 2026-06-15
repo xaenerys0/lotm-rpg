@@ -308,6 +308,10 @@ describe("accessibility — stub pages", () => {
     const { container } = render(<CharacterPage />);
     await expectNoAxeViolationsInContainer(container);
 
+    // Open the True Self editor and re-check the form fields + recognition toggle.
+    fireEvent.click(screen.getByRole("button", { name: "Edit true self" }));
+    await expectNoAxeViolationsInContainer(container);
+
     // Open the two-step delete confirm and re-check the live region + buttons.
     fireEvent.click(screen.getByRole("button", { name: /Delete Klein/ }));
     await expectNoAxeViolationsInContainer(container);

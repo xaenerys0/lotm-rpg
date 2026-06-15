@@ -8,6 +8,7 @@ import {
 import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
 import { isValidIdentityStateShape } from "./identity";
+import { isValidProfileStateShape } from "./profile";
 import { isValidSocietyShape } from "./society";
 import { DEFAULT_EPOCH_ID, getEpoch } from "@/lib/lore/epochs";
 import type { StartScenario } from "@/lib/lore/start-scenarios";
@@ -250,6 +251,12 @@ export function isValidSessionShape(obj: unknown): boolean {
 
   // Anchor state (issues #35, #25) is optional but strict when present.
   if (s.anchorState !== undefined && !isValidAnchorStateShape(s.anchorState)) {
+    return false;
+  }
+
+  // True-self profile (character-info storage) is optional but strict when
+  // present — lazily seeded for legacy saves, exactly like identityState.
+  if (s.profileState !== undefined && !isValidProfileStateShape(s.profileState)) {
     return false;
   }
 

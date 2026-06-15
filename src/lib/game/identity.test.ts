@@ -10,6 +10,7 @@ import {
   discardIdentity,
   identityCapability,
   identityPromptContext,
+  isFateProof,
   isValidIdentityStateShape,
   recordIdentityUse,
   switchIdentity,
@@ -37,9 +38,21 @@ function fullState(): IdentityState {
 describe("identityCapability", () => {
   it("unlocks full management at the pathway's canonical threshold", () => {
     expect(identityCapability(1, 9)).toBe("basic"); // Seer
-    expect(identityCapability(1, 6)).toBe("full"); // Faceless
-    expect(identityCapability(1, 5)).toBe("full");
     expect(identityCapability(8, 8)).toBe("full"); // Error: Swindler
+    expect(identityCapability(8, 6)).toBe("full");
+  });
+
+  it("unlocks the flawless tier for the high transformation sequences", () => {
+    expect(identityCapability(1, 6)).toBe("flawless"); // Fool: Faceless
+    expect(identityCapability(1, 5)).toBe("flawless");
+    expect(identityCapability(8, 5)).toBe("flawless"); // Error: Dream Stealer
+    expect(identityCapability(8, 4)).toBe("flawless");
+  });
+
+  it("marks only the Dream Stealer line as fate-proof", () => {
+    expect(isFateProof(8, 5)).toBe(true);
+    expect(isFateProof(8, 6)).toBe(false);
+    expect(isFateProof(1, 6)).toBe(false); // Faceless is flawless but not fate-proof
   });
 
   it("everyone else gets the basic disguise tier", () => {
@@ -195,6 +208,72 @@ describe("identityPromptContext", () => {
     expect(context).toContain("middle class");
     expect(context).toContain("not the character's true self");
     expect(identityPromptContext(fullState())).toBeNull();
+  });
+});
+
+describe("flawless tier", () => {
+  function flawlessState(fateProof = false): IdentityState {
+    let state = createIdentityState();
+    state = createIdentity(
+      state,
+      fields("The Stranger"),
+      "flawless",
+      1000,
+      "f-1",
+      fateProof,
+    );
+    return switchIdentity(state, "f-1");
+  }
+
+  it("creates a real, separate person — never a disguise, marked flawless", () => {
+    const active = activeIdentity(flawlessState())!;
+    expect(active.flawless).toBe(true);
+    expect(active.activeDisguise).toBe(false);
+    expect(active.fateProof).toBeUndefined();
+  });
+
+  it("allows multiple flawless personas (no basic cap)", () => {
+    let state = createIdentityState();
+    state = createIdentity(state, fields("Face One"), "flawless", 1, "a");
+    state = createIdentity(state, fields("Face Two"), "flawless", 2, "b");
+    expect(state.identities).toHaveLength(2);
+  });
+
+  it("accrues NO exposure risk but still records witnesses", () => {
+    let state = flawlessState();
+    state = recordIdentityUse(state, ["Dunn Smith", "Old Neil"]);
+    const active = activeIdentity(state)!;
+    expect(active.knownBy).toEqual(["Dunn Smith", "Old Neil"]);
+    expect(active.exposureRisk).toBe(0);
+  });
+
+  it("is never connected to another face by a mundane NPC", () => {
+    let state = createIdentityState();
+    state = createIdentity(state, fields("The Stranger"), "flawless", 1, "f-1");
+    state = createIdentity(state, fields("Sherlock Moriarty"), "full", 2, "id-2");
+    // A shared witness knows both faces.
+    state = switchIdentity(state, "id-2");
+    state = recordIdentityUse(state, ["Leonard Mitchell"]);
+    state = switchIdentity(state, "f-1");
+    state = recordIdentityUse(state, ["Leonard Mitchell"]);
+    // Even with a forced roll, a flawless persona never exposes.
+    expect(checkExposure(state, () => 0)).toBeNull();
+  });
+
+  it("narrates a flawless persona as a real person, fate-proof when applicable", () => {
+    const plain = identityPromptContext(flawlessState())!;
+    expect(plain).toContain("FLAWLESS");
+    expect(plain).toContain("real, separate person");
+    expect(plain).not.toContain("divination");
+
+    const fated = identityPromptContext(flawlessState(true))!;
+    expect(fated).toContain("divination and fate-reading");
+  });
+
+  it("persists the flawless and fateProof flags", () => {
+    const state = flawlessState(true);
+    state.identities[0].fateProof = true;
+    expect(isValidIdentityStateShape(state)).toBe(true);
   });
 });
 

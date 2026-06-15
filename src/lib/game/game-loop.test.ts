@@ -8,6 +8,7 @@ import {
   applyResolution,
 } from "./world-state";
 import { createDigestionState } from "./digestion";
+import { FUNDS_DISCOVERED_CAP } from "./marketplace";
 import {
   advanceCanonPosition,
   createSession,
@@ -832,6 +833,46 @@ describe("applyResolution", () => {
     expect(gameState.inventory[0].name).toBe("Ancient Diary");
   });
 
+  it("credits money found in the fiction to the wallet", () => {
+    const state = makeGameState({ funds: 100 });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({ fundsDiscovered: 60 });
+    const { gameState } = applyResolution(state, memory, result, 0, "Pocket the purse");
+    expect(gameState.funds).toBe(160);
+  });
+
+  it("clamps a single turn's funds find and floors the wallet at zero on a loss", () => {
+    const memory = createMemoryState();
+    const huge = applyResolution(
+      makeGameState({ funds: 0 }),
+      memory,
+      makeValidatedResponse({ fundsDiscovered: 999999 }),
+      0,
+      "Claim a fortune",
+    );
+    expect(huge.gameState.funds).toBe(FUNDS_DISCOVERED_CAP);
+
+    const robbed = applyResolution(
+      makeGameState({ funds: 50 }),
+      memory,
+      makeValidatedResponse({ fundsDiscovered: -999999 }),
+      0,
+      "Get robbed",
+    );
+    expect(robbed.gameState.funds).toBe(0);
+  });
+
+  it("leaves the wallet untouched when no money is found", () => {
+    const { gameState } = applyResolution(
+      makeGameState({ funds: 75 }),
+      createMemoryState(),
+      makeValidatedResponse({ fundsDiscovered: 0 }),
+      0,
+      "Wait",
+    );
+    expect(gameState.funds).toBe(75);
+  });
+
   it("updates memory with the new turn", () => {
     const state = makeGameState();
     const memory = createMemoryState();
@@ -1478,6 +1519,41 @@ describe("deserializeSession", () => {
     const restored = deserializeSession(JSON.stringify(modified));
     expect(restored).not.toBeNull();
     expect(restored!.memory.runningSummary).toBeUndefined();
+  });
+
+  it("round-trips the true-self profile state", () => {
+    const session = makeSession({
+      profileState: {
+        profile: {
+          gender: "woman",
+          pronouns: "she/her",
+          demeanor: [{ id: "a", label: "allure" }],
+          notes: [{ id: "n", text: "Took a new name.", at: 1 }],
+          formerNames: ["Sean"],
+        },
+        recognition: { pendingNpcs: ["Audrey"], priorName: "Sean", openedAt: 1 },
+      },
+    });
+    const restored = deserializeSession(serializeSession(session));
+    expect(restored!.profileState).toEqual(session.profileState);
+  });
+
+  it("accepts a legacy save with no profile state", () => {
+    const session = makeSession();
+    const modified = JSON.parse(serializeSession(session));
+    delete modified.profileState;
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored).not.toBeNull();
+    expect(restored!.profileState).toBeUndefined();
+  });
+
+  it("returns null for a malformed profile state", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    modified.profileState = {
+      profile: { demeanor: [], notes: [], formerNames: [5] },
+      recognition: null,
+    };
+    expect(deserializeSession(JSON.stringify(modified))).toBeNull();
   });
 });
 

@@ -61,6 +61,14 @@ export interface GameSession {
    */
   anchorState?: import("./anchors").AnchorState;
   /**
+   * True-self profile (character-info storage): the mutable record of who the
+   * character actually is — gender, pronouns, appearance, epithet, age, marks,
+   * demeanor traits, a notes log, former names, and any open recognition gap.
+   * Absent on legacy/fresh saves (lazily seeded via `resolveProfileState`);
+   * strictly validated when present, exactly like `identityState`.
+   */
+  profileState?: import("./profile").ProfileState;
+  /**
    * Permadeath marker (issue #12). Set once, never cleared: the session is
    * preserved as a historical record (inventory, memory, journal stay
    * readable) but play cannot continue.

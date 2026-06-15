@@ -2203,6 +2203,51 @@ describe("prompts", () => {
         false,
       );
     });
+
+    it("includes the True Self and Recognition layers when provided", () => {
+      const assembly = assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        profileContext: "Selena — woman; pronouns she/her.",
+        recognitionContext: "Audrey knew them as Sean and sees a stranger.",
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      const self = assembly.layers.find((l) => l.content.startsWith("## True Self"));
+      const recog = assembly.layers.find((l) => l.content.startsWith("## Recognition"));
+      expect(self!.content).toContain("she/her");
+      expect(recog!.content).toContain("sees a stranger");
+    });
+
+    it("omits the True Self and Recognition layers when null or absent", () => {
+      const withNull = assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        profileContext: null,
+        recognitionContext: null,
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      const withAbsent = assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+      });
+      for (const a of [withNull, withAbsent]) {
+        expect(a.layers.some((l) => l.content.startsWith("## True Self"))).toBe(false);
+        expect(a.layers.some((l) => l.content.startsWith("## Recognition"))).toBe(false);
+      }
+    });
   });
 
   describe("promptToMessages", () => {
@@ -2795,6 +2840,53 @@ describe("validation", () => {
       expect(result.actingEvaluation?.alignment).toBe(0.8);
       expect(result.sanityImpact).toBe(-3);
       expect(result.itemsDiscovered).toHaveLength(1);
+    });
+
+    it("whitelists a proposedSelfChange through to the game loop", () => {
+      const result = parseAIResponse(
+        JSON.stringify({
+          narrative: "You introduce yourself anew.",
+          proposedSelfChange: {
+            field: "name",
+            value: "Selena",
+            reason: "a witch's tradition",
+          },
+        }),
+      );
+      expect(result.proposedSelfChange).toEqual({
+        field: "name",
+        value: "Selena",
+        reason: "a witch's tradition",
+      });
+    });
+
+    it("passes a proposedSelfChange through coerced, dropping a non-string reason", () => {
+      const result = parseAIResponse(
+        JSON.stringify({
+          narrative: "Hair grows out.",
+          proposedSelfChange: { field: "appearance", value: "longer hair", reason: 5 },
+        }),
+      );
+      expect(result.proposedSelfChange).toEqual({
+        field: "appearance",
+        value: "longer hair",
+      });
+    });
+
+    it("omits proposedSelfChange when absent", () => {
+      const result = parseAIResponse(JSON.stringify({ narrative: "Nothing changes." }));
+      expect(result.proposedSelfChange).toBeUndefined();
+    });
+
+    it("parses a finite fundsDiscovered and drops a non-numeric one", () => {
+      const found = parseAIResponse(
+        JSON.stringify({ narrative: "A purse of coins.", fundsDiscovered: 48 }),
+      );
+      expect(found.fundsDiscovered).toBe(48);
+      const bad = parseAIResponse(
+        JSON.stringify({ narrative: "Nothing.", fundsDiscovered: "lots" }),
+      );
+      expect(bad.fundsDiscovered).toBeUndefined();
     });
 
     it("throws on non-JSON input", () => {
