@@ -1,9 +1,4 @@
-import type {
-  Ability,
-  Pathway,
-  Sequence,
-  SequenceClassification,
-} from "@/lib/types/rules";
+import type { Ability, Pathway, Sequence } from "@/lib/types/rules";
 
 import { ADVANCEMENT_RITUALS, RITUAL_FROM_SEQUENCE } from "./advancement-canon";
 
@@ -9416,7 +9411,6 @@ export interface CumulativeAbility extends Ability {
 export interface SequenceAbilityGroup {
   level: number;
   name: string;
-  classification: SequenceClassification;
   /** True for an earlier rung whose powers are now enhanced by advancement. */
   enhanced: boolean;
   abilities: Ability[];
@@ -9475,7 +9469,6 @@ export function getCumulativeAbilityGroups(
     .map((seq) => ({
       level: seq.level,
       name: seq.name,
-      classification: seq.classification,
       enhanced: seq.level > level,
       abilities: seq.abilities,
     }));
