@@ -4,29 +4,20 @@ import type { ActingEvaluation, StateChange } from "@/lib/ai";
 import { addSessionFact, addTurn, buildTurnRecord } from "@/lib/ai";
 import { applyDigestionProgress, createDigestionState } from "./digestion";
 import { tickInjuries } from "./combat";
+import { isReagentCategory } from "./inventory";
 import { adjustFunds, FUNDS_DISCOVERED_CAP } from "./marketplace";
 import { clamp } from "./math";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
 
 /**
- * Item categories the rules engine alone may grant. Advancement prerequisites —
- * the next potion's formula, Beyonder Characteristic (main ingredient), and
- * supplementary reagents — are acquired ONLY through the potion-preparation
- * framework (buy/hunt), combat spoils, or echoes. AI narration may not mint them
- * into inventory, so they are stripped from `itemsDiscovered` and turned into a
- * story lead instead (see `partitionDiscoveredItems` / `discoveredItemLeadFact`).
- */
-const ENGINE_ONLY_CATEGORIES = new Set<Item["category"]>([
-  "main-ingredient",
-  "supplementary-ingredient",
-  "potion-formula",
-]);
-
-/**
- * Split AI-discovered items into the `mundane` loot the player may actually
- * carry and the advancement-critical reagents that must come through the
- * framework. Pure.
+ * Split AI-discovered items into the loot the player may actually carry
+ * (`mundane` belongings and the narrator-grantable `uniqueness` artifact) and
+ * the advancement-critical reagents that must come through the framework. The
+ * reagents (`isReagentCategory`) are acquired ONLY via potion-preparation
+ * (buy/hunt), combat spoils, or echoes — AI narration may not mint them, so they
+ * are stripped here and turned into a story lead (`discoveredItemLeadFact`).
+ * Pure.
  */
 export function partitionDiscoveredItems(items: Item[]): {
   carried: Item[];
@@ -35,7 +26,7 @@ export function partitionDiscoveredItems(items: Item[]): {
   const carried: Item[] = [];
   const blocked: Item[] = [];
   for (const item of items) {
-    (ENGINE_ONLY_CATEGORIES.has(item.category) ? blocked : carried).push(item);
+    (isReagentCategory(item.category) ? blocked : carried).push(item);
   }
   return { carried, blocked };
 }

@@ -19,13 +19,13 @@ import {
   fetchOwnHistory,
   filterListings,
   getFunds,
+  isReagentCategory,
   purchase,
   removeItemForListing,
   sellItemToVendor,
   validateListing,
   vendorSaleValue,
   PRICE_GUIDANCE,
-  SELLABLE_CATEGORIES,
   VENDOR_SALE_CATEGORIES,
   type GameSession,
   type ListingFilter,
@@ -211,7 +211,7 @@ export function MarketPanel() {
   const funds = session ? getFunds(session.gameState) : 0;
   // The player market lists reagents; mundane belongings go to the fence instead.
   const listableInventory =
-    session?.gameState.inventory.filter((i) => SELLABLE_CATEGORIES.has(i.category)) ?? [];
+    session?.gameState.inventory.filter((i) => isReagentCategory(i.category)) ?? [];
   const fenceable =
     session?.gameState.inventory.filter((i) => VENDOR_SALE_CATEGORIES.has(i.category)) ??
     [];

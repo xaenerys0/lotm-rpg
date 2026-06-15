@@ -1,6 +1,25 @@
 import type { Item } from "@/lib/types/rules";
 
 /**
+ * The three advancement-ladder reagent categories — the rules-engine-owned
+ * kinds (formula + main/supplementary ingredient) the AI may not mint and that
+ * trade on the Beyonder market. The single source of truth for "is this an
+ * advancement reagent?": `world-state` blocks these from AI item discovery and
+ * `marketplace` lists exactly these, so the two can never drift (issue #90).
+ * `mundane` and `uniqueness` are deliberately excluded.
+ */
+export const REAGENT_CATEGORIES = new Set<Item["category"]>([
+  "main-ingredient",
+  "supplementary-ingredient",
+  "potion-formula",
+]);
+
+/** Whether a category is an advancement-ladder reagent (see `REAGENT_CATEGORIES`). */
+export function isReagentCategory(category: Item["category"]): boolean {
+  return REAGENT_CATEGORIES.has(category);
+}
+
+/**
  * Remove `items` from an inventory by name — one match removed per entry,
  * unmatched names ignored. The single shared form of the "drop these items"
  * operation the combat, advancement, and failure subsystems all need (so they

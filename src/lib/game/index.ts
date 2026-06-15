@@ -92,7 +92,6 @@ export {
   sellItemToVendor,
   LISTING_DAYS,
   PRICE_GUIDANCE,
-  SELLABLE_CATEGORIES,
   VENDOR_SALE_CATEGORIES,
   STARTING_FUNDS,
   type ListingFilter,
@@ -311,7 +310,13 @@ export {
   type PurchaseOutcome,
   type PurchaseResult,
 } from "./potion-preparation";
-export { hasItem, hasItemMatching, removeItemsByName } from "./inventory";
+export {
+  hasItem,
+  hasItemMatching,
+  isReagentCategory,
+  removeItemsByName,
+  REAGENT_CATEGORIES,
+} from "./inventory";
 export {
   artifactToItem,
   deserializeArtifacts,

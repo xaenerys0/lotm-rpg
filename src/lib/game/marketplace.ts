@@ -1,6 +1,8 @@
 import type { GameState } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
 
+import { isReagentCategory } from "./inventory";
+
 // ---------------------------------------------------------------------------
 // Item marketplace (issue #16)
 // ---------------------------------------------------------------------------
@@ -52,26 +54,12 @@ export const PRICE_GUIDANCE: Record<
   "main-ingredient": { min: 100, suggested: 350, max: 1500 },
   "potion-formula": { min: 250, suggested: 800, max: 4000 },
   // Mundane loot fetches only pocket change at a fence (see vendorSaleValue);
-  // it is never listed on the player market (see SELLABLE_CATEGORIES).
+  // it is never listed on the player market (see isReagentCategory).
   mundane: { min: 1, suggested: 8, max: 40 },
   // The singular pathway Uniqueness is never sold by any channel; this band
   // exists only to keep `PRICE_GUIDANCE[item.category]` total over the Item union.
   uniqueness: { min: 0, suggested: 0, max: 0 },
 };
-
-/**
- * The categories a player may list on the **player-to-player** market — the
- * rules-engine reagent kinds only. `mundane` loot is excluded here (it can be
- * fenced instead, see `sellItemToVendor`) and `uniqueness` is never sold at all.
- * Keeping AI-mintable `mundane` off the player market matters because the AI can
- * narrate an unbounded amount of it; a fence pays only pocket change, but a
- * player-set listing price could be anything.
- */
-export const SELLABLE_CATEGORIES = new Set<Item["category"]>([
-  "supplementary-ingredient",
-  "main-ingredient",
-  "potion-formula",
-]);
 
 /**
  * Categories a non-player vendor (a fence/pawnbroker) will buy for a fixed,
@@ -101,7 +89,11 @@ export function validateListing(
   if (!item) {
     return { ok: false, reason: "You can only list items you actually carry." };
   }
-  if (!SELLABLE_CATEGORIES.has(item.category)) {
+  // The player-to-player market trades the rules-engine reagent kinds only:
+  // `mundane` loot is fenced instead (sellItemToVendor) and `uniqueness` is
+  // never sold. Keeping AI-mintable mundane off the open market matters because
+  // a player-set listing price is unbounded (a fence pays only pocket change).
+  if (!isReagentCategory(item.category)) {
     return { ok: false, reason: "That is not a tradable kind of thing." };
   }
   if (!Number.isInteger(price) || price <= 0) {

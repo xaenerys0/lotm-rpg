@@ -2,7 +2,12 @@ import { describe, expect, it } from "vitest";
 
 import type { Item } from "@/lib/types/rules";
 
-import { hasItem, hasItemMatching, removeItemsByName } from "./inventory";
+import {
+  hasItem,
+  hasItemMatching,
+  isReagentCategory,
+  removeItemsByName,
+} from "./inventory";
 
 const formula: Item = {
   name: "Spectator Potion Formula",
@@ -36,6 +41,16 @@ describe("hasItemMatching", () => {
 
   it("returns false for an empty inventory", () => {
     expect(hasItemMatching([], formula)).toBe(false);
+  });
+});
+
+describe("isReagentCategory", () => {
+  it("is true for the three advancement reagents, false for mundane/uniqueness", () => {
+    expect(isReagentCategory("main-ingredient")).toBe(true);
+    expect(isReagentCategory("supplementary-ingredient")).toBe(true);
+    expect(isReagentCategory("potion-formula")).toBe(true);
+    expect(isReagentCategory("mundane")).toBe(false);
+    expect(isReagentCategory("uniqueness")).toBe(false);
   });
 });
 
