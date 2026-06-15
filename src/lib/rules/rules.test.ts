@@ -19,6 +19,8 @@ import {
   HANGED_MAN_PATHWAY,
   getPathway,
   getSequence,
+  getCumulativeAbilities,
+  getCumulativeAbilityGroups,
   areNeighboringPathways,
 } from "./pathways";
 import { PATHWAY_GROUPS, getGroupForPathway, areInSameGroup } from "./groups";
@@ -287,6 +289,68 @@ describe("pathway definitions", () => {
         );
       }
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Cumulative abilities — abilities are retained across every rung climbed,
+// with earlier-rung powers enhanced on advancement.
+// ---------------------------------------------------------------------------
+describe("cumulative abilities", () => {
+  it("returns only the current rung's abilities at Sequence 9", () => {
+    const seq9 = getSequence(1, 9)!;
+    const cumulative = getCumulativeAbilities(1, 9);
+    expect(cumulative.map((a) => a.name)).toEqual(seq9.abilities.map((a) => a.name));
+    expect(cumulative.every((a) => a.sourceLevel === 9)).toBe(true);
+    expect(cumulative.every((a) => a.enhanced === false)).toBe(true);
+  });
+
+  it("carries every rung's abilities at a deeper Sequence, current rung first", () => {
+    const cumulative = getCumulativeAbilities(1, 7);
+    const reachedLevels = [9, 8, 7];
+    const expectedCount = reachedLevels.reduce(
+      (sum, level) => sum + getSequence(1, level)!.abilities.length,
+      0,
+    );
+    // No duplicate names collapse expected for distinct-named Fool rungs.
+    expect(cumulative).toHaveLength(expectedCount);
+    // Current rung (7) appears first; the earliest reached (9) last.
+    expect(cumulative[0].sourceLevel).toBe(7);
+    expect(cumulative[cumulative.length - 1].sourceLevel).toBe(9);
+  });
+
+  it("marks abilities from earlier rungs as enhanced, the current rung as not", () => {
+    const cumulative = getCumulativeAbilities(1, 7);
+    for (const ability of cumulative) {
+      expect(ability.enhanced).toBe(ability.sourceLevel > 7);
+    }
+    expect(cumulative.some((a) => a.enhanced)).toBe(true);
+    expect(cumulative.some((a) => !a.enhanced)).toBe(true);
+  });
+
+  it("collapses repeated ability names to the current-rung definition", () => {
+    const cumulative = getCumulativeAbilities(1, 1);
+    const names = cumulative.map((a) => a.name);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it("returns nothing for an unknown pathway or unreached level", () => {
+    expect(getCumulativeAbilities(999, 9)).toEqual([]);
+    expect(getCumulativeAbilities(1, 99)).toEqual([]);
+  });
+
+  it("groups cumulative abilities by rung, current first and earlier flagged", () => {
+    const groups = getCumulativeAbilityGroups(1, 7);
+    expect(groups.map((g) => g.level)).toEqual([7, 8, 9]);
+    expect(groups[0].enhanced).toBe(false);
+    expect(groups.slice(1).every((g) => g.enhanced)).toBe(true);
+    expect(groups[0].name).toBe(getSequence(1, 7)!.name);
+    // Each group carries its own rung's abilities verbatim.
+    expect(groups[0].abilities).toEqual(getSequence(1, 7)!.abilities);
+  });
+
+  it("returns no groups for an unknown pathway", () => {
+    expect(getCumulativeAbilityGroups(999, 9)).toEqual([]);
   });
 });
 

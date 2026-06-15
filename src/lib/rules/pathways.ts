@@ -1,4 +1,9 @@
-import type { Pathway, Sequence } from "@/lib/types/rules";
+import type {
+  Ability,
+  Pathway,
+  Sequence,
+  SequenceClassification,
+} from "@/lib/types/rules";
 
 import { ADVANCEMENT_RITUALS, RITUAL_FROM_SEQUENCE } from "./advancement-canon";
 
@@ -9394,6 +9399,86 @@ export function getPathway(id: number): Pathway | undefined {
 
 export function getSequence(pathwayId: number, level: number): Sequence | undefined {
   return getPathway(pathwayId)?.sequences.find((s) => s.level === level);
+}
+
+/** An ability, tagged with the rung it was first gained at. */
+export interface CumulativeAbility extends Ability {
+  /** The sequence level at which this ability was first gained. */
+  sourceLevel: number;
+  /**
+   * True when the ability was first gained at an earlier, weaker rung (a
+   * higher-numbered Sequence) and has since been enhanced by advancement.
+   */
+  enhanced: boolean;
+}
+
+/** A reached rung and the abilities it contributed, for grouped display. */
+export interface SequenceAbilityGroup {
+  level: number;
+  name: string;
+  classification: SequenceClassification;
+  /** True for an earlier rung whose powers are now enhanced by advancement. */
+  enhanced: boolean;
+  abilities: Ability[];
+}
+
+/**
+ * The rungs a Beyonder at `level` has climbed, ordered from the current
+ * Sequence first to the earliest (Sequence 9) last. Sequences are numbered
+ * downward as power rises, so every rung with `level >= current` has been
+ * reached.
+ */
+function reachedSequences(pathwayId: number, level: number): Sequence[] {
+  const pathway = getPathway(pathwayId);
+  if (!pathway) return [];
+  return pathway.sequences
+    .filter((s) => s.level >= level)
+    .sort((a, b) => a.level - b.level);
+}
+
+/**
+ * Abilities are cumulative: a Beyonder retains every ability from the rungs
+ * they have climbed (the current Sequence up through Sequence 9), and powers
+ * gained at earlier, weaker rungs are enhanced as they advance. Returns the
+ * full set ordered from the current Sequence first to the earliest, tagging
+ * each with where it was first gained and whether advancement has since
+ * enhanced it. Abilities sharing a name across rungs collapse to the
+ * current-rung definition so the list never duplicates.
+ */
+export function getCumulativeAbilities(
+  pathwayId: number,
+  level: number,
+): CumulativeAbility[] {
+  const seen = new Set<string>();
+  const result: CumulativeAbility[] = [];
+  for (const seq of reachedSequences(pathwayId, level)) {
+    for (const ability of seq.abilities) {
+      if (seen.has(ability.name)) continue;
+      seen.add(ability.name);
+      result.push({ ...ability, sourceLevel: seq.level, enhanced: seq.level > level });
+    }
+  }
+  return result;
+}
+
+/**
+ * The same cumulative abilities, grouped by the rung that introduced them —
+ * the current Sequence first, then each earlier rung (flagged `enhanced`).
+ * Rungs that introduced no abilities are omitted.
+ */
+export function getCumulativeAbilityGroups(
+  pathwayId: number,
+  level: number,
+): SequenceAbilityGroup[] {
+  return reachedSequences(pathwayId, level)
+    .filter((seq) => seq.abilities.length > 0)
+    .map((seq) => ({
+      level: seq.level,
+      name: seq.name,
+      classification: seq.classification,
+      enhanced: seq.level > level,
+      abilities: seq.abilities,
+    }));
 }
 
 export function areNeighboringPathways(a: number, b: number): boolean {

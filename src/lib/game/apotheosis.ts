@@ -1,6 +1,6 @@
 import type { SessionFact } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
-import { getPathway, getSequence } from "@/lib/rules";
+import { getCumulativeAbilities, getPathway, getSequence } from "@/lib/rules";
 
 import { effectiveSupport, requiredSupport, anchorHighRisk } from "./anchors";
 import { evaluateFailure, type FailureVerdict } from "./death";
@@ -91,6 +91,13 @@ export const TRUE_GOD_ACTING: readonly string[] = [
  * sequence. Sequence 0 has no rules-engine `Sequence`, so a True God's
  * authority is framed here instead of resolving to an empty lookup — one place
  * for the True-God-aware derivation the prompt and UI both need.
+ *
+ * Abilities are **cumulative**: the list carries every power from the rungs the
+ * character has climbed (the current Sequence up through Sequence 9), with the
+ * earlier, now-enhanced powers tagged `(enhanced)` so the narrator knows the
+ * Beyonder still wields them — strengthened — at the current rung. Acting
+ * requirements stay scoped to the current Sequence: they describe the role
+ * being digested now, not the roles already mastered.
  */
 export function sequenceAbilities(
   pathwayId: number,
@@ -101,7 +108,9 @@ export function sequenceAbilities(
   }
   const seq = getSequence(pathwayId, level);
   return {
-    abilities: seq?.abilities.map((a) => a.name) ?? [],
+    abilities: getCumulativeAbilities(pathwayId, level).map((a) =>
+      a.enhanced ? `${a.name} (enhanced)` : a.name,
+    ),
     acting: seq?.actingRequirements ?? [],
   };
 }

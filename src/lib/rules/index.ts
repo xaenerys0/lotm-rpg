@@ -6,8 +6,11 @@ export {
   DEATH_PATHWAY,
   getPathway,
   getSequence,
+  getCumulativeAbilities,
+  getCumulativeAbilityGroups,
   areNeighboringPathways,
 } from "./pathways";
+export type { CumulativeAbility, SequenceAbilityGroup } from "./pathways";
 
 export { PATHWAY_GROUPS, getGroupForPathway, areInSameGroup } from "./groups";
 

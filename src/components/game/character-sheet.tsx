@@ -7,7 +7,7 @@ import {
   persistSession as writeSession,
   useStoredValue,
 } from "@/lib/react/session-store";
-import { getPathway, getSequence } from "@/lib/rules";
+import { getCumulativeAbilityGroups, getPathway, getSequence } from "@/lib/rules";
 import { classifySanityTier } from "@/lib/ai";
 import { getEpoch } from "@/lib/lore";
 import {
@@ -108,6 +108,9 @@ export function CharacterSheet() {
   const state = session.gameState;
   const pathway = getPathway(state.pathwayId);
   const sequence = getSequence(state.pathwayId, state.sequenceLevel);
+  // Abilities are cumulative — every rung climbed (Sequence 9 down to the
+  // current one) is retained, with earlier powers enhanced by advancement.
+  const abilityGroups = getCumulativeAbilityGroups(state.pathwayId, state.sequenceLevel);
   const epoch = getEpoch(state.epoch);
   const tier = classifySanityTier(state.sanity, state.maxSanity);
 
@@ -194,19 +197,42 @@ export function CharacterSheet() {
           >
             Abilities
           </h2>
-          <ul className="mt-4 space-y-3">
-            {(sequence?.abilities ?? []).map((ability) => (
-              <li key={ability.name} className="text-sm">
-                <span className="font-medium text-foreground">{ability.name}</span>
-                <span className="mt-0.5 block text-xs leading-relaxed text-muted">
-                  {ability.description}
-                </span>
-              </li>
-            ))}
-            {(sequence?.abilities ?? []).length === 0 && (
-              <li className="text-sm text-muted">None recorded.</li>
-            )}
-          </ul>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            Every power from the rungs you have climbed is yours — those drawn from
+            earlier Sequences are enhanced as you advance.
+          </p>
+          {abilityGroups.length === 0 ? (
+            <p className="mt-4 text-sm text-muted">None recorded.</p>
+          ) : (
+            <div className="mt-4 space-y-5">
+              {abilityGroups.map((group) => (
+                <div key={group.level}>
+                  <h3 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-semibold tracking-wide text-foreground/70 uppercase">
+                    <span>
+                      Sequence {group.level} · {group.name}
+                    </span>
+                    {group.enhanced && (
+                      <span className="rounded-sm border border-amber/40 bg-amber/10 px-1.5 py-0.5 text-[10px] font-medium tracking-[0.1em] text-amber normal-case">
+                        Enhanced
+                      </span>
+                    )}
+                  </h3>
+                  <ul className="mt-2 space-y-3">
+                    {group.abilities.map((ability) => (
+                      <li key={ability.name} className="text-sm">
+                        <span className="font-medium text-foreground">
+                          {ability.name}
+                        </span>
+                        <span className="mt-0.5 block text-xs leading-relaxed text-muted">
+                          {ability.description}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          )}
           <h3 className="mt-6 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
             Acting Method
           </h3>
