@@ -22,3 +22,18 @@
 - jsdom has no layout/colour engine, so axe's `color-contrast` rule is disabled
   there — structural checks (names, roles, labels, ARIA, ids) are covered;
   verify contrast against the design tokens and a real-browser tool.
+
+## Hydration tests
+
+- `src/test/hydration.tsx` (`renderThenHydrate`) is the SSR-then-hydrate harness
+  for the "frozen snapshot" bug class (issues #84/#86): an SSR'd client screen
+  that seeds local state with `useState(useStoredValue(...))` renders the server
+  fallback and never picks up the real localStorage value after a full page load.
+  It server-renders to HTML, mounts it, then hydrates (where the client snapshot
+  is read), returning the SSR HTML and the hydrated container so a test can assert
+  both the pre- and post-hydration states.
+- `src/components/game/screen-hydration.test.tsx` uses it (jsdom docblock) to
+  guard the fix: a self-check exercising the broken `useState(useStoredValue())`
+  pattern (must stay stale) alongside the reactive-snapshot + local-override
+  pattern (must correct after hydration), plus real-screen cases. Add a case when
+  a new SSR'd screen reads a localStorage snapshot.
