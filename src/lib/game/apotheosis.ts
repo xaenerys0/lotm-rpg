@@ -5,6 +5,7 @@ import { getPathway, getSequence } from "@/lib/rules";
 import { effectiveSupport, requiredSupport, anchorHighRisk } from "./anchors";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
+import { hasItem } from "./inventory";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -134,7 +135,7 @@ export function apotheosisRequirements(session: GameSession): ApotheosisRequirem
     {
       id: "uniqueness",
       label: `Carry the ${uniquenessName}`,
-      met: state.inventory.some((item) => item.name === uniquenessName),
+      met: hasItem(state.inventory, uniquenessName),
     },
     {
       id: "anchors",

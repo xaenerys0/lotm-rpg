@@ -10,7 +10,7 @@ import {
 } from "./anchors";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
-import { removeItemsByName } from "./inventory";
+import { hasItem, removeItemsByName } from "./inventory";
 import { clamp } from "./math";
 import { sanityDelta } from "./sanity";
 import type { GameSession } from "./types";
@@ -104,7 +104,7 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
   // (a Beyonder characteristic) + supplementary ingredients.
   const prerequisiteItems = targetSeq?.prerequisiteItems ?? [];
   const missingItems = prerequisiteItems.filter(
-    (item) => !state.inventory.some((carried) => carried.name === item.name),
+    (item) => !hasItem(state.inventory, item.name),
   );
   if (prerequisiteItems.length > 0) {
     requirements.push({

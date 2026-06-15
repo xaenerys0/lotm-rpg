@@ -263,7 +263,7 @@ export {
   type PurchaseOutcome,
   type PurchaseResult,
 } from "./potion-preparation";
-export { removeItemsByName } from "./inventory";
+export { hasItem, removeItemsByName } from "./inventory";
 export {
   artifactToItem,
   deserializeArtifacts,

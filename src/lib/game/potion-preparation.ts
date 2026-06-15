@@ -1,4 +1,4 @@
-import type { GameState, SessionFact } from "@/lib/ai";
+import type { SessionFact } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
 import { getSequence } from "@/lib/rules";
 
@@ -7,6 +7,7 @@ import {
   MAX_ADVANCEABLE_SEQUENCE,
   targetSequence,
 } from "./advancement";
+import { hasItem } from "./inventory";
 import {
   addItemToInventory,
   adjustFunds,
@@ -103,8 +104,32 @@ export interface PotionPreparationPlan {
   allOwned: boolean;
 }
 
-function ownsItem(state: GameState, name: string): boolean {
-  return state.inventory.some((carried) => carried.name === name);
+/**
+ * The shared success tail for both acquisition paths: deliver the item, adjust
+ * funds (negative for a purchase, positive for hunt spoils), record a memory
+ * fact, and stamp the session. Pure.
+ */
+function grantItem(
+  session: GameSession,
+  item: Item,
+  fundDelta: number,
+  description: string,
+  now: number,
+): GameSession {
+  const fact: SessionFact = {
+    type: "event",
+    description,
+    turnNumber: session.turnCount,
+  };
+  return {
+    ...session,
+    gameState: addItemToInventory(adjustFunds(session.gameState, fundDelta), item),
+    memory: {
+      ...session.memory,
+      sessionFacts: [...session.memory.sessionFacts, fact],
+    },
+    updatedAt: now,
+  };
 }
 
 /** The target potion's prerequisite items (formula + ingredients), if any. */
@@ -123,7 +148,7 @@ export function potionPreparationPlan(session: GameSession): PotionPreparationPl
     const methods = acquisitionMethodsFor(item, target);
     return {
       item,
-      owned: ownsItem(session.gameState, item.name),
+      owned: hasItem(session.gameState.inventory, item.name),
       methods,
       cost: methods.includes("purchase") ? acquisitionCost(item, target) : 0,
     };
@@ -162,7 +187,7 @@ export function purchasePotionItem(
 
   const item = nextPotionItems(session).find((candidate) => candidate.name === itemName);
   if (!item) return { outcome: "not-required" };
-  if (ownsItem(state, itemName)) return { outcome: "already-owned" };
+  if (hasItem(state.inventory, itemName)) return { outcome: "already-owned" };
   if (!acquisitionMethodsFor(item, target).includes("purchase")) {
     return { outcome: "not-purchasable" };
   }
@@ -170,24 +195,16 @@ export function purchasePotionItem(
   const cost = acquisitionCost(item, target);
   if (!canAfford(state, cost)) return { outcome: "unaffordable", cost };
 
-  const delivered = addItemToInventory(adjustFunds(state, -cost), item);
-  const fact: SessionFact = {
-    type: "event",
-    description: `Acquired ${item.name} for the next potion (${cost} pence).`,
-    turnNumber: session.turnCount,
-  };
   return {
     outcome: "purchased",
     cost,
-    session: {
-      ...session,
-      gameState: delivered,
-      memory: {
-        ...session.memory,
-        sessionFacts: [...session.memory.sessionFacts, fact],
-      },
-      updatedAt: now,
-    },
+    session: grantItem(
+      session,
+      item,
+      -cost,
+      `Acquired ${item.name} for the next potion (${cost} pence).`,
+      now,
+    ),
   };
 }
 
@@ -217,29 +234,21 @@ export function deliverHuntedItem(
 
   const item = nextPotionItems(session).find((candidate) => candidate.name === itemName);
   if (!item) return { outcome: "not-required" };
-  if (ownsItem(state, itemName)) return { outcome: "already-owned" };
+  if (hasItem(state.inventory, itemName)) return { outcome: "already-owned" };
   if (!acquisitionMethodsFor(item, target).includes("hunt")) {
     return { outcome: "not-huntable" };
   }
 
   const loot = huntLootReward(target);
-  const delivered = addItemToInventory(adjustFunds(state, loot), item);
-  const fact: SessionFact = {
-    type: "event",
-    description: `Hunted and claimed ${item.name}, taking ${loot} pence in spoils.`,
-    turnNumber: session.turnCount,
-  };
   return {
     outcome: "delivered",
     loot,
-    session: {
-      ...session,
-      gameState: delivered,
-      memory: {
-        ...session.memory,
-        sessionFacts: [...session.memory.sessionFacts, fact],
-      },
-      updatedAt: now,
-    },
+    session: grantItem(
+      session,
+      item,
+      loot,
+      `Hunted and claimed ${item.name}, taking ${loot} pence in spoils.`,
+      now,
+    ),
   };
 }

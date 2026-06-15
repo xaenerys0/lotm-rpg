@@ -2046,8 +2046,8 @@ function PotionPreparationPanel({
 }) {
   const plan = potionPreparationPlan(session);
   const funds = getFunds(session.gameState);
-  const missing = plan.items.filter((status) => !status.owned);
-  if (missing.length === 0) return null;
+  // Everything is in hand — the AdvancementPanel takes over.
+  if (plan.allOwned) return null;
 
   return (
     <section
