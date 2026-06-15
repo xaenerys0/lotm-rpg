@@ -121,7 +121,14 @@ export function PlayDashboard() {
   // page reload even when a provider was configured. Consuming the reactive
   // snapshot lets it correct to the real localStorage value after hydration.
   const hasConfig = initialData.hasConfig;
-  const [sessions, setSessions] = useState(initialData.sessions);
+  // Derive from the reactive store snapshot until a mutation overrides it.
+  // `useState(initialData.sessions)` would freeze on the server fallback (empty)
+  // captured at the hydration render, leaving the character list blank on a full
+  // page load; the override pattern corrects after hydration.
+  const [sessionsOverride, setSessionsOverride] = useState<
+    InitialData["sessions"] | null
+  >(null);
+  const sessions = sessionsOverride ?? initialData.sessions;
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   // Two-step confirm so a destructive delete is never a single misclick.
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -189,20 +196,23 @@ export function PlayDashboard() {
     setView("home");
     setActiveSessionId(null);
     setPendingDeleteId(null);
-    setSessions(loadExistingSessions());
+    setSessionsOverride(loadExistingSessions());
   }, []);
 
   // Remove a character and every scrap of its data (shared cleanup in
   // `purgeCharacter`), then drop it from the displayed list. Cross-timeline
   // legacies/echoes are world memory and are intentionally left untouched (the
   // "restart timeline" path wipes those).
-  const handleDeleteCharacter = useCallback((sessionId: string) => {
-    purgeCharacter(sessionId);
-    setPendingDeleteId(null);
-    // localStorage is already consistent; drop the deleted character from the
-    // displayed list without re-reading every save.
-    setSessions((prev) => prev.filter((s) => s.id !== sessionId));
-  }, []);
+  const handleDeleteCharacter = useCallback(
+    (sessionId: string) => {
+      purgeCharacter(sessionId);
+      setPendingDeleteId(null);
+      // localStorage is already consistent; drop the deleted character from the
+      // displayed list without re-reading every save.
+      setSessionsOverride(sessions.filter((s) => s.id !== sessionId));
+    },
+    [sessions],
+  );
 
   if (view === "playing" && activeSessionId) {
     return (

@@ -25,16 +25,22 @@ export function SanityPreferences() {
     () => DEFAULT_PREFERENCES,
   );
 
-  const [prefs, setPrefs] = useState(initial);
+  // Derive from the reactive store snapshot until a toggle overrides it.
+  // `useState(initial)` would freeze on the server fallback (DEFAULT_PREFERENCES)
+  // captured at the hydration render and never reflect saved prefs on a full page
+  // load; the override pattern corrects after hydration.
+  const [prefsOverride, setPrefsOverride] = useState<GamePreferences | null>(null);
+  const prefs = prefsOverride ?? initial;
 
-  const toggle = useCallback((key: keyof GamePreferences) => {
-    setPrefs((prev) => {
-      const next = { ...prev, [key]: !prev[key] };
+  const toggle = useCallback(
+    (key: keyof GamePreferences) => {
+      const next = { ...prefs, [key]: !prefs[key] };
       savePreferences(next);
       if (key === "highContrast") applyContrastPreference(next);
-      return next;
-    });
-  }, []);
+      setPrefsOverride(next);
+    },
+    [prefs],
+  );
 
   return (
     <div className="space-y-3">

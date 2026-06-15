@@ -249,7 +249,12 @@ export function ProviderConfig() {
     () => null,
   );
 
-  const [form, setForm] = useState<FormState>(initialState);
+  // Derive from the reactive store snapshot until an edit overrides it.
+  // `useState(initialState)` would freeze on the server fallback captured at the
+  // hydration render, blanking the saved config on a full page load; the override
+  // pattern corrects after hydration.
+  const [formOverride, setFormOverride] = useState<FormState | null>(null);
+  const form = formOverride ?? initialState;
   const [showKey, setShowKey] = useState(false);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("idle");
   const [connectionError, setConnectionError] = useState("");
@@ -303,7 +308,7 @@ export function ProviderConfig() {
 
   const updateField = useCallback(
     <K extends keyof FormState>(field: K, value: FormState[K]) => {
-      setForm((prev) => ({ ...prev, [field]: value }));
+      setFormOverride({ ...form, [field]: value });
       setSaveStatus("unsaved");
       setConnectionStatus("idle");
       // Any field edit (key, base URL, or a model pick) invalidates a prior
@@ -313,7 +318,7 @@ export function ProviderConfig() {
       setModelAccess(null);
       setAccessStatus("idle");
     },
-    [],
+    [form],
   );
 
   const handleProviderChange = useCallback((newId: ProviderId) => {
@@ -327,7 +332,7 @@ export function ProviderConfig() {
     probeIdRef.current++;
     setModelAccess(null);
     setAccessStatus("idle");
-    setForm({
+    setFormOverride({
       providerId: newId,
       apiKey: "",
       baseUrl: newBaseUrl,
@@ -423,7 +428,7 @@ export function ProviderConfig() {
   // Key removal/rotation (issue #15): wipe the key from the form AND from the
   // persisted config immediately — no save step where a stale key lingers.
   const handleRemoveKey = useCallback(() => {
-    setForm((f) => ({ ...f, apiKey: "" }));
+    setFormOverride({ ...form, apiKey: "" });
     setConnectionStatus("idle");
     try {
       const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
@@ -438,7 +443,7 @@ export function ProviderConfig() {
       // Storage unavailable — the in-memory form is still cleared.
     }
     setSaveStatus("unsaved");
-  }, []);
+  }, [form]);
 
   const handleSave = useCallback(() => {
     setSaveStatus("saving");
