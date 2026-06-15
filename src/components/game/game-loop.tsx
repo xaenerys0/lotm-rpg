@@ -13,6 +13,8 @@ import type { GameSession, GameplayPillar } from "@/lib/game";
 import {
   transition,
   applyResolution,
+  partitionDiscoveredItems,
+  discoveredItemLeadFact,
   applyDigestion,
   applyCombatResult,
   createEncounter,
@@ -2418,7 +2420,14 @@ function ConsequencesPhase({
   const illustrate = artFlag !== null && shouldGenerateSceneArt(artFlag.eventType);
   const hasStateChanges =
     response.worldStateChanges && response.worldStateChanges.length > 0;
-  const hasItems = response.itemsDiscovered && response.itemsDiscovered.length > 0;
+  // Only mundane loot actually enters inventory; advancement-critical reagents
+  // the AI tried to grant become story leads (issue #90). Render them the same
+  // way applyResolution commits them so the panel never shows a phantom reagent.
+  const { carried: discoveredItems, blocked: discoveredLeads } = partitionDiscoveredItems(
+    response.itemsDiscovered ?? [],
+  );
+  const hasItems = discoveredItems.length > 0;
+  const hasLeads = discoveredLeads.length > 0;
   const hasSanityImpact =
     response.sanityImpact !== undefined && response.sanityImpact !== 0;
   const hasActingEval = response.actingEvaluation !== undefined;
@@ -2465,7 +2474,7 @@ function ConsequencesPhase({
       </div>
 
       {/* Consequences Summary */}
-      {(hasSanityImpact || hasStateChanges || hasItems || hasActingEval) && (
+      {(hasSanityImpact || hasStateChanges || hasItems || hasLeads || hasActingEval) && (
         <div className="mb-6 space-y-3 rounded-md border border-border/30 bg-background/50 p-4">
           <p className="text-[10px] tracking-[0.2em] text-muted uppercase">
             Consequences
@@ -2529,7 +2538,7 @@ function ConsequencesPhase({
             ))}
 
           {hasItems &&
-            response.itemsDiscovered!.map((item, i) => (
+            discoveredItems.map((item, i) => (
               <div key={i} className="flex items-start gap-2 text-sm">
                 <span className="mt-0.5 text-amber" aria-hidden="true">
                   {"✦"}
@@ -2537,6 +2546,20 @@ function ConsequencesPhase({
                 <div>
                   <span className="font-medium text-amber">{item.name}</span>
                   <span className="ml-1 text-muted">{item.description}</span>
+                </div>
+              </div>
+            ))}
+
+          {hasLeads &&
+            discoveredLeads.map((item, i) => (
+              <div key={`lead-${i}`} className="flex items-start gap-2 text-sm">
+                <span className="mt-0.5 text-occult-bright" aria-hidden="true">
+                  {"✧"}
+                </span>
+                <div>
+                  <span className="text-foreground/80">
+                    {discoveredItemLeadFact(item, 0).description}
+                  </span>
                 </div>
               </div>
             ))}

@@ -2943,13 +2943,24 @@ describe("validation", () => {
       expect(result.choices![0].type).toBe("action");
     });
 
-    it("defaults invalid item category to supplementary-ingredient", () => {
+    it("defaults invalid item category to mundane", () => {
       const json = JSON.stringify({
         narrative: "x",
         itemsDiscovered: [{ name: "thing", description: "desc", category: "invalid" }],
       });
       const result = parseAIResponse(json);
-      expect(result.itemsDiscovered![0].category).toBe("supplementary-ingredient");
+      expect(result.itemsDiscovered![0].category).toBe("mundane");
+    });
+
+    it("keeps a valid mundane item category", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        itemsDiscovered: [
+          { name: "Brass Key", description: "desc", category: "mundane" },
+        ],
+      });
+      const result = parseAIResponse(json);
+      expect(result.itemsDiscovered![0].category).toBe("mundane");
     });
 
     it("handles null actingEvaluation", () => {
@@ -3072,7 +3083,7 @@ describe("validation", () => {
       });
       const result = parseAIResponse(json);
       expect(result.itemsDiscovered![0].name).toBe("");
-      expect(result.itemsDiscovered![0].category).toBe("supplementary-ingredient");
+      expect(result.itemsDiscovered![0].category).toBe("mundane");
     });
 
     it("handles valid item categories", () => {

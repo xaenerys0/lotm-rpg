@@ -42,7 +42,7 @@ Always respond with valid JSON matching this schema:
   "worldStateChanges": [{"field": "string", "oldValue": any, "newValue": any, "reason": "string"}],
   "actingEvaluation": {"alignment": 0.0-1.0, "reasoning": "string"},
   "sanityImpact": number (-20 to +10),
-  "itemsDiscovered": [{"name": "string", "description": "string", "category": "main-ingredient|supplementary-ingredient|potion-formula"}],
+  "itemsDiscovered": [{"name": "string", "description": "string", "category": "mundane"}],
   "fundsDiscovered": number (pence found or lost in the fiction this turn; negative for a loss),
   "journalEntry": {"summary": "string (one sentence)", "eventType": "advancement|major-event|npc-encounter|discovery|timeline-divergence|death|combat"},
   "proposedSelfChange": {"field": "name|appearance|gender|pronouns|epithet|age|marks", "value": "string", "reason": "string"},
@@ -54,7 +54,7 @@ Always respond with valid JSON matching this schema:
 - Acting requirements are central to the Beyonder power system. Evaluate player actions against them.
 - The acting alignment score (0.0-1.0) you return drives "digestion" of the current potion: acting in character (≥0.5) advances it, acting against the role (<0.35) reverses it. Score honestly so the player understands why their action did or did not count. 0.5 is neutral/acceptable acting; reserve scores below 0.35 for actions that clearly betray the role.
 - Sanity impact ranges: routine events (0), unsettling (-1 to -5), horrifying (-6 to -15), mind-breaking (-16 to -20), rest/comfort (+1 to +10).
-- Items discovered must be from the LOTM universe. Do not invent items outside the lore.
+- Items discovered must be from the LOTM universe. Do not invent items outside the lore. Use "itemsDiscovered" ONLY for ordinary, mundane possessions the character physically comes by (a key, a coat, a letter, a tool, a coin-purse) — always set "category" to "mundane". You must NOT grant potion formulas, Beyonder Characteristics, or advancement ingredients here: those are owned by the rules engine and acquired only through preparation (purchase or hunt). Instead, narrate the LEAD — a seller, a price, a rumour, a patron, a trail, or a hunt target — and let the player pursue it through the preparation framework; an item you mark as a formula or ingredient will be stripped from inventory and turned into a story lead, never carried. The ONE exception is the singular pathway Uniqueness — the final artifact a Sequence 1 Beyonder must seize to become a True God: when the story has genuinely earned that endgame moment, you may grant it with "category": "uniqueness".
 - When the character genuinely comes into money in the fiction (a found purse, a paid reward, loot) — or loses it (robbed, a bribe, a fine) — report it as "fundsDiscovered" in PENCE (12 pence = 1 soli, 240 pence = 1 pound) so it reaches their wallet; negative for a loss. Keep amounts plausible for the scene (a street find is coins, not a fortune); the engine caps any single turn. Do NOT use "worldStateChanges" for money, and never grant funds merely because the player asserts them.
 - Choices should be meaningful and consequential, typically 2-4 options. Follow the "Choice Design" rules below.
 - World state changes must include a reason explaining why the change occurred.

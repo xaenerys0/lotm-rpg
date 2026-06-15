@@ -14,6 +14,8 @@ export {
   applyWorldStateChanges,
   applySanityImpact,
   addDiscoveredItems,
+  partitionDiscoveredItems,
+  discoveredItemLeadFact,
   applyDigestion,
   applyResolution,
 } from "./world-state";
@@ -86,12 +88,16 @@ export {
   getFunds,
   removeItemForListing,
   validateListing,
+  vendorSaleValue,
+  sellItemToVendor,
   LISTING_DAYS,
   PRICE_GUIDANCE,
+  VENDOR_SALE_CATEGORIES,
   STARTING_FUNDS,
   type ListingFilter,
   type ListingStatus,
   type MarketListing,
+  type VendorSaleResult,
 } from "./marketplace";
 export {
   createListing,
@@ -304,7 +310,13 @@ export {
   type PurchaseOutcome,
   type PurchaseResult,
 } from "./potion-preparation";
-export { hasItem, removeItemsByName } from "./inventory";
+export {
+  hasItem,
+  hasItemMatching,
+  isReagentCategory,
+  removeItemsByName,
+  REAGENT_CATEGORIES,
+} from "./inventory";
 export {
   artifactToItem,
   deserializeArtifacts,

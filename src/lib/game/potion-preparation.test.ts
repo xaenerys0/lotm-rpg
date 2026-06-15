@@ -131,6 +131,24 @@ describe("potionPreparationPlan", () => {
     expect(plan.items.every((status) => status.owned)).toBe(true);
     expect(plan.allOwned).toBe(true);
   });
+
+  it("ignores a mundane item that merely shares a prerequisite's name (issue #90)", () => {
+    const { formula } = targetItems(9);
+    expect(formula).toBeDefined();
+    const session = stuck(9);
+    // A mundane decoy named exactly like the required formula must NOT count.
+    const decoy: Item = { ...formula!, category: "mundane" };
+    const carrying: GameSession = {
+      ...session,
+      gameState: { ...session.gameState, inventory: [decoy] },
+    };
+    const status = potionPreparationPlan(carrying).items.find(
+      (s) => s.item.name === formula!.name,
+    );
+    expect(status?.owned).toBe(false);
+    // …and it must not soft-lock the real purchase as "already-owned".
+    expect(purchasePotionItem(carrying, formula!.name).outcome).toBe("purchased");
+  });
 });
 
 describe("purchasePotionItem", () => {

@@ -5,7 +5,7 @@ import { getCumulativeAbilities, getPathway, getSequence } from "@/lib/rules";
 import { effectiveSupport, requiredSupport, anchorHighRisk } from "./anchors";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
-import { hasItem } from "./inventory";
+import { hasItemMatching } from "./inventory";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -51,7 +51,11 @@ export function uniquenessItemFor(pathwayId: number): Item {
   return {
     name: `${pathway} Uniqueness`,
     description: `The singular, indivisible core characteristic of the ${pathway} pathway. There is exactly one in all the world.`,
-    category: "main-ingredient",
+    // Its own category, not lumped with mundane loot or the advancement-ladder
+    // reagents: the Uniqueness is the singular endgame artifact the narrator
+    // grants through play (so it stays outside the engine-only reagent block,
+    // issue #90) and is never sold by any channel.
+    category: "uniqueness",
   };
 }
 
@@ -127,7 +131,8 @@ export interface ApotheosisRequirement {
  */
 export function apotheosisRequirements(session: GameSession): ApotheosisRequirement[] {
   const state = session.gameState;
-  const uniquenessName = uniquenessItemFor(state.pathwayId).name;
+  const uniqueness = uniquenessItemFor(state.pathwayId);
+  const uniquenessName = uniqueness.name;
   const support = session.anchorState ? effectiveSupport(session.anchorState) : 0;
   const needed = requiredSupport(0);
   return [
@@ -144,7 +149,7 @@ export function apotheosisRequirements(session: GameSession): ApotheosisRequirem
     {
       id: "uniqueness",
       label: `Carry the ${uniquenessName}`,
-      met: hasItem(state.inventory, uniquenessName),
+      met: hasItemMatching(state.inventory, uniqueness),
     },
     {
       id: "anchors",

@@ -1,6 +1,8 @@
 import type { GameState } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
 
+import { isReagentCategory } from "./inventory";
+
 // ---------------------------------------------------------------------------
 // Item marketplace (issue #16)
 // ---------------------------------------------------------------------------
@@ -51,7 +53,21 @@ export const PRICE_GUIDANCE: Record<
   "supplementary-ingredient": { min: 10, suggested: 40, max: 200 },
   "main-ingredient": { min: 100, suggested: 350, max: 1500 },
   "potion-formula": { min: 250, suggested: 800, max: 4000 },
+  // Mundane loot fetches only pocket change at a fence (see vendorSaleValue);
+  // it is never listed on the player market (see isReagentCategory).
+  mundane: { min: 1, suggested: 8, max: 40 },
+  // The singular pathway Uniqueness is never sold by any channel; this band
+  // exists only to keep `PRICE_GUIDANCE[item.category]` total over the Item union.
+  uniqueness: { min: 0, suggested: 0, max: 0 },
 };
+
+/**
+ * Categories a non-player vendor (a fence/pawnbroker) will buy for a fixed,
+ * modest sum — `mundane` belongings only. Kept low and AI-loot-only on purpose:
+ * fencing is "sell to the world, not to other players", and the small valuation
+ * keeps it from becoming a funds-laundering route into deep-Sequence reagents.
+ */
+export const VENDOR_SALE_CATEGORIES = new Set<Item["category"]>(["mundane"]);
 
 export interface ListingValidation {
   ok: boolean;
@@ -73,7 +89,11 @@ export function validateListing(
   if (!item) {
     return { ok: false, reason: "You can only list items you actually carry." };
   }
-  if (!(item.category in PRICE_GUIDANCE)) {
+  // The player-to-player market trades the rules-engine reagent kinds only:
+  // `mundane` loot is fenced instead (sellItemToVendor) and `uniqueness` is
+  // never sold. Keeping AI-mintable mundane off the open market matters because
+  // a player-set listing price is unbounded (a fence pays only pocket change).
+  if (!isReagentCategory(item.category)) {
     return { ok: false, reason: "That is not a tradable kind of thing." };
   }
   if (!Number.isInteger(price) || price <= 0) {
@@ -108,6 +128,45 @@ export function removeItemForListing(
 /** Deliver a purchased (or returned) item into an inventory. */
 export function addItemToInventory(state: GameState, item: Item): GameState {
   return { ...state, inventory: [...state.inventory, item] };
+}
+
+/**
+ * What a fence pays for one item — the category's `suggested` band, but only for
+ * the vendor-sellable kinds (mundane). Anything else is worthless to a fence
+ * (reagents go to the player market; the Uniqueness is never sold), so 0.
+ */
+export function vendorSaleValue(item: Item): number {
+  return VENDOR_SALE_CATEGORIES.has(item.category)
+    ? PRICE_GUIDANCE[item.category].suggested
+    : 0;
+}
+
+export interface VendorSaleResult {
+  ok: boolean;
+  reason?: string;
+  /** The updated state after the sale (on success). */
+  state?: GameState;
+  /** Pence credited (on success). */
+  proceeds?: number;
+}
+
+/**
+ * Sell one carried item to a non-player vendor (a fence) for `vendorSaleValue`.
+ * Local + pure — no marketplace row, no other player involved: this is the
+ * "sellable, but not to users" path for mundane belongings. Refuses items the
+ * seller does not carry and anything a fence will not buy.
+ */
+export function sellItemToVendor(state: GameState, itemName: string): VendorSaleResult {
+  const item = state.inventory.find((i) => i.name === itemName);
+  if (!item) {
+    return { ok: false, reason: "You are not carrying that." };
+  }
+  if (!VENDOR_SALE_CATEGORIES.has(item.category)) {
+    return { ok: false, reason: "No fence would give you a penny for that." };
+  }
+  const proceeds = vendorSaleValue(item);
+  const { state: without } = removeItemForListing(state, itemName);
+  return { ok: true, state: adjustFunds(without, proceeds), proceeds };
 }
 
 /** Listing lifetime before it expires back to the seller. */

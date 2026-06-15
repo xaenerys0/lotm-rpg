@@ -4,6 +4,8 @@ import {
   applyWorldStateChanges,
   applySanityImpact,
   addDiscoveredItems,
+  partitionDiscoveredItems,
+  discoveredItemLeadFact,
   applyDigestion,
   applyResolution,
 } from "./world-state";
@@ -785,6 +787,85 @@ describe("addDiscoveredItems", () => {
   });
 });
 
+// ─── partitionDiscoveredItems / discoveredItemLeadFact ─────────────
+
+describe("partitionDiscoveredItems", () => {
+  const mundane: Item = { name: "Coat", description: "warm", category: "mundane" };
+  const formula: Item = {
+    name: "Seer Potion Formula",
+    description: "recipe",
+    category: "potion-formula",
+  };
+  const main: Item = {
+    name: "Crystal",
+    description: "characteristic",
+    category: "main-ingredient",
+  };
+  const supp: Item = {
+    name: "Herb",
+    description: "reagent",
+    category: "supplementary-ingredient",
+  };
+
+  it("returns empty buckets for no items", () => {
+    expect(partitionDiscoveredItems([])).toEqual({ carried: [], blocked: [] });
+  });
+
+  it("carries mundane and uniqueness items (narrator-grantable, not reagents)", () => {
+    const uniqueness: Item = {
+      name: "Fool Uniqueness",
+      description: "singular",
+      category: "uniqueness",
+    };
+    expect(partitionDiscoveredItems([mundane, uniqueness])).toEqual({
+      carried: [mundane, uniqueness],
+      blocked: [],
+    });
+  });
+
+  it("blocks every advancement-critical category", () => {
+    const { carried, blocked } = partitionDiscoveredItems([formula, main, supp]);
+    expect(carried).toEqual([]);
+    expect(blocked).toEqual([formula, main, supp]);
+  });
+
+  it("splits a mixed batch", () => {
+    const { carried, blocked } = partitionDiscoveredItems([mundane, formula]);
+    expect(carried).toEqual([mundane]);
+    expect(blocked).toEqual([formula]);
+  });
+});
+
+describe("discoveredItemLeadFact", () => {
+  it("phrases a formula lead and tags it quest-progress with the turn", () => {
+    const fact = discoveredItemLeadFact(
+      { name: "Seer Formula", description: "d", category: "potion-formula" },
+      3,
+    );
+    expect(fact.type).toBe("quest-progress");
+    expect(fact.turnNumber).toBe(3);
+    expect(fact.description).toContain("formula");
+    expect(fact.description).toContain("Seer Formula");
+  });
+
+  it("phrases a main-ingredient (Characteristic) lead", () => {
+    const fact = discoveredItemLeadFact(
+      { name: "Devil Eye", description: "d", category: "main-ingredient" },
+      0,
+    );
+    expect(fact.description).toContain("Beyonder Characteristic");
+    expect(fact.description).toContain("Devil Eye");
+  });
+
+  it("phrases a supplementary-ingredient lead", () => {
+    const fact = discoveredItemLeadFact(
+      { name: "Rabies Virus", description: "d", category: "supplementary-ingredient" },
+      0,
+    );
+    expect(fact.description).toContain("Rabies Virus");
+  });
+});
+
 // ─── applyResolution ───────────────────────────────────────────────
 
 describe("applyResolution", () => {
@@ -815,7 +896,7 @@ describe("applyResolution", () => {
     expect(gameState.location).toBe("Chanis Gate");
   });
 
-  it("adds discovered items from resolution", () => {
+  it("adds discovered mundane items from resolution", () => {
     const state = makeGameState();
     const memory = createMemoryState();
     const result = makeValidatedResponse({
@@ -823,7 +904,7 @@ describe("applyResolution", () => {
         {
           name: "Ancient Diary",
           description: "A dusty leather-bound diary",
-          category: "supplementary-ingredient",
+          category: "mundane",
         },
       ],
     });
@@ -831,6 +912,76 @@ describe("applyResolution", () => {
     const { gameState } = applyResolution(state, memory, result, 0, "Search the desk");
     expect(gameState.inventory).toHaveLength(1);
     expect(gameState.inventory[0].name).toBe("Ancient Diary");
+  });
+
+  it("does not add advancement-critical items the AI tried to grant", () => {
+    const state = makeGameState();
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      itemsDiscovered: [
+        {
+          name: "Spectator Potion Formula",
+          description: "The recipe for the next potion",
+          category: "potion-formula",
+        },
+        {
+          name: "Eyeball of a Devil",
+          description: "A Beyonder Characteristic",
+          category: "main-ingredient",
+        },
+        {
+          name: "Rabies Virus",
+          description: "A supplementary reagent",
+          category: "supplementary-ingredient",
+        },
+      ],
+    });
+
+    const { gameState, memory: newMemory } = applyResolution(
+      state,
+      memory,
+      result,
+      4,
+      "Demand the formula",
+    );
+
+    // None reached inventory — narration cannot bypass the framework (issue #90).
+    expect(gameState.inventory).toHaveLength(0);
+    // Each became a quest-progress lead fact instead of a "Discovered" fact.
+    const leads = newMemory.sessionFacts.filter((f) => f.type === "quest-progress");
+    expect(leads).toHaveLength(3);
+    expect(
+      newMemory.sessionFacts.some((f) => f.description.startsWith("Discovered")),
+    ).toBe(false);
+    expect(leads.every((f) => f.turnNumber === 4)).toBe(true);
+  });
+
+  it("carries only the mundane items in a mixed discovery and leads the rest", () => {
+    const state = makeGameState();
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      itemsDiscovered: [
+        { name: "Brass Key", description: "A small key", category: "mundane" },
+        {
+          name: "Spectator Potion Formula",
+          description: "The recipe",
+          category: "potion-formula",
+        },
+      ],
+    });
+
+    const { gameState, memory: newMemory } = applyResolution(
+      state,
+      memory,
+      result,
+      0,
+      "Loot the study",
+    );
+
+    expect(gameState.inventory.map((i) => i.name)).toEqual(["Brass Key"]);
+    expect(
+      newMemory.sessionFacts.filter((f) => f.type === "quest-progress"),
+    ).toHaveLength(1);
   });
 
   it("credits money found in the fiction to the wallet", () => {
@@ -917,7 +1068,7 @@ describe("applyResolution", () => {
         {
           name: "Case File",
           description: "A mysterious case file",
-          category: "supplementary-ingredient",
+          category: "mundane",
         },
       ],
     });

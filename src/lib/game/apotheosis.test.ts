@@ -61,7 +61,9 @@ describe("uniquenessItemFor", () => {
   it("names the pathway's singular characteristic", () => {
     const item = uniquenessItemFor(1);
     expect(item.name).toBe("Fool Uniqueness");
-    expect(item.category).toBe("main-ingredient");
+    // Its own category — not a reagent and not lumped with mundane loot; the
+    // narrator may grant it (issue #90) but it is never sold.
+    expect(item.category).toBe("uniqueness");
     expect(item.description).toContain("exactly one");
   });
 });

@@ -84,7 +84,9 @@ export function artifactToItem(artifact: TimelineArtifact): Item {
   return {
     name: artifact.name,
     description: artifact.description,
-    category: "supplementary-ingredient",
+    // A timeline echo is a resonance/keepsake, never an advancement reagent —
+    // mundane so it cannot satisfy a prerequisite or be traded as one (issue #90).
+    category: "mundane",
   };
 }
 

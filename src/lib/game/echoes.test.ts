@@ -117,7 +117,8 @@ describe("artifactToItem", () => {
     const item = artifactToItem(makeArtifact());
     expect(item.name).toBe("Seer formula");
     expect(item.description).toContain("faded ink");
-    expect(item.category).toBe("supplementary-ingredient");
+    // An echo is a keepsake, not an advancement reagent (issue #90).
+    expect(item.category).toBe("mundane");
   });
 });
 

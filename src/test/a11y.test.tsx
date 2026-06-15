@@ -284,6 +284,11 @@ describe("accessibility — stub pages", () => {
           description: "A vial.",
           category: "main-ingredient",
         },
+        {
+          name: "Brass Key",
+          description: "A small tarnished key.",
+          category: "mundane",
+        },
       ],
     };
     const session = {

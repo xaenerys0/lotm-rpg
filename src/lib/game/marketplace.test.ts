@@ -9,7 +9,9 @@ import {
   filterListings,
   getFunds,
   removeItemForListing,
+  sellItemToVendor,
   validateListing,
+  vendorSaleValue,
   PRICE_GUIDANCE,
   STARTING_FUNDS,
   type MarketListing,
@@ -86,6 +88,63 @@ describe("validateListing", () => {
     expect(validateListing(state(), "Night Vanilla", cap + 1).reason).toMatch(
       /No one in the city/,
     );
+  });
+
+  it("rejects mundane loot and the Uniqueness from the player market (issue #90)", () => {
+    const withLoot = state({
+      inventory: [
+        { name: "Brass Key", description: "a key", category: "mundane" },
+        { name: "Fool Uniqueness", description: "singular", category: "uniqueness" },
+      ],
+    });
+    expect(validateListing(withLoot, "Brass Key", 10).reason).toMatch(
+      /not a tradable kind/,
+    );
+    expect(validateListing(withLoot, "Fool Uniqueness", 10).reason).toMatch(
+      /not a tradable kind/,
+    );
+  });
+});
+
+describe("vendorSaleValue / sellItemToVendor", () => {
+  const loot = (): GameState =>
+    state({
+      funds: 50,
+      inventory: [
+        { name: "Brass Key", description: "a key", category: "mundane" },
+        {
+          name: "Night Vanilla",
+          description: "13 drops.",
+          category: "supplementary-ingredient",
+        },
+        { name: "Fool Uniqueness", description: "singular", category: "uniqueness" },
+      ],
+    });
+
+  it("values only mundane belongings; everything else is worthless to a fence", () => {
+    expect(
+      vendorSaleValue({ name: "Brass Key", description: "", category: "mundane" }),
+    ).toBe(PRICE_GUIDANCE.mundane.suggested);
+    expect(
+      vendorSaleValue({ name: "x", description: "", category: "potion-formula" }),
+    ).toBe(0);
+    expect(vendorSaleValue({ name: "x", description: "", category: "uniqueness" })).toBe(
+      0,
+    );
+  });
+
+  it("fences a mundane item: removes it and credits the proceeds", () => {
+    const result = sellItemToVendor(loot(), "Brass Key");
+    expect(result.ok).toBe(true);
+    expect(result.proceeds).toBe(PRICE_GUIDANCE.mundane.suggested);
+    expect(getFunds(result.state!)).toBe(50 + PRICE_GUIDANCE.mundane.suggested);
+    expect(result.state!.inventory.some((i) => i.name === "Brass Key")).toBe(false);
+  });
+
+  it("refuses reagents, the Uniqueness, and items not carried", () => {
+    expect(sellItemToVendor(loot(), "Night Vanilla").ok).toBe(false);
+    expect(sellItemToVendor(loot(), "Fool Uniqueness").reason).toMatch(/no fence/i);
+    expect(sellItemToVendor(loot(), "Phantom").reason).toMatch(/not carrying/i);
   });
 });
 

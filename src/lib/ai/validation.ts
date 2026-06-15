@@ -10,6 +10,8 @@ const VALID_ITEM_CATEGORIES = [
   "main-ingredient",
   "supplementary-ingredient",
   "potion-formula",
+  "mundane",
+  "uniqueness",
 ];
 
 /**
@@ -134,7 +136,7 @@ export function parseAIResponse(raw: string): AIResponse {
         description: String(item.description ?? ""),
         category: VALID_ITEM_CATEGORIES.includes(String(item.category))
           ? (String(item.category) as Item["category"])
-          : "supplementary-ingredient",
+          : "mundane",
       };
     });
   }
