@@ -203,12 +203,21 @@ function saveUsageToStorage(sessionId: string, usage: SessionUsage): void {
 function appendJournalEntries(sessionId: string, entries: JournalEntry[]): void {
   if (entries.length === 0) return;
   try {
-    const raw = localStorage.getItem(JOURNAL_KEY_PREFIX + sessionId);
-    const journal = (raw ? deserializeJournal(raw) : null) ?? createJournal();
-    localStorage.setItem(
-      JOURNAL_KEY_PREFIX + sessionId,
-      serializeJournal(addJournalEntries(journal, entries)),
-    );
+    const key = JOURNAL_KEY_PREFIX + sessionId;
+    const raw = localStorage.getItem(key);
+    const existing = raw ? deserializeJournal(raw) : null;
+    // Backward-compat: fall back to a fresh journal ONLY when nothing was
+    // stored. If a journal IS stored but can't be parsed (a legacy/corrupted
+    // shape), do NOT overwrite it — replacing it with a fresh journal would
+    // destroy the player's existing entries and annotations. We skip the local
+    // write in that case; the best-effort Supabase sync below still records the
+    // new entries additively (server-side).
+    if (existing || !raw) {
+      localStorage.setItem(
+        key,
+        serializeJournal(addJournalEntries(existing ?? createJournal(), entries)),
+      );
+    }
   } catch {
     // Storage full or unavailable — the turn proceeds regardless.
   }
