@@ -87,6 +87,15 @@ describe("validateListing", () => {
       /No one in the city/,
     );
   });
+
+  it("rejects mundane loot (not a tradable kind — anti-laundering, issue #90)", () => {
+    const withLoot = state({
+      inventory: [{ name: "Brass Key", description: "a key", category: "mundane" }],
+    });
+    expect(validateListing(withLoot, "Brass Key", 10).reason).toMatch(
+      /not a tradable kind/,
+    );
+  });
 });
 
 describe("escrow", () => {

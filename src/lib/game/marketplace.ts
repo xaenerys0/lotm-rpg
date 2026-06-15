@@ -51,7 +51,24 @@ export const PRICE_GUIDANCE: Record<
   "supplementary-ingredient": { min: 10, suggested: 40, max: 200 },
   "main-ingredient": { min: 100, suggested: 350, max: 1500 },
   "potion-formula": { min: 250, suggested: 800, max: 4000 },
+  // Present only to keep `PRICE_GUIDANCE[item.category]` total over the Item
+  // union; mundane loot is NOT sellable (see SELLABLE_CATEGORIES) so this band
+  // is never actually quoted.
+  mundane: { min: 1, suggested: 10, max: 100 },
 };
+
+/**
+ * The categories a player may list on the market — the rules-engine reagent
+ * kinds only. `mundane` loot is deliberately excluded: the AI can narrate an
+ * unbounded amount of it, so letting it be sold would be an uncapped funds
+ * source (mint loot → sell → buy a deep-Sequence reagent), defeating the
+ * per-turn `FUNDS_DISCOVERED_CAP` and re-opening the advancement bypass.
+ */
+const SELLABLE_CATEGORIES = new Set<Item["category"]>([
+  "supplementary-ingredient",
+  "main-ingredient",
+  "potion-formula",
+]);
 
 export interface ListingValidation {
   ok: boolean;
@@ -73,7 +90,7 @@ export function validateListing(
   if (!item) {
     return { ok: false, reason: "You can only list items you actually carry." };
   }
-  if (!(item.category in PRICE_GUIDANCE)) {
+  if (!SELLABLE_CATEGORIES.has(item.category)) {
     return { ok: false, reason: "That is not a tradable kind of thing." };
   }
   if (!Number.isInteger(price) || price <= 0) {

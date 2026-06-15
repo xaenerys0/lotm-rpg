@@ -115,6 +115,24 @@ describe("advancementRequirements", () => {
     expect(canAdvance(empty)).toBe(false);
   });
 
+  it("is not satisfied by mundane items the AI named like the ingredients (issue #90)", () => {
+    const target = targetSequence(7);
+    const prereq = getSequence(1, target)?.prerequisiteItems ?? [];
+    if (prereq.length === 0) return; // sequence has no canon ingredients yet
+    const session = readyToAdvance(7);
+    // Same names, but every one downgraded to mundane — exactly what a narration
+    // bypass would produce. The category-aware gate must still mark it unmet.
+    const decoys = prereq.map((i) => ({ ...i, category: "mundane" as const }));
+    const spoofed = {
+      ...session,
+      gameState: { ...session.gameState, inventory: decoys },
+    };
+    expect(
+      advancementRequirements(spoofed).find((r) => r.id === "ingredients")?.met,
+    ).toBe(false);
+    expect(canAdvance(spoofed)).toBe(false);
+  });
+
   it("requires the Advancement Ritual from Sequence 5 onward (mandatory)", () => {
     const session = readyToAdvance(6); // target 5 — ritual tier
     const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");

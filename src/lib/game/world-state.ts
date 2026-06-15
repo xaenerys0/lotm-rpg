@@ -1,13 +1,60 @@
-import type { GameState, ValidatedAIResponse, MemoryState } from "@/lib/ai";
+import type { GameState, ValidatedAIResponse, MemoryState, SessionFact } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
 import type { ActingEvaluation, StateChange } from "@/lib/ai";
-import { addTurn, buildTurnRecord } from "@/lib/ai";
+import { addSessionFact, addTurn, buildTurnRecord } from "@/lib/ai";
 import { applyDigestionProgress, createDigestionState } from "./digestion";
 import { tickInjuries } from "./combat";
 import { adjustFunds, FUNDS_DISCOVERED_CAP } from "./marketplace";
 import { clamp } from "./math";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
+
+/**
+ * Item categories the rules engine alone may grant. Advancement prerequisites —
+ * the next potion's formula, Beyonder Characteristic (main ingredient), and
+ * supplementary reagents — are acquired ONLY through the potion-preparation
+ * framework (buy/hunt), combat spoils, or echoes. AI narration may not mint them
+ * into inventory, so they are stripped from `itemsDiscovered` and turned into a
+ * story lead instead (see `partitionDiscoveredItems` / `discoveredItemLeadFact`).
+ */
+const ENGINE_ONLY_CATEGORIES = new Set<Item["category"]>([
+  "main-ingredient",
+  "supplementary-ingredient",
+  "potion-formula",
+]);
+
+/**
+ * Split AI-discovered items into the `mundane` loot the player may actually
+ * carry and the advancement-critical reagents that must come through the
+ * framework. Pure.
+ */
+export function partitionDiscoveredItems(items: Item[]): {
+  carried: Item[];
+  blocked: Item[];
+} {
+  const carried: Item[] = [];
+  const blocked: Item[] = [];
+  for (const item of items) {
+    (ENGINE_ONLY_CATEGORIES.has(item.category) ? blocked : carried).push(item);
+  }
+  return { carried, blocked };
+}
+
+/**
+ * Turn a blocked advancement-critical item the AI tried to grant into a story
+ * lead: a `quest-progress` memory fact pointing the player at the proper
+ * acquisition route (the preparation framework) rather than silently dropping
+ * the narration. Pure.
+ */
+export function discoveredItemLeadFact(item: Item, turnNumber: number): SessionFact {
+  const description =
+    item.category === "potion-formula"
+      ? `A lead surfaced toward the formula "${item.name}" — it must still be obtained through the proper channels for the next potion.`
+      : item.category === "main-ingredient"
+        ? `Word of the ${item.name} Beyonder Characteristic surfaced — it must still be hunted or bought for the next potion.`
+        : `Learned where ${item.name} might be acquired for the next potion.`;
+  return { type: "quest-progress", description, turnNumber };
+}
 
 export function applyWorldStateChanges(
   state: GameState,
@@ -94,8 +141,12 @@ export function applyResolution(
     updated = applyWorldStateChanges(updated, response.worldStateChanges);
   }
 
-  if (response.itemsDiscovered && response.itemsDiscovered.length > 0) {
-    updated = addDiscoveredItems(updated, response.itemsDiscovered);
+  // Only `mundane` loot enters inventory from AI narration; advancement-critical
+  // reagents are stripped and recorded as story leads, so narration cannot
+  // bypass the potion-preparation framework (issue #90).
+  const { carried, blocked } = partitionDiscoveredItems(response.itemsDiscovered ?? []);
+  if (carried.length > 0) {
+    updated = addDiscoveredItems(updated, carried);
   }
 
   // Money found (or lost) in the fiction reaches the wallet, bounded per turn so
@@ -119,8 +170,18 @@ export function applyResolution(
   // A turn of normal play heals active combat injuries (issue #10).
   updated = tickInjuries(updated);
 
-  const turn = buildTurnRecord(turnCount, playerAction, response);
-  const updatedMemory = addTurn(memory, turn);
+  // Build the turn record from a response carrying only the carried (mundane)
+  // items, so the memory fact extractor and recent-summary bullet never report a
+  // blocked reagent as "discovered". The blocked items become lead facts instead.
+  const sanitizedResponse = { ...response, itemsDiscovered: carried };
+  const turn = buildTurnRecord(turnCount, playerAction, sanitizedResponse);
+  let updatedMemory = addTurn(memory, turn);
+  for (const item of blocked) {
+    updatedMemory = addSessionFact(
+      updatedMemory,
+      discoveredItemLeadFact(item, turnCount),
+    );
+  }
 
   return { gameState: updated, memory: updatedMemory, digestionDelta };
 }

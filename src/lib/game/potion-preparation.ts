@@ -7,7 +7,7 @@ import {
   MAX_ADVANCEABLE_SEQUENCE,
   targetSequence,
 } from "./advancement";
-import { hasItem } from "./inventory";
+import { hasItemMatching } from "./inventory";
 import {
   addItemToInventory,
   adjustFunds,
@@ -148,7 +148,7 @@ export function potionPreparationPlan(session: GameSession): PotionPreparationPl
     const methods = acquisitionMethodsFor(item, target);
     return {
       item,
-      owned: hasItem(session.gameState.inventory, item.name),
+      owned: hasItemMatching(session.gameState.inventory, item),
       methods,
       cost: methods.includes("purchase") ? acquisitionCost(item, target) : 0,
     };
@@ -187,7 +187,7 @@ export function purchasePotionItem(
 
   const item = nextPotionItems(session).find((candidate) => candidate.name === itemName);
   if (!item) return { outcome: "not-required" };
-  if (hasItem(state.inventory, itemName)) return { outcome: "already-owned" };
+  if (hasItemMatching(state.inventory, item)) return { outcome: "already-owned" };
   if (!acquisitionMethodsFor(item, target).includes("purchase")) {
     return { outcome: "not-purchasable" };
   }
@@ -234,7 +234,7 @@ export function deliverHuntedItem(
 
   const item = nextPotionItems(session).find((candidate) => candidate.name === itemName);
   if (!item) return { outcome: "not-required" };
-  if (hasItem(state.inventory, itemName)) return { outcome: "already-owned" };
+  if (hasItemMatching(state.inventory, item)) return { outcome: "already-owned" };
   if (!acquisitionMethodsFor(item, target).includes("hunt")) {
     return { outcome: "not-huntable" };
   }

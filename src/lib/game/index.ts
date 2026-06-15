@@ -14,6 +14,8 @@ export {
   applyWorldStateChanges,
   applySanityImpact,
   addDiscoveredItems,
+  partitionDiscoveredItems,
+  discoveredItemLeadFact,
   applyDigestion,
   applyResolution,
 } from "./world-state";
@@ -304,7 +306,7 @@ export {
   type PurchaseOutcome,
   type PurchaseResult,
 } from "./potion-preparation";
-export { hasItem, removeItemsByName } from "./inventory";
+export { hasItem, hasItemMatching, removeItemsByName } from "./inventory";
 export {
   artifactToItem,
   deserializeArtifacts,

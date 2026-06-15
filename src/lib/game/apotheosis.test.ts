@@ -61,7 +61,9 @@ describe("uniquenessItemFor", () => {
   it("names the pathway's singular characteristic", () => {
     const item = uniquenessItemFor(1);
     expect(item.name).toBe("Fool Uniqueness");
-    expect(item.category).toBe("main-ingredient");
+    // Mundane, not a reagent: the narrator may grant it (issue #90) while the
+    // three advancement-ladder categories stay engine-only.
+    expect(item.category).toBe("mundane");
     expect(item.description).toContain("exactly one");
   });
 });

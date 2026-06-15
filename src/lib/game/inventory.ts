@@ -25,3 +25,17 @@ export function removeItemsByName(inventory: Item[], items: Item[]): Item[] {
 export function hasItem(inventory: Item[], name: string): boolean {
   return inventory.some((item) => item.name === name);
 }
+
+/**
+ * Whether an inventory carries an item matching BOTH category and name. The
+ * advancement and potion-preparation gates use this (not the name-only
+ * `hasItem`) so a `mundane` item that merely shares a required reagent's name
+ * cannot satisfy a prerequisite or soft-lock its acquisition — the canonical
+ * advancement check in `@/lib/rules` (`laws.ts`) likewise matches category+name,
+ * and these stay consistent with it.
+ */
+export function hasItemMatching(inventory: Item[], item: Item): boolean {
+  return inventory.some(
+    (carried) => carried.category === item.category && carried.name === item.name,
+  );
+}
