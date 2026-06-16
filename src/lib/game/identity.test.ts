@@ -142,6 +142,11 @@ describe("detectAssumeIdentityIntent", () => {
       // Investigation, not assumption — must not be caught.
       "I try to find out the identity of the thief",
       "I uncover the persona behind the letters",
+      // "don't" must not be read as the verb "don" + a persona noun.
+      "I don't want to reveal my identity",
+      "I don't trust this disguise",
+      // Verb and an unrelated later noun in the same sentence stay far apart.
+      "I wear my coat, then wonder who left the disguise on the table",
       "",
       "   ",
     ]) {
