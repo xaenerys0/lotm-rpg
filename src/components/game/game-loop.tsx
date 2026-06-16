@@ -90,10 +90,17 @@ import {
   freeTextToChoice,
   validateFreeText,
   FREE_TEXT_MAX_LENGTH,
+  activeIdentity,
   applyExposure,
   checkExposure,
+  createIdentityState,
+  detectAssumeIdentityIntent,
+  hasPreparedIdentity,
+  switchIdentity,
   identityCapability,
   identityPromptContext,
+  ASSUME_VIA_PANEL_NARRATIVE,
+  UNPREPARED_IDENTITY_NARRATIVE,
   applyProfileChange,
   isDrasticChange,
   pierceRecognition,
@@ -1165,6 +1172,19 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const handleFreeText = useCallback(
     (input: string) => {
       if (!session) return;
+      // Assuming a persona is a deliberate engine action (the panel below),
+      // never something the narrator commits from typed intent. Catch a typed
+      // attempt here so it can't silently fail to associate and only pollute
+      // the AI context (issue #22): steer the player to the switch instead.
+      if (detectAssumeIdentityIntent(input)) {
+        const identityState = session.identityState ?? createIdentityState();
+        setFreeTextNotice(
+          hasPreparedIdentity(identityState)
+            ? ASSUME_VIA_PANEL_NARRATIVE
+            : UNPREPARED_IDENTITY_NARRATIVE,
+        );
+        return;
+      }
       const validation = validateFreeText(input);
       if (!validation.ok) {
         setFreeTextNotice(freeTextRejection(validation.reason));
@@ -1495,6 +1515,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   onEngageHunt={handleEngageHunt}
                   onAbandonHunt={handleAbandonHunt}
                 />
+                <IdentityActionPanel session={session} onUpdate={updateSession} />
                 <CombatLauncher onStart={startCombat} />
                 {session.gameState.digestion?.complete === true &&
                   isAdvanceableSequence(session.gameState.sequenceLevel) && (
@@ -2185,6 +2206,106 @@ function ResolutionPhase() {
         The consequences unfold...
       </p>
     </div>
+  );
+}
+
+// Assume a prepared persona from the play surface (issue #22). Switching faces
+// is a deliberate engine action (`switchIdentity`) — the same one the character
+// sheet uses — so the narrator picks up the worn persona via
+// `identityPromptContext` on the next turn. When nothing has been prepared, the
+// panel says so in-world and points back to the character sheet to craft one,
+// rather than leaving the player to discover the empty list themselves.
+function IdentityActionPanel({
+  session,
+  onUpdate,
+}: {
+  session: GameSession;
+  onUpdate: (next: GameSession) => void;
+}) {
+  const identityState = session.identityState ?? createIdentityState();
+  const active = activeIdentity(identityState);
+
+  // Event-handler only (never during render) — useCallback marks it as such for
+  // the purity lint, matching the character sheet's identity switcher.
+  const wear = useCallback(
+    (id: string | null) => {
+      onUpdate({
+        ...session,
+        identityState: switchIdentity(session.identityState ?? createIdentityState(), id),
+        updatedAt: Date.now(),
+      });
+    },
+    [session, onUpdate],
+  );
+
+  if (!hasPreparedIdentity(identityState)) {
+    return (
+      <section
+        aria-labelledby="assume-identity-heading"
+        className="mt-8 rounded-lg border border-border/50 bg-surface/30 p-5"
+      >
+        <h2
+          id="assume-identity-heading"
+          className="font-serif text-base font-semibold text-foreground"
+        >
+          Another Face
+        </h2>
+        <p role="status" className="mt-2 text-sm leading-relaxed text-foreground/85">
+          {UNPREPARED_IDENTITY_NARRATIVE}
+        </p>
+        <Link
+          href="/character"
+          className="mt-3 inline-flex min-h-[24px] items-center rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber transition-colors hover:border-amber/50"
+        >
+          Go to your character sheet
+        </Link>
+      </section>
+    );
+  }
+
+  return (
+    <section
+      aria-labelledby="assume-identity-heading"
+      className="mt-8 rounded-lg border border-border/50 bg-surface/30 p-5"
+    >
+      <h2
+        id="assume-identity-heading"
+        className="font-serif text-base font-semibold text-foreground"
+      >
+        Another Face
+      </h2>
+      <p className="mt-1 text-sm text-foreground/85">
+        {active ? (
+          <>
+            Currently wearing{" "}
+            <span className="font-medium text-amber">{active.name}</span>.
+          </>
+        ) : (
+          "You wear your own face. Slip into one you have prepared:"
+        )}
+      </p>
+      <ul className="mt-3 space-y-2">
+        {identityState.identities.map((identity) => {
+          const isActive = identity.id === identityState.activeIdentityId;
+          return (
+            <li
+              key={identity.id}
+              className="flex items-center justify-between gap-3 rounded-md border border-border/40 bg-surface/40 px-3 py-2"
+            >
+              <span className="text-sm text-foreground">{identity.name}</span>
+              <button
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => wear(isActive ? null : identity.id)}
+                className="min-h-[24px] rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber transition-colors hover:border-amber/50"
+              >
+                {isActive ? "Return to your own face" : "Slip into this face"}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 

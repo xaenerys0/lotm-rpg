@@ -135,6 +135,32 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="choices-1" />);
   });
 
+  it("assume-identity panel (prepared persona, active) has no violations", async () => {
+    const gameState: GameState = createDefaultGameState(1, "char-id", "Klein");
+    const session = {
+      ...createSession(gameState, "identity-1", 1000),
+      phase: "choices" as const,
+      currentNarrative: "The crowd swallows you whole.",
+      currentChoices: [{ id: "c1", text: "Move through it", type: "action" as const }],
+      identityState: switchIdentity(
+        createIdentity(
+          createIdentityState(),
+          {
+            name: "Sherlock Moriarty",
+            appearance: "A lean detective",
+            socialClass: "middle",
+          },
+          "full",
+          1000,
+          "id-1",
+        ),
+        "id-1",
+      ),
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "identity-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="identity-1" />);
+  });
+
   it("quest log (general quests + hunt tracking) has no violations", async () => {
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-q", "Klein"),

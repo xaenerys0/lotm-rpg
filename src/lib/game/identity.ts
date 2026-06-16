@@ -186,6 +186,51 @@ export function activeIdentity(state: IdentityState): Identity | null {
   return state.identities.find((i) => i.id === state.activeIdentityId) ?? null;
 }
 
+/** Whether the character has crafted at least one persona to assume. */
+export function hasPreparedIdentity(state: IdentityState): boolean {
+  return state.identities.length > 0;
+}
+
+// In-world copy for the assume-identity flow (issue #22). Like
+// `freeTextRejection`, these are narration — never error messages.
+
+/** Shown when the player tries to wear a face but has prepared none. */
+export const UNPREPARED_IDENTITY_NARRATIVE =
+  "You reach for another face to wear — and find none. You have prepared no " +
+  "disguise, rehearsed no second self. Steal away to your character sheet and " +
+  "craft one before you can step into it.";
+
+/** Shown when the player *declares* a disguise aloud instead of choosing one. */
+export const ASSUME_VIA_PANEL_NARRATIVE =
+  "A face is not worn by saying so. Choose the one you have prepared and slip " +
+  "into it deliberately — declaring it aloud changes nothing.";
+
+// Detect an attempt to assume/switch a persona typed as a free-text action, so
+// the loop can steer it to the deliberate switch instead of letting it dissolve
+// into narration the engine never commits. Kept tight to avoid snagging ordinary
+// prose: an assume-verb (wear/put on/take on/slip into/adopt…) must be paired
+// with a persona noun in the same breath. A bare "the identity of the thief"
+// (investigation, not assumption) deliberately does NOT match.
+const ASSUME_VERBS =
+  "assume|wear|don|put\\s+on|take\\s+on|slip\\s+into|step\\s+into|adopt|disguise\\s+(?:myself|as)";
+const PERSONA_NOUNS =
+  "identit(?:y|ies)|personas?|disguises?|guise|aliase?s?|false\\s+(?:name|identity)";
+const ASSUME_IDENTITY_PATTERN = new RegExp(
+  `\\b(?:${ASSUME_VERBS})\\b[^.!?]*\\b(?:${PERSONA_NOUNS})\\b`,
+  "i",
+);
+
+/**
+ * Whether a free-text action reads as an attempt to assume a prepared persona.
+ * Pure; the loop short-circuits such input to an in-world steer rather than
+ * sending it to the narrator (where it would silently fail to associate).
+ */
+export function detectAssumeIdentityIntent(input: string): boolean {
+  const text = input.trim();
+  if (text === "") return false;
+  return ASSUME_IDENTITY_PATTERN.test(text);
+}
+
 // Exposure accrual: every public turn in a persona costs a little; being
 // seen by NPCs costs more; a surface disguise frays roughly twice as fast.
 export const EXPOSURE_PER_USE = 2;
