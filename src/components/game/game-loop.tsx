@@ -2212,9 +2212,9 @@ function ResolutionPhase() {
 // Assume a prepared persona from the play surface (issue #22). Switching faces
 // is a deliberate engine action (`switchIdentity`) — the same one the character
 // sheet uses — so the narrator picks up the worn persona via
-// `identityPromptContext` on the next turn. When nothing has been prepared, the
-// panel says so in-world and points back to the character sheet to craft one,
-// rather than leaving the player to discover the empty list themselves.
+// `identityPromptContext` on the next turn. Renders nothing when no face has
+// been prepared (no per-turn nag); the "you have prepared none" steer surfaces
+// in `handleFreeText` only when the player actually reaches for one.
 function IdentityActionPanel({
   session,
   onUpdate,
@@ -2231,37 +2231,14 @@ function IdentityActionPanel({
     (id: string | null) => {
       onUpdate({
         ...session,
-        identityState: switchIdentity(session.identityState ?? createIdentityState(), id),
+        identityState: switchIdentity(identityState, id),
         updatedAt: Date.now(),
       });
     },
-    [session, onUpdate],
+    [session, identityState, onUpdate],
   );
 
-  if (!hasPreparedIdentity(identityState)) {
-    return (
-      <section
-        aria-labelledby="assume-identity-heading"
-        className="mt-8 rounded-lg border border-border/50 bg-surface/30 p-5"
-      >
-        <h2
-          id="assume-identity-heading"
-          className="font-serif text-base font-semibold text-foreground"
-        >
-          Another Face
-        </h2>
-        <p role="status" className="mt-2 text-sm leading-relaxed text-foreground/85">
-          {UNPREPARED_IDENTITY_NARRATIVE}
-        </p>
-        <Link
-          href="/character"
-          className="mt-3 inline-flex min-h-[24px] items-center rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber transition-colors hover:border-amber/50"
-        >
-          Go to your character sheet
-        </Link>
-      </section>
-    );
-  }
+  if (!hasPreparedIdentity(identityState)) return null;
 
   return (
     <section

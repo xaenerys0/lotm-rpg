@@ -208,15 +208,21 @@ export const ASSUME_VIA_PANEL_NARRATIVE =
 // Detect an attempt to assume/switch a persona typed as a free-text action, so
 // the loop can steer it to the deliberate switch instead of letting it dissolve
 // into narration the engine never commits. Kept tight to avoid snagging ordinary
-// prose: an assume-verb (wear/put on/take on/slip into/adopt…) must be paired
-// with a persona noun in the same breath. A bare "the identity of the thief"
-// (investigation, not assumption) deliberately does NOT match.
+// prose: an assume-verb (wear/put on/take on/slip into/adopt…) must sit close to
+// a persona noun. A bare "the identity of the thief" (investigation, not
+// assumption) deliberately does NOT match. Note: "don" is intentionally absent —
+// `\bdon\b` matches the contraction "don't", so "I don't reveal my identity"
+// would false-match; the rarer literal "don a disguise" is not worth that cost.
 const ASSUME_VERBS =
-  "assume|wear|don|put\\s+on|take\\s+on|slip\\s+into|step\\s+into|adopt|disguise\\s+(?:myself|as)";
+  "assume|wear|put\\s+on|take\\s+on|slip\\s+into|step\\s+into|adopt|disguise\\s+(?:myself|as)";
 const PERSONA_NOUNS =
   "identit(?:y|ies)|personas?|disguises?|guise|aliase?s?|false\\s+(?:name|identity)";
+// The persona noun must be the verb's object: at most three filler words
+// (articles/possessives/adjectives) may sit between them. A stray verb and an
+// unrelated later noun in the same sentence ("wear my coat, then wonder who left
+// the disguise") fall outside that window and do not false-match.
 const ASSUME_IDENTITY_PATTERN = new RegExp(
-  `\\b(?:${ASSUME_VERBS})\\b[^.!?]*\\b(?:${PERSONA_NOUNS})\\b`,
+  `\\b(?:${ASSUME_VERBS})\\b(?:\\s+\\w+\\b){0,3}\\s+(?:${PERSONA_NOUNS})\\b`,
   "i",
 );
 
