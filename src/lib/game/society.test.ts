@@ -6,10 +6,14 @@ import {
   foundSociety,
   holdGathering,
   isValidSocietyShape,
+  memberArc,
+  memberPathwayHint,
+  migrateSocietyState,
   recruitMember,
   resolveMemberArc,
   societyKindForPathway,
   GATHERING_COOLDOWN_TURNS,
+  RESOLVED_ARC_ID,
   SOCIETY_KIND_LABELS,
   type SocietyState,
 } from "./society";
@@ -109,7 +113,8 @@ describe("resolveMemberArc", () => {
     // society-page grammar fix.)
     expect(fact?.description).toContain("they are hunting");
     expect(fact?.description).not.toMatch(/they (is|owes|suspects|wants|knows)\b/);
-    expect(resolved.members[0].arc).toBe("owe you a debt they intend to honor");
+    expect(resolved.members[0].arcId).toBe(RESOLVED_ARC_ID);
+    expect(memberArc(resolved.members[0])).toBe("owe you a debt they intend to honor");
     expect(resolved.members[0].arcStage).toBe(0);
     expect(resolved.members[0].disposition).toBeGreaterThan(
       society.members[0].disposition,
@@ -119,17 +124,94 @@ describe("resolveMemberArc", () => {
 });
 
 describe("member phrasing", () => {
-  it("every arc agrees with the singular 'they' the card renders", () => {
-    // The card renders "This one {pathwayHint}. They {arc}." Singular "they"
-    // takes plural verb agreement, so an arc must never begin with a
-    // singular verb (is/owes/suspects/wants) when prefixed by "They".
+  it("every derived arc agrees with the singular 'they' the card renders", () => {
+    // The card renders "This one {hint}. They {arc}." Singular "they" takes
+    // plural verb agreement, so a derived arc must never begin with a singular
+    // verb (is/owes/suspects/wants) when prefixed by "They".
     for (let i = 0; i < 6; i++) {
       const pick = (i + 0.5) / 6; // hits arc/hint index i deterministically
       const society = recruitMember(foundSociety(1, 7, undefined), () => pick, `m${i}`);
-      const { pathwayHint, arc } = society.members[0];
-      expect(`They ${arc}`).not.toMatch(/They (is|owes|suspects|wants|knows)\b/);
-      expect(pathwayHint.length).toBeGreaterThan(0);
+      const member = society.members[0];
+      expect(`They ${memberArc(member)}`).not.toMatch(
+        /They (is|owes|suspects|wants|knows)\b/,
+      );
+      expect(memberPathwayHint(member).length).toBeGreaterThan(0);
     }
+  });
+
+  it("derives prose from ids and clamps unknown ids to the first entry", () => {
+    const base = recruitMember(foundSociety(1, 7, undefined), () => 0, "m0");
+    const member = base.members[0];
+    // Recruited deterministically at index 0 of each catalog.
+    expect(memberArc(member)).toBe(
+      "are hunting the counterfeiter who ruined their family",
+    );
+    expect(memberPathwayHint(member)).toBe("reads people a little too easily");
+    // Out-of-range ids (e.g. a shrunken catalog) fall back, never undefined.
+    expect(memberArc({ ...member, arcId: 999 })).toBe(memberArc({ ...member, arcId: 0 }));
+    expect(memberPathwayHint({ ...member, pathwayHintId: 999 })).toBe(
+      memberPathwayHint({ ...member, pathwayHintId: 0 }),
+    );
+  });
+});
+
+describe("migrateSocietyState", () => {
+  const legacyMember = (over: Record<string, unknown> = {}) =>
+    ({
+      id: "m0",
+      codeName: "Justice",
+      disposition: 13,
+      arcStage: 2,
+      ...over,
+    }) as unknown as SocietyState["members"][number];
+
+  function legacyClub(members: SocietyState["members"]): SocietyState {
+    return { ...foundSociety(1, 7, undefined), members };
+  }
+
+  it("maps pre-fix singular-verb prose back to its stable id", () => {
+    const state = legacyClub([
+      legacyMember({
+        arc: "is hunting the counterfeiter who ruined their family",
+        pathwayHint: "asks careful questions about the dead",
+      }),
+    ]);
+    const migrated = migrateSocietyState(state);
+    const member = migrated.members[0];
+    // Prose is now derived in code — and grammatical.
+    expect(memberArc(member)).toBe(
+      "are hunting the counterfeiter who ruined their family",
+    );
+    expect(memberPathwayHint(member)).toBe("asks careful questions about the dead");
+    expect(member.arcStage).toBe(2);
+    // Legacy prose fields are dropped from the migrated member.
+    expect((member as unknown as Record<string, unknown>).arc).toBeUndefined();
+    expect((member as unknown as Record<string, unknown>).pathwayHint).toBeUndefined();
+  });
+
+  it("maps both spellings of the resolved arc to the reserved id", () => {
+    for (const arc of [
+      "owe you a debt they intend to honor",
+      "owes you a debt they intend to honor",
+    ]) {
+      const migrated = migrateSocietyState(legacyClub([legacyMember({ arc })]));
+      expect(migrated.members[0].arcId).toBe(RESOLVED_ARC_ID);
+      expect(memberArc(migrated.members[0])).toBe("owe you a debt they intend to honor");
+    }
+  });
+
+  it("clamps unknown or missing prose to id 0 rather than crashing", () => {
+    const migrated = migrateSocietyState(
+      legacyClub([legacyMember({ arc: "something nobody ever wrote" })]),
+    );
+    expect(migrated.members[0].arcId).toBe(0);
+    expect(migrated.members[0].pathwayHintId).toBe(0);
+    expect(migrated.members[0].arcStage).toBe(2);
+  });
+
+  it("returns id-shaped state untouched (idempotent)", () => {
+    const fresh = recruitMember(foundSociety(1, 7, undefined), () => 0.5, "m0");
+    expect(migrateSocietyState(fresh)).toBe(fresh);
   });
 });
 
@@ -138,6 +220,16 @@ describe("isValidSocietyShape", () => {
     expect(isValidSocietyShape(club())).toBe(true);
     expect(isValidSocietyShape(null)).toBe(false);
     expect(isValidSocietyShape({ kind: "tarot-club" })).toBe(false);
+    // Non-finite counters are rejected.
+    expect(
+      isValidSocietyShape({
+        kind: "tarot-club",
+        name: "x",
+        gatheringCount: Number.NaN,
+        lastGatheringTurn: 0,
+        members: [],
+      }),
+    ).toBe(false);
     expect(
       isValidSocietyShape({
         kind: "tarot-club",
@@ -145,6 +237,26 @@ describe("isValidSocietyShape", () => {
         gatheringCount: 0,
         lastGatheringTurn: 0,
         members: [{ id: 1 }],
+      }),
+    ).toBe(false);
+  });
+
+  it("accepts both legacy prose and id-shaped members", () => {
+    const base = {
+      kind: "tarot-club",
+      name: "x",
+      gatheringCount: 0,
+      lastGatheringTurn: 0,
+    };
+    const legacy = { id: "m0", codeName: "Justice", disposition: 5, arc: "is hunting" };
+    const idShaped = { id: "m1", codeName: "The Moon", disposition: 5, arcId: 2 };
+    expect(isValidSocietyShape({ ...base, members: [legacy] })).toBe(true);
+    expect(isValidSocietyShape({ ...base, members: [idShaped] })).toBe(true);
+    // A member with neither arc form is rejected.
+    expect(
+      isValidSocietyShape({
+        ...base,
+        members: [{ id: "m2", codeName: "x", disposition: 5 }],
       }),
     ).toBe(false);
   });

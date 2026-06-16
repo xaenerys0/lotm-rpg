@@ -9,7 +9,7 @@ import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
-import { isValidSocietyShape } from "./society";
+import { isValidSocietyShape, migrateSocietyState, type SocietyState } from "./society";
 import { DEFAULT_EPOCH_ID, getEpoch } from "@/lib/lore/epochs";
 import type { StartScenario } from "@/lib/lore/start-scenarios";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
@@ -146,6 +146,11 @@ export function deserializeSession(json: string): GameSession | null {
     canonPosition: (s.canonPosition as number | undefined) ?? DEFAULT_CANON_POSITION,
     embeddingModelId:
       (s.embeddingModelId as string | undefined) ?? DEFAULT_EMBEDDING_MODEL_ID,
+    // Convert legacy society members (which stored arc/hint prose) to the
+    // id-based shape so member descriptions are re-derived from current copy.
+    ...(s.societyState !== undefined
+      ? { societyState: migrateSocietyState(s.societyState as SocietyState) }
+      : {}),
   } as GameSession;
 }
 

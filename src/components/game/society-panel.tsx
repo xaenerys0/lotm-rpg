@@ -16,6 +16,8 @@ import {
   deserializeJournal,
   foundSociety,
   holdGathering,
+  memberArc,
+  memberPathwayHint,
   recruitMember,
   resolveMemberArc,
   serializeJournal,
@@ -310,7 +312,7 @@ export function SocietyPanel() {
                   {member.codeName}
                 </p>
                 <p className="mt-1 text-xs leading-relaxed text-muted">
-                  This one {member.pathwayHint}. They {member.arc}.
+                  This one {memberPathwayHint(member)}. They {memberArc(member)}.
                 </p>
                 <div className="mt-3">
                   <div className="flex items-center justify-between text-[11px] text-muted">
