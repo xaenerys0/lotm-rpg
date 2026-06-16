@@ -7,17 +7,21 @@ import {
   checkExposure,
   createIdentity,
   createIdentityState,
+  detectAssumeIdentityIntent,
   discardIdentity,
+  hasPreparedIdentity,
   identityCapability,
   identityPromptContext,
   isFateProof,
   isValidIdentityStateShape,
   recordIdentityUse,
   switchIdentity,
+  ASSUME_VIA_PANEL_NARRATIVE,
   DISGUISE_EXPOSURE_MULTIPLIER,
   EXPOSURE_EVENT_THRESHOLD,
   EXPOSURE_PER_NEW_NPC,
   EXPOSURE_PER_USE,
+  UNPREPARED_IDENTITY_NARRATIVE,
   type IdentityState,
 } from "./identity";
 
@@ -105,6 +109,54 @@ describe("createIdentity / discardIdentity / switchIdentity", () => {
     state = discardIdentity(state, "id-1");
     expect(state.identities.map((i) => i.id)).toEqual(["id-2"]);
     expect(state.activeIdentityId).toBeNull();
+  });
+});
+
+describe("hasPreparedIdentity", () => {
+  it("is false on a fresh state and true once a persona exists", () => {
+    expect(hasPreparedIdentity(createIdentityState())).toBe(false);
+    expect(hasPreparedIdentity(fullState())).toBe(true);
+  });
+});
+
+describe("detectAssumeIdentityIntent", () => {
+  it("catches assume-a-persona phrasings", () => {
+    for (const input of [
+      "I assume my false identity",
+      "I want to wear a disguise now",
+      "put on the persona of a dockworker",
+      "I slip into the identity of the dead clerk",
+      "take on the alias I prepared",
+      "I adopt the guise of a noble",
+    ]) {
+      expect(detectAssumeIdentityIntent(input)).toBe(true);
+    }
+  });
+
+  it("leaves ordinary actions alone", () => {
+    for (const input of [
+      "I walk to the harbour and look around",
+      "I ask the sailor about the missing ship",
+      "I draw my revolver and aim at the door",
+      "I wear my coat against the cold",
+      // Investigation, not assumption — must not be caught.
+      "I try to find out the identity of the thief",
+      "I uncover the persona behind the letters",
+      "",
+      "   ",
+    ]) {
+      expect(detectAssumeIdentityIntent(input)).toBe(false);
+    }
+  });
+});
+
+describe("assume-identity narration", () => {
+  it("reads in-world, never as an error message", () => {
+    for (const line of [UNPREPARED_IDENTITY_NARRATIVE, ASSUME_VIA_PANEL_NARRATIVE]) {
+      expect(line.length).toBeGreaterThan(20);
+      expect(line).not.toMatch(/error|invalid|failed|denied/i);
+    }
+    expect(UNPREPARED_IDENTITY_NARRATIVE).toMatch(/character sheet/i);
   });
 });
 
