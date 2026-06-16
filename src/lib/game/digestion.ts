@@ -29,8 +29,16 @@ export const NEUTRAL_ALIGNMENT = 0.5;
  */
 export const CONTRADICTION_THRESHOLD = 0.35;
 
-/** Progress gained from a perfectly in-character action (alignment === 1). */
-export const MAX_PROGRESS_PER_EVAL = 12;
+/**
+ * Progress gained from a perfectly in-character action (alignment === 1).
+ *
+ * Digestion pace was slowed slightly in issue #95 (12 → 10). The original
+ * sketch floated a flat ~1.5× slowdown, but a literal 12/1.5 = 8 felt too slow
+ * once the floor also dropped; 10 (with `MIN_PROGRESS_PER_SESSION` 2 → 1) gives
+ * the intended gentler climb without making a strong run feel inert. Flat
+ * across Sequences — sequence-scaled digestion is explicitly out of scope.
+ */
+export const MAX_PROGRESS_PER_EVAL = 10;
 
 /** Progress lost from a maximally out-of-character action (alignment === 0). */
 export const MAX_REVERSE_PER_EVAL = 8;
@@ -39,8 +47,10 @@ export const MAX_REVERSE_PER_EVAL = 8;
  * Anti-stagnation floor. Any non-contradictory action advances digestion by at
  * least this much, so a player who keeps acting (even imperfectly) in character
  * can never get permanently stuck (Acceptance: minimum progress per session).
+ * Lowered 2 → 1 in issue #95 alongside the slower max, so mediocre-but-not-
+ * contradictory acting inches rather than strides.
  */
-export const MIN_PROGRESS_PER_SESSION = 2;
+export const MIN_PROGRESS_PER_SESSION = 1;
 
 export function createDigestionState(
   pathwayId: number,
@@ -107,14 +117,41 @@ export function isDigestionComplete(state: DigestionState): boolean {
 /**
  * Produce in-world narrative feedback describing the digestion change. Kept
  * deterministic (rather than asking the AI) so the message is always coherent
- * with the actual progress number shown in the UI.
+ * with the actual progress shown in the UI.
+ *
+ * The trailing `knowsMethod` gates how much is revealed (issue #95):
+ * - **Pre-discovery:** the Acting Method is secret knowledge the character does
+ *   not yet have, so the prose is vague and cryptic — it names no mechanic, no
+ *   number, and does NOT branch on the progress band (which would leak the
+ *   magnitude). One line per direction: complete / forward / reverse / none.
+ * - **Post-discovery:** the existing clearer, progress-tiered prose.
+ *
+ * No default on `knowsMethod` — the compiler must flag every caller so the
+ * discovery gate is threaded everywhere it is shown.
  */
 export function digestionFeedback(
   roleName: string,
   state: DigestionState,
   delta: number,
+  knowsMethod: boolean,
 ): string {
   const role = roleName || "Beyonder";
+
+  if (!knowsMethod) {
+    // The character does not know that acting in role is what assimilates the
+    // potion. Convey only a vague, diegetic sense — never the mechanic, a
+    // number, or a progress band.
+    if (state.complete) {
+      return `Something long unsettled beneath your skin goes quiet, as if a restless presence has at last lain down inside you.`;
+    }
+    if (delta > 0) {
+      return `For a moment you feel oddly at home in your own skin — the way you carried yourself sitting easily upon you.`;
+    }
+    if (delta < 0) {
+      return `A wrongness coils beneath your thoughts, as though you had just betrayed something that shares your bones.`;
+    }
+    return `Whatever rides beneath your thoughts neither stirs nor settles.`;
+  }
 
   if (state.complete) {
     return `The essence of the ${role} has become wholly your own — the potion is fully digested. You sense you could now reach for what lies beyond.`;

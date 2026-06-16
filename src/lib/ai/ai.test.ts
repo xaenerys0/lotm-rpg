@@ -1777,6 +1777,21 @@ describe("prompts", () => {
       expect(layer.content).toContain("Choice Design");
       expect(layer.content).toContain("Do NOT force a ritual");
     });
+
+    it("documents the hybrid sanity channel and the new fields (issue #95)", () => {
+      const layer = buildSystemPrompt([], []);
+      expect(layer.content).toContain("sanityEventTags");
+      expect(layer.content).toContain("actingMethodTaught");
+      // Sanity residual is tightened to ±5 and the stale -16..-20 guidance is gone.
+      expect(layer.content).toContain("-5 to +5");
+      expect(layer.content).not.toContain("-16 to -20");
+    });
+
+    it("softens the acting rule so the mechanic is not tutorialized (issue #95)", () => {
+      const layer = buildSystemPrompt([], []);
+      expect(layer.content).not.toContain("so the player understands");
+      expect(layer.content).toContain("secret knowledge");
+    });
   });
 
   describe("buildLoreContext", () => {
@@ -2990,6 +3005,50 @@ describe("validation", () => {
       expect(result.sanityImpact).toBeUndefined();
     });
 
+    it("normalizes sanityEventTags to the known set, dropping unknowns (issue #95)", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        sanityEventTags: ["rest", "tea-party", "ability-use", 42],
+      });
+      const result = parseAIResponse(json);
+      expect(result.sanityEventTags).toEqual(["rest", "ability-use"]);
+    });
+
+    it("omits sanityEventTags entirely when none are valid", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        sanityEventTags: ["nonsense"],
+      });
+      const result = parseAIResponse(json);
+      expect(result.sanityEventTags).toBeUndefined();
+    });
+
+    it("ignores a non-array sanityEventTags", () => {
+      const result = parseAIResponse(
+        JSON.stringify({ narrative: "x", sanityEventTags: "rest" }),
+      );
+      expect(result.sanityEventTags).toBeUndefined();
+    });
+
+    it("carries actingMethodTaught only when literally true (issue #95)", () => {
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", actingMethodTaught: true }))
+          .actingMethodTaught,
+      ).toBe(true);
+      // Falsy / non-true values leave the field absent (drop-not-throw).
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", actingMethodTaught: false }))
+          .actingMethodTaught,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", actingMethodTaught: "yes" }))
+          .actingMethodTaught,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x" })).actingMethodTaught,
+      ).toBeUndefined();
+    });
+
     it("defaults NaN alignment to 0", () => {
       const json = JSON.stringify({
         narrative: "x",
@@ -3298,14 +3357,22 @@ describe("validation", () => {
       expect(result.valid).toBe(false);
     });
 
-    it("validates sanity at boundary values", () => {
+    it("validates sanity at the ±5 boundary values (issue #95)", () => {
       const response1 = makeValidAIResponse();
-      response1.sanityImpact = -20;
+      response1.sanityImpact = -5;
       expect(validateAIResponse(response1).valid).toBe(true);
 
       const response2 = makeValidAIResponse();
-      response2.sanityImpact = 10;
+      response2.sanityImpact = 5;
       expect(validateAIResponse(response2).valid).toBe(true);
+
+      // Just outside the tightened range is now a violation.
+      const response3 = makeValidAIResponse();
+      response3.sanityImpact = -6;
+      expect(validateAIResponse(response3).valid).toBe(false);
+      const response4 = makeValidAIResponse();
+      response4.sanityImpact = 6;
+      expect(validateAIResponse(response4).valid).toBe(false);
     });
 
     it("validates acting alignment at boundary values", () => {
@@ -3343,18 +3410,18 @@ describe("validation", () => {
   });
 
   describe("sanitizeAIResponse", () => {
-    it("clamps sanity impact to valid range", () => {
+    it("clamps sanity impact to the ±5 range (issue #95)", () => {
       const response = makeValidAIResponse();
       response.sanityImpact = -30;
       const sanitized = sanitizeAIResponse(response);
-      expect(sanitized.sanityImpact).toBe(-20);
+      expect(sanitized.sanityImpact).toBe(-5);
     });
 
     it("clamps high sanity impact", () => {
       const response = makeValidAIResponse();
       response.sanityImpact = 20;
       const sanitized = sanitizeAIResponse(response);
-      expect(sanitized.sanityImpact).toBe(10);
+      expect(sanitized.sanityImpact).toBe(5);
     });
 
     it("trims excess choices", () => {
@@ -3647,7 +3714,7 @@ describe("client", () => {
         actingRequirements: [],
       });
 
-      expect(result.response.sanityImpact).toBe(-20);
+      expect(result.response.sanityImpact).toBe(-5);
       expect(result.response.actingEvaluation!.alignment).toBe(1);
       expect(result.validation.valid).toBe(true);
     });

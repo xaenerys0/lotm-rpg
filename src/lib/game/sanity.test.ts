@@ -16,10 +16,13 @@ import {
   HUMAN_CONNECTION_RECOVERY,
   ROUTINE_RECOVERY,
   ACTING_NEGLECT_DECAY,
+  HORROR_TAG_GAP,
+  SANITY_EVENT_TAGS,
   sanityPercent,
   classifySanityTier,
   sanityEffects,
   sanityDelta,
+  sanityDeltaForTags,
   isLossOfControl,
   evaluateLossOfControl,
   type SanityTier,
@@ -221,6 +224,52 @@ describe("sanity", () => {
 
     it("decays slowly from neglecting the acting method", () => {
       expect(sanityDelta({ type: "acting-neglect" })).toBe(-ACTING_NEGLECT_DECAY);
+    });
+  });
+
+  describe("sanityDeltaForTags (issue #95)", () => {
+    it("returns 0 for an empty tag list", () => {
+      expect(sanityDeltaForTags([], 9)).toBe(0);
+    });
+
+    it("matches sanityDelta for each flat recovery tag", () => {
+      expect(sanityDeltaForTags(["rest"], 9)).toBe(sanityDelta({ type: "rest" }));
+      expect(sanityDeltaForTags(["human-connection"], 9)).toBe(
+        sanityDelta({ type: "human-connection" }),
+      );
+      expect(sanityDeltaForTags(["routine"], 9)).toBe(sanityDelta({ type: "routine" }));
+    });
+
+    it("resolves ability-use against the player's Sequence", () => {
+      expect(sanityDeltaForTags(["ability-use"], 9)).toBe(
+        sanityDelta({ type: "ability-use", sequenceLevel: 9 }),
+      );
+      const strong = sanityDeltaForTags(["ability-use"], 4);
+      expect(strong).toBe(sanityDelta({ type: "ability-use", sequenceLevel: 4 }));
+      // A stronger Beyonder (lower number) pays more.
+      expect(strong).toBeLessThan(sanityDeltaForTags(["ability-use"], 9));
+    });
+
+    it("models a horror tag as one rung above the player (HORROR_TAG_GAP)", () => {
+      expect(sanityDeltaForTags(["horror-encounter"], 7)).toBe(
+        sanityDelta({
+          type: "horror-encounter",
+          playerSequence: 7,
+          horrorSequence: 7 - HORROR_TAG_GAP,
+        }),
+      );
+    });
+
+    it("sums multiple tags", () => {
+      const total = sanityDeltaForTags(["rest", "routine"], 9);
+      expect(total).toBe(REST_RECOVERY + ROUTINE_RECOVERY);
+    });
+
+    it("exposes exactly the five known tags", () => {
+      expect([...SANITY_EVENT_TAGS].sort()).toEqual(
+        ["ability-use", "horror-encounter", "human-connection", "rest", "routine"].sort(),
+      );
+      expect(HORROR_TAG_GAP).toBe(1);
     });
   });
 

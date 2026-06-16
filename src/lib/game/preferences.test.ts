@@ -11,6 +11,7 @@ describe("preferences", () => {
   describe("DEFAULT_PREFERENCES", () => {
     it("hides the sanity meter and normal contrast by default", () => {
       expect(DEFAULT_PREFERENCES.sanityMeterVisible).toBe(false);
+      expect(DEFAULT_PREFERENCES.digestionMeterVisible).toBe(false);
       expect(DEFAULT_PREFERENCES.highContrast).toBe(false);
       expect(DEFAULT_PREFERENCES.sceneArtEnabled).toBe(false);
     });
@@ -46,17 +47,44 @@ describe("preferences", () => {
         isValidPreferencesShape({ sanityMeterVisible: true, highContrast: true }),
       ).toBe(true);
     });
+
+    it("treats digestionMeterVisible as legacy-optional but type-checked (issue #95)", () => {
+      // Absent on legacy payloads — still valid.
+      expect(isValidPreferencesShape({ sanityMeterVisible: true })).toBe(true);
+      // Present and well-typed — valid.
+      expect(
+        isValidPreferencesShape({
+          sanityMeterVisible: true,
+          digestionMeterVisible: true,
+        }),
+      ).toBe(true);
+      // Present but wrong type — rejected.
+      expect(
+        isValidPreferencesShape({
+          sanityMeterVisible: true,
+          digestionMeterVisible: "x",
+        }),
+      ).toBe(false);
+    });
   });
 
   describe("mergePreferences", () => {
     it("keeps provided booleans and defaults the rest", () => {
       expect(mergePreferences({ sanityMeterVisible: true })).toEqual({
         sanityMeterVisible: true,
+        digestionMeterVisible: false,
         highContrast: false,
         sceneArtEnabled: false,
       });
-      expect(mergePreferences({ highContrast: true, sceneArtEnabled: true })).toEqual({
+      expect(
+        mergePreferences({
+          highContrast: true,
+          sceneArtEnabled: true,
+          digestionMeterVisible: true,
+        }),
+      ).toEqual({
         sanityMeterVisible: false,
+        digestionMeterVisible: true,
         highContrast: true,
         sceneArtEnabled: true,
       });
@@ -76,6 +104,7 @@ describe("preferences", () => {
     it("round-trips preferences", () => {
       const prefs = {
         sanityMeterVisible: true,
+        digestionMeterVisible: true,
         highContrast: true,
         sceneArtEnabled: true,
       };

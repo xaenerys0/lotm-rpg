@@ -146,46 +146,101 @@ describe("isDigestionComplete", () => {
   });
 });
 
+// ─── slowed pacing constants (issue #95) ───────────────────────────
+
+describe("digestion pacing constants (issue #95)", () => {
+  it("slows the max forward progress and lowers the anti-stagnation floor", () => {
+    expect(MAX_PROGRESS_PER_EVAL).toBe(10);
+    expect(MIN_PROGRESS_PER_SESSION).toBe(1);
+  });
+});
+
 // ─── digestionFeedback ─────────────────────────────────────────────
 
-describe("digestionFeedback", () => {
+describe("digestionFeedback — post-discovery (knowsMethod = true)", () => {
   it("describes completion", () => {
     const msg = digestionFeedback(
       "Clown",
       makeDigestion({ progress: 100, complete: true }),
       5,
+      true,
     );
     expect(msg).toContain("fully digested");
     expect(msg).toContain("Clown");
   });
 
   it("describes near-complete forward progress", () => {
-    const msg = digestionFeedback("Clown", makeDigestion({ progress: 80 }), 4);
+    const msg = digestionFeedback("Clown", makeDigestion({ progress: 80 }), 4, true);
     expect(msg).toContain("mask feels almost");
   });
 
   it("describes mid forward progress", () => {
-    const msg = digestionFeedback("Clown", makeDigestion({ progress: 50 }), 4);
+    const msg = digestionFeedback("Clown", makeDigestion({ progress: 50 }), 4, true);
     expect(msg).toContain("mannerisms");
   });
 
   it("describes early forward progress", () => {
-    const msg = digestionFeedback("Clown", makeDigestion({ progress: 10 }), 2);
+    const msg = digestionFeedback("Clown", makeDigestion({ progress: 10 }), 2, true);
     expect(msg).toContain("settles a little deeper");
   });
 
   it("describes reverse progress", () => {
-    const msg = digestionFeedback("Clown", makeDigestion({ progress: 30 }), -4);
+    const msg = digestionFeedback("Clown", makeDigestion({ progress: 30 }), -4, true);
     expect(msg).toContain("resists you");
   });
 
   it("describes no change", () => {
-    const msg = digestionFeedback("Clown", makeDigestion({ progress: 0 }), 0);
+    const msg = digestionFeedback("Clown", makeDigestion({ progress: 0 }), 0, true);
     expect(msg).toContain("does not settle");
   });
 
   it("falls back to a generic role name when empty", () => {
-    const msg = digestionFeedback("", makeDigestion({ progress: 10 }), 2);
+    const msg = digestionFeedback("", makeDigestion({ progress: 10 }), 2, true);
     expect(msg).toContain("Beyonder");
+  });
+});
+
+describe("digestionFeedback — pre-discovery (knowsMethod = false)", () => {
+  const FORBIDDEN = /digest|potion|%/i;
+
+  it("names no mechanic, number, or percent in any direction", () => {
+    const cases: Array<[ReturnType<typeof makeDigestion>, number]> = [
+      [makeDigestion({ progress: 100, complete: true }), 5],
+      [makeDigestion({ progress: 80 }), 4],
+      [makeDigestion({ progress: 30 }), -4],
+      [makeDigestion({ progress: 0 }), 0],
+    ];
+    for (const [state, delta] of cases) {
+      const msg = digestionFeedback("Clown", state, delta, false);
+      expect(msg).not.toMatch(FORBIDDEN);
+      // No role name leak either — the prose is purely internal/diegetic.
+      expect(msg).not.toContain("Clown");
+    }
+  });
+
+  it("does not branch on the progress band (no magnitude leak)", () => {
+    const early = digestionFeedback("Clown", makeDigestion({ progress: 5 }), 4, false);
+    const late = digestionFeedback("Clown", makeDigestion({ progress: 90 }), 4, false);
+    expect(early).toBe(late);
+  });
+
+  it("gives one distinct line per direction, differing from post-discovery", () => {
+    const complete = makeDigestion({ progress: 100, complete: true });
+    const forward = makeDigestion({ progress: 40 });
+    const reverse = makeDigestion({ progress: 40 });
+    const none = makeDigestion({ progress: 40 });
+
+    const preComplete = digestionFeedback("Clown", complete, 5, false);
+    const preForward = digestionFeedback("Clown", forward, 4, false);
+    const preReverse = digestionFeedback("Clown", reverse, -4, false);
+    const preNone = digestionFeedback("Clown", none, 0, false);
+
+    // Four distinct directional lines.
+    expect(new Set([preComplete, preForward, preReverse, preNone]).size).toBe(4);
+    // Each differs from its post-discovery counterpart.
+    expect(preComplete).not.toBe(digestionFeedback("Clown", complete, 5, true));
+    expect(preForward).not.toBe(digestionFeedback("Clown", forward, 4, true));
+    expect(preReverse).not.toBe(digestionFeedback("Clown", reverse, -4, true));
+    expect(preNone).not.toBe(digestionFeedback("Clown", none, 0, true));
   });
 });

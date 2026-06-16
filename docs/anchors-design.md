@@ -320,3 +320,21 @@ mortally killable, who "respond to prayers all over the world."
 - **Attack surface for stories** — `damageAnchor` + `anchorHighRisk` directly
   model canon anchor theft/destabilisation as a setup for a dramatic, escalated
   failure.
+
+## Appendix — deliberately dormant per-turn sanity decay (issue #95)
+
+The sanity/digestion rework in issue #95 introduced a hybrid per-turn sanity
+model (AI event tags scored by the engine + a small AI residual). Two decay
+sources stayed **deliberately dormant** in that pass and are NOT wired into
+normal turn resolution:
+
+- **`anchorPressure(state, seq)`** — the non-positive per-turn sanity pressure an
+  under-anchored Saint+/Angel should feel. It remains defined, tested, and ready,
+  but is not yet folded into `applyResolution`'s sanity accumulation. Wiring it in
+  (Saints+, Seq ≤ 4) is explicitly out of scope and deferred.
+- **`acting-neglect` sanity decay** — neglecting the acting method does NOT drain
+  sanity. Neglect still bites, but only as a **digestion reversal** (contradictory
+  acting in `digestion.ts`), not as a sanity hit.
+
+Both are intentional gaps, kept dormant to keep the issue-#95 change focused;
+they are tracked for a later pass.
