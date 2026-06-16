@@ -1973,6 +1973,22 @@ describe("deserializeSession", () => {
     ];
     expect(deserializeSession(JSON.stringify(modified))).toBeNull();
   });
+
+  it("round-trips a pending engine-turn action and accepts null/absent", () => {
+    const withAction = makeSession({ pendingPlayerAction: "I drink and advance." });
+    expect(deserializeSession(serializeSession(withAction))!.pendingPlayerAction).toBe(
+      "I drink and advance.",
+    );
+    const cleared = JSON.parse(serializeSession(makeSession()));
+    cleared.pendingPlayerAction = null;
+    expect(deserializeSession(JSON.stringify(cleared))).not.toBeNull();
+  });
+
+  it("returns null for a non-string pending engine-turn action", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    modified.pendingPlayerAction = 123;
+    expect(deserializeSession(JSON.stringify(modified))).toBeNull();
+  });
 });
 
 // ─── isValidSessionShape ───────────────────────────────────────────

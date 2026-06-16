@@ -723,13 +723,37 @@ describe("dynamic abilities & artifacts mid-fight", () => {
       .flatMap((p) => p.options)
       .filter((o) => o.artifactItem)
       .map((o) => o.artifactItem!.name);
-    // No artifact offered twice; every offered one consumes the item.
+    // Every carried artifact is offered (one per point), and none offered twice.
     expect(new Set(offered).size).toBe(offered.length);
+    expect(new Set(offered)).toEqual(new Set(["Charm A", "Charm B"]));
     for (const point of points) {
       for (const option of point.options.filter((o) => o.artifactItem)) {
         expect(option.consumesArtifact).toBe(true);
       }
     }
+  });
+
+  it("does not also offer a carried artifact dynamically when it was readied as a sealed-prep artifact", () => {
+    // One physical item must not be spendable twice (sealed slot + dynamic).
+    const charm = makeItem("Sealed Charm");
+    const other = makeItem("Loose Talisman");
+    const encounter = applyPreparation(
+      createEncounter({
+        id: "dyn-sealed",
+        enemy: makeEnemy(),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+        availableArtifacts: [charm, other],
+      }),
+      makePrep({ sealedArtifacts: [charm] }),
+    );
+    const dynamicNames = encounter.decisionPoints
+      .flatMap((p) => p.options)
+      .filter((o) => o.artifactItem)
+      .map((o) => o.artifactItem!.name);
+    expect(dynamicNames).not.toContain("Sealed Charm");
+    expect(dynamicNames).toContain("Loose Talisman");
   });
 
   it("regenerates identical decision points from the same encounter (determinism)", () => {
