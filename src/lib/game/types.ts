@@ -78,6 +78,21 @@ export interface GameSession {
    */
   actingMethodState?: import("./acting-method").ActingMethodState;
   /**
+   * Active hunt quests (advancement/combat streamline). Tracking a Beyonder
+   * Characteristic's creature plays out over several turns before the fight;
+   * more than one can run at once. Absent on saves that have never started a
+   * hunt; strictly validated when present, exactly like `actingMethodState`.
+   */
+  hunts?: import("./hunt").HuntState[];
+  /**
+   * Transient player-action text for an engine-decided turn (advancement /
+   * apotheosis) that is routed straight into `consequences` via
+   * `ENGINE_RESOLUTION`. Carried so the turn record reads as what the player
+   * did (e.g. "I drank the potion and advanced") rather than a bare "Continue",
+   * keeping the next AI prompt aware of it. Cleared on `APPLY_CONSEQUENCES`.
+   */
+  pendingPlayerAction?: string | null;
+  /**
    * Permadeath marker (issue #12). Set once, never cleared: the session is
    * preserved as a historical record (inventory, memory, journal stay
    * readable) but play cannot continue.
@@ -98,6 +113,7 @@ export type GameLoopAction =
   | { type: "SITUATION_READY"; narrative: string; choices: Choice[] }
   | { type: "SELECT_CHOICE"; choiceId: string }
   | { type: "RESOLUTION_READY"; result: ValidatedAIResponse }
+  | { type: "ENGINE_RESOLUTION"; result: ValidatedAIResponse; playerAction: string }
   | { type: "APPLY_CONSEQUENCES" }
   | { type: "ERROR"; message: string; errorCode?: AIErrorCode | "CONFIG_MISSING" }
   | { type: "RETRY" };
@@ -115,7 +131,10 @@ export interface GameSessionSummary {
 export const VALID_TRANSITIONS: Record<GamePhase, GamePhase[]> = {
   idle: ["situation", "error"],
   situation: ["choices", "error"],
-  choices: ["resolution", "error"],
+  // `consequences` reachable directly for an engine-decided turn (advancement /
+  // apotheosis) via ENGINE_RESOLUTION — the outcome is already committed, so it
+  // skips the AI resolution-generation step and renders inline like any turn.
+  choices: ["resolution", "consequences", "error"],
   resolution: ["consequences", "error"],
   consequences: ["situation", "error"],
   error: ["situation", "idle"],

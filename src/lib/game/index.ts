@@ -19,7 +19,25 @@ export {
   actingMethodDiscoveryFact,
   applyDigestion,
   applyResolution,
+  narrationOnly,
 } from "./world-state";
+
+export {
+  advanceActiveHunts,
+  advanceHunt,
+  clearHunt,
+  findHunt,
+  huntQuestLabel,
+  huntTrackingTurns,
+  isHuntReady,
+  isValidHuntStateShape,
+  isValidHuntsShape,
+  startHunt,
+  HUNT_BASE_TRACKING_TURNS,
+  type HuntStartOutcome,
+  type HuntStartResult,
+  type HuntState,
+} from "./hunt";
 
 export {
   DIGESTION_MIN,
@@ -409,6 +427,7 @@ export {
   computeBaseAdvantage,
   generateDecisionPoints,
   deriveEncounterEnemy,
+  enemyIntel,
   createEncounter,
   applyPreparation,
   chooseOption,
@@ -419,7 +438,10 @@ export {
   applyCombatResult,
   tickInjuries,
   isValidEncounterShape,
+  MAX_DYNAMIC_ABILITY_OPTIONS,
+  MAX_DYNAMIC_ARTIFACT_OPTIONS_PER_POINT,
   type CreateEncounterOptions,
+  type EnemyIntel,
 } from "./combat";
 
 export type {

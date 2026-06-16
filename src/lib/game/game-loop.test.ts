@@ -8,6 +8,7 @@ import {
   discoveredItemLeadFact,
   applyDigestion,
   applyResolution,
+  narrationOnly,
 } from "./world-state";
 import { createDigestionState } from "./digestion";
 import { createActingMethodState, type ActingMethodState } from "./acting-method";
@@ -134,8 +135,8 @@ describe("VALID_TRANSITIONS", () => {
     expect(VALID_TRANSITIONS.situation).toEqual(["choices", "error"]);
   });
 
-  it("choices can transition to resolution or error", () => {
-    expect(VALID_TRANSITIONS.choices).toEqual(["resolution", "error"]);
+  it("choices can transition to resolution, consequences, or error", () => {
+    expect(VALID_TRANSITIONS.choices).toEqual(["resolution", "consequences", "error"]);
   });
 
   it("resolution can transition to consequences or error", () => {
@@ -359,12 +360,46 @@ describe("transition", () => {
       expect(next.updatedAt).toBe(NOW);
     });
 
-    it("throws from choices phase", () => {
-      const session = makeSession({ phase: "choices" });
+    it("throws from situation phase", () => {
+      const session = makeSession({ phase: "situation" });
       expect(() =>
         transition(
           session,
           { type: "RESOLUTION_READY", result: makeValidatedResponse() },
+          NOW,
+        ),
+      ).toThrow(InvalidTransitionError);
+    });
+  });
+
+  describe("ENGINE_RESOLUTION", () => {
+    it("carries an engine-decided narration straight from choices into consequences", () => {
+      const result = makeValidatedResponse();
+      const session = makeSession({ phase: "choices", selectedChoiceId: "c1" });
+      const next = transition(
+        session,
+        { type: "ENGINE_RESOLUTION", result, playerAction: "I drink and advance." },
+        NOW,
+      );
+
+      expect(next.phase).toBe("consequences");
+      expect(next.lastResolution).toEqual(result);
+      expect(next.currentNarrative).toBe(result.response.narrative);
+      expect(next.selectedChoiceId).toBeNull();
+      expect(next.pendingPlayerAction).toBe("I drink and advance.");
+      expect(next.updatedAt).toBe(NOW);
+    });
+
+    it("throws from situation phase", () => {
+      const session = makeSession({ phase: "situation" });
+      expect(() =>
+        transition(
+          session,
+          {
+            type: "ENGINE_RESOLUTION",
+            result: makeValidatedResponse(),
+            playerAction: "x",
+          },
           NOW,
         ),
       ).toThrow(InvalidTransitionError);
@@ -378,6 +413,7 @@ describe("transition", () => {
         turnCount: 3,
         lastResolution: makeValidatedResponse(),
         activePillar: "combat",
+        pendingPlayerAction: "I drink and advance.",
       });
       const next = transition(session, { type: "APPLY_CONSEQUENCES" }, NOW);
 
@@ -388,6 +424,7 @@ describe("transition", () => {
       expect(next.selectedChoiceId).toBeNull();
       expect(next.lastResolution).toBeNull();
       expect(next.activePillar).toBeNull();
+      expect(next.pendingPlayerAction).toBeNull();
       expect(next.updatedAt).toBe(NOW);
     });
 
@@ -1353,6 +1390,36 @@ describe("applyResolution", () => {
   });
 });
 
+// ─── narrationOnly ─────────────────────────────────────────────────
+
+describe("narrationOnly", () => {
+  it("keeps only the narrative (and a journal flag), stripping mechanical fields", () => {
+    const stripped = narrationOnly({
+      narrative: "The role sinks into your bones.",
+      journalEntry: { summary: "Advanced.", eventType: "advancement" },
+      sanityImpact: -5,
+      sanityEventTags: ["horror-encounter"],
+      actingEvaluation: { alignment: 1, reasoning: "x" },
+      itemsDiscovered: [{ name: "Loot", description: "", category: "mundane" }],
+      fundsDiscovered: 999,
+      worldStateChanges: [
+        { field: "location", oldValue: "Here", newValue: "Elsewhere", reason: "moved" },
+      ],
+      proposedSelfChange: { field: "name", value: "X" },
+    });
+    expect(stripped).toEqual({
+      narrative: "The role sinks into your bones.",
+      journalEntry: { summary: "Advanced.", eventType: "advancement" },
+    });
+  });
+
+  it("omits the journal flag when the response carries none", () => {
+    expect(narrationOnly({ narrative: "Just prose." })).toEqual({
+      narrative: "Just prose.",
+    });
+  });
+});
+
 // ─── applyDigestion ────────────────────────────────────────────────
 
 describe("applyDigestion", () => {
@@ -1873,6 +1940,37 @@ describe("deserializeSession", () => {
   it("returns null for a malformed acting-method state", () => {
     const modified = JSON.parse(serializeSession(makeSession()));
     modified.actingMethodState = { knowsMethod: "yes", alignedStreak: -1 };
+    expect(deserializeSession(JSON.stringify(modified))).toBeNull();
+  });
+
+  it("round-trips active hunt quests", () => {
+    const session = makeSession({
+      hunts: [
+        {
+          targetItemName: "Spectator Characteristic",
+          targetSeq: 6,
+          turnsRemaining: 2,
+          totalTurns: 3,
+        },
+      ],
+    });
+    const restored = deserializeSession(serializeSession(session));
+    expect(restored!.hunts).toEqual(session.hunts);
+  });
+
+  it("accepts a legacy save with no hunts", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    delete modified.hunts;
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored).not.toBeNull();
+    expect(restored!.hunts).toBeUndefined();
+  });
+
+  it("returns null for a malformed hunts list", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    modified.hunts = [
+      { targetItemName: "", targetSeq: 6, turnsRemaining: 1, totalTurns: 2 },
+    ];
     expect(deserializeSession(JSON.stringify(modified))).toBeNull();
   });
 });

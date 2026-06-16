@@ -13,6 +13,7 @@ import type { GameSession, GameplayPillar } from "@/lib/game";
 import {
   transition,
   applyResolution,
+  narrationOnly,
   partitionDiscoveredItems,
   discoveredItemLeadFact,
   applyDigestion,
@@ -20,6 +21,7 @@ import {
   createEncounter,
   deriveEncounterEnemy,
   isValidEncounterShape,
+  isReagentCategory,
   digestionFeedback,
   classifySanityTier,
   isLossOfControl,
@@ -73,6 +75,13 @@ import {
   potionPreparationPlan,
   purchasePotionItem,
   type PotionItemStatus,
+  startHunt,
+  clearHunt,
+  advanceActiveHunts,
+  findHunt,
+  isHuntReady,
+  huntQuestLabel,
+  type HuntState,
   deserializeArtifacts,
   mintArtifact,
   serializeArtifacts,
@@ -115,6 +124,8 @@ import type {
   Choice,
   InstructionType,
   AIErrorCode,
+  ValidatedAIResponse,
+  AIResponse,
 } from "@/lib/ai";
 import {
   generate,
@@ -550,11 +561,6 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // Apotheosis (issue #30): the engine — not the AI — decides the ascent.
   // Success writes Sequence 0 and the tease; failure at this height is
   // absolute and routes through the same permadeath machinery.
-  const [ascension, setAscension] = useState<{
-    honorific: string;
-    tease: string;
-  } | null>(null);
-
   const handleApotheosis = useCallback(async () => {
     // The attempt is irrevocable and rolls exactly once — take the synchronous
     // lock before the roll so a rapid second click cannot re-roll it.
@@ -570,8 +576,20 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           arc: "Sequence 0",
         }),
       ]);
-      setAscension({ honorific: result.honorific, tease: result.tease });
-      updateSession(result.session);
+      // Route the ascent through the normal turn loop (like advancement) so the
+      // tease becomes the current scene and a memory turn record — the narrator
+      // continues as a True God with full awareness, no side-channel banner.
+      const resolution: ValidatedAIResponse = {
+        response: { narrative: result.tease },
+        validation: { valid: true, violations: [] },
+      };
+      updateSession(
+        transition(result.session, {
+          type: "ENGINE_RESOLUTION",
+          result: resolution,
+          playerAction: `I seize the throne and ascend to Sequence 0, becoming ${result.honorific}, a True God of the pathway.`,
+        }),
+      );
       endingInFlight.current = false;
       return;
     }
@@ -590,11 +608,6 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // Sequence advancement (Seq 9 → 2): the engine — not the AI — decides whether
   // the climb holds. Success rewrites `sequenceLevel`; a loss of control routes
   // through the same setback / permadeath machinery as any other failure.
-  const [advancement, setAdvancement] = useState<{
-    sequenceLevel: number;
-    roleName: string;
-    scene: string;
-  } | null>(null);
   const [advancing, setAdvancing] = useState(false);
   // Synchronous re-entry lock — `advancing` is async React state, so a rapid
   // second click can pass the check before it commits. The ref is set before the
@@ -621,6 +634,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         let scene = `You drink the Sequence ${result.newSequenceLevel} potion${
           result.ritual ? ` and complete the rite — ${result.ritual.description}` : ""
         }. The role sinks into your bones until it is indistinguishable from you: you are a ${result.roleName} now.`;
+        let aiResponse: AIResponse | null = null;
         if (providerConfig) {
           try {
             const {
@@ -653,6 +667,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               actingRequirements: actingReqs,
             });
             if (res.response.narrative) scene = res.response.narrative;
+            aiResponse = res.response;
             recordUsage(res.usage);
           } catch {
             // Deterministic scene already set.
@@ -666,12 +681,27 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             arc: `Sequence ${result.newSequenceLevel}`,
           }),
         ]);
-        setAdvancement({
-          sequenceLevel: result.newSequenceLevel,
-          roleName: result.roleName,
-          scene,
-        });
-        updateSession(advanced);
+        // Route the engine-decided climb through the normal turn loop: the
+        // narration becomes the current scene AND a memory turn record (so the
+        // narrator knows on the next turn it happened), with the AI response
+        // stripped to narration so it cannot re-apply the effects the engine
+        // already committed. No more side-channel banner.
+        const resolution: ValidatedAIResponse = {
+          response: aiResponse
+            ? { ...narrationOnly(aiResponse), narrative: scene }
+            : { narrative: scene },
+          validation: { valid: true, violations: [] },
+        };
+        const playerAction = `I drink the Sequence ${result.newSequenceLevel} potion and undergo the advancement to ${result.roleName}${
+          result.ritual ? `, performing the rite: ${result.ritual.description}` : ""
+        }. I have fully digested the previous potion through the Acting Method.`;
+        updateSession(
+          transition(advanced, {
+            type: "ENGINE_RESOLUTION",
+            result: resolution,
+            playerAction,
+          }),
+        );
         setAdvancing(false);
         return;
       }
@@ -711,13 +741,22 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     } catch {
       // Storage unavailable
     }
-    // Clear any lingering ascension banner so it cannot bleed into a new run.
-    setAscension(null);
   }, []);
 
   const startCombat = useCallback(
     (ambush: boolean, huntTarget?: string) => {
       if (!session) return;
+      // The player's actual abilities and carried artifacts ride onto the
+      // encounter so they can be invoked dynamically mid-fight (not only readied
+      // in preparation). Reagents are excluded — a potion ingredient is not a
+      // combat artifact.
+      const { abilities } = sequenceAbilities(
+        session.gameState.pathwayId,
+        session.gameState.sequenceLevel,
+      );
+      const availableArtifacts = session.gameState.inventory.filter(
+        (item) => !isReagentCategory(item.category),
+      );
       const encounter = createEncounter({
         id: crypto.randomUUID(),
         enemy: deriveEncounterEnemy(session.gameState, ambush),
@@ -725,6 +764,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         playerSequence: session.gameState.sequenceLevel,
         ambush,
         injuries: session.gameState.injuries ?? [],
+        availableAbilities: abilities,
+        availableArtifacts,
         huntTarget,
       });
       setCombat(encounter);
@@ -771,6 +812,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             }),
           ]);
         }
+        // The quarry is down — retire the tracking quest (its label drops from
+        // activeQuests). On a loss/escape the hunt stays ready to re-engage.
+        next = clearHunt(next, huntTarget);
       }
 
       updateSession(next);
@@ -813,15 +857,53 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     [session, updateSession],
   );
 
-  // Hunting a Beyonder Characteristic launches a combat encounter; the kill is
-  // resolved in `handleCombatResult`, which grants the item on victory.
+  // Hunting a Beyonder Characteristic now begins a tracked, multi-turn QUEST to
+  // find the creature (longer/harder the deeper the rung). The search plays out
+  // over normal turns; when the quarry is cornered the player engages it through
+  // the unified combat system (`handleEngageHunt`), and victory grants the
+  // Characteristic in `handleCombatResult` exactly as before.
   const handleHuntItem = useCallback(
+    (itemName: string) => {
+      if (!session) return;
+      const result = startHunt(session, itemName);
+      if (result.outcome === "started" && result.session) {
+        appendJournalEntries(session.id, [
+          buildJournalEntry(result.session.gameState, result.session.turnCount, {
+            eventType: "discovery",
+            summary: `Began the hunt for ${itemName}.`,
+            narrative: `You set out to track down the creature that carries ${itemName} — the hunt for the next potion's Characteristic has begun.`,
+            arc: `Sequence ${result.session.gameState.sequenceLevel}`,
+          }),
+        ]);
+        updateSession(result.session);
+        setPrepNotice(null);
+      } else if (result.outcome === "already-hunting") {
+        setPrepNotice(`You are already tracking ${itemName}.`);
+      } else {
+        setPrepNotice(`You cannot hunt ${itemName} just now.`);
+      }
+    },
+    [session, updateSession],
+  );
+
+  // The quarry is cornered — engage it through the unified combat system. The
+  // hunt rides on `combat.huntTarget`, so victory delivers the Characteristic.
+  const handleEngageHunt = useCallback(
     (itemName: string) => {
       if (!session) return;
       setPrepNotice(null);
       startCombat(false, itemName);
     },
     [session, startCombat],
+  );
+
+  // Give up tracking a Characteristic: drops the hunt and its quest label.
+  const handleAbandonHunt = useCallback(
+    (itemName: string) => {
+      if (!session) return;
+      updateSession(clearHunt(session, itemName));
+    },
+    [session, updateSession],
   );
 
   const dispatchMissingConfig = useCallback(
@@ -1105,7 +1187,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     const selectedChoice = session.currentChoices?.find(
       (c) => c.id === session.selectedChoiceId,
     );
-    const playerAction = selectedChoice?.text ?? "Continue";
+    // An engine-decided turn (advancement / apotheosis) carries its own action
+    // text so the turn record reads as what the player did, keeping the next AI
+    // prompt aware of it.
+    const isEngineTurn = session.pendingPlayerAction != null;
+    const playerAction =
+      session.pendingPlayerAction ?? selectedChoice?.text ?? "Continue";
 
     const resolution = session.lastResolution;
     if (resolution) {
@@ -1175,18 +1262,22 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       }
 
       // Journal capture (issue #11): the AI's flag plus deterministic
-      // detections from the state delta, recorded before the phase advances.
-      const seq = getSequence(gameState.pathwayId, gameState.sequenceLevel);
-      appendJournalEntries(
-        session.id,
-        deriveJournalEntries({
-          prevState: session.gameState,
-          nextState: gameState,
-          response: resolution.response,
-          turnNumber: session.turnCount,
-          arc: `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
-        }),
-      );
+      // detections from the state delta, recorded before the phase advances. An
+      // engine turn already wrote its own explicit entry (and its before/after
+      // state are identical, so derivation would find nothing) — skip it.
+      if (!isEngineTurn) {
+        const seq = getSequence(gameState.pathwayId, gameState.sequenceLevel);
+        appendJournalEntries(
+          session.id,
+          deriveJournalEntries({
+            prevState: session.gameState,
+            nextState: gameState,
+            response: resolution.response,
+            turnNumber: session.turnCount,
+            arc: `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
+          }),
+        );
+      }
       if (exposureNarrative) {
         appendJournalEntries(session.id, [
           buildJournalEntry(gameState, session.turnCount, {
@@ -1204,7 +1295,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         ...(identityState ? { identityState } : {}),
         ...(profileState ? { profileState } : {}),
       };
-      const next = transition(updated, { type: "APPLY_CONSEQUENCES" });
+      // A turn of play closes the distance on every active hunt (and keeps the
+      // AI-visible quest labels in sync).
+      const tracked = advanceActiveHunts(updated);
+      const next = transition(tracked, { type: "APPLY_CONSEQUENCES" });
       updateSession(next);
     }
   }, [session, updateSession]);
@@ -1345,25 +1439,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           </div>
         )}
 
-        {/* Apotheosis achieved (issue #30) — the glimpse above the sequences. */}
-        {ascension && (
-          <AscentBanner
-            title={`You are ${ascension.honorific} now. Sequence 0. A True God.`}
-            body={ascension.tease}
-            dismissLabel="Take the throne"
-            onDismiss={() => setAscension(null)}
-          />
-        )}
-
-        {/* Advancement succeeded — the climb to the next Sequence held. */}
-        {advancement && (
-          <AscentBanner
-            title={`You are a ${advancement.roleName} now — Sequence ${advancement.sequenceLevel}.`}
-            body={advancement.scene}
-            dismissLabel="Take your new measure"
-            onDismiss={() => setAdvancement(null)}
-          />
-        )}
+        {/* Advancement and apotheosis now flow through the normal turn loop
+            (rendered inline in the consequences phase + recorded to memory), so
+            there is no separate success banner to surface here. */}
 
         {/* Loss of control — sanity has bottomed out (issue #12). */}
         {lostControl && !session.ended && (
@@ -1407,6 +1485,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   onSelect={handleSelectChoice}
                   onFreeText={handleFreeText}
                   freeTextNotice={freeTextNotice}
+                />
+                <QuestLogPanel
+                  session={session}
+                  busy={facingFate}
+                  onEngageHunt={handleEngageHunt}
+                  onAbandonHunt={handleAbandonHunt}
                 />
                 <CombatLauncher onStart={startCombat} />
                 {session.gameState.digestion?.complete === true &&
@@ -2127,38 +2211,140 @@ function CombatLauncher({ onStart }: { onStart: (ambush: boolean) => void }) {
   );
 }
 
-// A success banner shared by the apotheosis ascent and a held advancement —
-// same occult-glow card, different copy.
-function AscentBanner({
-  title,
-  body,
-  dismissLabel,
-  onDismiss,
+// The quest log: every quest the player is tracking in one place — the
+// AI-narrated story quests (`activeQuests`) and the structured hunt quests with
+// their tracking progress. Renders nothing when there is nothing to track.
+function QuestLogPanel({
+  session,
+  busy,
+  onEngageHunt,
+  onAbandonHunt,
 }: {
-  title: string;
-  body: string;
-  dismissLabel: string;
-  onDismiss: () => void;
+  session: GameSession;
+  busy: boolean;
+  onEngageHunt: (itemName: string) => void;
+  onAbandonHunt: (itemName: string) => void;
 }) {
+  const hunts = session.hunts ?? [];
+  const huntLabels = new Set(hunts.map(huntQuestLabel));
+  // Story quests are shown plainly; hunts get their own progress rows, so their
+  // labels are filtered out of the general list to avoid a duplicate entry.
+  const generalQuests = session.gameState.activeQuests.filter(
+    (quest) => !huntLabels.has(quest),
+  );
+
+  if (hunts.length === 0 && generalQuests.length === 0) return null;
+
   return (
-    <div
-      role="status"
-      className="mb-6 rounded-md border border-occult/40 bg-occult/[0.08] p-5 animate-fade-in"
+    <section
+      aria-labelledby="quest-log-heading"
+      className="mt-8 rounded-lg border border-border/50 bg-surface/30 p-5"
     >
-      <p className="gaslit font-serif text-base font-semibold text-occult-bright">
-        {title}
-      </p>
-      <p className="mt-2 font-serif text-sm italic leading-relaxed text-foreground/85">
-        {body}
-      </p>
-      <button
-        type="button"
-        onClick={onDismiss}
-        className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-occult-bright hover:underline"
+      <h2
+        id="quest-log-heading"
+        className="font-serif text-base font-semibold text-foreground"
       >
-        {dismissLabel}
-      </button>
-    </div>
+        Quest Log
+      </h2>
+
+      {generalQuests.length > 0 && (
+        <ul className="mt-3 space-y-1.5">
+          {generalQuests.map((quest) => (
+            <li key={quest} className="flex items-start gap-2 text-sm text-foreground/85">
+              <span aria-hidden="true" className="text-amber">
+                ◆
+              </span>
+              <span>{quest}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {hunts.length > 0 && (
+        <ul className="mt-4 space-y-3">
+          {hunts.map((hunt) => (
+            <HuntQuestRow
+              key={hunt.targetItemName}
+              hunt={hunt}
+              busy={busy}
+              onEngage={onEngageHunt}
+              onAbandon={onAbandonHunt}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+// One hunt in the quest log: the quarry, a tracking-progress bar, and — once the
+// creature is cornered — the button to engage it through the unified combat
+// system. An abandon action drops the hunt entirely.
+function HuntQuestRow({
+  hunt,
+  busy,
+  onEngage,
+  onAbandon,
+}: {
+  hunt: HuntState;
+  busy: boolean;
+  onEngage: (itemName: string) => void;
+  onAbandon: (itemName: string) => void;
+}) {
+  const ready = isHuntReady(hunt);
+  const done = hunt.totalTurns - hunt.turnsRemaining;
+  const pct = hunt.totalTurns > 0 ? Math.round((done / hunt.totalTurns) * 100) : 100;
+
+  return (
+    <li className="rounded-md border border-crimson/30 bg-crimson/[0.04] p-3">
+      <p className="text-sm font-medium text-foreground">Hunt: {hunt.targetItemName}</p>
+      <div
+        role="progressbar"
+        aria-label={`Hunt progress for ${hunt.targetItemName}`}
+        aria-valuemin={0}
+        aria-valuemax={hunt.totalTurns}
+        aria-valuenow={done}
+        aria-valuetext={
+          ready
+            ? "The quarry is cornered"
+            : `Tracking — ${done} of ${hunt.totalTurns} turns`
+        }
+        className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface"
+      >
+        <div
+          aria-hidden="true"
+          className="h-full bg-crimson"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <p className="mt-1 text-xs text-muted">
+        {ready
+          ? "You have cornered the quarry — engage it when you are ready."
+          : `Closing in… ${hunt.turnsRemaining} turn${
+              hunt.turnsRemaining === 1 ? "" : "s"
+            } of tracking remain.`}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        {ready && (
+          <button
+            type="button"
+            onClick={() => onEngage(hunt.targetItemName)}
+            disabled={busy}
+            className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-crimson/60 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Engage the quarry
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => onAbandon(hunt.targetItemName)}
+          disabled={busy}
+          className="min-h-[24px] rounded px-2 py-1 text-xs text-muted hover:text-foreground/80"
+        >
+          Abandon the hunt
+        </button>
+      </div>
+    </li>
   );
 }
 
@@ -2349,16 +2535,21 @@ function PotionPreparationPanel({
                     Buy ({status.cost} pence)
                   </button>
                 )}
-                {status.methods.includes("hunt") && (
-                  <button
-                    type="button"
-                    onClick={() => onHunt(status.item.name)}
-                    disabled={busy}
-                    className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-crimson/60 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Hunt the Characteristic
-                  </button>
-                )}
+                {status.methods.includes("hunt") &&
+                  (findHunt(session, status.item.name) ? (
+                    <span className="text-xs text-muted">
+                      Hunt underway — see the Quest Log
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => onHunt(status.item.name)}
+                      disabled={busy}
+                      className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-crimson/60 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Begin the hunt
+                    </button>
+                  ))}
               </span>
             )}
           </li>
