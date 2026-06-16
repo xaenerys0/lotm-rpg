@@ -73,6 +73,24 @@ export function transition(
       };
     }
 
+    case "ENGINE_RESOLUTION": {
+      // An engine-decided turn (advancement / apotheosis): the engine has
+      // already committed the outcome onto `session.gameState`, so this carries
+      // the narration-only AI response straight into `consequences`, bypassing
+      // the AI resolution-generation step. The narration becomes the current
+      // narrative and a memory turn record via the normal `handleContinue`.
+      assertTransition(session.phase, "consequences");
+      return {
+        ...session,
+        phase: "consequences",
+        lastResolution: action.result,
+        currentNarrative: action.result.response.narrative,
+        selectedChoiceId: null,
+        pendingPlayerAction: action.playerAction,
+        updatedAt: now,
+      };
+    }
+
     case "APPLY_CONSEQUENCES": {
       if (session.phase !== "consequences") {
         throw new InvalidTransitionError(session.phase, "situation");
@@ -86,6 +104,7 @@ export function transition(
         selectedChoiceId: null,
         lastResolution: null,
         activePillar: null,
+        pendingPlayerAction: null,
         updatedAt: now,
       };
     }

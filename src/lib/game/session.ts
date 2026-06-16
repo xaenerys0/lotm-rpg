@@ -8,6 +8,7 @@ import {
 import { isValidActingMethodStateShape } from "./acting-method";
 import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
+import { isValidHuntsShape } from "./hunt";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
 import { isValidSocietyShape, migrateSocietyState, type SocietyState } from "./society";
@@ -272,6 +273,12 @@ export function isValidSessionShape(obj: unknown): boolean {
     s.actingMethodState !== undefined &&
     !isValidActingMethodStateShape(s.actingMethodState)
   ) {
+    return false;
+  }
+
+  // Hunt quests are optional but strict when present — they ride the deserialize
+  // `...s` spread (no seeding); absent simply means no active hunts.
+  if (s.hunts !== undefined && !isValidHuntsShape(s.hunts)) {
     return false;
   }
 

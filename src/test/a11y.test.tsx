@@ -135,6 +135,36 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="choices-1" />);
   });
 
+  it("quest log (general quests + hunt tracking) has no violations", async () => {
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-q", "Klein"),
+      activeQuests: ["Find the missing sailor"],
+    };
+    const session = {
+      ...createSession(gameState, "quests-1", 1000),
+      phase: "choices" as const,
+      currentNarrative: "Rumours of a fled creature drift through the harbour.",
+      currentChoices: [{ id: "c1", text: "Ask around", type: "investigation" as const }],
+      hunts: [
+        // One still tracking, one cornered (shows the Engage button + progressbar).
+        {
+          targetItemName: "Spectator Characteristic",
+          targetSeq: 6,
+          turnsRemaining: 2,
+          totalTurns: 3,
+        },
+        {
+          targetItemName: "Marauder Characteristic",
+          targetSeq: 7,
+          turnsRemaining: 0,
+          totalTurns: 2,
+        },
+      ],
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "quests-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="quests-1" />);
+  });
+
   it("apotheosis panel (Sequence 1 choices phase) has no violations", async () => {
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-a", "Klein"),
@@ -220,6 +250,34 @@ describe("accessibility — combat", () => {
         randomFactor: 0.5,
       }),
       emptyPreparation(),
+    );
+    await expectNoAxeViolations(view(prepared));
+  });
+
+  it("enemy dossier at thorough intelligence (full reveal) has no violations", async () => {
+    const prepared = applyPreparation(
+      createEncounter({
+        id: "a11y-combat-intel",
+        enemy: {
+          name: "The Pale Visitor",
+          description: "A figure wrapped in fog.",
+          sequenceLevel: 7,
+          isBeyonder: true,
+          pathwayId: 4,
+          knownAbilities: ["Command the spirits", "Walk the boundary"],
+        },
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+        availableAbilities: abilities,
+      }),
+      {
+        intelligence: "thorough",
+        ritualMaterials: [],
+        sealedArtifacts: [],
+        readiedAbilities: [],
+        terrain: "none",
+      },
     );
     await expectNoAxeViolations(view(prepared));
   });

@@ -90,6 +90,17 @@ export interface DecisionOption {
   modifier: number;
   /** True if choosing this consumes a sealed artifact (lost after the fight). */
   consumesArtifact?: boolean;
+  /**
+   * For a dynamic ability option: the concrete learned ability invoked in the
+   * moment. Lets the player wield their actual abilities mid-fight rather than
+   * only the ones readied during preparation.
+   */
+  abilityName?: string;
+  /**
+   * For a dynamic artifact option: the concrete carried artifact invoked in the
+   * moment (pairs with `consumesArtifact`). Removed from inventory on use.
+   */
+  artifactItem?: Item;
 }
 
 /** A mid-fight decision the player resolves. */
@@ -160,6 +171,18 @@ export interface CombatEncounter {
   accumulatedModifier: number;
   outcome: CombatOutcome | null;
   result: CombatResult | null;
+  /**
+   * The player's learned abilities at encounter start, surfaced as dynamic
+   * in-the-moment options at each decision point. Captured on the encounter (not
+   * looked up live) so a serialized fight regenerates identical decision points.
+   */
+  availableAbilities?: string[];
+  /**
+   * The player's carried artifacts at encounter start (inventory minus
+   * advancement reagents), offered as dynamic mid-fight options that consume the
+   * item when used. Captured on the encounter for the same determinism reason.
+   */
+  availableArtifacts?: Item[];
   /**
    * Potion-preparation hunt objective (issue #84): the name of the Beyonder
    * Characteristic this fight is hunting for. Set when the encounter is launched

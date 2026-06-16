@@ -1,4 +1,5 @@
 import type { GameState, ValidatedAIResponse, MemoryState, SessionFact } from "@/lib/ai";
+import type { AIResponse } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
 import type { ActingEvaluation, StateChange } from "@/lib/ai";
 import { addSessionFact, addTurn, buildTurnRecord } from "@/lib/ai";
@@ -69,6 +70,23 @@ export function actingMethodDiscoveryFact(
         ? "In fully assimilating the potion, came to understand what made it possible — living the role of one's Sequence. The Acting Method."
         : "Came to understand, through long practice, that staying true to the role of one's Sequence is what quietly settles the potion within — the Acting Method.";
   return { type: "event", description, turnNumber };
+}
+
+/**
+ * Strip an AI response down to narration (and an optional journal flag) for an
+ * engine-decided turn (advancement / apotheosis). The engine has already
+ * committed every mechanical effect — sequence change, ingredient consumption,
+ * sanity drain, re-seeded digestion — so feeding the full response through
+ * `applyResolution` would double-apply sanity/digestion/items/world changes.
+ * Keeping only the narrative lets the outcome flow through the normal turn loop
+ * (becoming `currentNarrative` and a memory turn record so the next prompt knows
+ * it happened) without the AI re-deciding anything. Pure.
+ */
+export function narrationOnly(response: AIResponse): AIResponse {
+  return {
+    narrative: response.narrative,
+    ...(response.journalEntry ? { journalEntry: response.journalEntry } : {}),
+  };
 }
 
 export function applyWorldStateChanges(

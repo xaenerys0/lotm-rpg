@@ -5,6 +5,7 @@ import {
   applyPreparation,
   chooseOption,
   emptyPreparation,
+  enemyIntel,
   isExchangeComplete,
   resolveEncounter,
   type CombatEncounter,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/game";
 import { generate } from "@/lib/ai";
 import type { GameState, LoreContext, ProviderConfig } from "@/lib/ai";
+import { getPathway, getSequence } from "@/lib/rules";
 import type { Item } from "@/lib/types/rules";
 
 const INTELLIGENCE_OPTIONS: { value: IntelligenceLevel; label: string }[] = [
@@ -135,9 +137,8 @@ export function CombatEncounterView({
       >
         {encounter.ambush ? "Ambush!" : "Confrontation"}
       </h2>
-      <p className="mb-6 text-center text-sm text-muted">
-        You face <span className="text-foreground/80">{encounter.enemy.name}</span>.
-      </p>
+
+      <EnemyPanel encounter={encounter} />
 
       {encounter.phase === "preparation" && (
         <PreparationForm
@@ -167,6 +168,71 @@ export function CombatEncounterView({
         />
       )}
     </section>
+  );
+}
+
+// ─── Enemy ───────────────────────────────────────────────────────────
+
+// The opponent dossier: name + description always, plus whatever the player's
+// intelligence level has revealed (rough strength, pathway, exact sequence and
+// known abilities). All gating lives in the pure `enemyIntel`; this only formats.
+function EnemyPanel({ encounter }: { encounter: CombatEncounter }) {
+  const intel = enemyIntel(
+    encounter.enemy,
+    encounter.preparation?.intelligence ?? "none",
+    encounter.playerSequence,
+  );
+  const pathwayName =
+    intel.pathwayId !== null ? (getPathway(intel.pathwayId)?.name ?? null) : null;
+  const roleName =
+    intel.pathwayId !== null && intel.sequenceLevel !== null
+      ? (getSequence(intel.pathwayId, intel.sequenceLevel)?.name ?? null)
+      : null;
+
+  return (
+    <div className="mx-auto mb-6 max-w-md rounded-md border border-crimson/30 bg-crimson/[0.04] px-5 py-4">
+      <p className="text-center font-serif text-base text-foreground">{intel.name}</p>
+      {intel.description && (
+        <p className="mt-1 text-center text-sm text-muted">{intel.description}</p>
+      )}
+      <dl className="mt-3 space-y-1 text-sm">
+        {intel.strength && (
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted">Strength</dt>
+            <dd className="text-foreground/85">
+              {roleName
+                ? `${roleName} — ${intel.strength}`
+                : intel.sequenceLevel !== null
+                  ? `Sequence ${intel.sequenceLevel} — ${intel.strength}`
+                  : intel.strength}
+            </dd>
+          </div>
+        )}
+        {pathwayName && (
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted">Pathway</dt>
+            <dd className="text-foreground/85">{pathwayName}</dd>
+          </div>
+        )}
+        {intel.knownAbilities.length > 0 && (
+          <div>
+            <dt className="text-muted">Known abilities</dt>
+            <dd>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-foreground/85">
+                {intel.knownAbilities.map((ability) => (
+                  <li key={ability}>{ability}</li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        )}
+      </dl>
+      {intel.strength === null && (
+        <p className="mt-2 text-center text-xs text-muted">
+          You know little of this foe — scout them first to learn their measure.
+        </p>
+      )}
+    </div>
   );
 }
 

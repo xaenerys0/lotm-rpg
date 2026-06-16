@@ -11,6 +11,7 @@ import type {
   Enemy,
   Injury,
   InjurySeverity,
+  IntelligenceLevel,
   PathwayMatchup,
   PreparationQuality,
   PreparationTier,
@@ -543,6 +544,11 @@ const OPTION_MODIFIER = {
 const SIGNATURE_BONUS = 0.05;
 const EDGE_THRESHOLD = 0.5;
 
+/** Dynamic ability options offered per decision point (in addition to the trio). */
+export const MAX_DYNAMIC_ABILITY_OPTIONS = 2;
+/** Dynamic carried-artifact options offered per decision point. */
+export const MAX_DYNAMIC_ARTIFACT_OPTIONS_PER_POINT = 1;
+
 const INTEL_FACTOR: Record<CombatPreparationInput["intelligence"], number> = {
   none: 0,
   partial: 0.5,
@@ -628,7 +634,16 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
   const artifactsAvailable = encounter.preparation?.sealedArtifacts.length ?? 0;
   const enemyName = encounter.enemy.name;
 
+  // Dynamic mid-fight capabilities: the player's actual learned abilities and
+  // carried artifacts, offered in the moment (not only what was readied during
+  // preparation). Deterministic — selection keys off the encounter's stored
+  // capability lists and the point index, never fresh randomness — so a
+  // serialized fight regenerates the same options.
+  const availableAbilities = encounter.availableAbilities ?? [];
+  const availableArtifacts = encounter.availableArtifacts ?? [];
+
   let artifactsAllocated = 0;
+  let dynamicArtifactsAllocated = 0;
   const points: DecisionPoint[] = [];
 
   for (let i = 0; i < DECISION_POINT_COUNT; i++) {
@@ -658,6 +673,57 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
       }
       return option;
     });
+
+    // Append dynamic ability options — the character's own learned powers, named
+    // explicitly. Picked by point index so they rotate without repeating within
+    // a point and without any randomness.
+    if (availableAbilities.length > 0) {
+      const seen = new Set<number>();
+      for (let k = 0; k < MAX_DYNAMIC_ABILITY_OPTIONS; k++) {
+        const idx = (i + k) % availableAbilities.length;
+        if (seen.has(idx)) break;
+        seen.add(idx);
+        const ability = availableAbilities[idx];
+        options.push({
+          id: `${pointId}-dyn-ability-${idx}`,
+          label: `Invoke ${ability}`,
+          kind: "ability",
+          description: `Turn your ${ability} on the ${enemyName}.`,
+          modifier: optionModifier(
+            "ability",
+            edge,
+            intel,
+            style.signatureKind === "ability",
+          ),
+          abilityName: ability,
+        });
+      }
+    }
+
+    // Append a dynamic artifact option — a carried artifact unsealed in the
+    // moment, consumed when used. Allocated across points so a single artifact
+    // is never offered twice.
+    if (
+      dynamicArtifactsAllocated < MAX_DYNAMIC_ARTIFACT_OPTIONS_PER_POINT &&
+      artifactsAllocated + dynamicArtifactsAllocated < availableArtifacts.length
+    ) {
+      const artifact = availableArtifacts[artifactsAllocated + dynamicArtifactsAllocated];
+      dynamicArtifactsAllocated++;
+      options.push({
+        id: `${pointId}-dyn-artifact-${i}`,
+        label: `Unleash ${artifact.name}`,
+        kind: "artifact",
+        description: `Break the seal on ${artifact.name} and loose its power on the ${enemyName}.`,
+        modifier: optionModifier(
+          "artifact",
+          edge,
+          intel,
+          style.signatureKind === "artifact",
+        ),
+        consumesArtifact: true,
+        artifactItem: artifact,
+      });
+    }
 
     points.push({
       id: pointId,
@@ -696,6 +762,68 @@ export function deriveEncounterEnemy(state: GameState, ambush: boolean): Enemy {
   };
 }
 
+/**
+ * What the player has learned about a foe, gated by their intelligence level —
+ * the "learned info pertinent to combat" the UI reveals alongside the enemy's
+ * name and description. `none` shows nothing beyond the basics; `partial` reads
+ * their rough strength (and pathway, if known) without exact numbers;
+ * `thorough` reveals the exact sequence and any abilities learned of. Pure data.
+ */
+export interface EnemyIntel {
+  name: string;
+  description?: string;
+  /** A coarse strength read vs the player; revealed at `partial` and above. */
+  strength: string | null;
+  /** The enemy's exact sequence; revealed only at `thorough`. */
+  sequenceLevel: number | null;
+  /** The enemy's pathway id, if a known Beyonder; revealed at `partial`+. */
+  pathwayId: number | null;
+  /** Abilities the player has learned the foe wields; revealed at `thorough`. */
+  knownAbilities: string[];
+}
+
+/**
+ * Format what the player knows of an enemy for display, gated by their
+ * intelligence level. Reveals only what was actually scouted — never fabricates
+ * data the enemy does not carry. Pure.
+ */
+export function enemyIntel(
+  enemy: Enemy,
+  intel: IntelligenceLevel,
+  playerSequence: number,
+): EnemyIntel {
+  const base: EnemyIntel = {
+    name: enemy.name,
+    ...(enemy.description !== undefined ? { description: enemy.description } : {}),
+    strength: null,
+    sequenceLevel: null,
+    pathwayId: null,
+    knownAbilities: [],
+  };
+  if (intel === "none") return base;
+
+  // Positive gap means the enemy holds the higher (weaker) Sequence number.
+  const gap = computeSequenceGap(playerSequence, enemy.sequenceLevel);
+  const strength =
+    gap > 0
+      ? "weaker than you"
+      : gap < 0
+        ? "stronger than you"
+        : "your equal in standing";
+  const partial: EnemyIntel = {
+    ...base,
+    strength,
+    pathwayId: enemy.isBeyonder ? (enemy.pathwayId ?? null) : null,
+  };
+  if (intel === "partial") return partial;
+
+  return {
+    ...partial,
+    sequenceLevel: enemy.sequenceLevel,
+    knownAbilities: enemy.knownAbilities ?? [],
+  };
+}
+
 export interface CreateEncounterOptions {
   id: string;
   enemy: Enemy;
@@ -707,6 +835,10 @@ export interface CreateEncounterOptions {
   randomFactor?: number;
   /** The player's active injuries, which penalise their advantage. */
   injuries?: Injury[];
+  /** Learned abilities offered as dynamic mid-fight options. */
+  availableAbilities?: string[];
+  /** Carried artifacts (non-reagent) offered as dynamic mid-fight options. */
+  availableArtifacts?: Item[];
   /** Potion-preparation hunt objective (issue #84): the Characteristic sought. */
   huntTarget?: string;
 }
@@ -746,6 +878,8 @@ export function createEncounter(options: CreateEncounterOptions): CombatEncounte
     accumulatedModifier: 0,
     outcome: null,
     result: null,
+    availableAbilities: options.availableAbilities ?? [],
+    availableArtifacts: options.availableArtifacts ?? [],
     ...(options.huntTarget !== undefined ? { huntTarget: options.huntTarget } : {}),
   };
 
@@ -970,13 +1104,23 @@ export function computeConsequences(
   finalAdvantage: number,
 ): CombatResult {
   const chosen = chosenOptions(encounter);
-  const consumedArtifacts = chosen.filter((o) => o.consumesArtifact).length;
+  // Dynamic artifacts carry the concrete item they spend; sealed-prep artifacts
+  // (no `artifactItem`) draw from the readied `sealedArtifacts` list in order.
+  const dynamicArtifactItems = chosen
+    .filter(
+      (o): o is DecisionOption & { artifactItem: Item } => o.artifactItem !== undefined,
+    )
+    .map((o) => o.artifactItem);
+  const consumedSealed = chosen.filter(
+    (o) => o.consumesArtifact && o.artifactItem === undefined,
+  ).length;
 
   const ritualMaterials = encounter.preparation?.ritualMaterials ?? [];
   const sealedArtifacts = encounter.preparation?.sealedArtifacts ?? [];
   const itemsLost: Item[] = [
     ...ritualMaterials,
-    ...sealedArtifacts.slice(0, consumedArtifacts),
+    ...sealedArtifacts.slice(0, consumedSealed),
+    ...dynamicArtifactItems,
   ];
 
   const itemsGained: Item[] = outcome === "victory" ? (encounter.enemy.loot ?? []) : [];

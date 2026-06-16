@@ -22,6 +22,7 @@ import {
   computeBaseAdvantage,
   generateDecisionPoints,
   deriveEncounterEnemy,
+  enemyIntel,
   createEncounter,
   applyPreparation,
   chooseOption,
@@ -32,6 +33,7 @@ import {
   applyCombatResult,
   tickInjuries,
   isValidEncounterShape,
+  MAX_DYNAMIC_ABILITY_OPTIONS,
 } from "./combat";
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -679,6 +681,78 @@ describe("generateDecisionPoints", () => {
   });
 });
 
+// ─── Dynamic mid-fight options ───────────────────────────────────────
+
+describe("dynamic abilities & artifacts mid-fight", () => {
+  function dynamicEncounter(
+    availableAbilities: string[],
+    availableArtifacts: Item[],
+  ): CombatEncounter {
+    const encounter = createEncounter({
+      id: "dyn",
+      enemy: makeEnemy(),
+      playerPathwayId: 1,
+      playerSequence: 9,
+      randomFactor: 0.5,
+      availableAbilities,
+      availableArtifacts,
+    });
+    return applyPreparation(encounter, makePrep());
+  }
+
+  it("offers the player's actual learned abilities as named options each point", () => {
+    const points = dynamicEncounter(["Spirit Vision", "Divination"], []).decisionPoints;
+    for (const point of points) {
+      const abilityOptions = point.options.filter((o) => o.abilityName);
+      expect(abilityOptions.length).toBeGreaterThan(0);
+      expect(abilityOptions.length).toBeLessThanOrEqual(MAX_DYNAMIC_ABILITY_OPTIONS);
+      expect(abilityOptions[0].label).toContain(abilityOptions[0].abilityName!);
+    }
+  });
+
+  it("does not repeat a single ability within one decision point", () => {
+    // With one ability and a 2-option cap, only one ability option appears.
+    const point = dynamicEncounter(["Lone Power"], []).decisionPoints[0];
+    expect(point.options.filter((o) => o.abilityName === "Lone Power")).toHaveLength(1);
+  });
+
+  it("offers carried artifacts as consuming options, allocated without duplication", () => {
+    const artifacts = [makeItem("Charm A"), makeItem("Charm B")];
+    const points = dynamicEncounter([], artifacts).decisionPoints;
+    const offered = points
+      .flatMap((p) => p.options)
+      .filter((o) => o.artifactItem)
+      .map((o) => o.artifactItem!.name);
+    // No artifact offered twice; every offered one consumes the item.
+    expect(new Set(offered).size).toBe(offered.length);
+    for (const point of points) {
+      for (const option of point.options.filter((o) => o.artifactItem)) {
+        expect(option.consumesArtifact).toBe(true);
+      }
+    }
+  });
+
+  it("regenerates identical decision points from the same encounter (determinism)", () => {
+    const encounter = dynamicEncounter(["A", "B"], [makeItem("Charm")]);
+    expect(generateDecisionPoints(encounter)).toEqual(encounter.decisionPoints);
+  });
+
+  it("attaches dynamic options on the ambush path too", () => {
+    const encounter = createEncounter({
+      id: "amb",
+      enemy: makeEnemy(),
+      playerPathwayId: 1,
+      playerSequence: 9,
+      ambush: true,
+      randomFactor: 0.5,
+      availableAbilities: ["Reflex"],
+    });
+    expect(
+      encounter.decisionPoints.flatMap((p) => p.options).some((o) => o.abilityName),
+    ).toBe(true);
+  });
+});
+
 // ─── Pathway Combat Styles (ids 5-9) ─────────────────────────────────
 
 describe("new pathway combat styles", () => {
@@ -1043,6 +1117,34 @@ describe("computeConsequences", () => {
     expect(result.itemsLost).toEqual([]);
   });
 
+  it("loses a dynamically-invoked carried artifact without double-counting sealed ones", () => {
+    const dynamic = makeItem("Pocket Mirror");
+    const encounter: CombatEncounter = {
+      ...resolvedWith("victory", { sequenceLevel: 7 }, 0.5),
+      preparation: makePrep(),
+      decisionPoints: [
+        {
+          id: "dp",
+          prompt: "",
+          options: [
+            {
+              id: "use-dynamic",
+              label: "",
+              kind: "artifact",
+              description: "",
+              modifier: 0.2,
+              consumesArtifact: true,
+              artifactItem: dynamic,
+            },
+          ],
+        },
+      ],
+      chosenOptionIds: ["use-dynamic"],
+    };
+    const result = computeConsequences(encounter, "victory", 0.5);
+    expect(result.itemsLost).toEqual([dynamic]);
+  });
+
   it("handles a null preparation (no materials lost)", () => {
     const encounter: CombatEncounter = {
       ...resolvedWith("escape", { sequenceLevel: 7 }, 0),
@@ -1227,5 +1329,61 @@ describe("tickInjuries", () => {
     expect(next.injuries).toEqual([
       { id: "b", description: "", severity: "major", recoveryTurns: 2 },
     ]);
+  });
+});
+
+// ─── enemyIntel ──────────────────────────────────────────────────────
+
+describe("enemyIntel", () => {
+  const enemy = makeEnemy({
+    name: "The Pale Visitor",
+    description: "A figure wrapped in fog.",
+    isBeyonder: true,
+    pathwayId: 4,
+    sequenceLevel: 7,
+    knownAbilities: ["Command the spirits"],
+  });
+
+  it("reveals only name and description with no intelligence", () => {
+    const intel = enemyIntel(enemy, "none", 9);
+    expect(intel.name).toBe("The Pale Visitor");
+    expect(intel.description).toBe("A figure wrapped in fog.");
+    expect(intel.strength).toBeNull();
+    expect(intel.sequenceLevel).toBeNull();
+    expect(intel.pathwayId).toBeNull();
+    expect(intel.knownAbilities).toEqual([]);
+  });
+
+  it("reveals a coarse strength read and pathway at partial intelligence", () => {
+    // Enemy is Sequence 7; a Sequence 9 player is weaker, so the foe reads stronger.
+    const intel = enemyIntel(enemy, "partial", 9);
+    expect(intel.strength).toBe("stronger than you");
+    expect(intel.pathwayId).toBe(4);
+    // Exact sequence and abilities stay hidden.
+    expect(intel.sequenceLevel).toBeNull();
+    expect(intel.knownAbilities).toEqual([]);
+  });
+
+  it("reveals the exact sequence and known abilities at thorough intelligence", () => {
+    const intel = enemyIntel(enemy, "thorough", 9);
+    expect(intel.sequenceLevel).toBe(7);
+    expect(intel.knownAbilities).toEqual(["Command the spirits"]);
+  });
+
+  it("reads strength relative to the player's own sequence", () => {
+    // Enemy is Sequence 7: an equal at 7, weaker than a stronger (Sequence 5) player.
+    expect(enemyIntel(enemy, "partial", 7).strength).toBe("your equal in standing");
+    expect(enemyIntel(enemy, "partial", 5).strength).toBe("weaker than you");
+  });
+
+  it("hides the pathway for a mundane foe even at thorough", () => {
+    const mundane = makeEnemy({ isBeyonder: false, sequenceLevel: 9 });
+    expect(enemyIntel(mundane, "thorough", 9).pathwayId).toBeNull();
+    expect(enemyIntel(mundane, "thorough", 9).knownAbilities).toEqual([]);
+  });
+
+  it("omits the description field when the enemy has none", () => {
+    const bare = makeEnemy({ description: undefined });
+    expect(enemyIntel(bare, "none", 9).description).toBeUndefined();
   });
 });
