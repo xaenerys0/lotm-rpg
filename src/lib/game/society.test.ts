@@ -104,11 +104,32 @@ describe("resolveMemberArc", () => {
     expect(society.members[0].arcStage).toBe(3);
     const { society: resolved, fact } = resolveMemberArc(society, "m0");
     expect(fact?.description).toContain("has come to a head");
+    // The hidden-face narrator uses singular "they", which takes plural verb
+    // agreement — never "they is/owes/suspects". (Regression guard for the
+    // society-page grammar fix.)
+    expect(fact?.description).toContain("they are hunting");
+    expect(fact?.description).not.toMatch(/they (is|owes|suspects|wants|knows)\b/);
+    expect(resolved.members[0].arc).toBe("owe you a debt they intend to honor");
     expect(resolved.members[0].arcStage).toBe(0);
     expect(resolved.members[0].disposition).toBeGreaterThan(
       society.members[0].disposition,
     );
     expect(resolveMemberArc(society, "nope").fact).toBeNull();
+  });
+});
+
+describe("member phrasing", () => {
+  it("every arc agrees with the singular 'they' the card renders", () => {
+    // The card renders "This one {pathwayHint}. They {arc}." Singular "they"
+    // takes plural verb agreement, so an arc must never begin with a
+    // singular verb (is/owes/suspects/wants) when prefixed by "They".
+    for (let i = 0; i < 6; i++) {
+      const pick = (i + 0.5) / 6; // hits arc/hint index i deterministically
+      const society = recruitMember(foundSociety(1, 7, undefined), () => pick, `m${i}`);
+      const { pathwayHint, arc } = society.members[0];
+      expect(`They ${arc}`).not.toMatch(/They (is|owes|suspects|wants|knows)\b/);
+      expect(pathwayHint.length).toBeGreaterThan(0);
+    }
   });
 });
 

@@ -87,6 +87,8 @@ const CODE_NAMES = [
   "The World",
 ] as const;
 
+// Rendered as "This one {hint}." — the subject is singular third person, so
+// each hint must read with a third-person-SINGULAR verb (reads / knows / hums).
 const PATHWAY_HINTS = [
   "reads people a little too easily",
   "always knows the weather at sea",
@@ -96,13 +98,16 @@ const PATHWAY_HINTS = [
   "carries the smell of old paper and ozone",
 ] as const;
 
+// Rendered as "They {arc}" / "they {arc}" — members keep their faces hidden, so
+// the narrator refers to each with the singular "they", which takes PLURAL verb
+// agreement (they are / they owe / they suspect). Keep new arcs in that form.
 const MEMBER_ARCS = [
-  "is hunting the counterfeiter who ruined their family",
-  "is quietly buying up a dead colleague's debts",
-  "suspects their superior serves something else entirely",
-  "is searching for a sibling who walked into the fog",
-  "wants a formula they cannot ask for openly",
-  "is being followed, and knows it",
+  "are hunting the counterfeiter who ruined their family",
+  "are quietly buying up a dead colleague's debts",
+  "suspect their superior serves something else entirely",
+  "are searching for a sibling who walked into the fog",
+  "want a formula they cannot ask for openly",
+  "are being followed, and know it",
 ] as const;
 
 // Intel templates per arc stage — the leads members bring to a gathering.
@@ -269,7 +274,7 @@ export function resolveMemberArc(
         ? {
             ...candidate,
             arcStage: 0,
-            arc: "owes you a debt they intend to honor",
+            arc: "owe you a debt they intend to honor",
             disposition: Math.min(100, candidate.disposition + 20),
           }
         : candidate,
