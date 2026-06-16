@@ -51,6 +51,12 @@ export function SanityPreferences() {
         onToggle={() => toggle("sanityMeterVisible")}
       />
       <PreferenceToggle
+        label="Show digestion meter"
+        description="Reveal the numeric potion-digestion meter and acting readouts. Hidden by default — and it stays hidden until your character has discovered the acting method through play."
+        checked={prefs.digestionMeterVisible}
+        onToggle={() => toggle("digestionMeterVisible")}
+      />
+      <PreferenceToggle
         label="Scene illustrations"
         description="Illustrate key moments (advancement, deaths, battles) with AI-generated art via your own OpenAI key. Roughly $0.04 per image — off by default."
         checked={prefs.sceneArtEnabled}

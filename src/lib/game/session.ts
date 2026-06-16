@@ -5,6 +5,7 @@ import {
   APPROVED_EMBEDDING_MODELS,
   DEFAULT_EMBEDDING_MODEL_ID,
 } from "@/lib/ai";
+import { isValidActingMethodStateShape } from "./acting-method";
 import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
 import { isValidIdentityStateShape } from "./identity";
@@ -262,6 +263,15 @@ export function isValidSessionShape(obj: unknown): boolean {
   // True-self profile (character-info storage) is optional but strict when
   // present — lazily seeded for legacy saves, exactly like identityState.
   if (s.profileState !== undefined && !isValidProfileStateShape(s.profileState)) {
+    return false;
+  }
+
+  // Acting-method discovery (issue #95) is optional but strict when present —
+  // lazily resolved for legacy saves; preserved on the deserialize `...s` spread.
+  if (
+    s.actingMethodState !== undefined &&
+    !isValidActingMethodStateShape(s.actingMethodState)
+  ) {
     return false;
   }
 

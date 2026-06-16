@@ -24,6 +24,8 @@ import {
   classifySanityTier,
   isLossOfControl,
   evaluateLossOfControl,
+  resolveActingMethodState,
+  previewSanityImpact,
   DEFAULT_PREFERENCES,
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
@@ -1042,6 +1044,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // journal) runs unchanged. Rejections are narrated, never errored.
   const [freeTextNotice, setFreeTextNotice] = useState<string | null>(null);
 
+  // Acting-method discovery announcement (issue #95): a transient role="status"
+  // reveal shown the turn the player earns the secret.
+  const [methodNotice, setMethodNotice] = useState<string | null>(null);
+
   // In-turn true-self change (character-info storage): the AI may flag a
   // declaration the player made; it is NEVER applied without this confirm.
   const [selfChangeHandledTurn, setSelfChangeHandledTurn] = useState<number | null>(null);
@@ -1103,13 +1109,26 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
     const resolution = session.lastResolution;
     if (resolution) {
-      const { gameState, memory } = applyResolution(
+      const result = applyResolution(
         session.gameState,
         session.memory,
         resolution,
         session.turnCount,
         playerAction,
+        resolveActingMethodState(session.actingMethodState),
       );
+      const { gameState, memory } = result;
+      // Acting-method discovery (issue #95): the moment the player earns the
+      // secret, announce it; the meter and clearer feedback unlock thereafter.
+      if (result.discovery.discoveredThisTurn) {
+        setMethodNotice(
+          result.discovery.trigger === "taught"
+            ? "You understand now — it is by living the role that the power becomes truly yours. They call it the Acting Method."
+            : result.discovery.trigger === "completion"
+              ? "As the last of it settles into you, the truth comes plain: living the role was what made it yours all along. The Acting Method."
+              : "A pattern resolves in your mind: it is staying true to your role, turn upon turn, that has been settling the power within you. The Acting Method.",
+        );
+      }
       // Identity bookkeeping (issue #22): a public turn in a persona teaches
       // present NPCs that face and accrues exposure; once risk runs high, a
       // shared witness may connect two faces.
@@ -1181,6 +1200,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         ...session,
         gameState,
         memory: memoryAfterPetitions,
+        actingMethodState: result.actingMethodState,
         ...(identityState ? { identityState } : {}),
         ...(profileState ? { profileState } : {}),
       };
@@ -1207,6 +1227,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
   const pathway = getPathway(session.gameState.pathwayId);
   const seq = getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel);
+  // Acting-method discovery (issue #95): the digestion meter/number stays hidden
+  // until the method is discovered, even with the toggle on.
+  const knowsMethod = resolveActingMethodState(session.actingMethodState).knowsMethod;
   const lostControl = isLossOfControl(session.gameState);
   // Sequence 0 (issue #30) has no rules-engine Sequence — present the honorific
   // instead of the empty "Unknown" fallback.
@@ -1264,7 +1287,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             )}
           </div>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-            <DigestionMeter digestion={session.gameState.digestion} />
+            {knowsMethod && preferences.digestionMeterVisible && (
+              <DigestionMeter digestion={session.gameState.digestion} />
+            )}
             {preferences.sanityMeterVisible && (
               <SanityMeter
                 sanity={session.gameState.sanity}
@@ -1273,6 +1298,28 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             )}
           </div>
         </div>
+
+        {/* Acting-method discovered (issue #95) — the secret is earned. */}
+        {methodNotice && (
+          <div
+            role="status"
+            className="mb-6 rounded-md border border-occult/40 bg-occult/[0.06] p-5 animate-fade-in"
+          >
+            <p className="gaslit font-serif text-sm font-semibold text-occult-bright">
+              The Acting Method
+            </p>
+            <p className="mt-2 font-serif text-sm italic leading-relaxed text-foreground/85">
+              {methodNotice}
+            </p>
+            <button
+              type="button"
+              onClick={() => setMethodNotice(null)}
+              className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs font-medium text-occult-bright hover:underline"
+            >
+              I see
+            </button>
+          </div>
+        )}
 
         {/* Setback aftermath — transient consequence report (issue #12). */}
         {setbackNotes && !lostControl && (
@@ -1404,6 +1451,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   onContinue={handleContinue}
                   config={providerConfig}
                   sceneArtEnabled={preferences.sceneArtEnabled}
+                  knowsMethod={knowsMethod}
+                  digestionMeterVisible={preferences.digestionMeterVisible}
+                  sanityMeterVisible={preferences.sanityMeterVisible}
                 />
               </>
             )}
@@ -2405,16 +2455,25 @@ function ConsequencesPhase({
   onContinue,
   config,
   sceneArtEnabled,
+  knowsMethod,
+  digestionMeterVisible,
+  sanityMeterVisible,
 }: {
   session: GameSession;
   onContinue: () => void;
   config: ProviderConfig | null;
   sceneArtEnabled: boolean;
+  knowsMethod: boolean;
+  digestionMeterVisible: boolean;
+  sanityMeterVisible: boolean;
 }) {
   const resolution = session.lastResolution;
   if (!resolution) return null;
 
   const response = resolution.response;
+  // The numeric digestion/alignment readout is doubly gated (issue #95): the
+  // player must have discovered the method AND opted the meter on.
+  const showDigestionNumbers = knowsMethod && digestionMeterVisible;
   // Scene art (issue #20): the AI's journal flag marks the key moments.
   const artFlag = validateJournalFlag(response.journalEntry);
   const illustrate = artFlag !== null && shouldGenerateSceneArt(artFlag.eventType);
@@ -2428,8 +2487,14 @@ function ConsequencesPhase({
   );
   const hasItems = discoveredItems.length > 0;
   const hasLeads = discoveredLeads.length > 0;
-  const hasSanityImpact =
-    response.sanityImpact !== undefined && response.sanityImpact !== 0;
+  // Hybrid sanity (issue #95): the SAME pure helper applyResolution commits on
+  // Continue, so the previewed number can never drift from the applied one.
+  const sanityTotal = previewSanityImpact(
+    response.sanityEventTags,
+    response.sanityImpact,
+    session.gameState.sequenceLevel,
+  ).total;
+  const hasSanityImpact = sanityTotal !== 0;
   const hasActingEval = response.actingEvaluation !== undefined;
 
   // Preview the digestion change this acting evaluation will apply on Continue.
@@ -2483,36 +2548,53 @@ function ConsequencesPhase({
           {hasSanityImpact && (
             <div className="flex items-center gap-2 text-sm">
               <span className="text-muted">Sanity</span>
-              <span
-                className={
-                  response.sanityImpact! > 0
-                    ? "font-medium text-sanity-high"
-                    : "font-medium text-sanity-low"
-                }
-              >
-                {response.sanityImpact! > 0 ? "+" : ""}
-                {response.sanityImpact}
-              </span>
+              {sanityMeterVisible ? (
+                <span
+                  className={
+                    sanityTotal > 0
+                      ? "font-medium text-sanity-high"
+                      : "font-medium text-sanity-low"
+                  }
+                >
+                  {sanityTotal > 0 ? "+" : ""}
+                  {sanityTotal}
+                </span>
+              ) : (
+                <span className="font-serif italic text-foreground/70">
+                  {sanityTotal > 0
+                    ? "your mind steadies a little"
+                    : "your mind frays a little"}
+                </span>
+              )}
             </div>
           )}
 
           {hasActingEval && (
             <div className="text-sm">
-              <span className="text-muted">Acting: </span>
-              <span className="text-gaslight">
-                {Math.round(response.actingEvaluation!.alignment * 100)}% alignment
-              </span>
-              {digestionPreview && digestionPreview.delta !== 0 && (
-                <span
-                  className={`ml-2 font-medium ${
-                    digestionPreview.delta > 0 ? "text-occult-bright" : "text-sanity-low"
-                  }`}
-                >
-                  {digestionPreview.delta > 0 ? "+" : ""}
-                  {digestionPreview.delta}% digestion
-                </span>
+              {/* The mechanic — alignment %, digestion delta, the AI's scoring
+                  reasoning — only surfaces once the method is discovered AND the
+                  meter is opted on. Pre-discovery only the vague prose shows. */}
+              {showDigestionNumbers && (
+                <>
+                  <span className="text-muted">Acting: </span>
+                  <span className="text-gaslight">
+                    {Math.round(response.actingEvaluation!.alignment * 100)}% alignment
+                  </span>
+                  {digestionPreview && digestionPreview.delta !== 0 && (
+                    <span
+                      className={`ml-2 font-medium ${
+                        digestionPreview.delta > 0
+                          ? "text-occult-bright"
+                          : "text-sanity-low"
+                      }`}
+                    >
+                      {digestionPreview.delta > 0 ? "+" : ""}
+                      {digestionPreview.delta}% digestion
+                    </span>
+                  )}
+                </>
               )}
-              {response.actingEvaluation!.reasoning && (
+              {knowsMethod && response.actingEvaluation!.reasoning && (
                 <p className="mt-1 text-xs italic text-muted">
                   {response.actingEvaluation!.reasoning}
                 </p>
@@ -2523,6 +2605,7 @@ function ConsequencesPhase({
                     seq?.name ?? "Beyonder",
                     digestionState,
                     digestionPreview.delta,
+                    knowsMethod,
                   )}
                 </p>
               )}
@@ -2566,15 +2649,18 @@ function ConsequencesPhase({
         </div>
       )}
 
-      {/* Digestion complete — advancement available */}
-      {(digestionState?.complete ?? session.gameState.digestion?.complete) && (
-        <div className="mb-6 rounded-md border border-occult/40 bg-occult/[0.06] p-4 text-center">
-          <p className="font-serif text-sm text-occult-bright">
-            <span aria-hidden="true">✦ </span>The potion is fully digested. Continue, and
-            you may undergo the advancement to the next Sequence when you are ready.
-          </p>
-        </div>
-      )}
+      {/* Digestion complete — advancement available. Gated on discovery so the
+          mechanic is never named to a player who hasn't earned the secret
+          (issue #95); completing digestion in practice implies discovery. */}
+      {knowsMethod &&
+        (digestionState?.complete ?? session.gameState.digestion?.complete) && (
+          <div className="mb-6 rounded-md border border-occult/40 bg-occult/[0.06] p-4 text-center">
+            <p className="font-serif text-sm text-occult-bright">
+              <span aria-hidden="true">✦ </span>The potion is fully digested. Continue,
+              and you may undergo the advancement to the next Sequence when you are ready.
+            </p>
+          </div>
+        )}
 
       {/* Continue */}
       <div className="flex justify-center pt-2">

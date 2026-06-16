@@ -58,16 +58,18 @@ export const TUTORIAL_SCENES: readonly TutorialScene[] = [
     id: "the-method-of-acting",
     title: "Become the Mask",
     body:
-      "An old Seer puts it this way, over cards she never seems to shuffle: " +
-      "“The potion thinks it is still a person. Convince it you are that " +
-      "person, and it stops fighting you.” A Seer who divines daily, reads " +
-      "fortunes, trusts the cards — her potion settles, dissolves, becomes simply " +
-      "her. A Seer who never touches the cards keeps a stranger under his skin. " +
-      "They call it the acting method: do not merely hold the role. Wear it, " +
-      "honestly, until the boundary between actor and role wears through.",
+      "An old woman who has clearly drunk something stranger than gin leans " +
+      "close in the tavern corner. “The ones who last,” she says, “live as the " +
+      "thing they drank wants to be lived. Day on day, choice on choice, until " +
+      "there's no seam between them and it.” She studies you. “And the ones who " +
+      "don't — who take the power and then turn their backs on what it asks of " +
+      "them — something under the skin stops sleeping. It wakes. It wants. They " +
+      "do not last.” How a Beyonder must carry themselves, she will not spell " +
+      "out. That, she says, you learn by living it.",
     lesson:
-      "Acting in line with your Sequence's role digests the potion — the game " +
-      "scores how truly you play the part, and digestion is how you advance safely.",
+      "Who you choose to be, turn after turn, matters more than any single act. " +
+      "Stay true to what your power asks of you and you steady; betray it and " +
+      "something within turns against you. The how is yours to discover.",
     teaches: ["acting"],
   },
   {

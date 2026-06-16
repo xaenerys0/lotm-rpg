@@ -12,6 +12,13 @@
 export interface GamePreferences {
   /** When true, the numeric sanity meter is shown; otherwise it is hidden. */
   sanityMeterVisible: boolean;
+  /**
+   * When true (and the Acting Method has been discovered), the numeric
+   * digestion meter + alignment readouts are shown (issue #95). Mirrors
+   * `sanityMeterVisible`: off by default, and inert until discovery — pre-
+   * discovery the digestion mechanic stays hidden regardless.
+   */
+  digestionMeterVisible: boolean;
   /** High-contrast display mode (issue #13): applied as `data-contrast="high"`. */
   highContrast: boolean;
   /** AI scene art for key moments (issue #20). Opt-in — images cost real money. */
@@ -20,6 +27,7 @@ export interface GamePreferences {
 
 export const DEFAULT_PREFERENCES: GamePreferences = {
   sanityMeterVisible: false,
+  digestionMeterVisible: false,
   highContrast: false,
   sceneArtEnabled: false,
 };
@@ -30,9 +38,15 @@ export function isValidPreferencesShape(obj: unknown): boolean {
   }
   const p = obj as Record<string, unknown>;
   if (typeof p.sanityMeterVisible !== "boolean") return false;
-  // highContrast (#13) and sceneArtEnabled (#20) were added later — older
-  // payloads omit them.
+  // highContrast (#13), sceneArtEnabled (#20) and digestionMeterVisible (#95)
+  // were added later — older payloads omit them.
   if (p.highContrast !== undefined && typeof p.highContrast !== "boolean") return false;
+  if (
+    p.digestionMeterVisible !== undefined &&
+    typeof p.digestionMeterVisible !== "boolean"
+  ) {
+    return false;
+  }
   return p.sceneArtEnabled === undefined || typeof p.sceneArtEnabled === "boolean";
 }
 
@@ -43,6 +57,10 @@ export function mergePreferences(partial: Partial<GamePreferences>): GamePrefere
       typeof partial.sanityMeterVisible === "boolean"
         ? partial.sanityMeterVisible
         : DEFAULT_PREFERENCES.sanityMeterVisible,
+    digestionMeterVisible:
+      typeof partial.digestionMeterVisible === "boolean"
+        ? partial.digestionMeterVisible
+        : DEFAULT_PREFERENCES.digestionMeterVisible,
     highContrast:
       typeof partial.highContrast === "boolean"
         ? partial.highContrast

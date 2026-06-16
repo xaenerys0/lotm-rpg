@@ -7,6 +7,12 @@ import { tickInjuries } from "./combat";
 import { isReagentCategory } from "./inventory";
 import { adjustFunds, FUNDS_DISCOVERED_CAP } from "./marketplace";
 import { clamp } from "./math";
+import { previewSanityImpact } from "./sanity";
+import {
+  evaluateActingDiscovery,
+  type ActingDiscoveryTrigger,
+  type ActingMethodState,
+} from "./acting-method";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
 
@@ -45,6 +51,24 @@ export function discoveredItemLeadFact(item: Item, turnNumber: number): SessionF
         ? `Word of the ${item.name} Beyonder Characteristic surfaced — it must still be hunted or bought for the next potion.`
         : `Learned where ${item.name} might be acquired for the next potion.`;
   return { type: "quest-progress", description, turnNumber };
+}
+
+/**
+ * The diegetic memory fact recorded when the player discovers the Acting Method
+ * (issue #95). Phrased to the trigger so the narrator can weave it in — a
+ * teaching moment reads differently from a self-realization. Pure.
+ */
+export function actingMethodDiscoveryFact(
+  trigger: ActingDiscoveryTrigger | null,
+  turnNumber: number,
+): SessionFact {
+  const description =
+    trigger === "taught"
+      ? "Learned the secret of the Acting Method: it is by truly living the role of one's Sequence that the potion is assimilated."
+      : trigger === "completion"
+        ? "In fully assimilating the potion, came to understand what made it possible — living the role of one's Sequence. The Acting Method."
+        : "Came to understand, through long practice, that staying true to the role of one's Sequence is what quietly settles the potion within — the Acting Method.";
+  return { type: "event", description, turnNumber };
 }
 
 export function applyWorldStateChanges(
@@ -120,12 +144,30 @@ export function applyResolution(
   result: ValidatedAIResponse,
   turnCount: number,
   playerAction: string,
-): { gameState: GameState; memory: MemoryState; digestionDelta: number } {
+  actingMethodState: ActingMethodState,
+): {
+  gameState: GameState;
+  memory: MemoryState;
+  digestionDelta: number;
+  sanity: { tagDelta: number; residual: number; total: number };
+  actingMethodState: ActingMethodState;
+  discovery: { discoveredThisTurn: boolean; trigger: ActingDiscoveryTrigger | null };
+} {
   let updated = { ...gameState };
   const response = result.response;
 
-  if (response.sanityImpact !== undefined) {
-    updated = applySanityImpact(updated, response.sanityImpact);
+  // Hybrid sanity (issue #95): the engine owns the magnitude of tagged events
+  // (scored against the PRE-mutation Sequence, so an advancement this turn does
+  // not retroactively change the cost), and the AI keeps a small residual
+  // free-form impact clamped to ±5. The consequences panel previews the same
+  // `previewSanityImpact` so the shown and applied numbers can never drift.
+  const sanity = previewSanityImpact(
+    response.sanityEventTags,
+    response.sanityImpact,
+    gameState.sequenceLevel,
+  );
+  if (sanity.total !== 0) {
+    updated = applySanityImpact(updated, sanity.total);
   }
 
   if (response.worldStateChanges && response.worldStateChanges.length > 0) {
@@ -158,6 +200,20 @@ export function applyResolution(
     digestionDelta = digestionResult.delta;
   }
 
+  // Acting-method discovery (issue #95): taught by an NPC / found in lore (the
+  // AI flag), inferred by the engine after a sustained run of aligned acting, or
+  // — as a backstop — the moment digestion completes (you cannot fully assimilate
+  // the potion through the role without grasping that that is what you were
+  // doing; this also keeps the advancement UI, which names the mechanic, from
+  // ever surfacing to a player still flagged as not knowing it). The tutorial
+  // does NOT grant it and a neglect scare is NOT a trigger.
+  const discovery = evaluateActingDiscovery({
+    state: actingMethodState,
+    alignment: response.actingEvaluation?.alignment,
+    taughtFlag: response.actingMethodTaught === true,
+    digestionComplete: updated.digestion?.complete === true,
+  });
+
   // A turn of normal play heals active combat injuries (issue #10).
   updated = tickInjuries(updated);
 
@@ -173,6 +229,22 @@ export function applyResolution(
       discoveredItemLeadFact(item, turnCount),
     );
   }
+  if (discovery.discoveredThisTurn) {
+    updatedMemory = addSessionFact(
+      updatedMemory,
+      actingMethodDiscoveryFact(discovery.trigger, turnCount),
+    );
+  }
 
-  return { gameState: updated, memory: updatedMemory, digestionDelta };
+  return {
+    gameState: updated,
+    memory: updatedMemory,
+    digestionDelta,
+    sanity,
+    actingMethodState: discovery.state,
+    discovery: {
+      discoveredThisTurn: discovery.discoveredThisTurn,
+      trigger: discovery.trigger,
+    },
+  };
 }

@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 
 import {
   loadAllSessions,
   persistSession as writeSession,
   useStoredValue,
 } from "@/lib/react/session-store";
+import { noopSubscribe } from "@/lib/react";
+import { loadPreferences } from "./preferences-store";
 import { getCumulativeAbilityGroups, getPathway, getSequence } from "@/lib/rules";
 import { classifySanityTier } from "@/lib/ai";
 import { getEpoch } from "@/lib/lore";
@@ -21,10 +23,12 @@ import {
   isDrasticChange,
   isFateProof,
   removeProfileNote,
+  resolveActingMethodState,
   resolveProfileState,
   switchIdentity,
   transformationRiteFor,
   trueGodName,
+  DEFAULT_PREFERENCES,
   type DemeanorTrait,
   type GameSession,
   type IdentityCapability,
@@ -65,6 +69,20 @@ const ITEM_CATEGORY_GLYPHS: Record<Item["category"], string> = {
 
 export function CharacterSheet() {
   const sessions = useStoredValue<GameSession[] | null>(loadAllSessions, null);
+
+  // Display preferences (issue #95): the digestion-meter toggle gates whether
+  // the numeric digestion is shown — but only once the method is discovered.
+  const prefsCacheRef = useRef<typeof DEFAULT_PREFERENCES | null>(null);
+  const preferences = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (prefsCacheRef.current === null) {
+        prefsCacheRef.current = loadPreferences();
+      }
+      return prefsCacheRef.current;
+    },
+    () => DEFAULT_PREFERENCES,
+  );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [overrides, setOverrides] = useState<Record<string, GameSession>>({});
@@ -117,6 +135,11 @@ export function CharacterSheet() {
   const abilityGroups = getCumulativeAbilityGroups(state.pathwayId, state.sequenceLevel);
   const epoch = getEpoch(state.epoch);
   const tier = classifySanityTier(state.sanity, state.maxSanity);
+  // Acting-method discovery (issue #95): pre-discovery the digestion mechanic is
+  // not leaked numerically (or by name); the numeric value is gated the same way
+  // as the status-bar meter (discovered AND the meter opted on).
+  const knowsMethod = resolveActingMethodState(session.actingMethodState).knowsMethod;
+  const showDigestionNumber = knowsMethod && preferences.digestionMeterVisible;
 
   const inventoryByCategory = (
     Object.keys(ITEM_CATEGORY_LABELS) as Item["category"][]
@@ -269,14 +292,22 @@ export function CharacterSheet() {
             </div>
             <div>
               <dt className="text-xs tracking-wide text-muted uppercase">
-                Potion digestion
+                {knowsMethod ? "Potion digestion" : "Within"}
               </dt>
               <dd className="mt-0.5 text-foreground/85">
-                {state.digestion
-                  ? state.digestion.complete
-                    ? "Fully digested — ready to advance."
-                    : `${state.digestion.progress}% assimilated through acting.`
-                  : "No potion taken."}
+                {!state.digestion
+                  ? "No potion taken."
+                  : !knowsMethod
+                    ? // Pre-discovery: the character does not know what is
+                      // happening, so no number and no mechanic named. (Once a
+                      // potion is fully digested the method is always discovered,
+                      // so this branch only ever describes in-progress digestion.)
+                      "Something taken in stirs and settles by turns you cannot yet name."
+                    : state.digestion.complete
+                      ? "Fully digested — ready to advance."
+                      : showDigestionNumber
+                        ? `${state.digestion.progress}% assimilated through acting.`
+                        : "Assimilating through the acting method."}
               </dd>
             </div>
             <div>

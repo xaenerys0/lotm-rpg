@@ -10,6 +10,7 @@ import {
   applyResolution,
 } from "./world-state";
 import { createDigestionState } from "./digestion";
+import { createActingMethodState, type ActingMethodState } from "./acting-method";
 import { FUNDS_DISCOVERED_CAP } from "./marketplace";
 import {
   advanceCanonPosition,
@@ -26,7 +27,13 @@ import {
 import { selectStartScenario } from "@/lib/lore";
 import { VALID_TRANSITIONS, PILLAR_INSTRUCTION_MAP, CHOICE_PILLAR_MAP } from "./types";
 import type { GameSession, GamePhase, GameplayPillar } from "./types";
-import type { GameState, Choice, ValidatedAIResponse, StateChange } from "@/lib/ai";
+import type {
+  GameState,
+  Choice,
+  ValidatedAIResponse,
+  StateChange,
+  MemoryState,
+} from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
 import { createMemoryState, DEFAULT_EMBEDDING_MODEL_ID } from "@/lib/ai";
 
@@ -85,6 +92,20 @@ function makeValidatedResponse(
     },
     validation: { valid: true, violations: [] },
   };
+}
+
+// Thin wrapper so the existing applyResolution cases (which predate the
+// issue-#95 acting-method param) keep their positional calls; the param has no
+// default in the engine itself (the compiler must flag callers there).
+function applyRes(
+  state: GameState,
+  memory: MemoryState,
+  result: ValidatedAIResponse,
+  turn: number,
+  action: string,
+  acting: ActingMethodState = createActingMethodState(),
+): ReturnType<typeof applyResolution> {
+  return applyResolution(state, memory, result, turn, action, acting);
 }
 
 // ─── VALID_TRANSITIONS ─────────────────────────────────────────────
@@ -869,13 +890,72 @@ describe("discoveredItemLeadFact", () => {
 // ─── applyResolution ───────────────────────────────────────────────
 
 describe("applyResolution", () => {
-  it("applies sanity impact from resolution", () => {
+  it("applies the residual sanity impact from resolution (within ±5)", () => {
     const state = makeGameState({ sanity: 80 });
     const memory = createMemoryState();
-    const result = makeValidatedResponse({ sanityImpact: -10 });
+    const result = makeValidatedResponse({ sanityImpact: -4 });
 
-    const { gameState } = applyResolution(state, memory, result, 0, "Look around");
-    expect(gameState.sanity).toBe(70);
+    const { gameState, sanity } = applyRes(state, memory, result, 0, "Look around");
+    expect(gameState.sanity).toBe(76);
+    expect(sanity).toEqual({ tagDelta: 0, residual: -4, total: -4 });
+  });
+
+  it("clamps the residual sanity impact to ±5 (issue #95)", () => {
+    const memory = createMemoryState();
+    const drained = applyRes(
+      makeGameState({ sanity: 80 }),
+      memory,
+      makeValidatedResponse({ sanityImpact: -20 }),
+      0,
+      "Stare into the dark",
+    );
+    expect(drained.sanity.residual).toBe(-5);
+    expect(drained.gameState.sanity).toBe(75);
+
+    const soothed = applyRes(
+      makeGameState({ sanity: 80 }),
+      memory,
+      makeValidatedResponse({ sanityImpact: 99 }),
+      0,
+      "Bask",
+    );
+    expect(soothed.sanity.residual).toBe(5);
+    expect(soothed.gameState.sanity).toBe(85);
+  });
+
+  it("scores tagged sanity events with the engine, summed with the residual", () => {
+    const state = makeGameState({ sanity: 50, sequenceLevel: 9 });
+    const memory = createMemoryState();
+    // rest (+8) + a residual of -1 → +7 total at Seq 9.
+    const result = makeValidatedResponse({
+      sanityEventTags: ["rest"],
+      sanityImpact: -1,
+    });
+    const { gameState, sanity } = applyRes(state, memory, result, 0, "Sleep");
+    expect(sanity.tagDelta).toBe(8);
+    expect(sanity.residual).toBe(-1);
+    expect(sanity.total).toBe(7);
+    expect(gameState.sanity).toBe(57);
+  });
+
+  it("scores ability-use/horror tags against the pre-mutation Sequence", () => {
+    const state = makeGameState({ sanity: 80, sequenceLevel: 5 });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({ sanityEventTags: ["ability-use"] });
+    const { sanity } = applyRes(state, memory, result, 0, "Channel power");
+    // ability-use at Seq 5 = -(2 + 4*1.5) = -8.
+    expect(sanity.tagDelta).toBe(-8);
+    expect(sanity.total).toBe(-8);
+  });
+
+  it("drops unknown sanity tags rather than scoring them", () => {
+    const state = makeGameState({ sanity: 80 });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      sanityEventTags: ["rest", "made-up-tag"],
+    });
+    const { sanity } = applyRes(state, memory, result, 0, "Rest");
+    expect(sanity.tagDelta).toBe(8);
   });
 
   it("applies world state changes from resolution", () => {
@@ -892,7 +972,7 @@ describe("applyResolution", () => {
       ],
     });
 
-    const { gameState } = applyResolution(state, memory, result, 0, "Go to Chanis Gate");
+    const { gameState } = applyRes(state, memory, result, 0, "Go to Chanis Gate");
     expect(gameState.location).toBe("Chanis Gate");
   });
 
@@ -909,7 +989,7 @@ describe("applyResolution", () => {
       ],
     });
 
-    const { gameState } = applyResolution(state, memory, result, 0, "Search the desk");
+    const { gameState } = applyRes(state, memory, result, 0, "Search the desk");
     expect(gameState.inventory).toHaveLength(1);
     expect(gameState.inventory[0].name).toBe("Ancient Diary");
   });
@@ -937,7 +1017,7 @@ describe("applyResolution", () => {
       ],
     });
 
-    const { gameState, memory: newMemory } = applyResolution(
+    const { gameState, memory: newMemory } = applyRes(
       state,
       memory,
       result,
@@ -970,7 +1050,7 @@ describe("applyResolution", () => {
       ],
     });
 
-    const { gameState, memory: newMemory } = applyResolution(
+    const { gameState, memory: newMemory } = applyRes(
       state,
       memory,
       result,
@@ -988,13 +1068,13 @@ describe("applyResolution", () => {
     const state = makeGameState({ funds: 100 });
     const memory = createMemoryState();
     const result = makeValidatedResponse({ fundsDiscovered: 60 });
-    const { gameState } = applyResolution(state, memory, result, 0, "Pocket the purse");
+    const { gameState } = applyRes(state, memory, result, 0, "Pocket the purse");
     expect(gameState.funds).toBe(160);
   });
 
   it("clamps a single turn's funds find and floors the wallet at zero on a loss", () => {
     const memory = createMemoryState();
-    const huge = applyResolution(
+    const huge = applyRes(
       makeGameState({ funds: 0 }),
       memory,
       makeValidatedResponse({ fundsDiscovered: 999999 }),
@@ -1003,7 +1083,7 @@ describe("applyResolution", () => {
     );
     expect(huge.gameState.funds).toBe(FUNDS_DISCOVERED_CAP);
 
-    const robbed = applyResolution(
+    const robbed = applyRes(
       makeGameState({ funds: 50 }),
       memory,
       makeValidatedResponse({ fundsDiscovered: -999999 }),
@@ -1014,7 +1094,7 @@ describe("applyResolution", () => {
   });
 
   it("leaves the wallet untouched when no money is found", () => {
-    const { gameState } = applyResolution(
+    const { gameState } = applyRes(
       makeGameState({ funds: 75 }),
       createMemoryState(),
       makeValidatedResponse({ fundsDiscovered: 0 }),
@@ -1029,13 +1109,7 @@ describe("applyResolution", () => {
     const memory = createMemoryState();
     const result = makeValidatedResponse();
 
-    const { memory: newMemory } = applyResolution(
-      state,
-      memory,
-      result,
-      0,
-      "Look around",
-    );
+    const { memory: newMemory } = applyRes(state, memory, result, 0, "Look around");
     expect(newMemory.immediateTurns).toHaveLength(1);
     expect(newMemory.immediateTurns[0].turnNumber).toBe(0);
     expect(newMemory.immediateTurns[0].playerAction).toBe("Look around");
@@ -1073,7 +1147,7 @@ describe("applyResolution", () => {
       ],
     });
 
-    const { gameState, memory: newMemory } = applyResolution(
+    const { gameState, memory: newMemory } = applyRes(
       state,
       memory,
       result,
@@ -1092,13 +1166,7 @@ describe("applyResolution", () => {
     const memory = createMemoryState();
     const result = makeValidatedResponse();
 
-    const { gameState, memory: newMemory } = applyResolution(
-      state,
-      memory,
-      result,
-      0,
-      "Wait",
-    );
+    const { gameState, memory: newMemory } = applyRes(state, memory, result, 0, "Wait");
     expect(gameState.sanity).toBe(state.sanity);
     expect(gameState.location).toBe(state.location);
     expect(gameState.inventory).toEqual([]);
@@ -1119,7 +1187,7 @@ describe("applyResolution", () => {
       ],
     });
 
-    applyResolution(state, memory, result, 0, "Search");
+    applyRes(state, memory, result, 0, "Search");
     expect(state.sanity).toBe(80);
     expect(state.inventory).toHaveLength(0);
     expect(memory.immediateTurns).toHaveLength(0);
@@ -1130,7 +1198,7 @@ describe("applyResolution", () => {
     const memory = createMemoryState();
     const result = makeValidatedResponse({ worldStateChanges: [] });
 
-    const { gameState } = applyResolution(state, memory, result, 0, "Wait");
+    const { gameState } = applyRes(state, memory, result, 0, "Wait");
     expect(gameState).toEqual(state);
   });
 
@@ -1139,7 +1207,7 @@ describe("applyResolution", () => {
     const memory = createMemoryState();
     const result = makeValidatedResponse({ itemsDiscovered: [] });
 
-    const { gameState } = applyResolution(state, memory, result, 0, "Wait");
+    const { gameState } = applyRes(state, memory, result, 0, "Wait");
     expect(gameState.inventory).toEqual([]);
   });
 
@@ -1150,7 +1218,7 @@ describe("applyResolution", () => {
       actingEvaluation: { alignment: 1, reasoning: "Perfectly in character" },
     });
 
-    const { gameState, digestionDelta } = applyResolution(
+    const { gameState, digestionDelta } = applyRes(
       state,
       memory,
       result,
@@ -1171,7 +1239,7 @@ describe("applyResolution", () => {
       actingEvaluation: { alignment: 0, reasoning: "Wholly out of character" },
     });
 
-    const { gameState, digestionDelta } = applyResolution(
+    const { gameState, digestionDelta } = applyRes(
       state,
       memory,
       result,
@@ -1187,7 +1255,7 @@ describe("applyResolution", () => {
     const memory = createMemoryState();
     const result = makeValidatedResponse();
 
-    const { digestionDelta } = applyResolution(state, memory, result, 0, "Wait");
+    const { digestionDelta } = applyRes(state, memory, result, 0, "Wait");
     expect(digestionDelta).toBe(0);
   });
 
@@ -1201,11 +1269,87 @@ describe("applyResolution", () => {
     const memory = createMemoryState();
     const result = makeValidatedResponse();
 
-    const { gameState } = applyResolution(state, memory, result, 0, "Rest");
+    const { gameState } = applyRes(state, memory, result, 0, "Rest");
     // The 1-turn injury fully recovers and is dropped; the other ticks down.
     expect(gameState.injuries).toEqual([
       { id: "b", description: "wound", severity: "major", recoveryTurns: 3 },
     ]);
+  });
+
+  // ─── acting-method discovery (issue #95) ──────────────────────────
+
+  it("discovers the acting method when the AI flags it as taught", () => {
+    const state = makeGameState();
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({ actingMethodTaught: true });
+    const out = applyRes(state, memory, result, 0, "Listen to the old Seer");
+    expect(out.discovery).toEqual({ discoveredThisTurn: true, trigger: "taught" });
+    expect(out.actingMethodState.knowsMethod).toBe(true);
+    // A diegetic discovery fact is recorded.
+    expect(out.memory.sessionFacts.some((f) => /Acting Method/.test(f.description))).toBe(
+      true,
+    );
+  });
+
+  it("discovers the acting method by repetition after a sustained aligned run", () => {
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      actingEvaluation: { alignment: 0.9, reasoning: "In role" },
+    });
+    // One aligned turn short of the threshold.
+    const out = applyRes(makeGameState(), memory, result, 0, "Act in character", {
+      knowsMethod: false,
+      alignedStreak: 5,
+    });
+    expect(out.discovery).toEqual({ discoveredThisTurn: true, trigger: "repetition" });
+    expect(out.actingMethodState.knowsMethod).toBe(true);
+  });
+
+  it("does not discover on a low-alignment 'scare' and resets the streak", () => {
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      actingEvaluation: { alignment: 0.1, reasoning: "Betrayed the role" },
+    });
+    const out = applyRes(makeGameState(), memory, result, 0, "Break character", {
+      knowsMethod: false,
+      alignedStreak: 5,
+    });
+    expect(out.discovery.discoveredThisTurn).toBe(false);
+    expect(out.actingMethodState).toEqual({ knowsMethod: false, alignedStreak: 0 });
+    expect(out.memory.sessionFacts.some((f) => /Acting Method/.test(f.description))).toBe(
+      false,
+    );
+  });
+
+  it("discovers the method as a backstop when digestion completes", () => {
+    // One strong turn finishes a nearly-digested potion with a cold streak.
+    const state = makeGameState({
+      digestion: { pathwayId: 1, sequenceLevel: 9, progress: 95, complete: false },
+    });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      actingEvaluation: { alignment: 1, reasoning: "In role" },
+    });
+    const out = applyRes(state, memory, result, 0, "Finish the role", {
+      knowsMethod: false,
+      alignedStreak: 0,
+    });
+    expect(out.gameState.digestion!.complete).toBe(true);
+    expect(out.discovery).toEqual({ discoveredThisTurn: true, trigger: "completion" });
+    expect(out.actingMethodState.knowsMethod).toBe(true);
+  });
+
+  it("leaves an already-known method untouched and records no fact", () => {
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      actingEvaluation: { alignment: 0.9, reasoning: "In role" },
+    });
+    const out = applyRes(makeGameState(), memory, result, 0, "Act", {
+      knowsMethod: true,
+      alignedStreak: 3,
+    });
+    expect(out.discovery.discoveredThisTurn).toBe(false);
+    expect(out.actingMethodState).toEqual({ knowsMethod: true, alignedStreak: 3 });
   });
 });
 
@@ -1704,6 +1848,31 @@ describe("deserializeSession", () => {
       profile: { demeanor: [], notes: [], formerNames: [5] },
       recognition: null,
     };
+    expect(deserializeSession(JSON.stringify(modified))).toBeNull();
+  });
+
+  it("round-trips the acting-method state (issue #95)", () => {
+    const session = makeSession({
+      actingMethodState: { knowsMethod: true, alignedStreak: 4 },
+    });
+    const restored = deserializeSession(serializeSession(session));
+    expect(restored!.actingMethodState).toEqual({
+      knowsMethod: true,
+      alignedStreak: 4,
+    });
+  });
+
+  it("accepts a legacy save with no acting-method state", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    delete modified.actingMethodState;
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored).not.toBeNull();
+    expect(restored!.actingMethodState).toBeUndefined();
+  });
+
+  it("returns null for a malformed acting-method state", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    modified.actingMethodState = { knowsMethod: "yes", alignedStreak: -1 };
     expect(deserializeSession(JSON.stringify(modified))).toBeNull();
   });
 });

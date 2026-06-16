@@ -85,7 +85,27 @@ export interface AIResponse {
   choices?: Choice[];
   worldStateChanges?: StateChange[];
   actingEvaluation?: ActingEvaluation;
+  /**
+   * Residual free-form per-turn sanity nuance (issue #95), clamped to **±5**.
+   * The bulk of per-turn sanity now comes from the engine via `sanityEventTags`
+   * (deterministic magnitudes); this is the small narrative remainder the AI
+   * may add on top. Validated/clamped to ±5 in `validation.ts`.
+   */
   sanityImpact?: number;
+  /**
+   * Engine-scored sanity events the turn triggered (issue #95). The AI emits
+   * only the tags; the engine computes the magnitude via `sanityDeltaForTags`.
+   * Loosely typed at the boundary like `journalEntry` — `parseAIResponse`
+   * normalizes it to the known `SanityEventTag` set (unknown tags dropped).
+   */
+  sanityEventTags?: string[];
+  /**
+   * The narrator detected the Acting Method being explicitly taught this turn —
+   * an NPC instructing the character, or the character reading it in lore
+   * (issue #95). Drop-not-throw flag (carried only when `true`); it is the
+   * ONLY AI-driven acting-method discovery trigger and is NEVER a sanity scare.
+   */
+  actingMethodTaught?: boolean;
   itemsDiscovered?: Item[];
   /**
    * Currency found (or lost) in the fiction this turn, in pence (issue #16

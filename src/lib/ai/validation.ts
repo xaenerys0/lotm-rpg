@@ -2,10 +2,21 @@ import type { Item, ValidationResult, Violation } from "@/lib/types/rules";
 import type { AIResponse } from "./types";
 import { createMalformedOutputError } from "./errors";
 
-const SANITY_IMPACT_MIN = -20;
-const SANITY_IMPACT_MAX = 10;
+// Residual free-form sanity bounds (issue #95): tightened to ±5 — the engine
+// now owns the bulk of per-turn sanity via `sanityEventTags`, leaving the AI
+// only a small narrative remainder.
+const SANITY_IMPACT_MIN = -5;
+const SANITY_IMPACT_MAX = 5;
 const MAX_CHOICES = 6;
 const VALID_CHOICE_TYPES = ["action", "dialogue", "investigation", "ritual"];
+// The sanity event tags the AI may emit (issue #95); unknown tags are dropped.
+const VALID_SANITY_EVENT_TAGS = [
+  "rest",
+  "human-connection",
+  "routine",
+  "ability-use",
+  "horror-encounter",
+];
 const VALID_ITEM_CATEGORIES = [
   "main-ingredient",
   "supplementary-ingredient",
@@ -123,6 +134,24 @@ export function parseAIResponse(raw: string): AIResponse {
     if (Number.isFinite(rawImpact)) {
       response.sanityImpact = rawImpact;
     }
+  }
+
+  // Engine-scored sanity event tags (issue #95) — normalized to the known set,
+  // dropping unknowns rather than throwing (loose channel, like journalEntry).
+  // The empty array is dropped so the field stays absent when nothing fired.
+  if (Array.isArray(obj.sanityEventTags)) {
+    const tags = obj.sanityEventTags
+      .map((t: unknown) => String(t))
+      .filter((t: string) => VALID_SANITY_EVENT_TAGS.includes(t));
+    if (tags.length > 0) {
+      response.sanityEventTags = tags;
+    }
+  }
+
+  // Acting-method taught flag (issue #95) — carried only when literally true;
+  // any other value leaves the field absent (drop-not-throw).
+  if (obj.actingMethodTaught === true) {
+    response.actingMethodTaught = true;
   }
 
   if (obj.itemsDiscovered !== undefined) {

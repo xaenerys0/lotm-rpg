@@ -69,6 +69,15 @@ export interface GameSession {
    */
   profileState?: import("./profile").ProfileState;
   /**
+   * Acting-method discovery (issue #95). The persisted `knowsMethod` flag +
+   * `alignedStreak` counter behind the "earned through play" discovery of the
+   * Acting Method (it gates the hidden digestion meter and vague-vs-clear
+   * feedback). Absent on legacy/fresh saves (lazily resolved via
+   * `resolveActingMethodState`); strictly validated when present, exactly like
+   * `profileState`. Not seeded by `createSession`.
+   */
+  actingMethodState?: import("./acting-method").ActingMethodState;
+  /**
    * Permadeath marker (issue #12). Set once, never cleared: the session is
    * preserved as a historical record (inventory, memory, journal stay
    * readable) but play cannot continue.

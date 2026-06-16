@@ -27,4 +27,16 @@ describe("TUTORIAL_SCENES", () => {
     const ids = TUTORIAL_SCENES.map((scene) => scene.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
+
+  it("does not tutorialize the acting-method mechanic (issue #95)", () => {
+    const acting = TUTORIAL_SCENES.find((s) => s.id === "the-method-of-acting");
+    expect(acting).toBeDefined();
+    // Still teaches "acting" so TUTORIAL_REQUIRED_TOPICS stays satisfied…
+    expect(acting!.teaches).toContain("acting");
+    // …but never names the secret digestion mechanic.
+    const text = `${acting!.body} ${acting!.lesson}`.toLowerCase();
+    expect(text).not.toContain("digest");
+    expect(text).not.toContain("potion");
+    expect(text).not.toContain("score");
+  });
 });

@@ -16,6 +16,7 @@ export {
   addDiscoveredItems,
   partitionDiscoveredItems,
   discoveredItemLeadFact,
+  actingMethodDiscoveryFact,
   applyDigestion,
   applyResolution,
 } from "./world-state";
@@ -473,10 +474,16 @@ export {
   HUMAN_CONNECTION_RECOVERY,
   ROUTINE_RECOVERY,
   ACTING_NEGLECT_DECAY,
+  HORROR_TAG_GAP,
+  SANITY_EVENT_TAGS,
+  SANITY_RESIDUAL_CAP,
   sanityPercent,
   classifySanityTier,
   sanityEffects,
   sanityDelta,
+  sanityDeltaForTags,
+  knownSanityTags,
+  previewSanityImpact,
   isLossOfControl,
   evaluateLossOfControl,
 } from "./sanity";
@@ -485,6 +492,8 @@ export type {
   SanityTier,
   SanityEffectProfile,
   SanityEvent,
+  SanityEventTag,
+  SanityBreakdown,
   LossOfControlSeverity,
   LossOfControlContext,
 } from "./sanity";
@@ -498,6 +507,18 @@ export {
 } from "./preferences";
 
 export type { GamePreferences } from "./preferences";
+
+export {
+  createActingMethodState,
+  evaluateActingDiscovery,
+  isValidActingMethodStateShape,
+  resolveActingMethodState,
+  ACTING_ALIGNED_THRESHOLD,
+  ACTING_DISCOVERY_STREAK,
+  type ActingDiscoveryResult,
+  type ActingDiscoveryTrigger,
+  type ActingMethodState,
+} from "./acting-method";
 
 export { isValidDraftShape, isActivePrologueDraft, clearDraft } from "./prologue-draft";
 

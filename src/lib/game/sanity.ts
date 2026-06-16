@@ -173,6 +173,121 @@ export function sanityDelta(event: SanityEvent): number {
   }
 }
 
+// ─── Hybrid sanity: AI event tags (issue #95) ────────────────────────
+
+/**
+ * The subset of `SanityEvent` types the AI may fire per turn as lightweight
+ * *tags*. The engine — not the AI — owns the magnitude: each tag maps to a
+ * `sanityDelta()` event, so per-turn sanity stays consistent and learnable
+ * while the AI keeps only a small residual free-form `sanityImpact` (±5) for
+ * narrative nuance.
+ */
+export type SanityEventTag =
+  | "rest"
+  | "human-connection"
+  | "routine"
+  | "ability-use"
+  | "horror-encounter";
+
+export const SANITY_EVENT_TAGS: readonly SanityEventTag[] = [
+  "rest",
+  "human-connection",
+  "routine",
+  "ability-use",
+  "horror-encounter",
+];
+
+/**
+ * A horror met in an ordinary turn is modeled as one rung above the player — a
+ * real-but-survivable brush with the uncanny rather than an Outer Deity. Feeds
+ * the `horror-encounter` gap so the drain scales with the player's own
+ * Sequence (a stronger Beyonder is less rattled by the same encounter).
+ */
+export const HORROR_TAG_GAP = 1;
+
+/**
+ * Cap on the AI's residual free-form sanity nuance per turn (issue #95). The
+ * engine owns the bulk of per-turn sanity through `sanityEventTags`; this bounds
+ * the small remainder so a single `sanityImpact` can't swing the meter wildly.
+ */
+export const SANITY_RESIDUAL_CAP = 5;
+
+/**
+ * Narrow a loosely-typed AI `sanityEventTags` array to the known set. The AI
+ * boundary already normalizes, but the engine never trusts it. Pure.
+ */
+export function knownSanityTags(tags: readonly string[] | undefined): SanityEventTag[] {
+  if (!tags) return [];
+  return tags.filter((t): t is SanityEventTag =>
+    (SANITY_EVENT_TAGS as readonly string[]).includes(t),
+  );
+}
+
+export interface SanityBreakdown {
+  /** Engine-scored magnitude of the tagged events. */
+  tagDelta: number;
+  /** The AI's residual free-form nuance, clamped to ±`SANITY_RESIDUAL_CAP`. */
+  residual: number;
+  /** `tagDelta + residual` — the sanity delta actually applied this turn. */
+  total: number;
+}
+
+/**
+ * The single source of truth for hybrid per-turn sanity (issue #95): engine-owned
+ * tag magnitudes (against the player's Sequence) plus the AI's clamped residual.
+ * `applyResolution` commits this on Continue; the consequences panel previews it —
+ * both call this one helper so the previewed and applied numbers can never drift.
+ * Pure.
+ */
+export function previewSanityImpact(
+  tags: readonly string[] | undefined,
+  sanityImpact: number | undefined,
+  playerSequence: number,
+): SanityBreakdown {
+  const tagDelta = sanityDeltaForTags(knownSanityTags(tags), playerSequence);
+  const residual = clamp(sanityImpact ?? 0, -SANITY_RESIDUAL_CAP, SANITY_RESIDUAL_CAP);
+  return { tagDelta, residual, total: tagDelta + residual };
+}
+
+/**
+ * Sum the engine-owned sanity delta for a set of AI-emitted event tags. The
+ * sequence-scaled tags resolve against the player's current Sequence:
+ * `ability-use` costs more at higher Sequences, and `horror-encounter` is
+ * modeled as a horror one rung above the player (`HORROR_TAG_GAP`). The flat
+ * recovery tags (`rest`/`human-connection`/`routine`) ignore the sequence.
+ * Pure — an empty tag list yields 0.
+ */
+export function sanityDeltaForTags(
+  tags: readonly SanityEventTag[],
+  playerSequence: number,
+): number {
+  let total = 0;
+  for (const tag of tags) {
+    switch (tag) {
+      case "ability-use":
+        total += sanityDelta({ type: "ability-use", sequenceLevel: playerSequence });
+        break;
+      case "horror-encounter":
+        total += sanityDelta({
+          type: "horror-encounter",
+          playerSequence,
+          horrorSequence: playerSequence - HORROR_TAG_GAP,
+        });
+        break;
+      case "rest":
+        total += sanityDelta({ type: "rest" });
+        break;
+      case "human-connection":
+        total += sanityDelta({ type: "human-connection" });
+        break;
+      case "routine":
+        total += sanityDelta({ type: "routine" });
+        break;
+    }
+  }
+  return total;
+}
+
 // ─── Loss of Control ─────────────────────────────────────────────────
 
 /**
