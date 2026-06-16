@@ -57,12 +57,19 @@ export interface SocietyMember {
   id: string;
   /** Members are known by code names — faces stay hidden in the fog. */
   codeName: string;
-  /** What the player can guess of their nature. */
-  pathwayHint: string;
+  /**
+   * Index into PATHWAY_HINTS. The PROSE is derived at render time
+   * (`memberPathwayHint`) and never persisted, so copy/grammar edits reach
+   * every existing save instead of being frozen in at recruit time.
+   */
+  pathwayHintId: number;
   /** -100..100 — drifts with gathering outcomes. */
   disposition: number;
-  /** The member's own slow arc; advances every few gatherings. */
-  arc: string;
+  /**
+   * Index into MEMBER_ARCS, or RESOLVED_ARC_ID once their matter is settled.
+   * Prose is derived via `memberArc` — see `pathwayHintId`.
+   */
+  arcId: number;
   arcStage: number;
 }
 
@@ -87,6 +94,10 @@ const CODE_NAMES = [
   "The World",
 ] as const;
 
+// Stable, APPEND-ONLY prose catalogs. Members persist an index into these (not
+// the rendered text), so prose is owned by code and any edit applies to every
+// save. Never reorder or delete entries — that would re-point existing ids.
+//
 // Rendered as "This one {hint}." — the subject is singular third person, so
 // each hint must read with a third-person-SINGULAR verb (reads / knows / hums).
 const PATHWAY_HINTS = [
@@ -109,6 +120,25 @@ const MEMBER_ARCS = [
   "want a formula they cannot ask for openly",
   "are being followed, and know it",
 ] as const;
+
+/**
+ * The arc a member carries once the player helps settle their matter. Assigned
+ * only by `resolveMemberArc` (never recruited randomly), so it lives outside
+ * the MEMBER_ARCS index under a reserved id.
+ */
+const RESOLVED_ARC = "owe you a debt they intend to honor";
+export const RESOLVED_ARC_ID = -1;
+
+/** Derive a member's hint prose from its stable id (unknown ids clamp to 0). */
+export function memberPathwayHint(member: SocietyMember): string {
+  return PATHWAY_HINTS[member.pathwayHintId] ?? PATHWAY_HINTS[0];
+}
+
+/** Derive a member's arc prose from its stable id (unknown ids clamp to 0). */
+export function memberArc(member: SocietyMember): string {
+  if (member.arcId === RESOLVED_ARC_ID) return RESOLVED_ARC;
+  return MEMBER_ARCS[member.arcId] ?? MEMBER_ARCS[0];
+}
 
 // Intel templates per arc stage — the leads members bring to a gathering.
 const INTEL_LEADS = [
@@ -172,9 +202,9 @@ export function recruitMember(
   const member: SocietyMember = {
     id,
     codeName: available[Math.floor(random() * available.length)],
-    pathwayHint: PATHWAY_HINTS[Math.floor(random() * PATHWAY_HINTS.length)],
+    pathwayHintId: Math.floor(random() * PATHWAY_HINTS.length),
     disposition: 10,
-    arc: MEMBER_ARCS[Math.floor(random() * MEMBER_ARCS.length)],
+    arcId: Math.floor(random() * MEMBER_ARCS.length),
     arcStage: 0,
   };
   return { ...society, members: [...society.members, member] };
@@ -274,7 +304,7 @@ export function resolveMemberArc(
         ? {
             ...candidate,
             arcStage: 0,
-            arc: "owe you a debt they intend to honor",
+            arcId: RESOLVED_ARC_ID,
             disposition: Math.min(100, candidate.disposition + 20),
           }
         : candidate,
@@ -284,7 +314,7 @@ export function resolveMemberArc(
     society: next,
     fact: {
       type: "event",
-      description: `${member.codeName}'s private matter — they ${member.arc} — has come to a head, with your society's help.`,
+      description: `${member.codeName}'s private matter — they ${memberArc(member)} — has come to a head, with your society's help.`,
       turnNumber: 0,
     },
   };
@@ -299,13 +329,77 @@ export function isValidSocietyShape(obj: unknown): boolean {
     return false;
   }
   if (!Array.isArray(s.members)) return false;
-  return s.members.every(
-    (entry: unknown) =>
-      typeof entry === "object" &&
-      entry !== null &&
-      typeof (entry as SocietyMember).id === "string" &&
-      typeof (entry as SocietyMember).codeName === "string" &&
-      Number.isFinite((entry as SocietyMember).disposition) &&
-      typeof (entry as SocietyMember).arc === "string",
-  );
+  return s.members.every((entry: unknown) => {
+    if (typeof entry !== "object" || entry === null) return false;
+    const m = entry as Record<string, unknown>;
+    return (
+      typeof m.id === "string" &&
+      typeof m.codeName === "string" &&
+      Number.isFinite(m.disposition) &&
+      // The arc is a legacy prose string OR the current numeric id; legacy
+      // saves are converted to ids on load by `migrateSocietyState`.
+      (typeof m.arc === "string" || Number.isFinite(m.arcId))
+    );
+  });
+}
+
+// --- Legacy migration --------------------------------------------------------
+// Saves written before arcs/hints became ids stored the rendered PROSE,
+// including the pre-grammar-fix singular-verb arcs ("is hunting", "owes …").
+// Map every historical string back to its stable id ONCE, on load; afterwards
+// the save holds the id and any future copy edit applies automatically.
+const LEGACY_MEMBER_ARCS = [
+  "is hunting the counterfeiter who ruined their family",
+  "is quietly buying up a dead colleague's debts",
+  "suspects their superior serves something else entirely",
+  "is searching for a sibling who walked into the fog",
+  "wants a formula they cannot ask for openly",
+  "is being followed, and knows it",
+] as const;
+
+const ARC_PROSE_TO_ID: Record<string, number> = {};
+MEMBER_ARCS.forEach((arc, i) => (ARC_PROSE_TO_ID[arc] = i));
+LEGACY_MEMBER_ARCS.forEach((arc, i) => (ARC_PROSE_TO_ID[arc] = i));
+ARC_PROSE_TO_ID[RESOLVED_ARC] = RESOLVED_ARC_ID;
+ARC_PROSE_TO_ID["owes you a debt they intend to honor"] = RESOLVED_ARC_ID;
+
+const HINT_PROSE_TO_ID: Record<string, number> = {};
+PATHWAY_HINTS.forEach((hint, i) => (HINT_PROSE_TO_ID[hint] = i));
+
+/**
+ * Bring a persisted society up to the id-based member shape. Legacy saves
+ * stored arc/hint PROSE; map it back to stable ids so prose is re-derived in
+ * code (and any copy fix reaches the save). Idempotent — id-shaped members pass
+ * through untouched, and unknown prose clamps to id 0 rather than crashing.
+ */
+export function migrateSocietyState(state: SocietyState): SocietyState {
+  let changed = false;
+  const members = state.members.map((member) => {
+    if (typeof member.arcId === "number" && typeof member.pathwayHintId === "number") {
+      return member;
+    }
+    changed = true;
+    const loose = member as SocietyMember & { arc?: unknown; pathwayHint?: unknown };
+    const arcId =
+      typeof member.arcId === "number"
+        ? member.arcId
+        : typeof loose.arc === "string"
+          ? (ARC_PROSE_TO_ID[loose.arc] ?? 0)
+          : 0;
+    const pathwayHintId =
+      typeof member.pathwayHintId === "number"
+        ? member.pathwayHintId
+        : typeof loose.pathwayHint === "string"
+          ? (HINT_PROSE_TO_ID[loose.pathwayHint] ?? 0)
+          : 0;
+    return {
+      id: member.id,
+      codeName: member.codeName,
+      pathwayHintId,
+      disposition: member.disposition,
+      arcId,
+      arcStage: typeof member.arcStage === "number" ? member.arcStage : 0,
+    };
+  });
+  return changed ? { ...state, members } : state;
 }
