@@ -282,6 +282,17 @@ export function isValidSessionShape(obj: unknown): boolean {
     return false;
   }
 
+  // The transient engine-turn action text is optional but, when present, must be
+  // a string or null (a mid-`consequences` engine turn can be persisted with it
+  // set; it is consumed as the turn record's player action on the next continue).
+  if (
+    s.pendingPlayerAction !== undefined &&
+    s.pendingPlayerAction !== null &&
+    typeof s.pendingPlayerAction !== "string"
+  ) {
+    return false;
+  }
+
   // The permadeath marker (issue #12) is optional but strict when present.
   if (s.ended !== undefined) {
     if (typeof s.ended !== "object" || s.ended === null) return false;

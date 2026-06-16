@@ -640,10 +640,21 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
   // capability lists and the point index, never fresh randomness — so a
   // serialized fight regenerates the same options.
   const availableAbilities = encounter.availableAbilities ?? [];
-  const availableArtifacts = encounter.availableArtifacts ?? [];
+  // Dynamic artifact pool: carried artifacts NOT already readied as sealed-prep
+  // artifacts. A sealed item is consumed through the templated artifact slot, so
+  // offering it dynamically too would let one physical item be spent — and add
+  // its modifier — twice. Matched by name, consistent with `removeItemsByName`.
+  const sealedNames = new Set(
+    (encounter.preparation?.sealedArtifacts ?? []).map((a) => a.name),
+  );
+  const dynamicArtifactPool = (encounter.availableArtifacts ?? []).filter(
+    (a) => !sealedNames.has(a.name),
+  );
 
   let artifactsAllocated = 0;
-  let dynamicArtifactsAllocated = 0;
+  // Cursor into `dynamicArtifactPool` so each carried artifact is offered at
+  // most once across the whole fight (never re-offered at a later point).
+  let dynamicArtifactIndex = 0;
   const points: DecisionPoint[] = [];
 
   for (let i = 0; i < DECISION_POINT_COUNT; i++) {
@@ -700,17 +711,15 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
       }
     }
 
-    // Append a dynamic artifact option — a carried artifact unsealed in the
-    // moment, consumed when used. Allocated across points so a single artifact
-    // is never offered twice.
-    if (
-      dynamicArtifactsAllocated < MAX_DYNAMIC_ARTIFACT_OPTIONS_PER_POINT &&
-      artifactsAllocated + dynamicArtifactsAllocated < availableArtifacts.length
-    ) {
-      const artifact = availableArtifacts[artifactsAllocated + dynamicArtifactsAllocated];
-      dynamicArtifactsAllocated++;
+    // Append dynamic artifact options — carried artifacts unsealed in the
+    // moment, consumed when used. The cursor walks the pool so each artifact is
+    // offered at most once across the fight (never the same item twice).
+    for (let k = 0; k < MAX_DYNAMIC_ARTIFACT_OPTIONS_PER_POINT; k++) {
+      if (dynamicArtifactIndex >= dynamicArtifactPool.length) break;
+      const artifact = dynamicArtifactPool[dynamicArtifactIndex];
+      dynamicArtifactIndex++;
       options.push({
-        id: `${pointId}-dyn-artifact-${i}`,
+        id: `${pointId}-dyn-artifact-${i}-${k}`,
         label: `Unleash ${artifact.name}`,
         kind: "artifact",
         description: `Break the seal on ${artifact.name} and loose its power on the ${enemyName}.`,

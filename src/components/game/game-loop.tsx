@@ -161,6 +161,14 @@ import {
   useStoredValue,
 } from "@/lib/react/session-store";
 
+// Wrap a narration-only AI response as the `ValidatedAIResponse` an
+// engine-decided turn (advancement / apotheosis) carries through
+// ENGINE_RESOLUTION. The engine already committed the mechanical effects, so the
+// response only narrates — no validation work to do.
+function engineResolution(response: AIResponse): ValidatedAIResponse {
+  return { response, validation: { valid: true, violations: [] } };
+}
+
 function loadProviderConfig(): ProviderConfig | null {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
@@ -579,14 +587,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // Route the ascent through the normal turn loop (like advancement) so the
       // tease becomes the current scene and a memory turn record — the narrator
       // continues as a True God with full awareness, no side-channel banner.
-      const resolution: ValidatedAIResponse = {
-        response: { narrative: result.tease },
-        validation: { valid: true, violations: [] },
-      };
       updateSession(
         transition(result.session, {
           type: "ENGINE_RESOLUTION",
-          result: resolution,
+          result: engineResolution({ narrative: result.tease }),
           playerAction: `I seize the throne and ascend to Sequence 0, becoming ${result.honorific}, a True God of the pathway.`,
         }),
       );
@@ -686,12 +690,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         // narrator knows on the next turn it happened), with the AI response
         // stripped to narration so it cannot re-apply the effects the engine
         // already committed. No more side-channel banner.
-        const resolution: ValidatedAIResponse = {
-          response: aiResponse
+        const resolution = engineResolution(
+          aiResponse
             ? { ...narrationOnly(aiResponse), narrative: scene }
             : { narrative: scene },
-          validation: { valid: true, violations: [] },
-        };
+        );
         const playerAction = `I drink the Sequence ${result.newSequenceLevel} potion and undergo the advancement to ${result.roleName}${
           result.ritual ? `, performing the rite: ${result.ritual.description}` : ""
         }. I have fully digested the previous potion through the Acting Method.`;
