@@ -1,0 +1,125 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# Cancel superseded runs on the same ref (e.g. rapid pushes to a PR branch).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Least privilege: the pipeline only reads the repo.
+permissions:
+  contents: read
+
+env:
+  # Pin the toolchain so CI matches local development.
+  NODE_VERSION: "22"
+  PNPM_VERSION: "10"
+
+jobs:
+  # Fast, browserless quality gate — mirrors the pre-commit checklist.
+  checks:
+    name: Lint, typecheck & test (coverage)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prettier
+        run: pnpm format:check
+
+      - name: ESLint
+        run: pnpm lint
+
+      - name: TypeScript
+        run: pnpm typecheck
+
+      # Coverage thresholds (95%) are enforced in vitest.config.mts, so this
+      # fails the job if coverage regresses — the gate now lives in CI, not just
+      # locally.
+      - name: Vitest (coverage)
+        run: pnpm vitest run --coverage
+
+  # Public-tier Playwright suite — real-browser layout/responsiveness checks.
+  # The webServer block boots the app with dummy Supabase env, so no backend is
+  # needed. The authenticated tier (E2E_SUPABASE_URL) is a secret-gated
+  # follow-up tracked in the issue.
+  e2e:
+    name: E2E (Playwright, public tier)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Key the browser cache on the resolved @playwright/test version so a
+      # dependency bump busts it automatically.
+      - name: Resolve Playwright version
+        id: playwright
+        run: |
+          version="$(node -e "console.log(require('@playwright/test/package.json').version)")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      # The suite honors PLAYWRIGHT_BROWSERS_PATH; cache the browser binaries
+      # there to avoid re-downloading Chromium on every run.
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # Install chromium only — the config defines mobile/desktop Chromium
+      # projects. On a cache hit we still install the OS deps (apt packages),
+      # which aren't part of the cached browser bundle.
+      - name: Install Chromium (with deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Install Chromium system deps (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
+
+      - name: Run Playwright (public tier)
+        run: pnpm test:e2e
+
+      # Surface failures: keep the HTML report and any traces for download.
+      - name: Upload Playwright report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
