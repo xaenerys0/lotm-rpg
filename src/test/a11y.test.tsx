@@ -81,6 +81,15 @@ describe("accessibility — game shell", () => {
     await expectNoAxeViolations(<GameSidebar userEmail="beyonder@tingen.city" />);
   });
 
+  it("sidebar character switcher (multiple characters) has no violations", async () => {
+    const a = createSession(createDefaultGameState(1, "char-a", "Klein"), "switch-a");
+    const b = createSession(createDefaultGameState(2, "char-b", "Audrey"), "switch-b");
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["switch-b", "switch-a"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "switch-a", serializeSession(a));
+    localStorage.setItem(SESSION_KEY_PREFIX + "switch-b", serializeSession(b));
+    await expectNoAxeViolations(<GameSidebar userEmail="beyonder@tingen.city" />);
+  });
+
   it("settings provider config has no violations", async () => {
     await expectNoAxeViolations(<ProviderConfig />);
   });

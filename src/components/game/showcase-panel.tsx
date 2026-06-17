@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import { loadActiveSession, useStoredValue } from "@/lib/react/session-store";
+import { useActiveSession } from "@/lib/react/session-store";
 import { createClient } from "@/lib/supabase/client";
 import { getPathway } from "@/lib/rules";
 import {
@@ -20,7 +20,8 @@ import {
 // Nothing leaves the device until the player presses Publish.
 
 export function ShowcasePanel() {
-  const session = useStoredValue(loadActiveSession, null);
+  // The single active character, reactive (active-character sync).
+  const session = useActiveSession();
 
   const [displayName, setDisplayName] = useState("");
   const [isPublic, setIsPublic] = useState(false);

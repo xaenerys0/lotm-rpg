@@ -26,6 +26,7 @@ import { selectStartScenario, selectStartScenarioForLocation } from "@/lib/lore"
 import {
   loadAllSessions,
   loadSessionIndex,
+  saveActiveSessionId,
   saveSessionIndex,
   persistSession,
   useStoredValue,
@@ -181,6 +182,8 @@ export function PlayDashboard() {
       persistSession(session);
       saveSessionIndex([session.id, ...loadSessionIndex()]);
 
+      // Make the new character the active one everywhere (active-character sync).
+      saveActiveSessionId(session.id);
       setActiveSessionId(session.id);
       setView("playing");
     },
@@ -188,6 +191,9 @@ export function PlayDashboard() {
   );
 
   const handleContinue = useCallback((sessionId: string) => {
+    // Continuing a character makes it the active one everywhere (the Map,
+    // Journal, Glossary, etc. all follow the one you are actually playing).
+    saveActiveSessionId(sessionId);
     setActiveSessionId(sessionId);
     setView("playing");
   }, []);

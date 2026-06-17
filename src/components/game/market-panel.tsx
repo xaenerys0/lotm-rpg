@@ -2,11 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-import {
-  loadActiveSession,
-  persistSession,
-  useStoredValue,
-} from "@/lib/react/session-store";
+import { persistSession, useActiveSession } from "@/lib/react/session-store";
 import { createBrowserClientSafe, createClient } from "@/lib/supabase/client";
 import type { Item } from "@/lib/types/rules";
 import {
@@ -42,16 +38,11 @@ const marketClient = (): MarketplaceClient | null =>
   createBrowserClientSafe<MarketplaceClient>();
 
 export function MarketPanel() {
-  const initialSession = useStoredValue(loadActiveSession, null);
-  // Derive from the reactive store snapshot until a local mutation overrides it.
-  // `useState(initialSession)` would freeze on the server-fallback (null) captured
-  // at the hydration render and never pick up the real session on a full page
-  // load; the override pattern (see character-sheet.tsx) corrects after hydration.
-  const [sessionOverride, setSession] = useState<GameSession | null>(null);
-  const session = sessionOverride ?? initialSession;
+  // The single active character, reactive (active-character sync): a sale/listing
+  // persists and this page re-reads; switching character updates it live.
+  const session = useActiveSession();
 
   const persist = useCallback((next: GameSession) => {
-    setSession(next);
     persistSession(next);
   }, []);
 

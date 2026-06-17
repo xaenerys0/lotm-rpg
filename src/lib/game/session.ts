@@ -118,6 +118,9 @@ export function sessionToSummary(session: GameSession): GameSessionSummary {
     pathwayId: session.gameState.pathwayId,
     sequenceLevel: session.gameState.sequenceLevel,
     updatedAt: session.updatedAt,
+    ...(session.gameState.characterName
+      ? { characterName: session.gameState.characterName }
+      : {}),
   };
 }
 

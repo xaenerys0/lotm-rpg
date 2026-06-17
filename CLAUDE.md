@@ -50,7 +50,7 @@ src/
 │   ├── game/            # Game loop engine — state machine, world state, sessions
 │   ├── lore/            # Lore database — RAG-ready chunks for AI layer
 │   ├── rag/             # RAG ingestion core — JSONL chunk format + shared chunker
-│   ├── react/           # Small React utilities (e.g. noopSubscribe)
+│   ├── react/           # React utilities: noopSubscribe + session-store (the shared active-character pointer + reactive hooks)
 │   ├── rules/           # Rules engine — pathways, laws, validation
 │   ├── supabase/        # Client factories (browser, server, middleware)
 │   └── types/           # TypeScript type definitions
