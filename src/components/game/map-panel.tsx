@@ -6,15 +6,16 @@ import { persistSession, useActiveSession } from "@/lib/react/session-store";
 import {
   canTravelTo,
   CITIES,
-  cityIdFromLocation,
   companionsPresentOnMove,
+  locationLabel,
+  mapAtlasFor,
   resolveTrackedNpcState,
   travelDays,
   travelTo,
   type GameSession,
 } from "@/lib/game";
 import { addSessionFact } from "@/lib/ai";
-import { gazetteerForEpoch, type GazetteerDistrict } from "@/lib/lore";
+import { gazetteerForEpoch } from "@/lib/lore";
 
 // Map panel (issue #23, epoch isolation): an epoch-keyed gazetteer. The Fifth
 // Epoch shows Tingen's districts plus a "Farther afield" section with inter-city
@@ -26,33 +27,25 @@ import { gazetteerForEpoch, type GazetteerDistrict } from "@/lib/lore";
 // active session's location via the pure `travelTo` engine and persists to
 // localStorage (mirroring the session-persist pattern in market-panel.tsx).
 
-function isHere(district: GazetteerDistrict, location: string | null): boolean {
-  if (!location) return false;
-  const lowered = location.toLowerCase();
-  return district.keywords.some((keyword) => lowered.includes(keyword));
-}
-
 export function MapPanel() {
   // The single active character, reactive: switching it (sidebar / character tab)
   // or travelling re-renders this page live (active-character sync).
   const session = useActiveSession();
   const [notice, setNotice] = useState<string | null>(null);
 
-  const location = session?.gameState.location ?? null;
-  // Prefer the engine-tracked current city (issue #101): it survives the narrator
-  // moving the character to a bare district string that `cityIdFromLocation`
-  // can't resolve, so the atlas stays on the right city instead of reverting to
-  // Tingen. Fall back to resolving the location string for legacy saves.
-  const currentCityId =
-    session?.gameState.currentCity ??
-    (location ? cityIdFromLocation(location) : undefined);
-  // Epoch- AND city-keyed atlas (issue #101): a Fifth character sees the districts
-  // of the city they are actually in (Bayam shows Bayam, not Tingen); a non-Fifth
-  // character sees its own era's regions. Absent epoch defaults to the Fifth.
-  const gazetteer = gazetteerForEpoch(session?.gameState.epoch, currentCityId);
-  const currentCityName = currentCityId
-    ? (CITIES.find((c) => c.id === currentCityId)?.name ?? null)
+  // One shared resolver (Backlund location sync): the atlas city, the districts
+  // (incl. the character's off-map custom venues), and the "you are here" marker
+  // all come from `mapAtlasFor`, so the map can never disagree with itself or
+  // with the character sheet. An unresolved Fifth-Epoch city yields the neutral
+  // "whereabouts uncertain" atlas instead of silently defaulting to Tingen.
+  const resolved = session
+    ? mapAtlasFor(session.gameState, session.gameState.epoch)
     : null;
+  const gazetteer = resolved?.atlas ?? gazetteerForEpoch(undefined);
+  const currentCityId = resolved?.resolved.cityId ?? null;
+  const currentCityName = resolved?.resolved.cityName ?? null;
+  const hereSlug = resolved?.resolved.districtSlug ?? null;
+  const whereabouts = resolved ? locationLabel(resolved.resolved) : null;
 
   const handleTravel = useCallback(
     (cityId: string) => {
@@ -80,19 +73,14 @@ export function MapPanel() {
     [session],
   );
 
-  // A broad location ("Tingen City") shouldn't pin every district; only mark a
-  // district when the location names it specifically.
-  const marked = gazetteer.districts.filter((d) => isHere(d, location));
-  const specific = marked.length === 1 ? marked[0].slug : null;
-
   return (
     <div className="space-y-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="font-serif text-sm italic text-muted">{gazetteer.intro}</p>
-        {location && (
+        {whereabouts && (
           <p className="text-xs text-muted">
             Current whereabouts:{" "}
-            <span className="font-medium text-amber">{location}</span>
+            <span className="font-medium text-amber">{whereabouts}</span>
           </p>
         )}
       </div>
@@ -109,7 +97,7 @@ export function MapPanel() {
 
       <ul className="grid gap-4 sm:grid-cols-2">
         {gazetteer.districts.map((district) => {
-          const here = district.slug === specific;
+          const here = district.slug === hereSlug;
           return (
             <li
               key={district.slug}

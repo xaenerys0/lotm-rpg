@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { gazetteerForEpoch } from "./gazetteer";
+import { gazetteerForEpoch, uncertainFifthGazetteer } from "./gazetteer";
 import { DEFAULT_EPOCH_ID, getEpoch } from "./epochs";
 
 describe("gazetteerForEpoch", () => {
@@ -71,6 +71,23 @@ describe("gazetteerForEpoch", () => {
       // No Tingen district leaks into an earlier epoch's atlas.
       expect(g.districts.some((d) => d.slug === "iron-cross-district")).toBe(false);
     }
+  });
+
+  it("offers an uncertain atlas with no districts but full travel", () => {
+    const uncertain = uncertainFifthGazetteer();
+    expect(uncertain.districts).toEqual([]);
+    expect(uncertain.travelEnabled).toBe(true);
+    expect(uncertain.intro.toLowerCase()).toContain("uncertain");
+    // Every Fifth city is reachable, so setting out re-anchors the player.
+    expect(uncertain.fartherCities.map((c) => c.id)).toEqual([
+      "tingen",
+      "backlund",
+      "trier",
+      "bayam",
+      "pritz",
+      "enmat",
+      "feysac",
+    ]);
   });
 
   it("places the new character's starting region in the atlas", () => {

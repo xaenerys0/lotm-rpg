@@ -32,6 +32,21 @@ export {
 export { cityForLocation, isReachable, type ReachableResult } from "./place-graph";
 
 export {
+  resolveLocation,
+  mapAtlasFor,
+  locationLabel,
+  registerCustomLocation,
+  resolveCityId,
+  matchDistrictSlug,
+  stripCityPrefix,
+  customLocationSlug,
+  customToDistrict,
+  isValidCustomLocationsShape,
+  type ResolvedLocation,
+  type MapAtlas,
+} from "./location";
+
+export {
   companionsPresentOnMove,
   emptyTrackedNpcState,
   followers,
