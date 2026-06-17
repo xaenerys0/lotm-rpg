@@ -25,6 +25,7 @@ import {
   removeProfileNote,
   resolveActingMethodState,
   resolveProfileState,
+  resolveTrackedNpcState,
   switchIdentity,
   transformationRiteFor,
   trueGodName,
@@ -335,6 +336,26 @@ export function CharacterSheet() {
                 {state.activeQuests.length > 0 ? state.activeQuests.join("; ") : "None."}
               </dd>
             </div>
+            {resolveTrackedNpcState(session.trackedNpcState).roster.length > 0 && (
+              <div>
+                <dt className="text-xs tracking-wide text-muted uppercase">
+                  Companions &amp; pursuers
+                </dt>
+                <dd className="mt-0.5 text-foreground/85">
+                  <ul className="space-y-1">
+                    {resolveTrackedNpcState(session.trackedNpcState).roster.map((npc) => (
+                      <li key={npc.name}>
+                        {npc.name}{" "}
+                        <span className="text-xs text-muted">
+                          ({npc.disposition === "hostile" ? "pursuer" : npc.disposition}
+                          {npc.follows ? ", follows" : ""})
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </dd>
+              </div>
+            )}
           </dl>
         </section>
       </div>

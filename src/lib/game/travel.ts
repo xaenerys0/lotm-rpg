@@ -1,4 +1,9 @@
 import type { GameState, SessionFact } from "@/lib/ai";
+import {
+  emptyTrackedNpcState,
+  reassertFollowersAt,
+  type TrackedNpcState,
+} from "./tracked-npcs";
 
 // Travel mechanics (issue #23). A small pure module describing the cities a
 // player can deliberately journey between and the act of doing so. Location is
@@ -140,14 +145,18 @@ export interface TravelResult {
 /**
  * Deliberately travel to `cityId`. Returns a NEW GameState whose `location` is
  * the destination city's name, plus a memory-fact describing the journey, or
- * `null` if the travel is not permitted (`canTravelTo` is false). On arrival
- * `npcsPresent` is cleared — the companions of the previous scene are left
- * behind. The caller supplies `turnNumber` for the fact's bookkeeping.
+ * `null` if the travel is not permitted (`canTravelTo` is false). On arrival the
+ * scene cast is cleared and replaced with the roster's followers (issue #101):
+ * companions and pursuers travel WITH the player, while incidental NPCs of the
+ * previous scene are left behind. The default empty roster reproduces the legacy
+ * "clear `npcsPresent`" behaviour, so every existing caller/test is unaffected.
+ * The caller supplies `turnNumber` for the fact's bookkeeping.
  */
 export function travelTo(
   state: GameState,
   cityId: string,
   turnNumber = 0,
+  trackedNpcState: TrackedNpcState = emptyTrackedNpcState(),
 ): TravelResult | null {
   if (!canTravelTo(state, cityId)) return null;
   const dest = getCity(cityId);
@@ -165,7 +174,11 @@ export function travelTo(
       : `Travelled to ${dest.name}.`;
 
   return {
-    state: { ...state, location: dest.name, npcsPresent: [] },
+    state: {
+      ...state,
+      location: dest.name,
+      npcsPresent: reassertFollowersAt([], trackedNpcState),
+    },
     fact: { type: "event", description: journey, turnNumber },
   };
 }

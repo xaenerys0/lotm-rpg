@@ -23,6 +23,13 @@ export interface GamePreferences {
   highContrast: boolean;
   /** AI scene art for key moments (issue #20). Opt-in — images cost real money. */
   sceneArtEnabled: boolean;
+  /**
+   * Movement realism (issue #101). When true (default), the narrator is blocked
+   * from teleporting the character across the map — cross-city moves are the
+   * player's deliberate travel-map choice. Turn it off to let the AI relocate
+   * you anywhere (the override the gate honours).
+   */
+  movementGateEnabled: boolean;
 }
 
 export const DEFAULT_PREFERENCES: GamePreferences = {
@@ -30,6 +37,7 @@ export const DEFAULT_PREFERENCES: GamePreferences = {
   digestionMeterVisible: false,
   highContrast: false,
   sceneArtEnabled: false,
+  movementGateEnabled: true,
 };
 
 export function isValidPreferencesShape(obj: unknown): boolean {
@@ -45,6 +53,10 @@ export function isValidPreferencesShape(obj: unknown): boolean {
     p.digestionMeterVisible !== undefined &&
     typeof p.digestionMeterVisible !== "boolean"
   ) {
+    return false;
+  }
+  // movementGateEnabled (#101) was added later — older payloads omit it.
+  if (p.movementGateEnabled !== undefined && typeof p.movementGateEnabled !== "boolean") {
     return false;
   }
   return p.sceneArtEnabled === undefined || typeof p.sceneArtEnabled === "boolean";
@@ -69,6 +81,10 @@ export function mergePreferences(partial: Partial<GamePreferences>): GamePrefere
       typeof partial.sceneArtEnabled === "boolean"
         ? partial.sceneArtEnabled
         : DEFAULT_PREFERENCES.sceneArtEnabled,
+    movementGateEnabled:
+      typeof partial.movementGateEnabled === "boolean"
+        ? partial.movementGateEnabled
+        : DEFAULT_PREFERENCES.movementGateEnabled,
   };
 }
 

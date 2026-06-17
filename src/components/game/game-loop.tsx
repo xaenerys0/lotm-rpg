@@ -27,6 +27,7 @@ import {
   isLossOfControl,
   evaluateLossOfControl,
   resolveActingMethodState,
+  resolveTrackedNpcState,
   previewSanityImpact,
   DEFAULT_PREFERENCES,
   CHOICE_PILLAR_MAP,
@@ -1226,6 +1227,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         session.turnCount,
         playerAction,
         resolveActingMethodState(session.actingMethodState),
+        session.gameState.epoch,
+        resolveTrackedNpcState(session.trackedNpcState),
+        preferences.movementGateEnabled,
       );
       const { gameState, memory } = result;
       // Acting-method discovery (issue #95): the moment the player earns the
@@ -1324,7 +1328,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       const next = transition(tracked, { type: "APPLY_CONSEQUENCES" });
       updateSession(next);
     }
-  }, [session, updateSession]);
+  }, [session, updateSession, preferences]);
 
   const handleRetry = useCallback(() => {
     if (!session) return;

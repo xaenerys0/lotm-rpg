@@ -14,6 +14,7 @@ describe("preferences", () => {
       expect(DEFAULT_PREFERENCES.digestionMeterVisible).toBe(false);
       expect(DEFAULT_PREFERENCES.highContrast).toBe(false);
       expect(DEFAULT_PREFERENCES.sceneArtEnabled).toBe(false);
+      expect(DEFAULT_PREFERENCES.movementGateEnabled).toBe(true);
     });
   });
 
@@ -66,6 +67,21 @@ describe("preferences", () => {
         }),
       ).toBe(false);
     });
+
+    it("treats movementGateEnabled as legacy-optional but type-checked (issue #101)", () => {
+      expect(
+        isValidPreferencesShape({
+          sanityMeterVisible: true,
+          movementGateEnabled: false,
+        }),
+      ).toBe(true);
+      expect(
+        isValidPreferencesShape({
+          sanityMeterVisible: true,
+          movementGateEnabled: "x",
+        }),
+      ).toBe(false);
+    });
   });
 
   describe("mergePreferences", () => {
@@ -75,19 +91,29 @@ describe("preferences", () => {
         digestionMeterVisible: false,
         highContrast: false,
         sceneArtEnabled: false,
+        movementGateEnabled: true,
       });
       expect(
         mergePreferences({
           highContrast: true,
           sceneArtEnabled: true,
           digestionMeterVisible: true,
+          movementGateEnabled: false,
         }),
       ).toEqual({
         sanityMeterVisible: false,
         digestionMeterVisible: true,
         highContrast: true,
         sceneArtEnabled: true,
+        movementGateEnabled: false,
       });
+    });
+
+    it("defaults movementGateEnabled to true and accepts an explicit false (issue #101)", () => {
+      expect(mergePreferences({}).movementGateEnabled).toBe(true);
+      expect(mergePreferences({ movementGateEnabled: false }).movementGateEnabled).toBe(
+        false,
+      );
     });
 
     it("falls back to the default for a missing/invalid field", () => {
@@ -107,6 +133,7 @@ describe("preferences", () => {
         digestionMeterVisible: true,
         highContrast: true,
         sceneArtEnabled: true,
+        movementGateEnabled: false,
       };
       expect(deserializePreferences(serializePreferences(prefs))).toEqual(prefs);
     });
