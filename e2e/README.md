@@ -48,6 +48,19 @@ With those set, `playwright.config.ts` registers the `setup`, `mobile-authed`,
 and `desktop-authed` projects automatically. Without them, only the public tier
 runs (so CI/sandboxes without Supabase stay green).
 
+### In CI
+
+The `CI` workflow (`.github/workflows/ci.yml`) runs the **public tier** on every
+PR and push to `main` — the `webServer` block boots the app with dummy Supabase
+env, so no backend is required.
+
+The **authenticated tier** is a secret-gated follow-up. To enable it in CI,
+store `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`, `E2E_USER_EMAIL`, and
+`E2E_USER_PASSWORD` as repo/environment **secrets** and surface them to the job
+as env. Gate the step so it skips cleanly when the secrets are absent (forks /
+Dependabot can't read them), since the suite auto-registers the authenticated
+projects only when `E2E_SUPABASE_URL` is present.
+
 > The character-**delete** interaction (two-step confirm + removal) is exercised
 > at the component level in `src/test/a11y.test.tsx`, which seeds a character
 > and clicks through the flow. The authenticated e2e tier focuses on proving the

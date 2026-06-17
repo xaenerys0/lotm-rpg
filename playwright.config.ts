@@ -57,7 +57,10 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: process.env.CI ? "github" : "list",
+  // In CI, pair GitHub annotations with an HTML report (written to
+  // playwright-report/, never auto-opened) so the workflow can upload it as a
+  // failure artifact. Locally, the concise list reporter is enough.
+  reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL,
     trace: "on-first-retry",
