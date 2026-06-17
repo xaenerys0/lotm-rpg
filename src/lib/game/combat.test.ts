@@ -32,6 +32,7 @@ import {
   resolveEncounter,
   applyCombatResult,
   tickInjuries,
+  combatNarrationContext,
   isValidEncounterShape,
   MAX_DYNAMIC_ABILITY_OPTIONS,
 } from "./combat";
@@ -879,6 +880,56 @@ describe("chooseOption", () => {
     expect(chooseOption(encounter, encounter.decisionPoints[0].options[0].id)).toBe(
       encounter,
     );
+  });
+});
+
+describe("combatNarrationContext", () => {
+  function freshEncounter(): CombatEncounter {
+    return createEncounter({
+      id: "n1",
+      enemy: makeEnemy(),
+      playerPathwayId: 1,
+      playerSequence: 9,
+      randomFactor: 0.5,
+    });
+  }
+
+  it("returns an empty string before any preparation is committed", () => {
+    expect(combatNarrationContext(freshEncounter())).toBe("");
+  });
+
+  it("summarizes the committed preparation once the exchange begins", () => {
+    const prepared = applyPreparation(
+      freshEncounter(),
+      makePrep({
+        intelligence: "thorough",
+        terrain: "favorable",
+        readiedAbilities: ["Spirit Vision"],
+        sealedArtifacts: [makeItem("Sealed Idol")],
+        ritualMaterials: [makeItem("Chalk")],
+      }),
+    );
+    const context = combatNarrationContext(prepared);
+    expect(context).toMatch(/thorough intelligence/);
+    expect(context).toMatch(/favourable ground/);
+    expect(context).toMatch(/readied abilities: Spirit Vision/);
+    expect(context).toMatch(/sealed artifacts: Sealed Idol/);
+    expect(context).toMatch(/ritual materials: Chalk/);
+    // Nothing has been chosen yet, so the tactics clause is absent.
+    expect(context).not.toMatch(/Tactics chosen/);
+  });
+
+  it("appends the chosen tactics, in order, once options are picked", () => {
+    let encounter = applyPreparation(
+      freshEncounter(),
+      makePrep({ intelligence: "partial" }),
+    );
+    const firstLabel = encounter.decisionPoints[0].options[0].label;
+    encounter = chooseOption(encounter, encounter.decisionPoints[0].options[0].id);
+    const context = combatNarrationContext(encounter);
+    expect(context).toMatch(/partial intelligence/);
+    expect(context).toMatch(/Tactics chosen, in order:/);
+    expect(context).toContain(firstLabel);
   });
 });
 

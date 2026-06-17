@@ -28,7 +28,7 @@ const GAME_ROUTES = [
   { path: "/play", heading: "Welcome, Beyonder" },
   { path: "/character", heading: "Character" },
   { path: "/journal", heading: "Journal" },
-  { path: "/map", heading: "Map of Tingen" },
+  { path: "/map", heading: "The Gazetteer" },
   { path: "/market", heading: "The Night Market" },
   { path: "/settings", heading: "Settings" },
 ] as const;

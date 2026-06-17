@@ -15,6 +15,7 @@ import type {
   PathwayMatchup,
   PreparationQuality,
   PreparationTier,
+  TerrainAdvantage,
 } from "@/lib/types/combat";
 import { getGroupForPathway } from "@/lib/rules";
 import { sanityDelta } from "./sanity";
@@ -981,6 +982,60 @@ function chosenOptions(encounter: CombatEncounter): DecisionOption[] {
     }
   });
   return options;
+}
+
+const INTELLIGENCE_NARRATION: Record<IntelligenceLevel, string> = {
+  none: "no intelligence on the foe",
+  partial: "partial intelligence on the foe",
+  thorough: "thorough intelligence on the foe",
+};
+
+const TERRAIN_NARRATION: Record<TerrainAdvantage, string> = {
+  none: "no terrain advantage",
+  neutral: "surveyed, neutral ground",
+  favorable: "favourable ground of their choosing",
+};
+
+/**
+ * A plain-language summary of the choices the player has actually committed in
+ * this encounter — the preparation (intelligence, terrain, readied abilities,
+ * sealed artifacts, ritual materials) and, once the exchange is under way, the
+ * tactical options chosen in order. The combat-narration prompt appends this so
+ * the narrated fight reflects what the player did rather than a generic clash.
+ * Returns "" before the player has committed anything (the bare preparation
+ * phase), so the opening line stays clean.
+ */
+export function combatNarrationContext(encounter: CombatEncounter): string {
+  const parts: string[] = [];
+
+  const prep = encounter.preparation;
+  if (prep) {
+    const prepBits: string[] = [
+      INTELLIGENCE_NARRATION[prep.intelligence],
+      TERRAIN_NARRATION[prep.terrain],
+    ];
+    if (prep.readiedAbilities.length > 0) {
+      prepBits.push(`readied abilities: ${prep.readiedAbilities.join(", ")}`);
+    }
+    if (prep.sealedArtifacts.length > 0) {
+      prepBits.push(
+        `sealed artifacts: ${prep.sealedArtifacts.map((a) => a.name).join(", ")}`,
+      );
+    }
+    if (prep.ritualMaterials.length > 0) {
+      prepBits.push(
+        `ritual materials: ${prep.ritualMaterials.map((m) => m.name).join(", ")}`,
+      );
+    }
+    parts.push(`The player entered with ${prepBits.join("; ")}.`);
+  }
+
+  const chosen = chosenOptions(encounter);
+  if (chosen.length > 0) {
+    parts.push(`Tactics chosen, in order: ${chosen.map((o) => o.label).join("; ")}.`);
+  }
+
+  return parts.join(" ");
 }
 
 // ─── Outcome Resolution ──────────────────────────────────────────────

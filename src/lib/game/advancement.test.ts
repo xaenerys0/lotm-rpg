@@ -139,6 +139,10 @@ describe("advancementRequirements", () => {
     expect(ritualReq).toBeDefined();
     // A canon pathway defines the rite, so it is met and the climb is allowed.
     expect(ritualReq?.met).toBe(true);
+    // It is enacted DURING the climb, so it is flagged forthcoming (not a
+    // tick-box prerequisite) and worded as such — never "already complete".
+    expect(ritualReq?.forthcoming).toBe(true);
+    expect(ritualReq?.label).toMatch(/will be enacted as you climb/i);
     expect(canAdvance(session)).toBe(true);
   });
 

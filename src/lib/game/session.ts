@@ -142,12 +142,22 @@ export function deserializeSession(json: string): GameSession | null {
 
   const s = parsed as Record<string, unknown>;
   const gs = s.gameState as Record<string, unknown>;
+  // Backfill the engine-tracked current city (issue #101) for legacy saves that
+  // predate it: resolve it from the location's leading word so the map's
+  // per-city atlas opens on the right city instead of reverting to Tingen. A
+  // bare-district location that names no city is left unresolved (self-heals as
+  // soon as the location next names a known city). An existing value is kept.
+  const backfilledCity =
+    gs.currentCity === undefined && typeof gs.location === "string"
+      ? cityIdFromLocation(gs.location)
+      : undefined;
   const gameState = {
     ...gs,
     // Seed digestion for sessions saved before the Acting Method mechanic.
     digestion:
       gs.digestion ??
       createDigestionState(gs.pathwayId as number, gs.sequenceLevel as number),
+    ...(backfilledCity ? { currentCity: backfilledCity } : {}),
   };
   return {
     ...s,
