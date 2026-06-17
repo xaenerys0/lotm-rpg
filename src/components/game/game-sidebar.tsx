@@ -4,6 +4,11 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import {
+  saveActiveSessionId,
+  useActiveSessionId,
+  useSessionSummaries,
+} from "@/lib/react/session-store";
 
 const navItems = [
   { href: "/play", label: "Dashboard" },
@@ -17,6 +22,49 @@ const navItems = [
   { href: "/society", label: "Society" },
   { href: "/settings", label: "Settings" },
 ] as const;
+
+/**
+ * The global active-character switcher (active-character sync): one control,
+ * visible on every page, that sets the single pointer the Map/Journal/Character/
+ * Glossary/Market/Society/Profile all read. Renders nothing with no saves; a
+ * static name with one save; a `<select>` to switch between several.
+ */
+function CharacterSwitcher() {
+  const summaries = useSessionSummaries();
+  const activeId = useActiveSessionId();
+
+  if (summaries.length === 0) return null;
+
+  const label = (id: string | null) =>
+    summaries.find((s) => s.id === id)?.characterName ?? "Unnamed Beyonder";
+
+  return (
+    <div className="border-b border-border px-4 py-3">
+      <p className="text-[10px] tracking-widest text-muted uppercase">Active character</p>
+      {summaries.length === 1 ? (
+        <p className="mt-1 truncate text-sm font-medium text-amber">{label(activeId)}</p>
+      ) : (
+        <>
+          <label htmlFor="active-character" className="sr-only">
+            Active character
+          </label>
+          <select
+            id="active-character"
+            value={activeId ?? ""}
+            onChange={(e) => saveActiveSessionId(e.target.value)}
+            className="mt-1 w-full truncate rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+          >
+            {summaries.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.characterName ?? "Unnamed Beyonder"} — Seq {s.sequenceLevel}
+              </option>
+            ))}
+          </select>
+        </>
+      )}
+    </div>
+  );
+}
 
 export function GameSidebar({ userEmail }: { userEmail: string }) {
   const pathname = usePathname();
@@ -116,6 +164,8 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
             Fifth Epoch
           </p>
         </div>
+
+        <CharacterSwitcher />
 
         <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Game navigation">
           <ul className="space-y-0.5" role="list">

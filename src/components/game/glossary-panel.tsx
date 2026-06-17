@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { loadActiveSession, useStoredValue } from "@/lib/react/session-store";
+import { useActiveSession } from "@/lib/react/session-store";
 import {
   glossaryForSequence,
   sealedTermCount,
@@ -14,28 +14,13 @@ import {
 // disclosure — entries unlock as the active character advances, so deep-game
 // concepts stay sealed until approached. Written as world-building.
 
-// The active character's sequence (progressive disclosure) and epoch (content
-// isolation) together decide which lexicon entries exist. Epoch is left
-// undefined for legacy/absent saves so the glossary defaults to the Fifth.
-interface GlossaryScope {
-  sequenceLevel: number;
-  epoch?: number;
-}
-
-const DEFAULT_SCOPE: GlossaryScope = { sequenceLevel: 9 };
-
-function loadActiveScope(): GlossaryScope {
-  const session = loadActiveSession();
-  if (!session) return DEFAULT_SCOPE;
-  return {
-    sequenceLevel: session.gameState.sequenceLevel ?? 9,
-    epoch: session.gameState.epoch,
-  };
-}
-
 export function GlossaryPanel() {
-  const scope = useStoredValue(loadActiveScope, DEFAULT_SCOPE);
-  const { sequenceLevel, epoch } = scope;
+  // The active character's sequence (progressive disclosure) and epoch (content
+  // isolation) decide which entries exist; reactive to the active-character
+  // switch. Defaults (Seq 9, Fifth) cover the no-save / hydration case.
+  const session = useActiveSession();
+  const sequenceLevel = session?.gameState.sequenceLevel ?? 9;
+  const epoch = session?.gameState.epoch;
 
   const [query, setQuery] = useState("");
 

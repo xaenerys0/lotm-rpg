@@ -3,9 +3,11 @@
 import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 
 import {
-  loadAllSessions,
   persistSession as writeSession,
-  useStoredValue,
+  saveActiveSessionId,
+  useActiveSession,
+  useHydrated,
+  useSessionSummaries,
 } from "@/lib/react/session-store";
 import { noopSubscribe } from "@/lib/react";
 import { loadPreferences } from "./preferences-store";
@@ -72,7 +74,12 @@ const ITEM_CATEGORY_GLYPHS: Record<Item["category"], string> = {
 };
 
 export function CharacterSheet() {
-  const sessions = useStoredValue<GameSession[] | null>(loadAllSessions, null);
+  // The shared active character drives the sheet (active-character sync): the
+  // selector below writes the same pointer the Map/Journal/sidebar read, and an
+  // edit persists + re-reads reactively (no local override).
+  const hydrated = useHydrated();
+  const summaries = useSessionSummaries();
+  const session = useActiveSession();
 
   // Display preferences (issue #95): the digestion-meter toggle gates whether
   // the numeric digestion is shown — but only once the method is discovered.
@@ -88,33 +95,22 @@ export function CharacterSheet() {
     () => DEFAULT_PREFERENCES,
   );
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [overrides, setOverrides] = useState<Record<string, GameSession>>({});
-  // Locally-removed characters: the underlying store read is one-shot, so we
-  // track deletions here to keep the sheet in sync without a full re-read.
-  const [deletedIds, setDeletedIds] = useState<string[]>([]);
-
   const persistSession = useCallback((next: GameSession) => {
-    setOverrides((prev) => ({ ...prev, [next.id]: next }));
     writeSession(next);
   }, []);
 
-  // Permanently delete the selected character (shared cleanup in
-  // `purgeCharacter` — same contract as the dashboard's Manage view), then drop
-  // it from the displayed list and fall back to another Beyonder.
+  // Permanently delete a character (shared cleanup in `purgeCharacter`); the
+  // active pointer self-heals to the newest remaining save and the reactive
+  // hooks re-render — no local list bookkeeping needed.
   const handleDelete = useCallback((sessionId: string) => {
     purgeCharacter(sessionId);
-    setSelectedId(null);
-    setDeletedIds((prev) => [...prev, sessionId]);
   }, []);
 
-  if (sessions === null) {
+  if (!hydrated) {
     return <p className="text-sm text-muted">Consulting the records…</p>;
   }
 
-  const livingSessions = sessions.filter((s) => !deletedIds.includes(s.id));
-
-  if (livingSessions.length === 0) {
+  if (summaries.length === 0 || !session) {
     return (
       <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
         <p className="font-serif text-lg italic text-foreground/70">
@@ -128,9 +124,6 @@ export function CharacterSheet() {
     );
   }
 
-  const baseSession =
-    livingSessions.find((s) => s.id === selectedId) ?? livingSessions[0];
-  const session = overrides[baseSession.id] ?? baseSession;
   const state = session.gameState;
   const pathway = getPathway(state.pathwayId);
   const sequence = getSequence(state.pathwayId, state.sequenceLevel);
@@ -154,20 +147,20 @@ export function CharacterSheet() {
 
   return (
     <div className="space-y-8">
-      {livingSessions.length > 1 && (
+      {summaries.length > 1 && (
         <div>
           <label htmlFor="sheet-session" className="mb-1.5 block text-xs text-muted">
-            Beyonder
+            Active Beyonder
           </label>
           <select
             id="sheet-session"
             value={session.id}
-            onChange={(e) => setSelectedId(e.target.value)}
+            onChange={(e) => saveActiveSessionId(e.target.value)}
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
           >
-            {livingSessions.map((s) => (
+            {summaries.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.gameState.characterName ?? "Unnamed Beyonder"} — Turn {s.turnCount}
+                {s.characterName ?? "Unnamed Beyonder"} — Turn {s.turnCount}
               </option>
             ))}
           </select>

@@ -2,11 +2,7 @@
 
 import { useCallback, useState } from "react";
 
-import {
-  loadActiveSession,
-  persistSession,
-  useStoredValue,
-} from "@/lib/react/session-store";
+import { persistSession, useActiveSession } from "@/lib/react/session-store";
 import {
   addItemToInventory,
   addJournalEntries,
@@ -36,19 +32,13 @@ import {
 // inventory, and the journal records the session.
 
 export function SocietyPanel() {
-  const initialSession = useStoredValue(loadActiveSession, null);
-  // Derive from the reactive store snapshot until a local mutation overrides it.
-  // `useState(initialSession)` would freeze on the server-fallback (null) captured
-  // at the hydration render and never pick up the real session on a full page
-  // load; the override pattern (see character-sheet.tsx) corrects after hydration.
-  const [sessionOverride, setSession] = useState<GameSession | null>(null);
-  const session = sessionOverride ?? initialSession;
+  // The single active character, reactive (active-character sync).
+  const session = useActiveSession();
   const [name, setName] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [lastOutcome, setLastOutcome] = useState<GatheringOutcome | null>(null);
 
   const persist = useCallback((next: GameSession) => {
-    setSession(next);
     persistSession(next);
   }, []);
 

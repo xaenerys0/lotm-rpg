@@ -5,7 +5,11 @@ import { useCallback, useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { sceneArtKey } from "@/lib/ai";
 import { SceneArt } from "./scene-art";
-import { loadAllSessions, useStoredValue } from "@/lib/react/session-store";
+import {
+  saveActiveSessionId,
+  useActiveSessionId,
+  useSessionSummaries,
+} from "@/lib/react/session-store";
 import {
   addAnnotation,
   annotationsFor,
@@ -31,21 +35,6 @@ import {
 // player annotations (player-ONLY — never fed to the AI), filtering, and
 // Markdown export. localStorage is the source of truth (mirrors sessions);
 // annotation edits additionally sync to Supabase best-effort and immediately.
-
-interface SessionOption {
-  id: string;
-  label: string;
-}
-
-function loadSessionOptions(): SessionOption[] {
-  return loadAllSessions().map((session) => {
-    const name = session.gameState.characterName ?? "Unnamed Beyonder";
-    return {
-      id: session.id,
-      label: `${name} — Turn ${session.turnCount} (${session.gameState.location})`,
-    };
-  });
-}
 
 function loadJournal(sessionId: string): Journal {
   try {
@@ -77,10 +66,18 @@ async function currentUserId(
 }
 
 export function JournalPanel() {
-  const sessionOptions = useStoredValue<SessionOption[] | null>(loadSessionOptions, null);
-
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const activeSessionId = sessionId ?? sessionOptions?.[0]?.id ?? null;
+  // The journal follows the shared active character (active-character sync); the
+  // Chronicle picker writes the same pointer the rest of the app reads.
+  const summaries = useSessionSummaries();
+  const activeSessionId = useActiveSessionId();
+  const sessionOptions = useMemo(
+    () =>
+      summaries.map((s) => ({
+        id: s.id,
+        label: `${s.characterName ?? "Unnamed Beyonder"} — Turn ${s.turnCount} (${s.location})`,
+      })),
+    [summaries],
+  );
 
   const [journals, setJournals] = useState<Record<string, Journal>>({});
   const journal = activeSessionId
@@ -167,7 +164,7 @@ export function JournalPanel() {
             <select
               id="journal-session"
               value={activeSessionId ?? ""}
-              onChange={(e) => setSessionId(e.target.value)}
+              onChange={(e) => saveActiveSessionId(e.target.value)}
               className="w-full max-w-full truncate rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
             >
               {sessionOptions.map((option) => (

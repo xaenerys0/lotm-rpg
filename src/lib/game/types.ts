@@ -135,6 +135,8 @@ export interface GameSessionSummary {
   pathwayId: number;
   sequenceLevel: number;
   updatedAt: number;
+  /** The character's chosen name, for the active-character switcher labels. */
+  characterName?: string;
 }
 
 export const VALID_TRANSITIONS: Record<GamePhase, GamePhase[]> = {
