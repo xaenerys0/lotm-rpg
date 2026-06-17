@@ -27,7 +27,7 @@
 // `gazetteer.travelEnabled`, and `regions.ts`). Earlier epochs have no city
 // graph, so movement is never gated there (Risk 5).
 
-import { DEFAULT_EPOCH_ID } from "@/lib/lore/epochs";
+import { isFifthEpoch } from "@/lib/lore/epochs";
 import { cityIdFromLocation, getCity } from "./travel";
 
 /**
@@ -36,7 +36,7 @@ import { cityIdFromLocation, getCity } from "./travel";
  * character is not in the Fifth Epoch (no city graph exists there).
  */
 export function cityForLocation(location: string, epoch?: number): string | null {
-  if ((epoch ?? DEFAULT_EPOCH_ID) !== DEFAULT_EPOCH_ID) return null;
+  if (!isFifthEpoch(epoch)) return null;
   return cityIdFromLocation(location) ?? null;
 }
 
@@ -50,7 +50,7 @@ export function cityForLocation(location: string, epoch?: number): string | null
  * corrupt value falls back to `null` rather than false-blocking every move).
  */
 function trackedCity(cityId: string | undefined, epoch?: number): string | null {
-  if ((epoch ?? DEFAULT_EPOCH_ID) !== DEFAULT_EPOCH_ID) return null;
+  if (!isFifthEpoch(epoch)) return null;
   if (!cityId) return null;
   return getCity(cityId)?.id ?? null;
 }

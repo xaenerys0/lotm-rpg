@@ -5,6 +5,7 @@ export {
   epochNarrationDirective,
   epochOpeningBeat,
   getEpoch,
+  isFifthEpoch,
   passesEpochGate,
   DEFAULT_EPOCH_ID,
   EPOCHS,

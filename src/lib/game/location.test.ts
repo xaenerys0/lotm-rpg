@@ -9,6 +9,7 @@ import {
   locationLabel,
   mapAtlasFor,
   matchDistrictSlug,
+  MAX_CUSTOM_LOCATIONS_PER_CITY,
   registerCustomLocation,
   resolveCityId,
   resolveLocation,
@@ -67,6 +68,15 @@ describe("matchDistrictSlug", () => {
   it("returns null when nothing matches", () => {
     expect(matchDistrictSlug("a quiet nowhere", TINGEN)).toBeNull();
   });
+
+  it("treats expanded religious-building nouns as generic (no solo pin)", () => {
+    const era3 = gazetteerForEpoch(3).districts; // third-field-temple: temple/shrine/sun
+    // "the temple"/"the shrine" alone no longer pin; the distinctive "sun" still does.
+    expect(matchDistrictSlug("the temple", era3)).toBeNull();
+    expect(matchDistrictSlug("the Field-Temple of the Sun", era3)).toBe(
+      "third-field-temple",
+    );
+  });
 });
 
 describe("customLocationSlug", () => {
@@ -108,13 +118,29 @@ describe("stripCityPrefix", () => {
     );
   });
 
+  it("strips on comma/colon separators too", () => {
+    expect(stripCityPrefix("Backlund, the East Borough", "backlund")).toBe(
+      "the East Borough",
+    );
+  });
+
   it("returns the input unchanged when it does not start with the city", () => {
     expect(stripCityPrefix("Old Saint-Sulpice Chapel", "backlund")).toBe(
       "Old Saint-Sulpice Chapel",
     );
   });
 
-  it("falls back to the full string when stripping leaves nothing", () => {
+  it("does NOT strip when only a space follows (city word is part of the place name)", () => {
+    // The regression guard: "Backlund Bridge" must stay intact, not become
+    // "Bridge", so the real Backlund Bridge district still resolves.
+    expect(stripCityPrefix("Backlund Bridge", "backlund")).toBe("Backlund Bridge");
+  });
+
+  it("does NOT strip a city word that is merely a prefix of a longer word", () => {
+    expect(stripCityPrefix("Trierston Square", "trier")).toBe("Trierston Square");
+  });
+
+  it("leaves a bare city name unchanged (no separator follows)", () => {
     expect(stripCityPrefix("Backlund", "backlund")).toBe("Backlund");
   });
 
@@ -154,6 +180,17 @@ describe("resolveLocation", () => {
     expect(r.place).toBe("Hillston Borough");
     expect(r.cityUnknown).toBe(false);
     expect(r.districtSlug).toBe("backlund-hillston-borough");
+  });
+
+  it("pins a district whose own name starts with the city word (no over-strip)", () => {
+    // Regression: "Backlund Bridge" must resolve the real backlund-bridge
+    // district, not get mangled to "Bridge" and lost.
+    const r = resolveLocation(
+      makeState({ currentCity: "backlund", location: "Backlund Bridge" }),
+      5,
+    );
+    expect(r.cityId).toBe("backlund");
+    expect(r.districtSlug).toBe("backlund-bridge");
   });
 
   it("matches a registered custom venue within the city", () => {
@@ -302,6 +339,63 @@ describe("registerCustomLocation", () => {
     expect(registerCustomLocation(state, 5)).toBe(state);
     const display = makeState({ currentCity: "pritz", location: "Pritz Harbor" });
     expect(registerCustomLocation(display, 5)).toBe(display);
+  });
+
+  it("is a no-op when the place's leading word names a known city", () => {
+    // "Backlund Spire" (no separator) keeps the city word; it must not be filed
+    // as a venue — its leading word is a known city.
+    const state = makeState({ currentCity: "backlund", location: "Backlund Spire" });
+    expect(registerCustomLocation(state, 5)).toBe(state);
+  });
+
+  it("files a venue that only hit an expanded generic noun (e.g. shrine)", () => {
+    const next = registerCustomLocation(
+      makeState({ currentCity: "backlund", location: "Backlund — The Old Shrine" }),
+      5,
+    );
+    expect(next.customLocations).toEqual([
+      { cityId: "backlund", slug: "custom-the-old-shrine", name: "The Old Shrine" },
+    ]);
+  });
+
+  it("caps custom venues per city, dropping that city's oldest", () => {
+    const existing = Array.from({ length: MAX_CUSTOM_LOCATIONS_PER_CITY }, (_, i) => ({
+      cityId: "backlund",
+      slug: `custom-v${i}`,
+      name: `Venue ${i}`,
+    }));
+    const next = registerCustomLocation(
+      makeState({
+        currentCity: "backlund",
+        location: "Backlund — A Fresh Place",
+        customLocations: existing,
+      }),
+      5,
+    );
+    const backlund = next.customLocations!.filter((c) => c.cityId === "backlund");
+    expect(backlund).toHaveLength(MAX_CUSTOM_LOCATIONS_PER_CITY);
+    expect(backlund.some((c) => c.slug === "custom-v0")).toBe(false); // oldest dropped
+    expect(backlund.some((c) => c.slug === "custom-a-fresh-place")).toBe(true);
+  });
+
+  it("does not evict another city's venues when capping", () => {
+    const existing = [
+      { cityId: "bayam", slug: "custom-keep", name: "Keep Me" },
+      ...Array.from({ length: MAX_CUSTOM_LOCATIONS_PER_CITY }, (_, i) => ({
+        cityId: "backlund",
+        slug: `custom-v${i}`,
+        name: `Venue ${i}`,
+      })),
+    ];
+    const next = registerCustomLocation(
+      makeState({
+        currentCity: "backlund",
+        location: "Backlund — Another Place",
+        customLocations: existing,
+      }),
+      5,
+    );
+    expect(next.customLocations!.some((c) => c.slug === "custom-keep")).toBe(true);
   });
 
   it("does not double-register the same venue", () => {
