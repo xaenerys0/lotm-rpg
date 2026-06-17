@@ -20,6 +20,7 @@ const navItems = [
   { href: "/profile", label: "Profile" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/society", label: "Society" },
+  { href: "/guide", label: "Guide" },
   { href: "/settings", label: "Settings" },
 ] as const;
 
@@ -167,6 +168,12 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
 
         <CharacterSwitcher />
 
+        {/* The nav list owns the overflow: it flexes to fill the space between
+            the pinned header/switcher above and the sign-out footer below, and
+            scrolls internally (overflow-y-auto) when the items exceed the
+            viewport height — so the footer stays reachable and no item is
+            clipped on short screens. This is the responsive strategy for the
+            growing item list; don't move the scroll to the page. */}
         <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Game navigation">
           <ul className="space-y-0.5" role="list">
             {navItems.map(({ href, label }) => {

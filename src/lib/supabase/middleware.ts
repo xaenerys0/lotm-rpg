@@ -8,6 +8,7 @@ const protectedPrefixes = [
   "/journal",
   "/map",
   "/glossary",
+  "/guide",
   "/settings",
 ];
 
