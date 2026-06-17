@@ -14,7 +14,7 @@ import {
   type ActingDiscoveryTrigger,
   type ActingMethodState,
 } from "./acting-method";
-import { isReachable } from "./place-graph";
+import { cityForLocation, isReachable } from "./place-graph";
 import { reassertFollowersAt, type TrackedNpcState } from "./tracked-npcs";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
@@ -253,10 +253,15 @@ export function applyWorldStateChanges(
             // Within-city / provisional: keep the existing cast, just re-assert
             // the followers — a local nudge must not wipe mid-scene NPCs.
             const base = gated.crossCity ? [] : next.npcsPresent;
+            // Keep the tracked current city oriented: update it when the new
+            // location names a known city, preserve it for a bare district
+            // string (issue #101 — so the map doesn't fall back to Tingen).
+            const appliedCity = cityForLocation(gated.location, opts.epoch);
             next = {
               ...next,
               location: gated.location,
               npcsPresent: reassertFollowersAt(base, opts.trackedNpcState),
+              ...(appliedCity ? { currentCity: appliedCity } : {}),
             };
           }
         }

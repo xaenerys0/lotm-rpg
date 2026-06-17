@@ -177,6 +177,9 @@ export function travelTo(
     state: {
       ...state,
       location: dest.name,
+      // Track the city we arrived in so the map stays oriented even after the
+      // narrator later moves us to a bare district string (issue #101).
+      currentCity: cityId,
       npcsPresent: reassertFollowersAt([], trackedNpcState),
     },
     fact: { type: "event", description: journey, turnNumber },

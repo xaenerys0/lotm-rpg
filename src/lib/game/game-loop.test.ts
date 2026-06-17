@@ -970,6 +970,36 @@ describe("applyWorldStateChanges — movement gate", () => {
     expect(next.npcsPresent).toEqual(["A passerby", "Old Neil"]);
   });
 
+  it("updates currentCity on a cross-city move but preserves it on a local nudge", () => {
+    const state = makeGameState({
+      location: "Backlund",
+      currentCity: "backlund",
+      epoch: 5,
+    });
+    // Involuntary cross-city move → currentCity follows to the new city.
+    const moved = applyWorldStateChanges(state, [locationChange("Bayam", "abduction")], {
+      ...opts,
+      epoch: 5,
+    }).state;
+    expect(moved.currentCity).toBe("bayam");
+
+    // A within-city nudge to a bare district string keeps the tracked city.
+    const local = applyWorldStateChanges(
+      state,
+      [
+        {
+          field: "location",
+          oldValue: "Backlund",
+          newValue: "The East Borough",
+          reason: "walked over",
+        },
+      ],
+      { ...opts, epoch: 5 },
+    ).state;
+    expect(local.location).toBe("The East Borough");
+    expect(local.currentCity).toBe("backlund");
+  });
+
   it("keeps followers authoritative over an AI npcsPresent wipe", () => {
     const state = makeGameState({ npcsPresent: ["Old Neil"] });
     const roster = {
@@ -1840,6 +1870,8 @@ describe("createDefaultGameState", () => {
     expect(state.maxSanity).toBe(100);
     expect(state.inventory).toEqual([]);
     expect(state.location).toBe("Tingen City");
+    // The tracked current city is seeded from a city-named start (issue #101).
+    expect(state.currentCity).toBe("tingen");
     expect(state.activeQuests).toEqual([]);
     expect(state.npcsPresent).toEqual([]);
   });

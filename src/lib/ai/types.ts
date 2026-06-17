@@ -193,6 +193,16 @@ export interface GameState {
   maxSanity: number;
   inventory: Item[];
   location: string;
+  /**
+   * The known city id the character is currently in (issue #101). Engine-
+   * maintained — set on deliberate travel and whenever an applied `location`
+   * change resolves to a known city, and PRESERVED when `location` becomes a
+   * bare district/landmark string (which `cityIdFromLocation` cannot resolve).
+   * Lets the map show the right city's atlas during within-city play instead of
+   * falling back to Tingen. NOT AI-mutable. Optional — absent on legacy saves and
+   * outside the Fifth Epoch; the map falls back to `cityIdFromLocation(location)`.
+   */
+  currentCity?: string;
   activeQuests: string[];
   npcsPresent: string[];
   characterName?: string;
