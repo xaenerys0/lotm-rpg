@@ -28,7 +28,7 @@
 // graph, so movement is never gated there (Risk 5).
 
 import { DEFAULT_EPOCH_ID } from "@/lib/lore/epochs";
-import { cityIdFromLocation } from "./travel";
+import { cityIdFromLocation, getCity } from "./travel";
 
 /**
  * The known city a location names by its leading word, or `null` when it names
@@ -40,19 +40,43 @@ export function cityForLocation(location: string, epoch?: number): string | null
   return cityIdFromLocation(location) ?? null;
 }
 
+/**
+ * Validate a tracked `currentCity` id into a known Fifth-Epoch city id, or
+ * `null`. The engine keeps `GameState.currentCity` oriented even when the raw
+ * location string is a bare district (issue #101), so it is the origin city the
+ * reachability gate should trust when the `from` STRING itself names no city —
+ * without it, a teleport from any district-level location slips the gate. Guarded
+ * to the Fifth Epoch (the only place a city graph exists) and to known ids (a
+ * corrupt value falls back to `null` rather than false-blocking every move).
+ */
+function trackedCity(cityId: string | undefined, epoch?: number): string | null {
+  if ((epoch ?? DEFAULT_EPOCH_ID) !== DEFAULT_EPOCH_ID) return null;
+  if (!cityId) return null;
+  return getCity(cityId)?.id ?? null;
+}
+
 export type ReachableResult =
   | { reachable: true; reason: "same-city" | "provisional" }
   | { reachable: false; reason: "cross-city" };
 
 /**
  * Whether `to` is reachable from `from` for a same-turn move. Reachable unless
- * BOTH endpoints name a known city and the cities differ. Either side
- * unresolvable (a district/landmark string, an unknown place, or a non-Fifth
- * epoch) → reachable (`provisional`). Same named city → reachable. Two different
- * named cities → blocked (`cross-city`).
+ * BOTH endpoints resolve to a known city and the cities differ. The origin city
+ * is the `from` STRING's leading word, falling back to the engine-tracked
+ * `fromCityId` (`GameState.currentCity`) when the string names no city — so a
+ * teleport out of a district-level location ("the harbour quarter" → "Bayam")
+ * is still caught instead of slipping through as `provisional`. Either side
+ * unresolvable (a district/landmark string with no tracked city, an unknown
+ * place, or a non-Fifth epoch) → reachable (`provisional`). Same city →
+ * reachable. Two different cities → blocked (`cross-city`).
  */
-export function isReachable(from: string, to: string, epoch?: number): ReachableResult {
-  const a = cityForLocation(from, epoch);
+export function isReachable(
+  from: string,
+  to: string,
+  epoch?: number,
+  fromCityId?: string,
+): ReachableResult {
+  const a = cityForLocation(from, epoch) ?? trackedCity(fromCityId, epoch);
   const b = cityForLocation(to, epoch);
   if (a === null || b === null) return { reachable: true, reason: "provisional" };
   if (a === b) return { reachable: true, reason: "same-city" };

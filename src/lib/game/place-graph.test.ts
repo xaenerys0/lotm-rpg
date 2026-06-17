@@ -62,4 +62,44 @@ describe("isReachable", () => {
   it("never blocks in an earlier epoch (no gating)", () => {
     expect(isReachable("Imperial Trier", "Bayam", 4).reachable).toBe(true);
   });
+
+  describe("tracked origin city (fromCityId)", () => {
+    it("blocks a teleport out of a bare district when the tracked city differs", () => {
+      // The classic bug: the character sits at a district-level location whose
+      // string names no city, then the narrator teleports them to another city.
+      // The tracked currentCity anchors the origin so the move is still caught.
+      expect(isReachable("the harbour quarter", "Bayam", 5, "tingen")).toEqual({
+        reachable: false,
+        reason: "cross-city",
+      });
+    });
+
+    it("allows a within-city move when the destination names the tracked city", () => {
+      expect(isReachable("the harbour quarter", "Tingen City", 5, "tingen")).toEqual({
+        reachable: true,
+        reason: "same-city",
+      });
+    });
+
+    it("still allows a move to another district (destination names no city)", () => {
+      expect(
+        isReachable("the harbour quarter", "a back alley", 5, "tingen").reachable,
+      ).toBe(true);
+    });
+
+    it("prefers the from STRING's city over the tracked city when both resolve", () => {
+      // A stale tracked city must not override an explicit origin city name.
+      expect(isReachable("Bayam", "Bayam docks", 5, "tingen").reachable).toBe(true);
+    });
+
+    it("ignores the tracked city in an earlier epoch (no city graph)", () => {
+      expect(isReachable("a frontier road", "Bayam", 4, "tingen").reachable).toBe(true);
+    });
+
+    it("ignores an unknown tracked city id rather than false-blocking", () => {
+      expect(isReachable("the harbour quarter", "Bayam", 5, "not-a-city").reachable).toBe(
+        true,
+      );
+    });
+  });
 });

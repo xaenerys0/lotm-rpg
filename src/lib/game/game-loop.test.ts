@@ -882,6 +882,33 @@ describe("gateLocationChange", () => {
     expect(r.location).toBe("Bayam");
     expect(r.fact?.description).toContain("Against your will");
   });
+
+  it("blocks a teleport out of a bare district using the tracked city", () => {
+    // The location string names no city (a district), but the engine-tracked
+    // currentCity anchors the origin so the teleport is still refused.
+    const r = gateLocationChange({
+      ...base,
+      from: "the harbour quarter",
+      to: "Bayam",
+      fromCity: "tingen",
+      gateEnabled: true,
+    });
+    expect(r.blocked).toBe(true);
+    expect(r.location).toBe("the harbour quarter");
+    expect(r.fact?.description).toContain("the harbour quarter");
+  });
+
+  it("allows a within-city nudge from a district when the tracked city matches", () => {
+    const r = gateLocationChange({
+      ...base,
+      from: "the harbour quarter",
+      to: "Tingen City",
+      fromCity: "tingen",
+      gateEnabled: true,
+    });
+    expect(r.blocked).toBe(false);
+    expect(r.location).toBe("Tingen City");
+  });
 });
 
 describe("applyWorldStateChanges — movement gate", () => {
@@ -900,6 +927,25 @@ describe("applyWorldStateChanges — movement gate", () => {
       opts,
     );
     expect(next.location).toBe("Tingen City");
+    expect(facts).toHaveLength(1);
+    expect(facts[0].description).toContain("deliberately");
+  });
+
+  it("refuses a teleport out of a bare district by using the tracked currentCity", () => {
+    // The character is mid-scene in a district (location names no city), but
+    // currentCity still records the city they are actually in — so the narrator
+    // cannot teleport them to another city just because the string is a district.
+    const state = makeGameState({
+      location: "the harbour quarter",
+      currentCity: "tingen",
+    });
+    const { state: next, facts } = applyWorldStateChanges(
+      state,
+      [locationChange("Bayam")],
+      opts,
+    );
+    expect(next.location).toBe("the harbour quarter");
+    expect(next.currentCity).toBe("tingen");
     expect(facts).toHaveLength(1);
     expect(facts[0].description).toContain("deliberately");
   });
