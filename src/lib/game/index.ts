@@ -467,6 +467,7 @@ export {
   resolveEncounter,
   applyCombatResult,
   tickInjuries,
+  combatNarrationContext,
   isValidEncounterShape,
   MAX_DYNAMIC_ABILITY_OPTIONS,
   MAX_DYNAMIC_ARTIFACT_OPTIONS_PER_POINT,

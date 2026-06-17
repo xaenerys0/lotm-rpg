@@ -2021,6 +2021,9 @@ describe("serializeSession", () => {
       currentNarrative: "A foggy night.",
       currentChoices: makeChoices(),
       gameState: makeGameState({
+        // currentCity present so the legacy backfill is a no-op and the round
+        // trip is exact (the backfill is covered separately below).
+        currentCity: "tingen",
         digestion: { pathwayId: 1, sequenceLevel: 9, progress: 0, complete: false },
       }),
     });
@@ -2054,6 +2057,40 @@ describe("deserializeSession", () => {
     const restored = deserializeSession(JSON.stringify(modified));
     expect(restored?.canonPosition).toBe(DEFAULT_CANON_POSITION);
     expect(restored?.embeddingModelId).toBe(DEFAULT_EMBEDDING_MODEL_ID);
+  });
+
+  it("backfills currentCity from a city-naming location for legacy saves", () => {
+    const modified = JSON.parse(
+      serializeSession(
+        makeSession({ gameState: makeGameState({ location: "Backlund" }) }),
+      ),
+    );
+    delete modified.gameState.currentCity;
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored?.gameState.currentCity).toBe("backlund");
+  });
+
+  it("leaves currentCity unset when the location names no known city", () => {
+    const modified = JSON.parse(
+      serializeSession(
+        makeSession({ gameState: makeGameState({ location: "Empress Borough" }) }),
+      ),
+    );
+    delete modified.gameState.currentCity;
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored?.gameState.currentCity).toBeUndefined();
+  });
+
+  it("preserves an existing currentCity rather than re-resolving it", () => {
+    const modified = JSON.parse(
+      serializeSession(
+        makeSession({
+          gameState: makeGameState({ location: "Backlund", currentCity: "bayam" }),
+        }),
+      ),
+    );
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored?.gameState.currentCity).toBe("bayam");
   });
 
   it("preserves an explicit canon position and approved model lock", () => {

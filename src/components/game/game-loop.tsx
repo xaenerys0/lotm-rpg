@@ -1510,6 +1510,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             gameState={session.gameState}
             abilities={combatAbilities}
             config={providerConfig}
+            identityContext={
+              session.identityState ? identityPromptContext(session.identityState) : null
+            }
+            profileContext={
+              session.profileState
+                ? profilePromptContext(session.profileState, session.gameState)
+                : null
+            }
             onUpdate={handleCombatUpdate}
             onApplyResult={handleCombatResult}
             onExit={handleCombatExit}
@@ -2469,28 +2477,50 @@ function HuntQuestRow({
   );
 }
 
-// The engine's requirement checklist, shared by the ritual-attempt panels.
+// The engine's requirement checklist, shared by the ritual-attempt panels. A
+// `forthcoming` requirement (the Advancement Ritual, enacted during the attempt
+// rather than beforehand) renders with its own neutral glyph so it never reads
+// as an already-completed prerequisite — genuine prerequisites keep the ✦/◇ pair.
 function RitualRequirementList({
   requirements,
 }: {
-  requirements: readonly { id: string; label: string; met: boolean }[];
+  requirements: readonly {
+    id: string;
+    label: string;
+    met: boolean;
+    forthcoming?: boolean;
+  }[];
 }) {
   return (
     <ul className="mt-3 space-y-1.5">
-      {requirements.map((req) => (
-        <li key={req.id} className="flex items-start gap-2 text-sm">
-          <span
-            aria-hidden="true"
-            className={req.met ? "text-occult-bright" : "text-muted"}
-          >
-            {req.met ? "✦" : "◇"}
-          </span>
-          <span className={req.met ? "text-foreground/85" : "text-muted"}>
-            {req.label}
-            <span className="sr-only">{req.met ? " — met" : " — not yet met"}</span>
-          </span>
-        </li>
-      ))}
+      {requirements.map((req) => {
+        const glyph = req.forthcoming ? "◷" : req.met ? "✦" : "◇";
+        const srState = req.forthcoming
+          ? " — to be enacted during the rite"
+          : req.met
+            ? " — met"
+            : " — not yet met";
+        return (
+          <li key={req.id} className="flex items-start gap-2 text-sm">
+            <span
+              aria-hidden="true"
+              className={
+                req.met && !req.forthcoming ? "text-occult-bright" : "text-muted"
+              }
+            >
+              {glyph}
+            </span>
+            <span
+              className={
+                req.met && !req.forthcoming ? "text-foreground/85" : "text-muted"
+              }
+            >
+              {req.label}
+              <span className="sr-only">{srState}</span>
+            </span>
+          </li>
+        );
+      })}
     </ul>
   );
 }
@@ -2518,7 +2548,12 @@ function RitualAttemptPanel({
   headingId: string;
   heading: string;
   intro: string;
-  requirements: readonly { id: string; label: string; met: boolean }[];
+  requirements: readonly {
+    id: string;
+    label: string;
+    met: boolean;
+    forthcoming?: boolean;
+  }[];
   ready: boolean;
   busy: boolean;
   armLabel: string;

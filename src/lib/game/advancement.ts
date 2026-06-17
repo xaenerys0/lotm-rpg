@@ -75,6 +75,15 @@ export interface AdvancementRequirement {
   id: "sequence" | "digestion" | "ingredients" | "ritual" | "anchors" | "sanity";
   label: string;
   met: boolean;
+  /**
+   * A requirement that is satisfied by *reaching* this point but is enacted
+   * later, during the attempt itself — not a prerequisite the player ticks off
+   * beforehand. The Advancement Ritual is performed and narrated as the climb
+   * happens, so it must not render as an already-completed item. `met` still
+   * gates `canAdvance` (the pathway must define the ritual); `forthcoming` only
+   * changes how the row is presented.
+   */
+  forthcoming?: boolean;
 }
 
 /**
@@ -123,10 +132,14 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
     const ritual = targetSeq?.advancementRitual;
     requirements.push({
       id: "ritual",
+      // Worded as a forthcoming rite, not a tick-box prerequisite: the ritual is
+      // enacted and narrated *during* the attempt, so the player has nothing to
+      // do beforehand. `met` still gates the climb (the pathway must define it).
       label: ritual
-        ? `Perform the Advancement Ritual: ${ritual.description}`
-        : "Perform the Sequence's Advancement Ritual",
+        ? `The Advancement Ritual will be enacted as you climb: ${ritual.description}`
+        : "The Sequence's Advancement Ritual will be enacted as you climb",
       met: ritual !== undefined,
+      forthcoming: true,
     });
   }
 

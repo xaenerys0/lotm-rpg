@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   applyPreparation,
   chooseOption,
+  combatNarrationContext,
   emptyPreparation,
   enemyIntel,
   isExchangeComplete,
@@ -53,6 +54,8 @@ export function CombatEncounterView({
   gameState,
   abilities,
   config,
+  identityContext,
+  profileContext,
   onUpdate,
   onApplyResult,
   onExit,
@@ -61,6 +64,11 @@ export function CombatEncounterView({
   gameState: GameState;
   abilities: string[];
   config: ProviderConfig | null;
+  /** The worn persona's narrator presentation (issue #22), so the fight is
+   * narrated as the face the player is actually wearing. Null when none worn. */
+  identityContext?: string | null;
+  /** True-self ground truth (pronouns/appearance/etc.) for narration fidelity. */
+  profileContext?: string | null;
   onUpdate: (next: CombatEncounter) => void;
   onApplyResult: (result: CombatResult) => void;
   onExit: () => void;
@@ -80,10 +88,14 @@ export function CombatEncounterView({
     if (narrationRef.current.has(key)) return;
     narrationRef.current.add(key);
 
+    // The choices the player actually committed (preparation + chosen tactics),
+    // so the narration matches what they did rather than a generic clash.
+    const choices = combatNarrationContext(encounter);
+    const choicesLine = choices ? ` ${choices}` : "";
     const playerAction =
       encounter.phase === "resolution"
-        ? `Narrate the conclusion of my fight with ${encounter.enemy.name}. The outcome is: ${encounter.outcome}. ${encounter.result?.narrativeSummary ?? ""}`
-        : `A fight with ${encounter.enemy.name} begins. Set the scene in a sentence or two.`;
+        ? `Narrate the conclusion of my fight with ${encounter.enemy.name}. The outcome is: ${encounter.outcome}. ${encounter.result?.narrativeSummary ?? ""}${choicesLine}`
+        : `A fight with ${encounter.enemy.name} begins. Set the scene in a sentence or two.${choicesLine}`;
 
     setNarrating(true);
     generate({
@@ -91,6 +103,10 @@ export function CombatEncounterView({
       gameState,
       memory: { immediateTurns: [], recentSummaries: [], sessionFacts: [] },
       loreContext: EMPTY_LORE,
+      // Narrate as the worn persona / true self so the fight matches who the
+      // player presents as (issue #22 / character-info storage).
+      identityContext,
+      profileContext,
       instruction: "combat",
       playerAction,
       abilities,
