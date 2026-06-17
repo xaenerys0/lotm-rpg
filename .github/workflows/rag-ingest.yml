@@ -1,0 +1,113 @@
+name: RAG ingest
+
+# Embed the canon corpus (novel + wiki) into the private source_chunks /
+# chunk_embeddings tables. The corpus rarely changes, embedding is expensive,
+# and it writes past RLS with a service-role key — so this runs ONLY on main
+# (i.e. after a PR merges), and only when the canon sources or the RAG pipeline
+# itself changed. It can also be dispatched manually.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "corpus/**"
+      - "scripts/rag/**"
+      - "src/lib/rag/**"
+      - "src/lib/ai/embeddings.ts"
+      - ".github/workflows/rag-ingest.yml"
+  workflow_dispatch:
+    inputs:
+      models:
+        description: Approved embedding model id(s), comma-separated.
+        default: qwen3-embedding-0.6b
+
+# Never cancel an in-flight run mid-load — a partial DB write should finish.
+concurrency:
+  group: rag-ingest
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Gate on the operator secrets so the workflow skips cleanly on forks /
+  # Dependabot (which can't read them) instead of failing.
+  gate:
+    name: Check ingestion secrets
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.check.outputs.enabled }}
+    steps:
+      - id: check
+        env:
+          SUPA_URL: ${{ secrets.RAG_SUPABASE_URL }}
+          SERVICE_ROLE: ${{ secrets.RAG_SUPABASE_SERVICE_ROLE_KEY }}
+          EMBED_URL: ${{ secrets.RAG_EMBEDDING_URL }}
+        run: |
+          if [ -n "$SUPA_URL" ] && [ -n "$SERVICE_ROLE" ] && [ -n "$EMBED_URL" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::RAG ingestion secrets absent — skipping (expected on forks/Dependabot)."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  ingest:
+    name: Embed corpus → source_chunks / chunk_embeddings
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Materialize LFS by hand below so we fetch only what we ingest.
+          lfs: false
+
+      # Pull just the raw sources (EPUB + wiki .7z). The committed, extracted
+      # .xml is redundant here — we extract from the .7z ourselves — so skip it.
+      - name: Materialize LFS sources
+        run: git lfs pull --include="corpus/novel/*.EPUB,corpus/wiki/*.7z"
+
+      - name: Set up Node & pnpm
+        uses: ./.github/actions/setup
+
+      - name: Extract wiki dump
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y p7zip-full
+          mkdir -p /tmp/wiki
+          7z x -y -o/tmp/wiki corpus/wiki/lordofthemystery_pages_current.xml.7z
+
+      # parse → chunk → embed → load. The embed stage validates --model against
+      # APPROVED_EMBEDDING_MODELS (no new id leaks into the model-keyed store)
+      # and the load stage upserts by deterministic UUID (idempotent — a re-run
+      # never duplicates rows, so live saves keep matching).
+      - name: Ingest corpus
+        env:
+          SUPABASE_URL: ${{ secrets.RAG_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.RAG_SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_OPERATOR_EMBEDDING_URL: ${{ secrets.RAG_EMBEDDING_URL }}
+          MODELS: ${{ inputs.models || 'qwen3-embedding-0.6b' }}
+        run: |
+          set -euo pipefail
+          wiki_xml=/tmp/wiki/lordofthemystery_pages_current.xml
+
+          # Parse + chunk each corpus once; the chunk sets are reused per model.
+          pnpm rag:novel corpus/novel/LordofMysteriesCuttlefishTha1.EPUB /tmp/novel-docs.jsonl
+          pnpm rag:chunk /tmp/novel-docs.jsonl /tmp/novel-chunks.jsonl
+          pnpm rag:wiki "$wiki_xml" /tmp/wiki-docs.jsonl
+          pnpm rag:chunk /tmp/wiki-docs.jsonl /tmp/wiki-chunks.jsonl
+
+          # Embed + load once per approved model (each model is its own vector map).
+          IFS=',' read -ra ids <<< "$MODELS"
+          for raw in "${ids[@]}"; do
+            model="$(echo "$raw" | xargs)" # trim surrounding whitespace
+            [ -z "$model" ] && continue
+            echo "::group::Embed + load ($model)"
+            pnpm rag:embed --model "$model" --provider operator \
+              /tmp/novel-chunks.jsonl "/tmp/novel.$model.jsonl"
+            pnpm rag:embed --model "$model" --provider operator \
+              /tmp/wiki-chunks.jsonl "/tmp/wiki.$model.jsonl"
+            pnpm rag:load "/tmp/novel.$model.jsonl" --model "$model"
+            pnpm rag:load "/tmp/wiki.$model.jsonl" --model "$model"
+            echo "::endgroup::"
+          done

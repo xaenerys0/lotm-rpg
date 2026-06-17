@@ -84,6 +84,30 @@ pnpm rag:load /tmp/wiki-chunks.jsonl  --chunks-only
 
 Add the `chunk_embeddings` later (step 3-4) to light up the vector half.
 
+## In CI (automated re-embed)
+
+The `rag-ingest` workflow (`.github/workflows/rag-ingest.yml`) runs this whole
+pipeline on a runner — parse → chunk → embed → load — so a canon change doesn't
+have to be re-embedded by hand. It is deliberately conservative:
+
+- **Trigger**: `push` to `main` (i.e. after a PR merges), **path-filtered** to
+  `corpus/**`, `scripts/rag/**`, `src/lib/rag/**`, and `src/lib/ai/embeddings.ts`
+  so unrelated merges don't re-embed; plus `workflow_dispatch` (manual, with an
+  optional comma-separated `models` input, default `qwen3-embedding-0.6b`).
+- **Secret-gated**: needs `RAG_SUPABASE_URL`, `RAG_SUPABASE_SERVICE_ROLE_KEY`,
+  and `RAG_EMBEDDING_URL` (the operator `/api/embed` endpoint) as repo/environment
+  **secrets**. A `gate` job checks they're present and the `ingest` job is
+  skipped cleanly when any is absent (forks/Dependabot can't read secrets).
+- **Sources**: checks out and `git lfs pull`s only the EPUB + wiki `.7z`, then
+  extracts the dump with `7z` (`p7zip-full`).
+- **Safe by construction**: the embed stage validates `--model` against
+  `APPROVED_EMBEDDING_MODELS` (no new id), and the load stage upserts by
+  deterministic UUID (idempotent — re-runs never duplicate rows, so live saves
+  keep matching). `concurrency` is set so a run is never cancelled mid-load.
+
+> Epoch tagging (below) is still a manual post-step — the workflow loads with
+> `epoch = null` (universal).
+
 ## Notes
 
 - **Idempotent**: re-running any stage upserts in place (deterministic chunk

@@ -1,0 +1,32 @@
+name: Setup Node & pnpm
+description: >
+  Install pnpm, set up Node with the pnpm store cached, and install
+  dependencies with a frozen lockfile. The single source of truth for the
+  CI toolchain versions, shared by every job.
+
+inputs:
+  node-version:
+    description: Node.js major version.
+    default: "22"
+  pnpm-version:
+    description: pnpm major version.
+    default: "10"
+
+runs:
+  using: composite
+  steps:
+    # pnpm must be installed before setup-node so `cache: pnpm` can find it.
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: ${{ inputs.pnpm-version }}
+
+    - name: Set up Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: pnpm
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
