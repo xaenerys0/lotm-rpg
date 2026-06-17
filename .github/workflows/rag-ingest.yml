@@ -19,6 +19,11 @@ on:
       models:
         description: Approved embedding model id(s), comma-separated.
         default: qwen3-embedding-0.6b
+      wiki_concealment_tier:
+        description: >
+          Concealment tier to load wiki chunks at (spoiler gate). Leave blank to
+          use the repo variable RAG_WIKI_CONCEALMENT_TIER, else 0.
+        default: ""
 
 # Never cancel an in-flight run mid-load — a partial DB write should finish.
 concurrency:
@@ -87,20 +92,36 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.RAG_SUPABASE_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_OPERATOR_EMBEDDING_URL: ${{ secrets.RAG_EMBEDDING_URL }}
           MODELS: ${{ inputs.models || 'qwen3-embedding-0.6b' }}
+          # Pin the wiki spoiler gate so a re-ingest never silently lowers it:
+          # dispatch input → repo variable → 0. `load` upserts concealment_tier,
+          # so this must match the intended tier on every run.
+          WIKI_TIER: ${{ inputs.wiki_concealment_tier || vars.RAG_WIKI_CONCEALMENT_TIER || '0' }}
         run: |
           set -euo pipefail
-          wiki_xml=/tmp/wiki/lordofthemystery_pages_current.xml
+
+          # Resolve the extracted dump by glob — 7z names the entry from inside
+          # the archive, which need not equal the .7z basename.
+          shopt -s nullglob
+          wiki_xmls=(/tmp/wiki/*.xml)
+          wiki_xml="${wiki_xmls[0]:-}"
+          if [ -z "$wiki_xml" ]; then
+            echo "::error::No extracted wiki XML found in /tmp/wiki" >&2
+            exit 1
+          fi
 
           # Parse + chunk each corpus once; the chunk sets are reused per model.
           pnpm rag:novel corpus/novel/LordofMysteriesCuttlefishTha1.EPUB /tmp/novel-docs.jsonl
           pnpm rag:chunk /tmp/novel-docs.jsonl /tmp/novel-chunks.jsonl
-          pnpm rag:wiki "$wiki_xml" /tmp/wiki-docs.jsonl
+          pnpm rag:wiki "$wiki_xml" /tmp/wiki-docs.jsonl --concealment-tier "$WIKI_TIER"
           pnpm rag:chunk /tmp/wiki-docs.jsonl /tmp/wiki-chunks.jsonl
 
           # Embed + load once per approved model (each model is its own vector map).
           IFS=',' read -ra ids <<< "$MODELS"
           for raw in "${ids[@]}"; do
-            model="$(echo "$raw" | xargs)" # trim surrounding whitespace
+            # Trim surrounding whitespace (parameter expansion — no subshell, and
+            # safe for values xargs would choke on).
+            model="${raw#"${raw%%[![:space:]]*}"}"
+            model="${model%"${model##*[![:space:]]}"}"
             [ -z "$model" ] && continue
             echo "::group::Embed + load ($model)"
             pnpm rag:embed --model "$model" --provider operator \

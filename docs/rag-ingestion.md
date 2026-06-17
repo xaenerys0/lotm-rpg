@@ -94,6 +94,11 @@ have to be re-embedded by hand. It is deliberately conservative:
   `corpus/**`, `scripts/rag/**`, `src/lib/rag/**`, and `src/lib/ai/embeddings.ts`
   so unrelated merges don't re-embed; plus `workflow_dispatch` (manual, with an
   optional comma-separated `models` input, default `qwen3-embedding-0.6b`).
+- **Wiki spoiler gate**: the load stage upserts `concealment_tier`, so a re-ingest
+  re-writes it. The workflow pins the wiki tier from the `wiki_concealment_tier`
+  dispatch input → the `RAG_WIKI_CONCEALMENT_TIER` repo **variable** → `0`, so an
+  automated re-ingest can never silently lower a tier the operator set. Set the
+  repo variable if your wiki canon needs a tier above 0.
 - **Secret-gated**: needs `RAG_SUPABASE_URL`, `RAG_SUPABASE_SERVICE_ROLE_KEY`,
   and `RAG_EMBEDDING_URL` (the operator `/api/embed` endpoint) as repo/environment
   **secrets**. A `gate` job checks they're present and the `ingest` job is
