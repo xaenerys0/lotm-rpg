@@ -8,6 +8,7 @@ import {
 import { isValidActingMethodStateShape } from "./acting-method";
 import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
+import { isValidCustomLocationsShape } from "./location";
 import { cityIdFromLocation } from "./travel";
 import { isValidHuntsShape } from "./hunt";
 import { isValidIdentityStateShape } from "./identity";
@@ -253,6 +254,15 @@ export function isValidSessionShape(obj: unknown): boolean {
   // Injuries are optional (older sessions predate combat) but must be
   // well-shaped when present; absent simply means no active injuries.
   if (gs.injuries !== undefined && !isValidInjuriesShape(gs.injuries)) return false;
+  // Custom locations (Backlund location sync) are optional but strict when
+  // present; absent means the character never visited an off-map venue. They
+  // ride the deserialize `...gs` spread (no seeding).
+  if (
+    gs.customLocations !== undefined &&
+    !isValidCustomLocationsShape(gs.customLocations)
+  ) {
+    return false;
+  }
 
   // RAG fields (issue #63) are optional (older sessions predate them) but
   // must be valid when present: a finite positive position, and a model id on

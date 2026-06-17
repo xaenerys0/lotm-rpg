@@ -185,6 +185,21 @@ export interface DigestionState {
   complete: boolean;
 }
 
+/**
+ * A narrator-named venue that is not in the static gazetteer, filed under the
+ * city it was discovered in (Backlund location sync). Lets the map render and
+ * pin places the story invented without the engine confidently mis-matching a
+ * generic keyword (e.g. "chapel") to an unrelated district.
+ */
+export interface CustomLocation {
+  /** The known city id this venue belongs to (e.g. "backlund"). */
+  cityId: string;
+  /** Stable, unique slug derived from the name (prefixed `custom-`). */
+  slug: string;
+  /** Display name, as the narrator wrote it (city prefix stripped). */
+  name: string;
+}
+
 export interface GameState {
   characterId: string;
   pathwayId: number;
@@ -203,6 +218,16 @@ export interface GameState {
    * outside the Fifth Epoch; the map falls back to `cityIdFromLocation(location)`.
    */
   currentCity?: string;
+  /**
+   * Venues the narrator named that are NOT in the static gazetteer (Backlund
+   * location sync). When an applied `location` change resolves to a known city
+   * but matches no known district, the engine files the place here under that
+   * city so the map can render it and pin "you are here" correctly — instead of
+   * silently keyword-matching a wrong district. Engine-maintained, NOT
+   * AI-mutable; Fifth-Epoch only (the per-city atlas is). Optional/absent on
+   * saves that never visited an off-map venue.
+   */
+  customLocations?: CustomLocation[];
   activeQuests: string[];
   npcsPresent: string[];
   characterName?: string;

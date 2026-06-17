@@ -11,6 +11,7 @@ export type {
   ValidatedAIResponse,
   InstructionType,
   GameState,
+  CustomLocation,
   DigestionState,
   TurnRecord,
   BulletSummary,

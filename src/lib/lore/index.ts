@@ -45,6 +45,7 @@ export {
 } from "./start-scenarios";
 export {
   gazetteerForEpoch,
+  uncertainFifthGazetteer,
   type EpochGazetteer,
   type GazetteerDistrict,
   type GazetteerFartherCity,

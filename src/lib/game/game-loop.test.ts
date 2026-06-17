@@ -1046,6 +1046,37 @@ describe("applyWorldStateChanges — movement gate", () => {
     expect(local.currentCity).toBe("backlund");
   });
 
+  it("registers an off-map venue as a custom location under the resolved city", () => {
+    // A within-city move to a place the gazetteer doesn't list (the Backlund
+    // location-sync fix): the engine files it under Backlund so the map can
+    // render and pin it instead of keyword-guessing a wrong district.
+    const state = makeGameState({
+      location: "Backlund",
+      currentCity: "backlund",
+      epoch: 5,
+    });
+    const { state: next } = applyWorldStateChanges(
+      state,
+      [
+        {
+          field: "location",
+          oldValue: "Backlund",
+          newValue: "Backlund — Old Saint-Sulpice Chapel",
+          reason: "entered the chapel",
+        },
+      ],
+      { ...opts, epoch: 5 },
+    );
+    expect(next.currentCity).toBe("backlund");
+    expect(next.customLocations).toEqual([
+      {
+        cityId: "backlund",
+        slug: "custom-old-saint-sulpice-chapel",
+        name: "Old Saint-Sulpice Chapel",
+      },
+    ]);
+  });
+
   it("keeps followers authoritative over an AI npcsPresent wipe", () => {
     const state = makeGameState({ npcsPresent: ["Old Neil"] });
     const roster = {
@@ -2094,6 +2125,31 @@ describe("deserializeSession", () => {
   it("returns null for missing required fields", () => {
     expect(deserializeSession("{}")).toBeNull();
     expect(deserializeSession('{"id": "x"}')).toBeNull();
+  });
+
+  it("preserves valid customLocations and rejects malformed ones", () => {
+    const withCustom = JSON.parse(
+      serializeSession(
+        makeSession({
+          gameState: makeGameState({
+            currentCity: "backlund",
+            customLocations: [
+              {
+                cityId: "backlund",
+                slug: "custom-old-saint-sulpice-chapel",
+                name: "Old Saint-Sulpice Chapel",
+              },
+            ],
+          }),
+        }),
+      ),
+    );
+    const restored = deserializeSession(JSON.stringify(withCustom));
+    expect(restored?.gameState.customLocations).toHaveLength(1);
+
+    // A malformed customLocations payload is rejected, not coerced.
+    withCustom.gameState.customLocations = [{ cityId: "backlund" }];
+    expect(deserializeSession(JSON.stringify(withCustom))).toBeNull();
   });
 
   it("seeds canon position and the default model lock for legacy sessions", () => {

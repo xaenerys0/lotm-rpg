@@ -26,7 +26,9 @@ import {
   isFateProof,
   joinRoster,
   leaveRoster,
+  locationLabel,
   removeProfileNote,
+  resolveLocation,
   resolveActingMethodState,
   resolveProfileState,
   resolveTrackedNpcState,
@@ -199,7 +201,8 @@ export function CharacterSheet() {
             </p>
           </div>
           <p className="text-xs text-muted">
-            {state.location} · Turn {session.turnCount}
+            {locationLabel(resolveLocation(state, state.epoch))} · Turn{" "}
+            {session.turnCount}
           </p>
         </div>
         {state.characterBackground && (

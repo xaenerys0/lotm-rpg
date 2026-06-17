@@ -15,6 +15,7 @@ import {
   type ActingMethodState,
 } from "./acting-method";
 import { cityForLocation, isReachable } from "./place-graph";
+import { registerCustomLocation } from "./location";
 import { reassertFollowersAt, type TrackedNpcState } from "./tracked-npcs";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
@@ -274,6 +275,10 @@ export function applyWorldStateChanges(
               npcsPresent: reassertFollowersAt(base, opts.trackedNpcState),
               ...(appliedCity ? { currentCity: appliedCity } : {}),
             };
+            // File a narrator-named venue that matches no known district under
+            // the resolved city, so the map can render and pin it instead of
+            // keyword-guessing a wrong district (Backlund location sync).
+            next = registerCustomLocation(next, opts.epoch);
           }
         }
         break;

@@ -431,6 +431,23 @@ const EARLIER_DISTRICTS: Record<number, GazetteerDistrict[]> = {
 const FIFTH_DEFAULT_CITY = "tingen";
 
 /**
+ * The Fifth-Epoch atlas to show when the character's city genuinely can't be
+ * resolved (Backlund location sync) — instead of silently defaulting to Tingen
+ * and confidently showing the wrong city. Carries no districts (so nothing is
+ * mis-pinned) but still lists every city as "farther afield" with travel
+ * enabled, so setting out for one re-anchors `currentCity` and self-heals.
+ */
+export function uncertainFifthGazetteer(): EpochGazetteer {
+  return {
+    intro:
+      "Your whereabouts are uncertain — no district here answers to where you stand. Set out for a city below to find your bearings.",
+    districts: [],
+    fartherCities: FIFTH_CITIES,
+    travelEnabled: true,
+  };
+}
+
+/**
  * The atlas for a character's epoch and (in the Fifth Epoch) current city. The
  * Fifth Epoch returns the CURRENT city's districts with a header naming that
  * city and "farther afield" travel to the OTHER cities (issue #101 — a character
