@@ -144,4 +144,20 @@ describe("travelTo", () => {
     expect(travelTo(stateAt("Backlund"), "backlund")).toBeNull();
     expect(travelTo(stateAt("Tingen City"), "narnia")).toBeNull();
   });
+
+  it("carries the roster's followers to the destination (issue #101)", () => {
+    const roster = {
+      roster: [
+        { name: "Old Neil", disposition: "ally" as const, follows: true },
+        { name: "A Stranger", disposition: "neutral" as const, follows: false },
+      ],
+    };
+    const result = travelTo(stateAt("Tingen City"), "backlund", 1, roster);
+    expect(result!.state.npcsPresent).toEqual(["Old Neil"]);
+  });
+
+  it("clears NPCs with the default empty roster (legacy behaviour)", () => {
+    const result = travelTo(stateAt("Tingen City"), "backlund", 1);
+    expect(result!.state.npcsPresent).toEqual([]);
+  });
 });

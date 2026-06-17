@@ -63,6 +63,12 @@ export function SanityPreferences() {
         onToggle={() => toggle("sceneArtEnabled")}
       />
       <PreferenceToggle
+        label="Movement realism"
+        description="Block the narrator from teleporting you across the map. Travel between cities stays your deliberate choice on the map; the narrator may still move you within a city. Leave on unless you want the AI to relocate you freely."
+        checked={prefs.movementGateEnabled}
+        onToggle={() => toggle("movementGateEnabled")}
+      />
+      <PreferenceToggle
         label="High-contrast mode"
         description="Brightens text and borders and quiets the fog and lamplight effects, so the words always come first."
         checked={prefs.highContrast}

@@ -116,6 +116,11 @@ export function parseAIResponse(raw: string): AIResponse {
         oldValue: change.oldValue,
         newValue: change.newValue,
         reason: String(change.reason ?? ""),
+        // Against-the-will relocation code (issue #101) — carried only when the
+        // AI supplied a string; the engine narrows it to a known cause.
+        ...(typeof change.involuntaryCause === "string"
+          ? { involuntaryCause: change.involuntaryCause }
+          : {}),
       };
     });
   }

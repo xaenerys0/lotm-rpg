@@ -20,7 +20,38 @@ export {
   applyDigestion,
   applyResolution,
   narrationOnly,
+  gateLocationChange,
+  isInvoluntaryMoveCause,
+  INVOLUNTARY_MOVE_CAUSES,
+  type ApplyWorldStateOptions,
+  type GateLocationChangeInput,
+  type GateLocationChangeResult,
+  type InvoluntaryMoveCause,
 } from "./world-state";
+
+export {
+  isReachable,
+  resolvePlace,
+  sameCity,
+  type PlaceNode,
+  type ReachableResult,
+} from "./place-graph";
+
+export {
+  companionsPresentOnMove,
+  emptyTrackedNpcState,
+  followers,
+  isValidTrackedNpcShape,
+  isValidTrackedNpcStateShape,
+  joinRoster,
+  leaveRoster,
+  reassertFollowersAt,
+  resolveTrackedNpcState,
+  shakeOff,
+  type TrackedDisposition,
+  type TrackedNpc,
+  type TrackedNpcState,
+} from "./tracked-npcs";
 
 export {
   advanceActiveHunts,

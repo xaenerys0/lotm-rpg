@@ -85,6 +85,15 @@ export interface GameSession {
    */
   hunts?: import("./hunt").HuntState[];
   /**
+   * Tracked-NPC roster (issue #101): the durable cast the player is bound to —
+   * allies who follow (a party) and hostiles who follow (pursuers) — distinct
+   * from the transient, scene-scoped `gameState.npcsPresent`. Followers are
+   * re-asserted at a move's destination so companions travel with the player.
+   * Absent on saves that never rostered anyone; strictly validated when present,
+   * exactly like `hunts`. Preserved on the deserialize `...s` spread (no seeding).
+   */
+  trackedNpcState?: import("./tracked-npcs").TrackedNpcState;
+  /**
    * Transient player-action text for an engine-decided turn (advancement /
    * apotheosis) that is routed straight into `consequences` via
    * `ENGINE_RESOLUTION`. Carried so the turn record reads as what the player

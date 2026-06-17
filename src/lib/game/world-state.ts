@@ -14,8 +14,101 @@ import {
   type ActingDiscoveryTrigger,
   type ActingMethodState,
 } from "./acting-method";
+import { isReachable } from "./place-graph";
+import { reassertFollowersAt, type TrackedNpcState } from "./tracked-npcs";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
+
+// ---------------------------------------------------------------------------
+// Movement gate (issue #101)
+// ---------------------------------------------------------------------------
+//
+// The narrator may move the character WITHIN a city freely, but a cross-city
+// move is the player's deliberate choice (the travel map) — never a teleport for
+// pacing. The one exception is an against-their-will relocation, signalled by an
+// explicit `involuntaryCause` code on the `location` change. The gate never
+// throws: a refused move keeps the character where they are and emits an
+// in-world redirect fact (narration), matching the `discoveredItemLeadFact` /
+// `freeTextRejection` convention.
+
+/** The recognised against-the-will relocation causes the AI may signal. */
+export const INVOLUNTARY_MOVE_CAUSES = [
+  "abduction",
+  "forced-passage",
+  "capability-gated-teleport",
+] as const;
+
+export type InvoluntaryMoveCause = (typeof INVOLUNTARY_MOVE_CAUSES)[number];
+
+export function isInvoluntaryMoveCause(value: unknown): value is InvoluntaryMoveCause {
+  return (
+    typeof value === "string" &&
+    (INVOLUNTARY_MOVE_CAUSES as readonly string[]).includes(value)
+  );
+}
+
+export interface GateLocationChangeInput {
+  from: string;
+  to: string;
+  epoch?: number;
+  cause?: InvoluntaryMoveCause;
+  gateEnabled: boolean;
+  turnNumber: number;
+}
+
+export interface GateLocationChangeResult {
+  /** The location that should actually take effect (`from` when blocked). */
+  location: string;
+  /** True when a cross-city move without a valid cause was refused. */
+  blocked: boolean;
+  /** An in-world fact to fold into memory (redirect, or "against your will"). */
+  fact?: SessionFact;
+}
+
+/**
+ * Decide what a proposed `location` change resolves to. With the gate off, or
+ * for a reachable (same-place / same-city / provisional) move, the change is
+ * allowed unchanged. A non-reachable (cross-city) move is allowed ONLY with a
+ * valid involuntary cause (recorded as an "against your will" fact); otherwise it
+ * is blocked — the character stays in `from` and an in-world redirect fact is
+ * emitted. Pure; never throws.
+ */
+export function gateLocationChange({
+  from,
+  to,
+  epoch,
+  cause,
+  gateEnabled,
+  turnNumber,
+}: GateLocationChangeInput): GateLocationChangeResult {
+  if (!gateEnabled) return { location: to, blocked: false };
+
+  if (isReachable(from, to, epoch).reachable) {
+    return { location: to, blocked: false };
+  }
+
+  if (cause !== undefined) {
+    return {
+      location: to,
+      blocked: false,
+      fact: {
+        type: "event",
+        description: `Against your will, you are taken from ${from} to ${to}.`,
+        turnNumber,
+      },
+    };
+  }
+
+  return {
+    location: from,
+    blocked: true,
+    fact: {
+      type: "event",
+      description: `You cannot simply will yourself from ${from} to ${to} — the journey between cities is one you must set out on deliberately. You remain in ${from}.`,
+      turnNumber,
+    },
+  };
+}
 
 /**
  * Split AI-discovered items into the loot the player may actually carry
@@ -89,11 +182,41 @@ export function narrationOnly(response: AIResponse): AIResponse {
   };
 }
 
+export interface ApplyWorldStateOptions {
+  /** Character epoch — threads into the reachability gate (Fifth-Epoch only). */
+  epoch?: number;
+  /** The movement realism gate (player override; default on). */
+  gateEnabled: boolean;
+  /** The tracked-NPC roster — followers re-asserted on a move. */
+  trackedNpcState: TrackedNpcState;
+  /** Turn number for any redirect/relocation fact. */
+  turnNumber: number;
+}
+
+/**
+ * Apply the AI-mutable world-state changes from a turn. Only the allowlisted
+ * fields (`location`, `activeQuests`, `npcsPresent`) are written. The `location`
+ * field passes through `gateLocationChange` (issue #101) — a cross-city teleport
+ * without a valid `involuntaryCause` is refused (location unchanged) and turned
+ * into an in-world redirect fact instead of a silent write.
+ *
+ * On an ACTUAL location change the scene cast is reset to the roster's followers
+ * (companions and pursuers travel with the player); on an explicit `npcsPresent`
+ * write the followers are likewise re-asserted, so the AI can never drop a
+ * follower (engine truth over the AI string, like `advanceActiveHunts`).
+ *
+ * Ordering within one batch (Risk 4): a `location` change resets `npcsPresent`
+ * to the followers, and any `npcsPresent` write unions the followers back in —
+ * so followers stay authoritative regardless of the order the two changes
+ * arrive. Returns the new state plus any facts the gate produced. Pure.
+ */
 export function applyWorldStateChanges(
   state: GameState,
   changes: StateChange[],
-): GameState {
+  opts: ApplyWorldStateOptions,
+): { state: GameState; facts: SessionFact[] } {
   let next = { ...state };
+  const facts: SessionFact[] = [];
 
   for (const change of changes) {
     if (!AI_MUTABLE_FIELDS.has(change.field)) {
@@ -103,7 +226,24 @@ export function applyWorldStateChanges(
     switch (change.field) {
       case "location":
         if (typeof change.newValue === "string") {
-          next = { ...next, location: change.newValue };
+          const gated = gateLocationChange({
+            from: next.location,
+            to: change.newValue,
+            epoch: opts.epoch,
+            cause: isInvoluntaryMoveCause(change.involuntaryCause)
+              ? change.involuntaryCause
+              : undefined,
+            gateEnabled: opts.gateEnabled,
+            turnNumber: opts.turnNumber,
+          });
+          if (gated.fact) facts.push(gated.fact);
+          if (!gated.blocked && gated.location !== next.location) {
+            next = {
+              ...next,
+              location: gated.location,
+              npcsPresent: reassertFollowersAt([], opts.trackedNpcState),
+            };
+          }
         }
         break;
       case "activeQuests":
@@ -113,13 +253,19 @@ export function applyWorldStateChanges(
         break;
       case "npcsPresent":
         if (Array.isArray(change.newValue)) {
-          next = { ...next, npcsPresent: change.newValue.map(String) };
+          next = {
+            ...next,
+            npcsPresent: reassertFollowersAt(
+              change.newValue.map(String),
+              opts.trackedNpcState,
+            ),
+          };
         }
         break;
     }
   }
 
-  return next;
+  return { state: next, facts };
 }
 
 export function applySanityImpact(state: GameState, impact: number): GameState {
@@ -163,6 +309,9 @@ export function applyResolution(
   turnCount: number,
   playerAction: string,
   actingMethodState: ActingMethodState,
+  epoch: number | undefined,
+  trackedNpcState: TrackedNpcState,
+  movementGateEnabled: boolean,
 ): {
   gameState: GameState;
   memory: MemoryState;
@@ -188,8 +337,16 @@ export function applyResolution(
     updated = applySanityImpact(updated, sanity.total);
   }
 
+  let worldStateFacts: SessionFact[] = [];
   if (response.worldStateChanges && response.worldStateChanges.length > 0) {
-    updated = applyWorldStateChanges(updated, response.worldStateChanges);
+    const applied = applyWorldStateChanges(updated, response.worldStateChanges, {
+      epoch,
+      gateEnabled: movementGateEnabled,
+      trackedNpcState,
+      turnNumber: turnCount,
+    });
+    updated = applied.state;
+    worldStateFacts = applied.facts;
   }
 
   // Only `mundane` loot enters inventory from AI narration; advancement-critical
@@ -241,6 +398,11 @@ export function applyResolution(
   const sanitizedResponse = { ...response, itemsDiscovered: carried };
   const turn = buildTurnRecord(turnCount, playerAction, sanitizedResponse);
   let updatedMemory = addTurn(memory, turn);
+  // Movement-gate narration (issue #101): a refused cross-city teleport, or an
+  // against-the-will relocation, is recorded so the narrator weaves it in.
+  for (const fact of worldStateFacts) {
+    updatedMemory = addSessionFact(updatedMemory, fact);
+  }
   for (const item of blocked) {
     updatedMemory = addSessionFact(
       updatedMemory,

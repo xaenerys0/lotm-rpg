@@ -73,6 +73,13 @@ export interface StateChange {
   oldValue: unknown;
   newValue: unknown;
   reason: string;
+  /**
+   * Optional against-the-will relocation code (issue #101). Only meaningful on a
+   * `location` change: the engine (`isInvoluntaryMoveCause` in
+   * `@/lib/game/world-state`) narrows it to a known cause and lets an otherwise-
+   * refused cross-city move through. Loosely typed at the boundary.
+   */
+  involuntaryCause?: string;
 }
 
 export interface ActingEvaluation {

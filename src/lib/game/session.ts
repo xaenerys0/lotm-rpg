@@ -11,6 +11,7 @@ import { createDigestionState } from "./digestion";
 import { isValidHuntsShape } from "./hunt";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
+import { isValidTrackedNpcStateShape } from "./tracked-npcs";
 import { isValidSocietyShape, migrateSocietyState, type SocietyState } from "./society";
 import { DEFAULT_EPOCH_ID, getEpoch } from "@/lib/lore/epochs";
 import type { StartScenario } from "@/lib/lore/start-scenarios";
@@ -279,6 +280,15 @@ export function isValidSessionShape(obj: unknown): boolean {
   // Hunt quests are optional but strict when present — they ride the deserialize
   // `...s` spread (no seeding); absent simply means no active hunts.
   if (s.hunts !== undefined && !isValidHuntsShape(s.hunts)) {
+    return false;
+  }
+
+  // Tracked-NPC roster (issue #101) is optional but strict when present — it
+  // rides the deserialize `...s` spread (no seeding); absent means no roster.
+  if (
+    s.trackedNpcState !== undefined &&
+    !isValidTrackedNpcStateShape(s.trackedNpcState)
+  ) {
     return false;
   }
 

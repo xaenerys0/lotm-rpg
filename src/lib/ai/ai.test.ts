@@ -3123,6 +3123,34 @@ describe("validation", () => {
       const result = parseAIResponse(json);
       expect(result.worldStateChanges![0].field).toBe("");
       expect(result.worldStateChanges![0].reason).toBe("");
+      // No involuntaryCause when the AI omitted it (issue #101).
+      expect(result.worldStateChanges![0].involuntaryCause).toBeUndefined();
+    });
+
+    it("carries a string involuntaryCause on a location change (issue #101)", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        worldStateChanges: [
+          {
+            field: "location",
+            oldValue: "Tingen City",
+            newValue: "Bayam",
+            reason: "abducted",
+            involuntaryCause: "abduction",
+          },
+          {
+            field: "location",
+            oldValue: "a",
+            newValue: "b",
+            reason: "walk",
+            involuntaryCause: 42,
+          },
+        ],
+      });
+      const result = parseAIResponse(json);
+      expect(result.worldStateChanges![0].involuntaryCause).toBe("abduction");
+      // A non-string cause is dropped at the boundary.
+      expect(result.worldStateChanges![1].involuntaryCause).toBeUndefined();
     });
 
     it("handles actingEvaluation with missing fields", () => {

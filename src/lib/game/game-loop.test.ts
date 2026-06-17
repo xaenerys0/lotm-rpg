@@ -9,9 +9,14 @@ import {
   applyDigestion,
   applyResolution,
   narrationOnly,
+  gateLocationChange,
+  isInvoluntaryMoveCause,
+  INVOLUNTARY_MOVE_CAUSES,
+  type ApplyWorldStateOptions,
 } from "./world-state";
 import { createDigestionState } from "./digestion";
 import { createActingMethodState, type ActingMethodState } from "./acting-method";
+import { emptyTrackedNpcState } from "./tracked-npcs";
 import { FUNDS_DISCOVERED_CAP } from "./marketplace";
 import {
   advanceCanonPosition,
@@ -105,8 +110,21 @@ function applyRes(
   turn: number,
   action: string,
   acting: ActingMethodState = createActingMethodState(),
+  epoch: number | undefined = undefined,
+  trackedNpcState = emptyTrackedNpcState(),
+  movementGateEnabled = true,
 ): ReturnType<typeof applyResolution> {
-  return applyResolution(state, memory, result, turn, action, acting);
+  return applyResolution(
+    state,
+    memory,
+    result,
+    turn,
+    action,
+    acting,
+    epoch,
+    trackedNpcState,
+    movementGateEnabled,
+  );
 }
 
 // ─── VALID_TRANSITIONS ─────────────────────────────────────────────
@@ -597,6 +615,23 @@ describe("transition", () => {
 
 // ─── applyWorldStateChanges ────────────────────────────────────────
 
+// Legacy field-allowlist cases predate the issue-#101 movement gate; the gate is
+// exercised by its own describe block below. Here we run with the gate OFF and an
+// empty roster, so the helper just returns the mutated state (the prior shape).
+function applyWSC(
+  state: GameState,
+  changes: StateChange[],
+  opts: Partial<ApplyWorldStateOptions> = {},
+): GameState {
+  return applyWorldStateChanges(state, changes, {
+    epoch: undefined,
+    gateEnabled: false,
+    trackedNpcState: emptyTrackedNpcState(),
+    turnNumber: 0,
+    ...opts,
+  }).state;
+}
+
 describe("applyWorldStateChanges", () => {
   it("updates location", () => {
     const state = makeGameState({ location: "Tingen City" });
@@ -608,7 +643,7 @@ describe("applyWorldStateChanges", () => {
         reason: "Traveled",
       },
     ];
-    const next = applyWorldStateChanges(state, changes);
+    const next = applyWSC(state, changes);
     expect(next.location).toBe("Backlund");
   });
 
@@ -622,7 +657,7 @@ describe("applyWorldStateChanges", () => {
         reason: "New quest",
       },
     ];
-    const next = applyWorldStateChanges(state, changes);
+    const next = applyWSC(state, changes);
     expect(next.activeQuests).toEqual(["quest-1", "quest-2"]);
   });
 
@@ -636,7 +671,7 @@ describe("applyWorldStateChanges", () => {
         reason: "NPCs arrived",
       },
     ];
-    const next = applyWorldStateChanges(state, changes);
+    const next = applyWSC(state, changes);
     expect(next.npcsPresent).toEqual(["Dunn Smith", "Leonard Mitchell"]);
   });
 
@@ -672,7 +707,7 @@ describe("applyWorldStateChanges", () => {
         reason: "Hack attempt",
       },
     ];
-    const next = applyWorldStateChanges(state, changes);
+    const next = applyWSC(state, changes);
     expect(next.pathwayId).toBe(1);
     expect(next.sequenceLevel).toBe(9);
     expect(next.maxSanity).toBe(100);
@@ -695,20 +730,20 @@ describe("applyWorldStateChanges", () => {
         reason: "Met NPC",
       },
     ];
-    const next = applyWorldStateChanges(state, changes);
+    const next = applyWSC(state, changes);
     expect(next.location).toBe("Chanis Gate");
     expect(next.npcsPresent).toEqual(["Old Neil"]);
   });
 
   it("handles empty changes array", () => {
     const state = makeGameState();
-    const next = applyWorldStateChanges(state, []);
+    const next = applyWSC(state, []);
     expect(next).toEqual(state);
   });
 
   it("does not mutate the original state", () => {
     const state = makeGameState({ location: "Tingen City" });
-    applyWorldStateChanges(state, [
+    applyWSC(state, [
       {
         field: "location",
         oldValue: "Tingen City",
@@ -729,7 +764,7 @@ describe("applyWorldStateChanges", () => {
         reason: "Bad data",
       },
     ];
-    const next = applyWorldStateChanges(state, changes);
+    const next = applyWSC(state, changes);
     expect(next.activeQuests).toEqual(["q1"]);
   });
 
@@ -743,7 +778,7 @@ describe("applyWorldStateChanges", () => {
         reason: "Bad data",
       },
     ];
-    const next = applyWorldStateChanges(state, changes);
+    const next = applyWSC(state, changes);
     expect(next.npcsPresent).toEqual(["npc1"]);
   });
 
@@ -757,8 +792,177 @@ describe("applyWorldStateChanges", () => {
         reason: "Bad data",
       },
     ];
-    const next = applyWorldStateChanges(state, changes);
+    const next = applyWSC(state, changes);
     expect(next.location).toBe("Tingen City");
+  });
+});
+
+// ─── movement gate (issue #101) ────────────────────────────────────
+
+function locationChange(to: string, involuntaryCause?: string): StateChange {
+  return {
+    field: "location",
+    oldValue: "from",
+    newValue: to,
+    reason: "the narrator moved you",
+    ...(involuntaryCause ? { involuntaryCause } : {}),
+  };
+}
+
+describe("isInvoluntaryMoveCause", () => {
+  it("accepts each known cause and rejects anything else", () => {
+    for (const cause of INVOLUNTARY_MOVE_CAUSES) {
+      expect(isInvoluntaryMoveCause(cause)).toBe(true);
+    }
+    expect(isInvoluntaryMoveCause("teleport")).toBe(false);
+    expect(isInvoluntaryMoveCause(42)).toBe(false);
+    expect(isInvoluntaryMoveCause(undefined)).toBe(false);
+  });
+});
+
+describe("gateLocationChange", () => {
+  const base = { epoch: undefined, turnNumber: 3 };
+
+  it("allows any move when the gate is disabled", () => {
+    const r = gateLocationChange({
+      ...base,
+      from: "Tingen City",
+      to: "Bayam",
+      gateEnabled: false,
+    });
+    expect(r).toEqual({ location: "Bayam", blocked: false });
+  });
+
+  it("allows a within-city move (district → landmark)", () => {
+    const r = gateLocationChange({
+      ...base,
+      from: "Zouteland Street",
+      to: "The Tussock River docks",
+      gateEnabled: true,
+    });
+    expect(r.blocked).toBe(false);
+    expect(r.location).toBe("The Tussock River docks");
+    expect(r.fact).toBeUndefined();
+  });
+
+  it("allows a move when either endpoint is unrecognised (provisional)", () => {
+    const r = gateLocationChange({
+      ...base,
+      from: "Tingen City",
+      to: "A nameless moor",
+      gateEnabled: true,
+    });
+    expect(r.blocked).toBe(false);
+    expect(r.location).toBe("A nameless moor");
+  });
+
+  it("blocks a cross-city teleport with no cause and keeps the origin", () => {
+    const r = gateLocationChange({
+      ...base,
+      from: "Tingen City",
+      to: "Bayam",
+      gateEnabled: true,
+    });
+    expect(r.blocked).toBe(true);
+    expect(r.location).toBe("Tingen City");
+    expect(r.fact?.type).toBe("event");
+    expect(r.fact?.description).toContain("Tingen City");
+    expect(r.fact?.turnNumber).toBe(3);
+  });
+
+  it("permits a cross-city move with a valid involuntary cause", () => {
+    const r = gateLocationChange({
+      ...base,
+      from: "Tingen City",
+      to: "Bayam",
+      cause: "abduction",
+      gateEnabled: true,
+    });
+    expect(r.blocked).toBe(false);
+    expect(r.location).toBe("Bayam");
+    expect(r.fact?.description).toContain("Against your will");
+  });
+});
+
+describe("applyWorldStateChanges — movement gate", () => {
+  const opts = {
+    epoch: undefined,
+    gateEnabled: true,
+    trackedNpcState: emptyTrackedNpcState(),
+    turnNumber: 1,
+  };
+
+  it("refuses a cross-city teleport and emits a redirect fact", () => {
+    const state = makeGameState({ location: "Tingen City" });
+    const { state: next, facts } = applyWorldStateChanges(
+      state,
+      [locationChange("Bayam")],
+      opts,
+    );
+    expect(next.location).toBe("Tingen City");
+    expect(facts).toHaveLength(1);
+    expect(facts[0].description).toContain("deliberately");
+  });
+
+  it("applies an against-the-will cross-city move with the cause", () => {
+    const state = makeGameState({ location: "Tingen City" });
+    const { state: next, facts } = applyWorldStateChanges(
+      state,
+      [locationChange("Bayam", "abduction")],
+      opts,
+    );
+    expect(next.location).toBe("Bayam");
+    expect(facts[0].description).toContain("Against your will");
+  });
+
+  it("ignores an unknown involuntary cause (still blocked)", () => {
+    const state = makeGameState({ location: "Tingen City" });
+    const { state: next } = applyWorldStateChanges(
+      state,
+      [locationChange("Bayam", "because-i-said-so")],
+      opts,
+    );
+    expect(next.location).toBe("Tingen City");
+  });
+
+  it("re-asserts followers at the destination on a move, dropping the rest", () => {
+    const state = makeGameState({
+      location: "Tingen City",
+      npcsPresent: ["A passerby"],
+    });
+    const roster = {
+      roster: [
+        { name: "Old Neil", disposition: "ally" as const, follows: true },
+        { name: "A rival", disposition: "hostile" as const, follows: false },
+      ],
+    };
+    const { state: next } = applyWorldStateChanges(
+      state,
+      [locationChange("Bayam", "forced-passage")],
+      { ...opts, trackedNpcState: roster },
+    );
+    expect(next.location).toBe("Bayam");
+    expect(next.npcsPresent).toEqual(["Old Neil"]);
+  });
+
+  it("keeps followers authoritative over an AI npcsPresent wipe", () => {
+    const state = makeGameState({ npcsPresent: ["Old Neil"] });
+    const roster = {
+      roster: [{ name: "Old Neil", disposition: "ally" as const, follows: true }],
+    };
+    const { state: next } = applyWorldStateChanges(
+      state,
+      [
+        {
+          field: "npcsPresent",
+          oldValue: ["Old Neil"],
+          newValue: [],
+          reason: "the AI tried to clear the scene",
+        },
+      ],
+      { ...opts, trackedNpcState: roster },
+    );
+    expect(next.npcsPresent).toEqual(["Old Neil"]);
   });
 });
 
@@ -1388,6 +1592,53 @@ describe("applyResolution", () => {
     expect(out.discovery.discoveredThisTurn).toBe(false);
     expect(out.actingMethodState).toEqual({ knowsMethod: true, alignedStreak: 3 });
   });
+
+  it("folds a blocked-teleport redirect fact into memory and keeps the origin", () => {
+    const state = makeGameState({ location: "Tingen City" });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      worldStateChanges: [locationChange("Bayam")],
+    });
+    const out = applyRes(state, memory, result, 0, "Will myself to Bayam");
+    // The gate refused the cross-city teleport — origin unchanged.
+    expect(out.gameState.location).toBe("Tingen City");
+    const descriptions = out.memory.sessionFacts.map((f) => f.description);
+    expect(descriptions.some((d) => d.includes("deliberately"))).toBe(true);
+  });
+
+  it("lets a within-city move through and brings followers along", () => {
+    const state = makeGameState({
+      location: "Zouteland Street",
+      npcsPresent: ["A passerby"],
+    });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      worldStateChanges: [
+        {
+          field: "location",
+          oldValue: "Zouteland Street",
+          newValue: "The Tussock docks",
+          reason: "walked over",
+        },
+      ],
+    });
+    const roster = {
+      roster: [{ name: "Old Neil", disposition: "ally" as const, follows: true }],
+    };
+    const out = applyRes(
+      state,
+      memory,
+      result,
+      0,
+      "Walk to the docks",
+      createActingMethodState(),
+      5,
+      roster,
+      true,
+    );
+    expect(out.gameState.location).toBe("The Tussock docks");
+    expect(out.gameState.npcsPresent).toEqual(["Old Neil"]);
+  });
 });
 
 // ─── narrationOnly ─────────────────────────────────────────────────
@@ -1971,6 +2222,30 @@ describe("deserializeSession", () => {
     modified.hunts = [
       { targetItemName: "", targetSeq: 6, turnsRemaining: 1, totalTurns: 2 },
     ];
+    expect(deserializeSession(JSON.stringify(modified))).toBeNull();
+  });
+
+  it("round-trips a tracked-NPC roster (issue #101)", () => {
+    const session = makeSession({
+      trackedNpcState: {
+        roster: [{ name: "Old Neil", disposition: "ally", follows: true }],
+      },
+    });
+    const restored = deserializeSession(serializeSession(session));
+    expect(restored!.trackedNpcState).toEqual(session.trackedNpcState);
+  });
+
+  it("accepts a legacy save with no tracked-NPC roster", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    delete modified.trackedNpcState;
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored).not.toBeNull();
+    expect(restored!.trackedNpcState).toBeUndefined();
+  });
+
+  it("returns null for a malformed tracked-NPC roster", () => {
+    const modified = JSON.parse(serializeSession(makeSession()));
+    modified.trackedNpcState = { roster: [{ name: "X", disposition: "friend" }] };
     expect(deserializeSession(JSON.stringify(modified))).toBeNull();
   });
 

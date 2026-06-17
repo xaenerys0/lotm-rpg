@@ -11,6 +11,8 @@ import {
   canTravelTo,
   CITIES,
   cityIdFromLocation,
+  companionsPresentOnMove,
+  resolveTrackedNpcState,
   travelDays,
   travelTo,
   type GameSession,
@@ -53,7 +55,10 @@ export function MapPanel() {
   const handleTravel = useCallback(
     (cityId: string) => {
       if (!session) return;
-      const result = travelTo(session.gameState, cityId, session.turnCount);
+      // Companions and pursuers travel with the player (issue #101): the roster's
+      // followers are re-asserted at the destination instead of being left behind.
+      const roster = resolveTrackedNpcState(session.trackedNpcState);
+      const result = travelTo(session.gameState, cityId, session.turnCount, roster);
       if (!result) return;
       const memory = addSessionFact(session.memory, result.fact);
       const next: GameSession = {
@@ -63,7 +68,12 @@ export function MapPanel() {
         updatedAt: Date.now(),
       };
       setSession(next);
-      setNotice(`You set out for ${result.state.location}.`);
+      const companions = companionsPresentOnMove(roster);
+      setNotice(
+        companions.length > 0
+          ? `You set out for ${result.state.location}. Travelling with: ${companions.join(", ")}.`
+          : `You set out for ${result.state.location}.`,
+      );
       persistSession(next);
     },
     [session],
