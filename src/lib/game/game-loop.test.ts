@@ -2152,6 +2152,31 @@ describe("deserializeSession", () => {
     expect(deserializeSession(JSON.stringify(withCustom))).toBeNull();
   });
 
+  it("registers the off-map venue a legacy save is parked at, on load", () => {
+    // A save sitting at a narrator-named place with a known city but no
+    // customLocations yet: deserialize files it so the map pins it immediately
+    // (Backlund location sync), without waiting for the next location change.
+    const parked = JSON.parse(
+      serializeSession(
+        makeSession({
+          gameState: makeGameState({
+            currentCity: "backlund",
+            location: "Backlund — Old Saint-Sulpice Chapel",
+          }),
+        }),
+      ),
+    );
+    delete parked.gameState.customLocations;
+    const restored = deserializeSession(JSON.stringify(parked));
+    expect(restored?.gameState.customLocations).toEqual([
+      {
+        cityId: "backlund",
+        slug: "custom-old-saint-sulpice-chapel",
+        name: "Old Saint-Sulpice Chapel",
+      },
+    ]);
+  });
+
   it("seeds canon position and the default model lock for legacy sessions", () => {
     const modified = JSON.parse(serializeSession(makeSession()));
     delete modified.canonPosition;

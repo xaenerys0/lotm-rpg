@@ -8,7 +8,7 @@ import {
 import { isValidActingMethodStateShape } from "./acting-method";
 import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
-import { isValidCustomLocationsShape } from "./location";
+import { isValidCustomLocationsShape, registerCustomLocation } from "./location";
 import { cityIdFromLocation } from "./travel";
 import { isValidHuntsShape } from "./hunt";
 import { isValidIdentityStateShape } from "./identity";
@@ -154,14 +154,20 @@ export function deserializeSession(json: string): GameSession | null {
     gs.currentCity == null && typeof gs.location === "string"
       ? cityIdFromLocation(gs.location)
       : undefined;
-  const gameState = {
+  const gameStateBase = {
     ...gs,
     // Seed digestion for sessions saved before the Acting Method mechanic.
     digestion:
       gs.digestion ??
       createDigestionState(gs.pathwayId as number, gs.sequenceLevel as number),
     ...(backfilledCity ? { currentCity: backfilledCity } : {}),
-  };
+  } as unknown as GameState;
+  // Register the venue the save is currently sitting at (Backlund location sync):
+  // a legacy/older save parked at a narrator-named, off-map place gets it filed
+  // under its city on load, so the map pins it immediately instead of waiting for
+  // the next location change. Pure + idempotent; a no-op for a bare city, a known
+  // district, or an unresolvable city.
+  const gameState = registerCustomLocation(gameStateBase, gameStateBase.epoch);
   return {
     ...s,
     gameState,

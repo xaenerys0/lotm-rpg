@@ -94,6 +94,17 @@ export const EPOCHS: readonly Epoch[] = [
 
 export const DEFAULT_EPOCH_ID = 5;
 
+/**
+ * Whether a character epoch is the Fifth (the default/baseline era) — the only
+ * one with the per-city atlas / `currentCity` / inter-city travel model. An
+ * absent epoch defaults to the Fifth. The single source of this rule, shared by
+ * the reachability gate (`place-graph`) and the location resolver (`location`)
+ * so they can never disagree about which era uses the city model.
+ */
+export function isFifthEpoch(epochId: number | undefined): boolean {
+  return (epochId ?? DEFAULT_EPOCH_ID) === DEFAULT_EPOCH_ID;
+}
+
 export function getEpoch(id: number | undefined): Epoch {
   return EPOCHS.find((epoch) => epoch.id === id) ?? EPOCHS[4];
 }

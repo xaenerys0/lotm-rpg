@@ -1,13 +1,17 @@
 import type { CustomLocation, GameState } from "@/lib/ai";
 import {
-  DEFAULT_EPOCH_ID,
   gazetteerForEpoch,
+  isFifthEpoch,
   uncertainFifthGazetteer,
   type EpochGazetteer,
   type GazetteerDistrict,
 } from "@/lib/lore";
 
 import { cityIdFromLocation, getCity } from "./travel";
+
+/** Cap on filed venues per city, so a long chronicle can't grow the atlas
+ * (and the persisted save) without bound; the oldest of that city is dropped. */
+export const MAX_CUSTOM_LOCATIONS_PER_CITY = 24;
 
 // Location resolution (Backlund location sync). ONE pure place that turns a
 // character's free-text `location` string + engine-tracked `currentCity` into a
@@ -17,22 +21,33 @@ import { cityIdFromLocation, getCity } from "./travel";
 // chapel showed up on Tingen's map pinned to the Cathedral of Serenity).
 //
 // Two deliberate hardening choices live here:
-//  1. GENERIC keywords (chapel/church/cathedral) never pin a district on their
-//     own — they collide across buildings and cities, and that substring match
-//     is exactly what pinned "Old Saint-Sulpice Chapel" to the Cathedral of
-//     Serenity. A district pins only on a distinctive (or multi-word) keyword,
-//     matched at WORD boundaries (no more "...includes('chapel')").
+//  1. GENERIC place-nouns (chapel/church/temple/…) never pin a district on
+//     their own — they collide across buildings and cities, and that substring
+//     match is exactly what pinned "Old Saint-Sulpice Chapel" to the Cathedral
+//     of Serenity. A district pins only on a distinctive (or multi-word)
+//     keyword, matched at WORD boundaries (no more "...includes('chapel')").
 //  2. A narrator-named venue that matches no known district is filed as a
 //     `customLocation` under the resolved city, so the map renders and pins it
 //     instead of guessing — the dynamic registry the design called for.
 
-/** Single common nouns too generic to pin a district by themselves. */
-const GENERIC_KEYWORDS = new Set(["chapel", "church", "cathedral"]);
-
-/** Fifth Epoch is the only era with the per-city atlas / `currentCity` model. */
-function isFifthEpoch(epoch: number | undefined): boolean {
-  return (epoch ?? DEFAULT_EPOCH_ID) === DEFAULT_EPOCH_ID;
-}
+// Single common place-nouns too generic to pin a district by themselves: the
+// same building-type word recurs across districts and cities, so on its own it
+// is noise. This is a deliberately CURATED list (there is no reliable way to
+// tell a generic noun from a distinctive proper name like "Zouteland" or
+// "Khoy" programmatically) — only nouns no district relies on as its sole
+// distinctive keyword belong here (every gazetteer district keeps at least one
+// non-generic or multi-word keyword, so none becomes unpinnable).
+const GENERIC_KEYWORDS = new Set([
+  "chapel",
+  "church",
+  "cathedral",
+  "shrine",
+  "sanctuary",
+  "basilica",
+  "abbey",
+  "monastery",
+  "temple",
+]);
 
 /**
  * Whole-word containment: `needle` appears in `haystack` bounded by non-
@@ -104,10 +119,15 @@ export function customToDistrict(custom: CustomLocation): GazetteerDistrict {
 }
 
 /**
- * Strip a leading city name/id (and its separator) from a location string so a
- * city-prefixed "Backlund — Old Saint-Sulpice Chapel" yields the bare venue
- * "Old Saint-Sulpice Chapel". Returns the trimmed input unchanged when it does
- * not begin with the city. Pure.
+ * Strip a leading city name/id from a location string so a city-prefixed
+ * "Backlund — Old Saint-Sulpice Chapel" yields the bare venue "Old
+ * Saint-Sulpice Chapel". The city is stripped ONLY when a real separator
+ * (—, –, -, :, ,) follows it — a bare space ("Backlund Bridge") means the city
+ * word is part of the place's OWN name, so it must be left intact (otherwise
+ * the real Backlund Bridge district would be mangled to "Bridge" and lost).
+ * This also rejects a city word that is merely a prefix of a longer word
+ * ("Trierston"), since no separator follows. Returns the trimmed input
+ * unchanged when it does not begin with the city + a separator. Pure.
  */
 export function stripCityPrefix(location: string, cityId: string): string {
   const trimmed = location.trim();
@@ -115,14 +135,18 @@ export function stripCityPrefix(location: string, cityId: string): string {
   const lowered = trimmed.toLowerCase();
   // Try the full display name first ("Tingen City", "Pritz Harbor"), then the
   // bare id word ("tingen"), so the longest legitimate prefix is removed.
-  const candidates = [city?.name.toLowerCase(), cityId].filter(
-    (c): c is string => typeof c === "string" && c.length > 0,
-  );
-  for (const candidate of candidates.sort((a, b) => b.length - a.length)) {
-    if (lowered.startsWith(candidate)) {
-      const rest = trimmed.slice(candidate.length).replace(/^[\s,:—–-]+/, "");
-      return rest.length > 0 ? rest : trimmed;
-    }
+  const candidates = [city?.name.toLowerCase(), cityId]
+    .filter((c): c is string => typeof c === "string" && c.length > 0)
+    .sort((a, b) => b.length - a.length);
+  for (const candidate of candidates) {
+    if (!lowered.startsWith(candidate)) continue;
+    const after = trimmed.slice(candidate.length);
+    // Require a real separator between the city and the venue; a bare space or
+    // continuing word means the city word belongs to the place name itself.
+    const separator = after.match(/^\s*[,:—–-]\s*/);
+    if (!separator) return trimmed;
+    const rest = after.slice(separator[0].length);
+    return rest.length > 0 ? rest : trimmed;
   }
   return trimmed;
 }
@@ -188,16 +212,7 @@ export function resolveLocation(
     };
   }
 
-  const place = stripCityPrefix(venue, cityId);
-  const districts = districtsForCity(state, epoch, cityId);
-  return {
-    venue,
-    place,
-    cityId,
-    cityName: getCity(cityId)?.name ?? null,
-    cityUnknown: false,
-    districtSlug: matchDistrictSlug(place, districts),
-  };
+  return fifthResolved(state, cityId, districtsForCity(state, epoch, cityId));
 }
 
 /** The known districts of a city PLUS the character's custom venues there. */
@@ -213,6 +228,28 @@ function districtsForCity(
   return [...base, ...custom];
 }
 
+/**
+ * Build the resolved location for a known Fifth-Epoch city against an
+ * already-computed district list — so the marker match and the atlas can share
+ * one `districtsForCity` pass instead of recomputing it. Pure.
+ */
+function fifthResolved(
+  state: GameState,
+  cityId: string,
+  districts: GazetteerDistrict[],
+): ResolvedLocation {
+  const venue = state.location;
+  const place = stripCityPrefix(venue, cityId);
+  return {
+    venue,
+    place,
+    cityId,
+    cityName: getCity(cityId)?.name ?? null,
+    cityUnknown: false,
+    districtSlug: matchDistrictSlug(place, districts),
+  };
+}
+
 export interface MapAtlas {
   atlas: EpochGazetteer;
   resolved: ResolvedLocation;
@@ -225,18 +262,20 @@ export interface MapAtlas {
  * silently defaulting to Tingen. Pure.
  */
 export function mapAtlasFor(state: GameState, epoch: number | undefined): MapAtlas {
-  const resolved = resolveLocation(state, epoch);
-
   if (!isFifthEpoch(epoch)) {
-    return { atlas: gazetteerForEpoch(epoch), resolved };
+    return { atlas: gazetteerForEpoch(epoch), resolved: resolveLocation(state, epoch) };
   }
-  if (resolved.cityUnknown || !resolved.cityId) {
-    return { atlas: uncertainFifthGazetteer(), resolved };
+  const cityId = resolveCityId(state);
+  if (!cityId) {
+    return { atlas: uncertainFifthGazetteer(), resolved: resolveLocation(state, epoch) };
   }
-  const base = gazetteerForEpoch(epoch, resolved.cityId);
+  // Compute the merged district list ONCE and reuse it for both the rendered
+  // atlas and the "you are here" match — no second districtsForCity per render.
+  const districts = districtsForCity(state, epoch, cityId);
+  const base = gazetteerForEpoch(epoch, cityId);
   return {
-    atlas: { ...base, districts: districtsForCity(state, epoch, resolved.cityId) },
-    resolved,
+    atlas: { ...base, districts },
+    resolved: fifthResolved(state, cityId, districts),
   };
 }
 
@@ -267,12 +306,12 @@ export function registerCustomLocation(
   if (!cityId) return state;
 
   const place = stripCityPrefix(state.location, cityId);
-  const placeLower = place.trim().toLowerCase();
-  if (placeLower.length === 0) return state;
-  // A bare city name ("Backlund", "Tingen City") is not a venue — don't file it.
-  if (placeLower === cityId || placeLower === getCity(cityId)?.name.toLowerCase()) {
-    return state;
-  }
+  if (place.trim().length === 0) return state;
+  // A place whose leading word names a known city is not an off-map venue: it is
+  // a bare city name ("Backlund"), or a city-prefixed string a missing separator
+  // left unstripped ("Backlund Bridge"). Either way, don't file it as a venue
+  // (and never under a possibly-different resolved city).
+  if (cityIdFromLocation(place)) return state;
 
   // Already a known district (or city-bare string that matches one)? Leave it.
   const base = gazetteerForEpoch(epoch, cityId).districts;
@@ -287,10 +326,24 @@ export function registerCustomLocation(
     .map(customToDistrict);
   if (matchDistrictSlug(place, customDistricts) !== null) return state;
 
-  return {
-    ...state,
-    customLocations: [...existing, { cityId, slug, name: place }],
-  };
+  const appended = [...existing, { cityId, slug, name: place }];
+  // Bound growth: a long single-city chronicle can otherwise accrete venues
+  // without limit. Keep the most recent MAX per city (drop that city's oldest);
+  // other cities' venues are untouched.
+  const cityCount = appended.filter((c) => c.cityId === cityId).length;
+  if (cityCount > MAX_CUSTOM_LOCATIONS_PER_CITY) {
+    let dropped = false;
+    const trimmed = appended.filter((c) => {
+      if (!dropped && c.cityId === cityId) {
+        dropped = true;
+        return false;
+      }
+      return true;
+    });
+    return { ...state, customLocations: trimmed };
+  }
+
+  return { ...state, customLocations: appended };
 }
 
 /** Strict shape guard for the persisted `customLocations` array. */
