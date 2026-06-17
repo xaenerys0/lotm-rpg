@@ -22,10 +22,13 @@ import {
   identityCapability,
   isDrasticChange,
   isFateProof,
+  joinRoster,
+  leaveRoster,
   removeProfileNote,
   resolveActingMethodState,
   resolveProfileState,
   resolveTrackedNpcState,
+  shakeOff,
   switchIdentity,
   transformationRiteFor,
   trueGodName,
@@ -336,26 +339,6 @@ export function CharacterSheet() {
                 {state.activeQuests.length > 0 ? state.activeQuests.join("; ") : "None."}
               </dd>
             </div>
-            {resolveTrackedNpcState(session.trackedNpcState).roster.length > 0 && (
-              <div>
-                <dt className="text-xs tracking-wide text-muted uppercase">
-                  Companions &amp; pursuers
-                </dt>
-                <dd className="mt-0.5 text-foreground/85">
-                  <ul className="space-y-1">
-                    {resolveTrackedNpcState(session.trackedNpcState).roster.map((npc) => (
-                      <li key={npc.name}>
-                        {npc.name}{" "}
-                        <span className="text-xs text-muted">
-                          ({npc.disposition === "hostile" ? "pursuer" : npc.disposition}
-                          {npc.follows ? ", follows" : ""})
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </dd>
-              </div>
-            )}
           </dl>
         </section>
       </div>
@@ -365,6 +348,9 @@ export function CharacterSheet() {
 
       {/* Identities (issue #22) */}
       <IdentitySection session={session} onUpdate={persistSession} />
+
+      {/* Companions & pursuers (issue #101) */}
+      <CompanionsSection session={session} onUpdate={persistSession} />
 
       {/* Inventory */}
       <section aria-labelledby="sheet-inventory">
@@ -478,6 +464,132 @@ function DeleteCharacter({ name, onDelete }: { name: string; onDelete: () => voi
 }
 
 const SOCIAL_CLASSES: SocialClass[] = ["lower", "middle", "upper", "noble"];
+
+function CompanionsSection({
+  session,
+  onUpdate,
+}: {
+  session: GameSession;
+  onUpdate: (next: GameSession) => void;
+}) {
+  const roster = resolveTrackedNpcState(session.trackedNpcState).roster;
+  const rostered = new Set(roster.map((n) => n.name));
+  // Present NPCs the player could bind: the current scene cast minus anyone
+  // already on the roster. `npcsPresent` is the AI-maintained scene cast.
+  const present = session.gameState.npcsPresent.filter((n) => !rostered.has(n));
+
+  const apply = useCallback(
+    (next: GameSession) => onUpdate({ ...next, updatedAt: Date.now() }),
+    [onUpdate],
+  );
+
+  return (
+    <section
+      aria-labelledby="sheet-companions"
+      className="rounded-lg border border-border/70 bg-surface/60 p-6"
+    >
+      <h2
+        id="sheet-companions"
+        className="gaslit font-serif text-lg font-semibold text-amber/90"
+      >
+        Companions &amp; pursuers
+      </h2>
+      <p className="mt-1 text-xs text-muted">
+        Those who travel with you across the map — allies at your side, and pursuers on
+        your trail. They follow when you set out for another city.
+      </p>
+
+      {roster.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">No one travels with you yet.</p>
+      ) : (
+        <ul className="mt-4 space-y-2">
+          {roster.map((npc) => {
+            const role = npc.disposition === "hostile" ? "Pursuer" : "Companion";
+            return (
+              <li
+                key={npc.name}
+                className="flex items-center justify-between gap-3 rounded border border-border/60 bg-background/40 p-3"
+              >
+                <span className="text-sm text-foreground/90">
+                  {npc.name}{" "}
+                  <span className="text-xs text-muted">
+                    ({role}
+                    {npc.follows ? ", travels with you" : ""})
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    apply(
+                      npc.disposition === "hostile"
+                        ? shakeOff(session, npc.name)
+                        : leaveRoster(session, npc.name),
+                    )
+                  }
+                  className="inline-flex min-h-[24px] items-center rounded border border-border px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:border-amber/40 hover:text-amber"
+                >
+                  {npc.disposition === "hostile" ? "Shake off" : "Part ways"}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {present.length > 0 && (
+        <div className="mt-5">
+          <h3 className="text-xs tracking-wide text-muted uppercase">
+            Present in the scene
+          </h3>
+          <ul className="mt-2 space-y-2">
+            {present.map((name) => (
+              <li
+                key={name}
+                className="flex flex-wrap items-center justify-between gap-2 rounded border border-border/60 bg-background/40 p-3"
+              >
+                <span className="text-sm text-foreground/90">{name}</span>
+                <span className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      apply(
+                        joinRoster(session, {
+                          name,
+                          disposition: "ally",
+                          follows: true,
+                        }),
+                      )
+                    }
+                    className="inline-flex min-h-[24px] items-center rounded border border-amber/40 px-3 py-1 text-xs font-medium text-amber transition-colors hover:bg-amber/10"
+                    aria-label={`Have ${name} travel with you`}
+                  >
+                    Travel with
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      apply(
+                        joinRoster(session, {
+                          name,
+                          disposition: "hostile",
+                          follows: true,
+                        }),
+                      )
+                    }
+                    className="inline-flex min-h-[24px] items-center rounded border border-border px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:border-crimson/50 hover:text-crimson"
+                    aria-label={`Mark ${name} as a pursuer`}
+                  >
+                    Mark pursuer
+                  </button>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
+  );
+}
 
 function IdentitySection({
   session,

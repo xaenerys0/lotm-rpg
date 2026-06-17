@@ -28,6 +28,7 @@ import {
   evaluateLossOfControl,
   resolveActingMethodState,
   resolveTrackedNpcState,
+  companionsPresentOnMove,
   previewSanityImpact,
   DEFAULT_PREFERENCES,
   CHOICE_PILLAR_MAP,
@@ -1302,6 +1303,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             response: resolution.response,
             turnNumber: session.turnCount,
             arc: `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
+            // Followers travel with the player — their re-assertion into the
+            // scene on a move is not a fresh encounter (issue #101).
+            ignoreNpcs: companionsPresentOnMove(
+              resolveTrackedNpcState(session.trackedNpcState),
+            ),
           }),
         );
       }

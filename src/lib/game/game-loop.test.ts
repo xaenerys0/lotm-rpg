@@ -823,14 +823,14 @@ describe("isInvoluntaryMoveCause", () => {
 describe("gateLocationChange", () => {
   const base = { epoch: undefined, turnNumber: 3 };
 
-  it("allows any move when the gate is disabled", () => {
+  it("allows any move when the gate is disabled (still reports crossCity)", () => {
     const r = gateLocationChange({
       ...base,
       from: "Tingen City",
       to: "Bayam",
       gateEnabled: false,
     });
-    expect(r).toEqual({ location: "Bayam", blocked: false });
+    expect(r).toEqual({ location: "Bayam", blocked: false, crossCity: true });
   });
 
   it("allows a within-city move (district → landmark)", () => {
@@ -925,7 +925,7 @@ describe("applyWorldStateChanges — movement gate", () => {
     expect(next.location).toBe("Tingen City");
   });
 
-  it("re-asserts followers at the destination on a move, dropping the rest", () => {
+  it("leaves the origin scene behind on a cross-city move, keeping only followers", () => {
     const state = makeGameState({
       location: "Tingen City",
       npcsPresent: ["A passerby"],
@@ -943,6 +943,31 @@ describe("applyWorldStateChanges — movement gate", () => {
     );
     expect(next.location).toBe("Bayam");
     expect(next.npcsPresent).toEqual(["Old Neil"]);
+  });
+
+  it("preserves the scene cast on a within-city move, adding followers", () => {
+    const state = makeGameState({
+      location: "Zouteland Street",
+      npcsPresent: ["A passerby"],
+    });
+    const roster = {
+      roster: [{ name: "Old Neil", disposition: "ally" as const, follows: true }],
+    };
+    const { state: next } = applyWorldStateChanges(
+      state,
+      [
+        {
+          field: "location",
+          oldValue: "Zouteland Street",
+          newValue: "The Tussock docks",
+          reason: "walked over",
+        },
+      ],
+      { ...opts, epoch: 5, trackedNpcState: roster },
+    );
+    expect(next.location).toBe("The Tussock docks");
+    // The passerby is NOT wiped by a local nudge; the follower is ensured present.
+    expect(next.npcsPresent).toEqual(["A passerby", "Old Neil"]);
   });
 
   it("keeps followers authoritative over an AI npcsPresent wipe", () => {
@@ -1637,7 +1662,8 @@ describe("applyResolution", () => {
       true,
     );
     expect(out.gameState.location).toBe("The Tussock docks");
-    expect(out.gameState.npcsPresent).toEqual(["Old Neil"]);
+    // Within-city nudge preserves the scene cast and ensures the follower.
+    expect(out.gameState.npcsPresent).toEqual(["A passerby", "Old Neil"]);
   });
 });
 

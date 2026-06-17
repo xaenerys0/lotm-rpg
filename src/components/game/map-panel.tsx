@@ -48,9 +48,13 @@ export function MapPanel() {
 
   const location = session?.gameState.location ?? null;
   const currentCityId = location ? cityIdFromLocation(location) : undefined;
-  // Epoch-keyed atlas: a non-Fifth character sees its own era's regions, never
-  // Tingen or the Fifth-Epoch cities. Absent epoch defaults to the Fifth.
-  const gazetteer = gazetteerForEpoch(session?.gameState.epoch);
+  // Epoch- AND city-keyed atlas (issue #101): a Fifth character sees the districts
+  // of the city they are actually in (Bayam shows Bayam, not Tingen); a non-Fifth
+  // character sees its own era's regions. Absent epoch defaults to the Fifth.
+  const gazetteer = gazetteerForEpoch(session?.gameState.epoch, currentCityId);
+  const currentCityName = currentCityId
+    ? (CITIES.find((c) => c.id === currentCityId)?.name ?? null)
+    : null;
 
   const handleTravel = useCallback(
     (cityId: string) => {
@@ -147,8 +151,8 @@ export function MapPanel() {
             />
           </div>
           <p className="text-sm text-muted">
-            Cities beyond Tingen, reachable by rail and sea. Setting out for one takes
-            your character there directly.
+            Cities beyond {currentCityName ?? "your current city"}, reachable by rail and
+            sea. Setting out for one takes your character there directly.
           </p>
 
           {notice && (

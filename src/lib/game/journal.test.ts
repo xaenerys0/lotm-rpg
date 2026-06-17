@@ -131,6 +131,22 @@ describe("deriveJournalEntries", () => {
     expect(derive(state(), state(), response())).toEqual([]);
   });
 
+  it("does not log a re-asserted follower as a new encounter (issue #101)", () => {
+    const entries = deriveJournalEntries({
+      prevState: state({ npcsPresent: [] }),
+      // A move re-asserts the follower "Old Neil" into the scene cast.
+      nextState: state({ location: "Backlund", npcsPresent: ["Old Neil"] }),
+      response: response(),
+      turnNumber: 3,
+      arc: "Sequence 9 — Seer",
+      now: 1000,
+      makeId,
+      ignoreNpcs: ["Old Neil"],
+    });
+    // The travel entry still fires; the follower does NOT produce an encounter.
+    expect(entries.map((e) => e.eventType)).toEqual(["discovery"]);
+  });
+
   it("dedupes by event type with the AI flag winning", () => {
     const entries = derive(
       state(),
