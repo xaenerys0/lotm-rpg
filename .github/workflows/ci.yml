@@ -14,11 +14,6 @@ concurrency:
 permissions:
   contents: read
 
-env:
-  # Pin the toolchain so CI matches local development.
-  NODE_VERSION: "22"
-  PNPM_VERSION: "10"
-
 jobs:
   # Fast, browserless quality gate — mirrors the pre-commit checklist.
   checks:
@@ -28,19 +23,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Set up Node & pnpm
+        uses: ./.github/actions/setup
 
       - name: Prettier
         run: pnpm format:check
@@ -68,19 +52,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Set up Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Set up Node & pnpm
+        uses: ./.github/actions/setup
 
       # Key the browser cache on the resolved @playwright/test version so a
       # dependency bump busts it automatically.
@@ -90,8 +63,8 @@ jobs:
           version="$(node -e "console.log(require('@playwright/test/package.json').version)")"
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
-      # The suite honors PLAYWRIGHT_BROWSERS_PATH; cache the browser binaries
-      # there to avoid re-downloading Chromium on every run.
+      # Cache the default browser install location (~/.cache/ms-playwright on
+      # Linux) so Chromium isn't re-downloaded every run.
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
@@ -99,16 +72,16 @@ jobs:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
 
-      # Install chromium only — the config defines mobile/desktop Chromium
-      # projects. On a cache hit we still install the OS deps (apt packages),
-      # which aren't part of the cached browser bundle.
-      - name: Install Chromium (with deps)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: pnpm exec playwright install --with-deps chromium
-
-      - name: Install Chromium system deps (cache hit)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
+      # System (apt) deps aren't part of the cached browser bundle, so install
+      # them every run.
+      - name: Install Chromium system deps
         run: pnpm exec playwright install-deps chromium
+
+      # Chromium-only — the config defines mobile/desktop Chromium projects.
+      # Runs unconditionally: a no-op when the cache restored a complete bundle,
+      # and a self-heal that re-downloads if the cache was partial or stale.
+      - name: Install Chromium
+        run: pnpm exec playwright install chromium
 
       - name: Run Playwright (public tier)
         run: pnpm test:e2e

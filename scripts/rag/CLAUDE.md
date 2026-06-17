@@ -28,7 +28,9 @@ model without re-parsing or re-chunking.
   - `pnpm rag:embed --model bge-m3 chunks.jsonl embedded.bge.jsonl`
   - Flags: `--provider ollama|operator` (default `ollama`), `--base-url <url>`, `--batch <n>`.
   - Offline/occasional operator batch — needs a running embedder (local Ollama or the
-    operator box); it is never part of CI or the app bundle.
+    operator box); never part of the app bundle. The one CI use is the secret-gated
+    `rag-ingest` workflow (`.github/workflows/rag-ingest.yml`, main-only / dispatch),
+    which runs `--provider operator` against the operator endpoint secret.
 
 - `novel.ts` (`pnpm rag:novel`) — the novel **parse + normalize** stages (issue #62).
   Reads an EPUB, a one-file-per-chapter directory (md/txt/html), or a single
@@ -71,7 +73,9 @@ model without re-parsing or re-chunking.
   into `source_chunks` and (with `--model <id>`) `chunk_embeddings`. Idempotent
   (deterministic uuid from the pipeline id). Requires `SUPABASE_URL` +
   `SUPABASE_SERVICE_ROLE_KEY` (RLS denies everyone else by design) — run it
-  **operator-side only**, never in the app or CI.
+  **operator-side only**, never in the app. The only CI caller is the
+  secret-gated `rag-ingest` workflow (main-only / dispatch), which provides the
+  service-role key as a secret; without those secrets the workflow skips cleanly.
   - `pnpm rag:load embedded.qwen3.jsonl --model qwen3-embedding-0.6b`
   - `pnpm rag:load chunks.jsonl --chunks-only`
   - Flags: `--model <id>`, `--chunks-only`, `--batch <n>` (default 200).
