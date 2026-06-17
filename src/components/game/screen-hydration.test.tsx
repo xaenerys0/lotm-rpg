@@ -17,6 +17,7 @@ import { renderThenHydrate } from "@/test/hydration";
 
 import { PlayDashboard } from "./play-dashboard";
 import { SanityPreferences } from "./sanity-preferences";
+import { JournalPanel } from "./journal-panel";
 
 // These guard the frozen-snapshot hydration bug (issue #84 audit / #86): an
 // SSR'd screen that seeds state with `useState(useStoredValue(...))` renders the
@@ -96,6 +97,28 @@ describe("screen hydration — frozen-snapshot regression", () => {
     expect(ssrHtml).not.toContain("Fool pathway");
     // …but the saved character's summary appears once the client snapshot is read.
     expect(container.textContent).toContain("Fool pathway");
+
+    await cleanup();
+  });
+
+  it("JournalPanel shows a loading line pre-hydration, not the empty state, when saves exist", async () => {
+    const session = createSession(
+      createDefaultGameState(1, "char-j", "Diarist"),
+      "sess-j",
+    );
+    localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify([session.id]));
+
+    const { ssrHtml, container, cleanup } = await renderThenHydrate(<JournalPanel />);
+
+    // SSR has no localStorage: a `useHydrated` guard shows a neutral loading line
+    // rather than flashing the "no chronicles" empty state to a player who has saves.
+    expect(ssrHtml).toContain("Loading journal…");
+    expect(ssrHtml).not.toContain("The pages are blank");
+
+    // After hydration the real chronicle appears and the loading line is gone.
+    expect(container.textContent).not.toContain("Loading journal…");
+    expect(container.textContent).toContain("Diarist");
 
     await cleanup();
   });
