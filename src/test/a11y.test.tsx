@@ -21,6 +21,7 @@ import MarketPage from "@/app/(game)/market/page";
 import ProfilePage from "@/app/(game)/profile/page";
 import LeaderboardPage from "@/app/(game)/leaderboard/page";
 import SocietyPage from "@/app/(game)/society/page";
+import GuidePage from "@/app/(game)/guide/page";
 
 import {
   buildLegacy,
@@ -421,6 +422,12 @@ describe("accessibility — stub pages", () => {
 
   it("glossary page has no violations", async () => {
     await expectNoAxeViolations(<GlossaryPage />);
+  });
+
+  it("guide page has no violations", async () => {
+    // Native <details> render their content in the DOM regardless of open
+    // state, so axe sees every disclosure's blurb and deep link here.
+    await expectNoAxeViolations(<GuidePage />);
   });
 
   it("profile page (with session) has no violations", async () => {
