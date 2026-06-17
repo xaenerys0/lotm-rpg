@@ -29,7 +29,7 @@ import {
   resolveActingMethodState,
   resolveTrackedNpcState,
   companionsPresentOnMove,
-  joinRoster,
+  markPursuer,
   previewSanityImpact,
   DEFAULT_PREFERENCES,
   CHOICE_PILLAR_MAP,
@@ -1330,16 +1330,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         ...(profileState ? { profileState } : {}),
       };
       // Pursuers (issue #101): the narrator names who is hunting the character;
-      // the engine rosters each as a hostile follower (idempotent, so a still-
-      // active pursuer is not duplicated) so they reappear after travel until the
-      // player shakes them off. Companions are the player's own choice, never the
-      // AI's, so they are NOT added here.
+      // the engine rosters each as a hostile follower so they reappear after
+      // travel until shaken off. `markPursuer` upserts by name — a companion the
+      // story turns hostile is CONVERTED to a pursuer, and a still-active pursuer
+      // is a no-op (no re-announcement). Companions are the player's own choice,
+      // never the AI's, so they are NOT added here.
       for (const name of resolution.response.pursuers ?? []) {
-        updated = joinRoster(updated, {
-          name,
-          disposition: "hostile",
-          follows: true,
-        });
+        updated = markPursuer(updated, name);
       }
       // A turn of play closes the distance on every active hunt (and keeps the
       // AI-visible quest labels in sync).

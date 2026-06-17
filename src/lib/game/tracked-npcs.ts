@@ -110,6 +110,49 @@ export function joinRoster(
   };
 }
 
+/**
+ * Mark an NPC as a PURSUER (hostile follower) — the story's channel, applied
+ * from the narrator's `AIResponse.pursuers`. Unlike `joinRoster` this UPSERTS by
+ * name: a name already on the roster as a companion (or neutral) is CONVERTED to
+ * a hostile pursuer (the story has turned them against the character), and only
+ * an already-active hostile follower is a no-op (so a still-pursuing enemy is not
+ * re-announced each turn). Appends an `npc-encounter` fact on a real change.
+ * Returns a NEW `GameSession`. Pure.
+ */
+export function markPursuer(
+  session: GameSession,
+  name: string,
+  now: number = Date.now(),
+): GameSession {
+  const state = resolveTrackedNpcState(session.trackedNpcState);
+  const existing = state.roster.find((n) => n.name === name);
+  if (existing && existing.disposition === "hostile" && existing.follows) {
+    return session;
+  }
+
+  const npc: TrackedNpc = { name, disposition: "hostile", follows: true };
+  const roster = existing
+    ? state.roster.map((n) => (n.name === name ? npc : n))
+    : [...state.roster, npc];
+  const fact: SessionFact = {
+    type: "npc-encounter",
+    description: existing
+      ? `${name} turns against you — now on your trail.`
+      : `${name} has taken up your trail.`,
+    turnNumber: session.turnCount,
+  };
+
+  return {
+    ...session,
+    trackedNpcState: { roster },
+    memory: {
+      ...session.memory,
+      sessionFacts: [...session.memory.sessionFacts, fact],
+    },
+    updatedAt: now,
+  };
+}
+
 /** Internal: remove a roster member by name with a worded `event` fact. */
 function removeFromRoster(
   session: GameSession,

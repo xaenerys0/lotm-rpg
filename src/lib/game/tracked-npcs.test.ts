@@ -9,6 +9,7 @@ import {
   isValidTrackedNpcStateShape,
   joinRoster,
   leaveRoster,
+  markPursuer,
   reassertFollowersAt,
   resolveTrackedNpcState,
   shakeOff,
@@ -110,6 +111,33 @@ describe("joinRoster", () => {
     const once = joinRoster(makeSession(), ally);
     const twice = joinRoster(once, { ...ally, disposition: "neutral" });
     expect(twice).toBe(once);
+  });
+});
+
+describe("markPursuer", () => {
+  it("adds a new hostile follower with an npc-encounter fact", () => {
+    const next = markPursuer(makeSession(), "The Hunter", 5);
+    expect(next.trackedNpcState?.roster).toEqual([
+      { name: "The Hunter", disposition: "hostile", follows: true },
+    ]);
+    const fact = next.memory.sessionFacts.at(-1)!;
+    expect(fact.type).toBe("npc-encounter");
+    expect(fact.description).toContain("trail");
+    expect(next.updatedAt).toBe(5);
+  });
+
+  it("converts an existing companion into a pursuer (the story turns them)", () => {
+    const withAlly = makeSession([ally]); // Old Neil, ally, follows
+    const next = markPursuer(withAlly, "Old Neil");
+    expect(next.trackedNpcState?.roster).toEqual([
+      { name: "Old Neil", disposition: "hostile", follows: true },
+    ]);
+    expect(next.memory.sessionFacts.at(-1)!.description).toContain("turns against you");
+  });
+
+  it("is a no-op for an already-active pursuer (no re-announcement)", () => {
+    const withPursuer = markPursuer(makeSession(), "The Hunter");
+    expect(markPursuer(withPursuer, "The Hunter")).toBe(withPursuer);
   });
 });
 

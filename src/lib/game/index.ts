@@ -39,6 +39,7 @@ export {
   isValidTrackedNpcStateShape,
   joinRoster,
   leaveRoster,
+  markPursuer,
   reassertFollowersAt,
   resolveTrackedNpcState,
   shakeOff,

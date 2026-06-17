@@ -47,7 +47,13 @@ export function MapPanel() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const location = session?.gameState.location ?? null;
-  const currentCityId = location ? cityIdFromLocation(location) : undefined;
+  // Prefer the engine-tracked current city (issue #101): it survives the narrator
+  // moving the character to a bare district string that `cityIdFromLocation`
+  // can't resolve, so the atlas stays on the right city instead of reverting to
+  // Tingen. Fall back to resolving the location string for legacy saves.
+  const currentCityId =
+    session?.gameState.currentCity ??
+    (location ? cityIdFromLocation(location) : undefined);
   // Epoch- AND city-keyed atlas (issue #101): a Fifth character sees the districts
   // of the city they are actually in (Bayam shows Bayam, not Tingen); a non-Fifth
   // character sees its own era's regions. Absent epoch defaults to the Fifth.

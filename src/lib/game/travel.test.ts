@@ -145,6 +145,11 @@ describe("travelTo", () => {
     expect(travelTo(stateAt("Tingen City"), "narnia")).toBeNull();
   });
 
+  it("tracks the arrival city for the map (issue #101)", () => {
+    const result = travelTo(stateAt("Tingen City"), "bayam", 1);
+    expect(result!.state.currentCity).toBe("bayam");
+  });
+
   it("carries the roster's followers to the destination (issue #101)", () => {
     const roster = {
       roster: [

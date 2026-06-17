@@ -8,6 +8,7 @@ import {
 import { isValidActingMethodStateShape } from "./acting-method";
 import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
+import { cityIdFromLocation } from "./travel";
 import { isValidHuntsShape } from "./hunt";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
@@ -77,6 +78,13 @@ export function createDefaultGameState(
   prologueRecap?: string,
   startScenario?: StartScenario,
 ): GameState {
+  // Varied story openings: a chosen start scenario sets the (randomly varied)
+  // starting location; absent (manual fallback / legacy callers) it falls back
+  // to the epoch's default starting location.
+  const location = startScenario?.location ?? getEpoch(epoch).startingLocation;
+  // Seed the tracked current city when the start location names a known one
+  // (issue #101), so the map opens on the right city's atlas.
+  const startCity = cityIdFromLocation(location);
   return {
     characterId,
     pathwayId,
@@ -84,10 +92,8 @@ export function createDefaultGameState(
     sanity: 100,
     maxSanity: 100,
     inventory: [],
-    // Varied story openings: a chosen start scenario sets the (randomly varied)
-    // starting location; absent (manual fallback / legacy callers) it falls back
-    // to the epoch's default starting location.
-    location: startScenario?.location ?? getEpoch(epoch).startingLocation,
+    location,
+    ...(startCity ? { currentCity: startCity } : {}),
     ...(epoch !== undefined && epoch !== DEFAULT_EPOCH_ID ? { epoch } : {}),
     activeQuests: [],
     npcsPresent: [],
