@@ -147,8 +147,10 @@ export function deserializeSession(json: string): GameSession | null {
   // per-city atlas opens on the right city instead of reverting to Tingen. A
   // bare-district location that names no city is left unresolved (self-heals as
   // soon as the location next names a known city). An existing value is kept.
+  // Nullish check (not `=== undefined`) so a save carrying `currentCity: null`
+  // — `isValidSessionShape` does not validate the field — is also backfilled.
   const backfilledCity =
-    gs.currentCity === undefined && typeof gs.location === "string"
+    gs.currentCity == null && typeof gs.location === "string"
       ? cityIdFromLocation(gs.location)
       : undefined;
   const gameState = {

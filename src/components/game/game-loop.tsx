@@ -328,6 +328,30 @@ function descentAction(lead: string, severity: FailureVerdict["severity"]): stri
   return `${lead} ${fate}. This ends their story: write a closing scene, no choices.`;
 }
 
+// The three narrator-presentation contexts derived from a session's persona /
+// true-self state (issue #22 / character-info storage), shared by the normal
+// turn (`buildAICallParams`) and the combat narration call site so the two can
+// never drift. `recognitionContext` is supplied ONLY while showing the true
+// face — a worn persona already presents as someone else entirely.
+function personaPromptContexts(session: GameSession): {
+  identityContext: string | null;
+  profileContext: string | null;
+  recognitionContext: string | null;
+} {
+  return {
+    identityContext: session.identityState
+      ? identityPromptContext(session.identityState)
+      : null,
+    profileContext: session.profileState
+      ? profilePromptContext(session.profileState, session.gameState)
+      : null,
+    recognitionContext:
+      session.profileState && (session.identityState?.activeIdentityId ?? null) === null
+        ? recognitionPromptContext(session.profileState)
+        : null,
+  };
+}
+
 function buildAICallParams(currentSession: GameSession) {
   const pathway = getPathway(currentSession.gameState.pathwayId);
   const seq = getSequence(
@@ -344,21 +368,8 @@ function buildAICallParams(currentSession: GameSession) {
     seq,
     abilities,
     actingReqs: acting,
-    // Active persona (issue #22): narrator presentation context.
-    identityContext: currentSession.identityState
-      ? identityPromptContext(currentSession.identityState)
-      : null,
-    // True-self ground truth (character-info storage): pronouns/appearance/etc.
-    profileContext: currentSession.profileState
-      ? profilePromptContext(currentSession.profileState, currentSession.gameState)
-      : null,
-    // Recognition gap (character-info storage): only while showing the TRUE
-    // face — a worn persona already presents as someone else entirely.
-    recognitionContext:
-      currentSession.profileState &&
-      (currentSession.identityState?.activeIdentityId ?? null) === null
-        ? recognitionPromptContext(currentSession.profileState)
-        : null,
+    // Persona / true-self / recognition narrator contexts (shared helper).
+    ...personaPromptContexts(currentSession),
     // Epoch tone (issues #26/#29): null for the Fifth-Epoch baseline.
     epochContext: epochNarrationDirective(currentSession.gameState.epoch),
     // Curated guardrail selection lives in @/lib/lore (tested); the component
@@ -1510,14 +1521,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             gameState={session.gameState}
             abilities={combatAbilities}
             config={providerConfig}
-            identityContext={
-              session.identityState ? identityPromptContext(session.identityState) : null
-            }
-            profileContext={
-              session.profileState
-                ? profilePromptContext(session.profileState, session.gameState)
-                : null
-            }
+            // Persona / true-self / recognition contexts (shared with the normal
+            // turn) so the fight is narrated as the face the player wears.
+            {...personaPromptContexts(session)}
             onUpdate={handleCombatUpdate}
             onApplyResult={handleCombatResult}
             onExit={handleCombatExit}
@@ -2494,6 +2500,9 @@ function RitualRequirementList({
   return (
     <ul className="mt-3 space-y-1.5">
       {requirements.map((req) => {
+        // A genuine prerequisite that is satisfied — distinct from a forthcoming
+        // rite (enacted during the attempt), which never reads as "complete".
+        const ticked = req.met && !req.forthcoming;
         const glyph = req.forthcoming ? "◷" : req.met ? "✦" : "◇";
         const srState = req.forthcoming
           ? " — to be enacted during the rite"
@@ -2504,17 +2513,11 @@ function RitualRequirementList({
           <li key={req.id} className="flex items-start gap-2 text-sm">
             <span
               aria-hidden="true"
-              className={
-                req.met && !req.forthcoming ? "text-occult-bright" : "text-muted"
-              }
+              className={ticked ? "text-occult-bright" : "text-muted"}
             >
               {glyph}
             </span>
-            <span
-              className={
-                req.met && !req.forthcoming ? "text-foreground/85" : "text-muted"
-              }
-            >
+            <span className={ticked ? "text-foreground/85" : "text-muted"}>
               {req.label}
               <span className="sr-only">{srState}</span>
             </span>

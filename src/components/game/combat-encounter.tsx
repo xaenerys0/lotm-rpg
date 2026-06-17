@@ -56,6 +56,7 @@ export function CombatEncounterView({
   config,
   identityContext,
   profileContext,
+  recognitionContext,
   onUpdate,
   onApplyResult,
   onExit,
@@ -69,6 +70,9 @@ export function CombatEncounterView({
   identityContext?: string | null;
   /** True-self ground truth (pronouns/appearance/etc.) for narration fidelity. */
   profileContext?: string | null;
+  /** Recognition gap (character-info storage): set only while showing the true
+   * face, so a drastically-changed character is narrated consistently in-fight. */
+  recognitionContext?: string | null;
   onUpdate: (next: CombatEncounter) => void;
   onApplyResult: (result: CombatResult) => void;
   onExit: () => void;
@@ -107,6 +111,7 @@ export function CombatEncounterView({
       // player presents as (issue #22 / character-info storage).
       identityContext,
       profileContext,
+      recognitionContext,
       instruction: "combat",
       playerAction,
       abilities,
