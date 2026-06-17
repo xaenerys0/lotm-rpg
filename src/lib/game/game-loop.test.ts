@@ -2116,6 +2116,19 @@ describe("deserializeSession", () => {
     expect(restored?.gameState.currentCity).toBe("backlund");
   });
 
+  it("backfills currentCity from the location when the stored value is null", () => {
+    const modified = JSON.parse(
+      serializeSession(
+        makeSession({ gameState: makeGameState({ location: "Backlund" }) }),
+      ),
+    );
+    // A null (not merely absent) currentCity must still be backfilled — the
+    // nullish guard catches it where a strict `=== undefined` would not.
+    modified.gameState.currentCity = null;
+    const restored = deserializeSession(JSON.stringify(modified));
+    expect(restored?.gameState.currentCity).toBe("backlund");
+  });
+
   it("leaves currentCity unset when the location names no known city", () => {
     const modified = JSON.parse(
       serializeSession(
