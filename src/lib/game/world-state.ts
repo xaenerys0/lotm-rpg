@@ -51,6 +51,12 @@ export interface GateLocationChangeInput {
   from: string;
   to: string;
   epoch?: number;
+  /**
+   * The engine-tracked current city (`GameState.currentCity`) — the origin city
+   * the gate trusts when the `from` string is a bare district that names no city
+   * (issue #101), so a teleport out of a district-level location is still caught.
+   */
+  fromCity?: string;
   cause?: InvoluntaryMoveCause;
   gateEnabled: boolean;
   turnNumber: number;
@@ -85,11 +91,12 @@ export function gateLocationChange({
   from,
   to,
   epoch,
+  fromCity,
   cause,
   gateEnabled,
   turnNumber,
 }: GateLocationChangeInput): GateLocationChangeResult {
-  const crossCity = !isReachable(from, to, epoch).reachable;
+  const crossCity = !isReachable(from, to, epoch, fromCity).reachable;
 
   if (!gateEnabled) return { location: to, blocked: false, crossCity };
 
@@ -241,6 +248,10 @@ export function applyWorldStateChanges(
             from: next.location,
             to: change.newValue,
             epoch: opts.epoch,
+            // The engine-tracked city anchors the origin when the location
+            // string is a bare district, so a cross-city teleport can't slip
+            // the gate just because the player is mid-scene in a district.
+            fromCity: next.currentCity,
             cause: isInvoluntaryMoveCause(change.involuntaryCause)
               ? change.involuntaryCause
               : undefined,
