@@ -139,6 +139,17 @@ export interface AIResponse {
    */
   proposedSelfChange?: { field: string; value: string; reason?: string };
   /**
+   * NPCs who are actively HUNTING/pursuing the character this turn (issue #101).
+   * The world — not the player — decides who is on your trail, so this is the
+   * narrator's channel for it. Loosely typed at the boundary like
+   * `sanityEventTags`; `parseAIResponse` normalizes it to clean, non-empty
+   * names. The engine rosters each as a hostile follower (idempotent), so a
+   * pursuer reappears at the player's destination after travel until shaken off.
+   * Companions, by contrast, are a deliberate PLAYER choice (the character
+   * sheet), never this field.
+   */
+  pursuers?: string[];
+  /**
    * Durable rolling "story so far" the narrator maintains each turn (amortized
    * into this response — no extra API call). It is fed back in next turn so the
    * model recursively prunes and extends it, and persisted on `MemoryState`

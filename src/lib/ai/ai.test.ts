@@ -3153,6 +3153,30 @@ describe("validation", () => {
       expect(result.worldStateChanges![1].involuntaryCause).toBeUndefined();
     });
 
+    it("normalizes pursuers to clean, de-duplicated names (issue #101)", () => {
+      const json = JSON.stringify({
+        narrative: "x",
+        pursuers: ["  Sebastian  ", "Sebastian", "", 7, "Klein"],
+      });
+      const result = parseAIResponse(json);
+      expect(result.pursuers).toEqual(["Sebastian", "7", "Klein"]);
+    });
+
+    it("drops pursuers when empty or not an array (issue #101)", () => {
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x" })).pursuers,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", pursuers: [] })).pursuers,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", pursuers: ["   "] })).pursuers,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", pursuers: "nope" })).pursuers,
+      ).toBeUndefined();
+    });
+
     it("handles actingEvaluation with missing fields", () => {
       const json = JSON.stringify({
         narrative: "x",

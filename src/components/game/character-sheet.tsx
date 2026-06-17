@@ -541,6 +541,10 @@ function CompanionsSection({
           <h3 className="text-xs tracking-wide text-muted uppercase">
             Present in the scene
           </h3>
+          <p className="mt-1 text-xs text-muted">
+            Ask one of them to travel with you — they will follow when you set out for
+            another city. (Pursuers appear on their own, from the story.)
+          </p>
           <ul className="mt-2 space-y-2">
             {present.map((name) => (
               <li
@@ -548,40 +552,22 @@ function CompanionsSection({
                 className="flex flex-wrap items-center justify-between gap-2 rounded border border-border/60 bg-background/40 p-3"
               >
                 <span className="text-sm text-foreground/90">{name}</span>
-                <span className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      apply(
-                        joinRoster(session, {
-                          name,
-                          disposition: "ally",
-                          follows: true,
-                        }),
-                      )
-                    }
-                    className="inline-flex min-h-[24px] items-center rounded border border-amber/40 px-3 py-1 text-xs font-medium text-amber transition-colors hover:bg-amber/10"
-                    aria-label={`Have ${name} travel with you`}
-                  >
-                    Travel with
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      apply(
-                        joinRoster(session, {
-                          name,
-                          disposition: "hostile",
-                          follows: true,
-                        }),
-                      )
-                    }
-                    className="inline-flex min-h-[24px] items-center rounded border border-border px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:border-crimson/50 hover:text-crimson"
-                    aria-label={`Mark ${name} as a pursuer`}
-                  >
-                    Mark pursuer
-                  </button>
-                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    apply(
+                      joinRoster(session, {
+                        name,
+                        disposition: "ally",
+                        follows: true,
+                      }),
+                    )
+                  }
+                  className="inline-flex min-h-[24px] items-center rounded border border-amber/40 px-3 py-1 text-xs font-medium text-amber transition-colors hover:bg-amber/10"
+                  aria-label={`Have ${name} travel with you`}
+                >
+                  Travel with
+                </button>
               </li>
             ))}
           </ul>

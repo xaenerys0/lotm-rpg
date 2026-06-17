@@ -159,6 +159,22 @@ export function parseAIResponse(raw: string): AIResponse {
     response.actingMethodTaught = true;
   }
 
+  // Pursuers (issue #101) — the narrator's channel for who is hunting the
+  // character. Normalize to clean, de-duplicated, non-empty names; an empty
+  // result is dropped (drop-not-throw, like sanityEventTags).
+  if (Array.isArray(obj.pursuers)) {
+    const names = Array.from(
+      new Set(
+        obj.pursuers
+          .map((n: unknown) => String(n).trim())
+          .filter((n: string) => n !== ""),
+      ),
+    );
+    if (names.length > 0) {
+      response.pursuers = names;
+    }
+  }
+
   if (obj.itemsDiscovered !== undefined) {
     if (!Array.isArray(obj.itemsDiscovered)) {
       throw createMalformedOutputError(raw);
