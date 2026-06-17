@@ -8,6 +8,7 @@ import { SceneArt } from "./scene-art";
 import {
   saveActiveSessionId,
   useActiveSessionId,
+  useHydrated,
   useSessionSummaries,
 } from "@/lib/react/session-store";
 import {
@@ -68,6 +69,7 @@ async function currentUserId(
 export function JournalPanel() {
   // The journal follows the shared active character (active-character sync); the
   // Chronicle picker writes the same pointer the rest of the app reads.
+  const hydrated = useHydrated();
   const summaries = useSessionSummaries();
   const activeSessionId = useActiveSessionId();
   const sessionOptions = useMemo(
@@ -134,7 +136,10 @@ export function JournalPanel() {
     URL.revokeObjectURL(url);
   }, [journal]);
 
-  if (sessionOptions === null) {
+  // Pre-hydration the summaries snapshot is empty (SSR fallback); show a neutral
+  // loading line rather than flashing the "no chronicles" empty state to a player
+  // who actually has saves (the issue-#84/#86 frozen-snapshot class).
+  if (!hydrated) {
     return <p className="text-sm text-muted">Loading journal…</p>;
   }
 

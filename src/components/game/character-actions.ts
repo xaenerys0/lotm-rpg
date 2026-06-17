@@ -1,4 +1,9 @@
-import { loadSessionIndex, saveSessionIndex } from "@/lib/react/session-store";
+import {
+  loadActiveSessionId,
+  loadSessionIndex,
+  saveActiveSessionId,
+  saveSessionIndex,
+} from "@/lib/react/session-store";
 import {
   characterDeletionPlan,
   deleteSessionEntriesRemote,
@@ -19,6 +24,10 @@ export function purgeCharacter(sessionId: string): string[] {
   try {
     for (const key of plan.removeKeys) localStorage.removeItem(key);
     saveSessionIndex(plan.nextIndex);
+    // Reconcile the shared active-character pointer: re-resolve it against the
+    // trimmed index (self-heals to the newest remaining save, or null) and write
+    // it back, so a deleted character is never left as a dangling pointer.
+    saveActiveSessionId(loadActiveSessionId());
   } catch {
     // Storage unavailable — callers still update their in-memory list.
   }
