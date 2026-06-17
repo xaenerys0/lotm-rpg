@@ -23,6 +23,42 @@ describe("gazetteerForEpoch", () => {
     expect(gazetteerForEpoch(undefined)).toEqual(gazetteerForEpoch(DEFAULT_EPOCH_ID));
   });
 
+  it("shows the CURRENT Fifth city's districts and excludes it from travel (issue #101)", () => {
+    const bayam = gazetteerForEpoch(5, "bayam");
+    expect(bayam.intro).toContain("Bayam");
+    expect(bayam.intro).not.toContain("Tingen");
+    expect(bayam.districts.every((d) => d.slug.startsWith("bayam-"))).toBe(true);
+    expect(bayam.districts.length).toBeGreaterThan(0);
+    // You can travel to the other cities, including Tingen, but not to Bayam.
+    const ids = bayam.fartherCities.map((c) => c.id);
+    expect(ids).toContain("tingen");
+    expect(ids).not.toContain("bayam");
+  });
+
+  it("gives every known Fifth city its own non-empty district list", () => {
+    for (const id of [
+      "tingen",
+      "backlund",
+      "trier",
+      "bayam",
+      "pritz",
+      "enmat",
+      "feysac",
+    ]) {
+      const g = gazetteerForEpoch(5, id);
+      expect(g.districts.length).toBeGreaterThan(0);
+      expect(g.fartherCities.map((c) => c.id)).not.toContain(id);
+    }
+  });
+
+  it("falls back to Tingen for an unknown current city", () => {
+    expect(gazetteerForEpoch(5, "atlantis")).toEqual(gazetteerForEpoch(5, "tingen"));
+  });
+
+  it("ignores the city id in an earlier epoch", () => {
+    expect(gazetteerForEpoch(4, "bayam")).toEqual(gazetteerForEpoch(4));
+  });
+
   it("gives each earlier epoch its own region list and no Fifth-Epoch travel", () => {
     for (const epoch of [1, 2, 3, 4]) {
       const g = gazetteerForEpoch(epoch);

@@ -61,17 +61,25 @@ export interface GateLocationChangeResult {
   location: string;
   /** True when a cross-city move without a valid cause was refused. */
   blocked: boolean;
+  /**
+   * True when the permitted move crosses cities (a real relocation) — the caller
+   * leaves the origin's scene cast behind. False for a within-city / provisional
+   * nudge, where the existing scene cast is preserved.
+   */
+  crossCity: boolean;
   /** An in-world fact to fold into memory (redirect, or "against your will"). */
   fact?: SessionFact;
 }
 
 /**
  * Decide what a proposed `location` change resolves to. With the gate off, or
- * for a reachable (same-place / same-city / provisional) move, the change is
- * allowed unchanged. A non-reachable (cross-city) move is allowed ONLY with a
- * valid involuntary cause (recorded as an "against your will" fact); otherwise it
- * is blocked — the character stays in `from` and an in-world redirect fact is
- * emitted. Pure; never throws.
+ * for a reachable (same-city / provisional) move, the change is allowed
+ * unchanged. A cross-city move is allowed ONLY with a valid involuntary cause
+ * (recorded as an "against your will" fact); otherwise it is blocked — the
+ * character stays in `from` and an in-world redirect fact is emitted. The
+ * `crossCity` flag reports whether the permitted move was a real relocation
+ * (independent of the gate toggle), so the caller knows whether to reset the
+ * scene cast. Pure; never throws.
  */
 export function gateLocationChange({
   from,
@@ -81,16 +89,17 @@ export function gateLocationChange({
   gateEnabled,
   turnNumber,
 }: GateLocationChangeInput): GateLocationChangeResult {
-  if (!gateEnabled) return { location: to, blocked: false };
+  const crossCity = !isReachable(from, to, epoch).reachable;
 
-  if (isReachable(from, to, epoch).reachable) {
-    return { location: to, blocked: false };
-  }
+  if (!gateEnabled) return { location: to, blocked: false, crossCity };
+
+  if (!crossCity) return { location: to, blocked: false, crossCity: false };
 
   if (cause !== undefined) {
     return {
       location: to,
       blocked: false,
+      crossCity: true,
       fact: {
         type: "event",
         description: `Against your will, you are taken from ${from} to ${to}.`,
@@ -102,6 +111,7 @@ export function gateLocationChange({
   return {
     location: from,
     blocked: true,
+    crossCity: true,
     fact: {
       type: "event",
       description: `You cannot simply will yourself from ${from} to ${to} — the journey between cities is one you must set out on deliberately. You remain in ${from}.`,
@@ -200,15 +210,16 @@ export interface ApplyWorldStateOptions {
  * without a valid `involuntaryCause` is refused (location unchanged) and turned
  * into an in-world redirect fact instead of a silent write.
  *
- * On an ACTUAL location change the scene cast is reset to the roster's followers
- * (companions and pursuers travel with the player); on an explicit `npcsPresent`
- * write the followers are likewise re-asserted, so the AI can never drop a
- * follower (engine truth over the AI string, like `advanceActiveHunts`).
+ * On a CROSS-CITY relocation the scene cast is reset to the roster's followers
+ * (companions and pursuers travel with the player; the origin's incidental NPCs
+ * are left behind). On a within-city / provisional move the existing scene cast
+ * is PRESERVED and the followers are merely re-asserted into it — a local
+ * narrator nudge no longer wipes the NPCs the player is mid-scene with. An
+ * explicit `npcsPresent` write likewise re-asserts the followers, so the AI can
+ * never drop a follower (engine truth over the AI string, like
+ * `advanceActiveHunts`).
  *
- * Ordering within one batch (Risk 4): a `location` change resets `npcsPresent`
- * to the followers, and any `npcsPresent` write unions the followers back in —
- * so followers stay authoritative regardless of the order the two changes
- * arrive. Returns the new state plus any facts the gate produced. Pure.
+ * Returns the new state plus any facts the gate produced. Pure.
  */
 export function applyWorldStateChanges(
   state: GameState,
@@ -238,10 +249,14 @@ export function applyWorldStateChanges(
           });
           if (gated.fact) facts.push(gated.fact);
           if (!gated.blocked && gated.location !== next.location) {
+            // Cross-city: leave the origin's scene behind (followers only).
+            // Within-city / provisional: keep the existing cast, just re-assert
+            // the followers — a local nudge must not wipe mid-scene NPCs.
+            const base = gated.crossCity ? [] : next.npcsPresent;
             next = {
               ...next,
               location: gated.location,
-              npcsPresent: reassertFollowersAt([], opts.trackedNpcState),
+              npcsPresent: reassertFollowersAt(base, opts.trackedNpcState),
             };
           }
         }

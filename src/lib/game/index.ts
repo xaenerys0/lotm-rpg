@@ -29,13 +29,7 @@ export {
   type InvoluntaryMoveCause,
 } from "./world-state";
 
-export {
-  isReachable,
-  resolvePlace,
-  sameCity,
-  type PlaceNode,
-  type ReachableResult,
-} from "./place-graph";
+export { cityForLocation, isReachable, type ReachableResult } from "./place-graph";
 
 export {
   companionsPresentOnMove,

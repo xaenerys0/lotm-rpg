@@ -121,6 +121,12 @@ export interface DeriveJournalArgs {
   now?: number;
   /** Injectable id factory (deterministic in tests). */
   makeId?: () => string;
+  /**
+   * NPC names to exclude from new-encounter detection (issue #101): the tracked
+   * roster's followers travel WITH the player, so their re-assertion into
+   * `npcsPresent` on a move is not a fresh encounter and must not log one.
+   */
+  ignoreNpcs?: readonly string[];
 }
 
 /**
@@ -169,8 +175,9 @@ export function deriveJournalEntries(args: DeriveJournalArgs): JournalEntry[] {
     });
   }
 
+  const ignore = new Set(args.ignoreNpcs ?? []);
   const newNpcs = nextState.npcsPresent.filter(
-    (npc) => !prevState.npcsPresent.includes(npc),
+    (npc) => !prevState.npcsPresent.includes(npc) && !ignore.has(npc),
   );
   if (newNpcs.length > 0) {
     entries.push({
