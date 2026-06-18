@@ -48,6 +48,7 @@ import {
   emptyPreparation,
 } from "@/lib/game";
 import type { GameState } from "@/lib/ai";
+import { getSequence } from "@/lib/rules";
 
 // Components reach for the Next router; stub it so they render in isolation.
 vi.mock("next/navigation", () => ({
@@ -215,6 +216,27 @@ describe("accessibility — game loop", () => {
     };
     localStorage.setItem(SESSION_KEY_PREFIX + "apo-1", serializeSession(session));
     await expectNoAxeViolations(<GameLoop sessionId="apo-1" />);
+  });
+
+  it("ritual performance panel (Seq 5 rite, choices phase) has no violations", async () => {
+    // A Fool at Seq 6 with the next potion fully prepared — the target (Seq 5)
+    // needs an Advancement Ritual, so the RitualPerformancePanel renders with a
+    // progressbar and "Enact this step" controls (issue #99 Part C).
+    const prereqs = getSequence(1, 5)?.prerequisiteItems ?? [];
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-r", "Klein"),
+      sequenceLevel: 6,
+      inventory: [...prereqs],
+      digestion: { pathwayId: 1, sequenceLevel: 6, progress: 100, complete: true },
+    };
+    const session = {
+      ...createSession(gameState, "ritual-1", 1000),
+      phase: "choices" as const,
+      currentNarrative: "The potion is brewed. The rite remains.",
+      currentChoices: [{ id: "c1", text: "Steady yourself", type: "action" as const }],
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "ritual-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="ritual-1" />);
   });
 
   it("pillar ascension panel (Sequence 0 choices phase) has no violations", async () => {

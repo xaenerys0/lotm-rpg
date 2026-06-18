@@ -12,6 +12,7 @@ import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
 import { hasItemMatching, removeItemsByName } from "./inventory";
 import { clamp } from "./math";
+import { isRitualComplete } from "./ritual";
 import { sanityDelta } from "./sanity";
 import type { GameSession } from "./types";
 import { applySanityImpact } from "./world-state";
@@ -126,20 +127,20 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
     });
   }
 
-  // From Sequence 5 onward an Advancement Ritual is canon and mandatory: the
-  // pathway must define one (it is performed and narrated during the attempt).
+  // From Sequence 5 onward an Advancement Ritual is canon and mandatory, and
+  // (issue #99 Part C) it must actually be PERFORMED step by step across turns
+  // before the climb unlocks — no longer auto-satisfied by merely defining one.
+  // The gate is met when the pathway defines no ritual, or the rite for this
+  // target has been fully performed (`ritualState`, via the ritual panel).
   if (ritualRequiredFor(target)) {
     const ritual = targetSeq?.advancementRitual;
+    const performed = ritual === undefined || isRitualComplete(session, target);
     requirements.push({
       id: "ritual",
-      // Worded as a forthcoming rite, not a tick-box prerequisite: the ritual is
-      // enacted and narrated *during* the attempt, so the player has nothing to
-      // do beforehand. `met` still gates the climb (the pathway must define it).
       label: ritual
-        ? `The Advancement Ritual will be enacted as you climb: ${ritual.description}`
-        : "The Sequence's Advancement Ritual will be enacted as you climb",
-      met: ritual !== undefined,
-      forthcoming: true,
+        ? `Perform the Advancement Ritual across the coming turns: ${ritual.description}`
+        : "The Sequence's Advancement Ritual must be performed",
+      met: performed,
     });
   }
 
@@ -304,6 +305,9 @@ export function attemptAdvancement(
         ...session.memory,
         sessionFacts: [...session.memory.sessionFacts, ...facts],
       },
+      // The performed rite is consumed by the climb — the next rung needs its
+      // own ritual performed from scratch (issue #99 Part C).
+      ritualState: undefined,
       updatedAt: now,
     },
   };

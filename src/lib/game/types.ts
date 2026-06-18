@@ -85,6 +85,14 @@ export interface GameSession {
    */
   hunts?: import("./hunt").HuntState[];
   /**
+   * Advancement ritual in progress (issue #99 Part C). From Sequence 5 the rite
+   * is performed STEP BY STEP across turns before the climb unlocks; this tracks
+   * the progress. Absent when no rite is under way; strictly validated when
+   * present and preserved on the deserialize `...s` spread (no seeding), exactly
+   * like `anchorState`. No DB migration — it serializes inside the session blob.
+   */
+  ritualState?: import("./ritual").RitualState;
+  /**
    * Tracked-NPC roster (issue #101): the durable cast the player is bound to —
    * allies who follow (a party) and hostiles who follow (pursuers) — distinct
    * from the transient, scene-scoped `gameState.npcsPresent`. Followers are
