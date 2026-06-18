@@ -412,6 +412,30 @@ export {
   type JournalSyncClient,
 } from "./journal-sync";
 export {
+  deleteSessionRemote,
+  fetchSessions,
+  pushSessions,
+  reconcile,
+  setActiveRemote,
+  toSessionRow,
+  type SessionReconciliation,
+  type SessionSyncClient,
+} from "./session-sync";
+export {
+  fetchWorldMemory,
+  pushWorldMemory,
+  reconcileWorldMemory,
+  type WorldMemory,
+  type WorldMemorySyncClient,
+} from "./world-memory-sync";
+export {
+  fetchPreferences,
+  pushPreferences,
+  reconcilePreferences,
+  type PreferencesSyncClient,
+  type SyncedPreferences,
+} from "./preferences-sync";
+export {
   advanceCanonPosition,
   createSession,
   createDefaultGameState,

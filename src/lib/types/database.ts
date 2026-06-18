@@ -343,6 +343,81 @@ export interface Database {
         };
         Relationships: [];
       };
+      game_sessions: {
+        // Cloud-synced character saves (cross-device sync). The full
+        // serialized GameSession as jsonb; owner-scoped by RLS. is_active is
+        // the active-character pointer, flipped via set_active_session.
+        Row: {
+          id: string;
+          user_id: string;
+          data: Json;
+          is_active: boolean;
+          updated_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          user_id: string;
+          data: Json;
+          is_active?: boolean;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          data?: Json;
+          is_active?: boolean;
+          updated_at?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      world_memory: {
+        // Cloud-synced cross-timeline world memory (legacies + echoes). One
+        // row per user; both arrays read/written wholesale by the engine.
+        Row: {
+          user_id: string;
+          legacies: Json;
+          echoes: Json;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          legacies?: Json;
+          echoes?: Json;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          legacies?: Json;
+          echoes?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      user_preferences: {
+        // Cloud-synced display preferences + hint dismissals (cross-device).
+        Row: {
+          user_id: string;
+          preferences: Json;
+          dismissed_hints: string[];
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          preferences?: Json;
+          dismissed_hints?: string[];
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          preferences?: Json;
+          dismissed_hints?: string[];
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       player_showcases: {
         // Published player profiles (issue #18). Public rows world-readable.
         Row: {
@@ -383,6 +458,10 @@ export interface Database {
     };
     Views: Record<string, never>;
     Functions: {
+      set_active_session: {
+        Args: { p_id: string };
+        Returns: undefined;
+      };
       purchase_listing: {
         Args: { p_listing_id: string };
         Returns: Json;

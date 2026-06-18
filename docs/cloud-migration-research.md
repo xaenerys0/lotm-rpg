@@ -27,7 +27,7 @@ core save data and a handful of smaller local-only items.
 the existing localStorage calls, and keep localStorage as an offline cache. The
 data is tiny — a few hundred KB per player — so it fits Supabase's free tier
 with enormous headroom. **API keys must stay browser-only** (BYOK security
-boundary) and are the one thing that should *not* move.
+boundary) and are the one thing that should _not_ move.
 
 ---
 
@@ -36,22 +36,22 @@ boundary) and are the one thing that should *not* move.
 Read/write sites confirmed in code. "Source of truth?" = is the browser the
 **only** copy, or a mirror of a Supabase table?
 
-| State | Mechanism | Key | Only copy? | Cloud table today | Where |
-| --- | --- | --- | --- | --- | --- |
-| **Full character save** (`GameSession`) | localStorage | `lotm-rpg-session-{id}` | 🔴 **Browser-only** | ❌ none | `session-store.ts:129` |
-| **Session index** (list of saves) | localStorage | `lotm-rpg-session-index` | 🔴 Browser-only | ❌ none | `session-store.ts:68` |
-| **Active character pointer** | localStorage | `lotm-rpg-active-session` | 🔴 Browser-only | ❌ none | `session-store.ts:112` |
-| **Legacies / Echoes** (cross-timeline memory) | localStorage | `lotm-rpg-legacies`, `lotm-rpg-echoes` | 🔴 Browser-only | ❌ none | `lib/game/constants.ts` |
-| **Prologue draft** (creation in progress) | localStorage | `lotm-rpg-prologue-draft` | 🟡 Browser-only, transient | ❌ none | `prologue-draft.ts:53` |
-| **In-progress combat** | localStorage | `lotm:combat:{id}` | 🟡 Browser-only, ephemeral | ❌ none | `game-loop.tsx:197` |
-| **Preferences** (UI toggles) | localStorage | `lotm-rpg-preferences` | 🟡 Browser-only | ❌ none | `preferences-store.ts:15` |
-| **First-time hint dismissals** | localStorage | `lotm-rpg-hint-{id}` | 🟡 Browser-only | ❌ none | `first-time-hint.tsx` |
-| **Journal entries + annotations** | localStorage | `lotm-rpg-journal-{id}` | 🟢 **Mirror** | ✅ `journal_entries`, `journal_annotations` | `journal-sync.ts:94` |
-| Marketplace / showcases / world messages | (fetched) | — | 🟢 Cloud-authoritative | ✅ respective tables | `*-sync.ts` |
-| **Token-usage estimate** | localStorage | `lotm:usage:{id}` | ⚪ Informational | ❌ (not needed) | `game-loop.tsx:228` |
-| **Provider config + API key** | localStorage | `lotm-rpg-provider-config` | 🔒 **Must stay local** | ❌ (by design) | `provider-config.tsx:186` |
-| **Model catalog cache** | localStorage | `lotm-rpg-models-cache:*` | ⚪ Cache (24h TTL) | ❌ (not needed) | `provider-config.tsx:113` |
-| **Scene-art images** | IndexedDB | `lotm-rpg-scene-art` / `images` | ⚪ Cache (regenerable) | ❌ (optional) | `scene-art-cache.ts:7` |
+| State                                         | Mechanism    | Key                                    | Only copy?                 | Cloud table today                           | Where                     |
+| --------------------------------------------- | ------------ | -------------------------------------- | -------------------------- | ------------------------------------------- | ------------------------- |
+| **Full character save** (`GameSession`)       | localStorage | `lotm-rpg-session-{id}`                | 🔴 **Browser-only**        | ❌ none                                     | `session-store.ts:129`    |
+| **Session index** (list of saves)             | localStorage | `lotm-rpg-session-index`               | 🔴 Browser-only            | ❌ none                                     | `session-store.ts:68`     |
+| **Active character pointer**                  | localStorage | `lotm-rpg-active-session`              | 🔴 Browser-only            | ❌ none                                     | `session-store.ts:112`    |
+| **Legacies / Echoes** (cross-timeline memory) | localStorage | `lotm-rpg-legacies`, `lotm-rpg-echoes` | 🔴 Browser-only            | ❌ none                                     | `lib/game/constants.ts`   |
+| **Prologue draft** (creation in progress)     | localStorage | `lotm-rpg-prologue-draft`              | 🟡 Browser-only, transient | ❌ none                                     | `prologue-draft.ts:53`    |
+| **In-progress combat**                        | localStorage | `lotm:combat:{id}`                     | 🟡 Browser-only, ephemeral | ❌ none                                     | `game-loop.tsx:197`       |
+| **Preferences** (UI toggles)                  | localStorage | `lotm-rpg-preferences`                 | 🟡 Browser-only            | ❌ none                                     | `preferences-store.ts:15` |
+| **First-time hint dismissals**                | localStorage | `lotm-rpg-hint-{id}`                   | 🟡 Browser-only            | ❌ none                                     | `first-time-hint.tsx`     |
+| **Journal entries + annotations**             | localStorage | `lotm-rpg-journal-{id}`                | 🟢 **Mirror**              | ✅ `journal_entries`, `journal_annotations` | `journal-sync.ts:94`      |
+| Marketplace / showcases / world messages      | (fetched)    | —                                      | 🟢 Cloud-authoritative     | ✅ respective tables                        | `*-sync.ts`               |
+| **Token-usage estimate**                      | localStorage | `lotm:usage:{id}`                      | ⚪ Informational           | ❌ (not needed)                             | `game-loop.tsx:228`       |
+| **Provider config + API key**                 | localStorage | `lotm-rpg-provider-config`             | 🔒 **Must stay local**     | ❌ (by design)                              | `provider-config.tsx:186` |
+| **Model catalog cache**                       | localStorage | `lotm-rpg-models-cache:*`              | ⚪ Cache (24h TTL)         | ❌ (not needed)                             | `provider-config.tsx:113` |
+| **Scene-art images**                          | IndexedDB    | `lotm-rpg-scene-art` / `images`        | ⚪ Cache (regenerable)     | ❌ (optional)                               | `scene-art-cache.ts:7`    |
 
 Legend: 🔴 at-risk, no backup · 🟡 local-only but low-stakes · 🟢 already safe ·
 🔒 must stay local · ⚪ cache, fine to lose.
@@ -61,23 +61,26 @@ Legend: 🔴 at-risk, no backup · 🟡 local-only but low-stakes · 🟢 alread
 ## 2. The three buckets
 
 ### 🔴 At-risk — browser-only, must move to the cloud
+
 - **Character saves** + **session index** + **active pointer** — the whole game.
-  Losing the browser loses every character. This is *the* problem.
+  Losing the browser loses every character. This is _the_ problem.
 - **Legacies / Echoes** — cross-timeline world memory; meant to outlive a single
   character, so losing them is a real (if smaller) regression.
 
 ### 🟡 Browser-only but low-stakes — move opportunistically
+
 - **Preferences** and **hint dismissals** — worth syncing so settings follow the
   player across devices, but not data-loss-critical.
 - **Prologue draft** and **in-progress combat** — transient/ephemeral; nice-to-
   have resumability, not required for durability.
 
 ### 🟢 / 🔒 / ⚪ Already safe, or intentionally local
+
 - **Journal, marketplace, showcases, world messages** — already Supabase-backed;
   localStorage is just a mirror. Nothing to do.
 - **Provider API keys** — BYOK boundary: keys go browser → provider directly and
-  must **never** touch our servers. Do not move. (You *could* sync the non-secret
-  provider/model *choice* without the key.)
+  must **never** touch our servers. Do not move. (You _could_ sync the non-secret
+  provider/model _choice_ without the key.)
 - **Model cache, scene-art cache, token-usage estimate** — regenerable caches;
   leave local.
 
@@ -130,12 +133,12 @@ changes — `@/lib/game` stays localStorage-free by design.
 
 The save data is **tiny** — this is not a capacity problem.
 
-| Data | Per player | Notes |
-| --- | --- | --- |
-| Character save (`GameSession` JSON) | ~5–200 KB each | a few saves per player |
-| Session metadata (index/active/prefs) | < 1 KB | |
-| Legacies / echoes | ~1–10 KB | |
-| **Per active player total** | **well under ~1 MB** | |
+| Data                                  | Per player           | Notes                  |
+| ------------------------------------- | -------------------- | ---------------------- |
+| Character save (`GameSession` JSON)   | ~5–200 KB each       | a few saves per player |
+| Session metadata (index/active/prefs) | < 1 KB               |                        |
+| Legacies / echoes                     | ~1–10 KB             |                        |
+| **Per active player total**           | **well under ~1 MB** |                        |
 
 Against **Supabase Free = 500 MB database**, that's room for **hundreds to low
 thousands of players** before storage alone matters — and pgvector/RAG is the
@@ -160,7 +163,7 @@ size; the only reason to pay is keeping the project warm + backed up.
    device consistency — cheap, same migration batch.
 3. **Add `world_memory`** for legacies/echoes if you want them durable.
 4. **Leave caches and API keys local.** Optionally sync the non-secret provider
-   *choice*.
+   _choice_.
 5. **Stay on Supabase Free** for a hobby build; go **Pro (~$25/mo)** only when
    you need to defeat the 7-day pause and get backups.
 
