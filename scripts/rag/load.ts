@@ -52,6 +52,43 @@ function requireEnv(name: string): string {
   return value;
 }
 
+const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+// Server-side `statement timeout` on the vector upsert is transient — it spikes
+// when concurrent HNSW index maintenance contends with the batch. Retry with
+// backoff before giving up; the upsert is idempotent so re-sending is safe.
+const isTransient = (message: string): boolean =>
+  /statement timeout|timeout|fetch failed|ECONNRESET/i.test(message);
+
+async function upsertWithRetry(
+  label: string,
+  run: () => PromiseLike<{ error: { message: string } | null }>,
+): Promise<void> {
+  const maxAttempts = 6;
+  for (let attempt = 1; ; attempt++) {
+    // A returned `error` is a Postgres/PostgREST failure (e.g. statement
+    // timeout); a thrown/rejected promise is a transport failure (fetch
+    // failed, ECONNRESET) — both can be transient, so handle them alike.
+    let message: string | null = null;
+    try {
+      const { error } = await run();
+      if (!error) return;
+      message = error.message;
+    } catch (err) {
+      message = err instanceof Error ? err.message : String(err);
+    }
+    if (!isTransient(message) || attempt >= maxAttempts) {
+      throw new Error(`${label} upsert failed: ${message}`);
+    }
+    const delay = Math.min(1000 * 2 ** (attempt - 1), 15000);
+    process.stderr.write(
+      `${label} upsert transient error (attempt ${attempt}/${maxAttempts}): ` +
+        `${message} — retrying in ${delay}ms\n`,
+    );
+    await sleep(delay);
+  }
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   if (args.inputPath === undefined) {
@@ -73,18 +110,19 @@ async function main(): Promise<void> {
   for (let i = 0; i < records.length; i += args.batchSize) {
     const batch = records.slice(i, i + args.batchSize);
 
-    const { error: chunkError } = await supabase
-      .from("source_chunks")
-      .upsert(batch.map(toSourceChunkRow), { onConflict: "id" });
-    if (chunkError) throw new Error(`source_chunks upsert failed: ${chunkError.message}`);
+    await upsertWithRetry("source_chunks", () =>
+      supabase.from("source_chunks").upsert(batch.map(toSourceChunkRow), {
+        onConflict: "id",
+      }),
+    );
 
     if (!args.chunksOnly) {
       const rows = batch.map((record) => toEmbeddingRow(record, args.modelId as string));
-      const { error: embedError } = await supabase
-        .from("chunk_embeddings")
-        .upsert(rows, { onConflict: "chunk_id,model_id" });
-      if (embedError)
-        throw new Error(`chunk_embeddings upsert failed: ${embedError.message}`);
+      await upsertWithRetry("chunk_embeddings", () =>
+        supabase.from("chunk_embeddings").upsert(rows, {
+          onConflict: "chunk_id,model_id",
+        }),
+      );
     }
 
     process.stderr.write(
