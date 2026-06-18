@@ -230,15 +230,22 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Use a production-ready SMTP server
-# [auth.email.smtp]
-# enabled = true
-# host = "smtp.sendgrid.net"
-# port = 587
-# user = "apikey"
-# pass = "env(SENDGRID_API_KEY)"
-# admin_email = "admin@email.com"
-# sender_name = "Admin"
+# Production SMTP (Resend). Configured here — not dashboard-only — so the Supabase
+# branching PREVIEW environments inherit it too. A preview branch starts as a fresh
+# project that does NOT inherit the dashboard's SMTP, so without this it falls back
+# to the default email provider and the free tier rejects the custom email-template
+# apply with HTTP 400 ("Email template modification is not available for free tier
+# projects using the default email provider"), failing the whole branch action
+# (MIGRATIONS_FAILED). RESEND_API_KEY is set as a Supabase project secret, so the
+# env() reference resolves in the branch/config pipeline (no secret is committed).
+[auth.email.smtp]
+enabled = true
+host = "smtp.resend.com"
+port = 465
+user = "resend"
+pass = "env(RESEND_API_KEY)"
+admin_email = "noreply@lotm-rpg.atgames.cc"
+sender_name = "LOTM RPG"
 
 [auth.email.template.confirmation]
 subject = "A new soul stirs in the fog"

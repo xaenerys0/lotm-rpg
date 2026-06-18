@@ -98,6 +98,8 @@ Session cookies are set with a 400-day max-age by `@supabase/ssr`, so cookie per
 
 Custom HTML templates in `templates/`: confirmation, recovery, magic_link, invite, reauthentication, email_change. Victorian-themed to match the game UI.
 
+> **SMTP must be configured in `config.toml`, not dashboard-only.** Auth email goes through **Resend** via `[auth.email.smtp]` (`host = smtp.resend.com`, `port = 465`, `user = resend`, `pass = env(RESEND_API_KEY)`). It is set in `config.toml` — not just the hosted dashboard — because a Supabase **branching preview environment** is a fresh project that does NOT inherit the dashboard's SMTP. Without an in-config SMTP the branch falls back to the default email provider, and the free tier rejects the custom email-template apply with HTTP 400 ("Email template modification is not available for free tier projects using the default email provider"), failing the entire branch action (`MIGRATIONS_FAILED`) — which is unrelated to the SQL migrations. `RESEND_API_KEY` must be set as a **Supabase project secret** so the `env()` reference resolves in the branch/config pipeline; the secret value is never committed.
+
 ## Conventions
 
 - Always enable RLS on new tables and write restrictive policies before inserting data.
