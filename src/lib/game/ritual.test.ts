@@ -7,6 +7,7 @@ import {
   currentRitualStep,
   isRitualComplete,
   isValidRitualStateShape,
+  ritualProgress,
   ritualStepsFor,
 } from "./ritual";
 import { createDefaultGameState, createSession } from "./session";
@@ -94,6 +95,15 @@ describe("advanceRitualStep / isRitualComplete / currentRitualStep", () => {
     expect(isRitualComplete(session, TARGET)).toBe(true);
     expect(isRitualComplete(session, 4)).toBe(false); // performed Seq 5's rite, not Seq 4's
     expect(currentRitualStep(session, 4)).toBe(ritualStepsFor(session, 4)[0]);
+  });
+});
+
+describe("ritualProgress", () => {
+  it("counts performed steps for the tracked target, 0 otherwise", () => {
+    expect(ritualProgress(sessionAt(), TARGET)).toBe(0); // no rite yet
+    const begun = advanceRitualStep(sessionAt(), TARGET);
+    expect(ritualProgress(begun, TARGET)).toBe(1);
+    expect(ritualProgress(begun, 4)).toBe(0); // different target
   });
 });
 

@@ -88,6 +88,7 @@ export {
   currentRitualStep,
   isRitualComplete,
   isValidRitualStateShape,
+  ritualProgress,
   ritualStepsFor,
   type RitualState,
 } from "./ritual";

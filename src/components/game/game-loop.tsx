@@ -81,6 +81,7 @@ import {
   advanceRitualStep,
   currentRitualStep,
   isRitualComplete,
+  ritualProgress,
   ritualStepsFor,
   ritualRequiredFor,
   meetsRequirements,
@@ -2842,8 +2843,7 @@ function RitualPerformancePanel({
   if (isRitualComplete(session, target)) return null;
 
   const steps = ritualStepsFor(session, target);
-  const completed =
-    session.ritualState?.targetSeq === target ? session.ritualState.stepsCompleted : 0;
+  const completed = ritualProgress(session, target);
   const roleName = targetSeq?.name ?? `Sequence ${target}`;
 
   return (

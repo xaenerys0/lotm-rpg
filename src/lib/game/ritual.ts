@@ -118,14 +118,25 @@ export function isRitualComplete(session: GameSession, targetSeq: number): boole
   return state !== undefined && state.targetSeq === targetSeq && state.complete;
 }
 
+/**
+ * How many steps of the rite for `targetSeq` have been performed — 0 when no
+ * rite is in progress or it is tracking a different target. The single source of
+ * truth for "where am I in this rite", shared by `currentRitualStep` and the UI
+ * progress display.
+ */
+export function ritualProgress(session: GameSession, targetSeq: number): number {
+  return session.ritualState?.targetSeq === targetSeq
+    ? session.ritualState.stepsCompleted
+    : 0;
+}
+
 /** The text of the next step to enact, or `null` when there is none/done. */
 export function currentRitualStep(
   session: GameSession,
   targetSeq: number,
 ): string | null {
   const steps = ritualStepsFor(session, targetSeq);
-  const done =
-    session.ritualState?.targetSeq === targetSeq ? session.ritualState.stepsCompleted : 0;
+  const done = ritualProgress(session, targetSeq);
   return done < steps.length ? steps[done] : null;
 }
 
