@@ -64,6 +64,21 @@ describe("trueGodName", () => {
     expect(Object.keys(TRUE_GOD_NAMES).length).toBe(22);
   });
 
+  it("matches canon Seq 0 names except the Fool's intentional article", () => {
+    // The wiki Seq 0 entry key is the bare pathway name; TRUE_GOD_NAMES mirrors
+    // it for all pathways save the Fool, whose honorific is the definite-article
+    // "The Fool" by design (the Lord of Mysteries' canon title). This guards
+    // that deliberate divergence so it can't be accidentally widened.
+    for (let id = 1; id <= 22; id++) {
+      if (id === 1) {
+        expect(TRUE_GOD_NAMES[id]).toBe("The Fool");
+        expect(SEQUENCE_NAMES[id][0]).toBe("Fool");
+      } else {
+        expect(TRUE_GOD_NAMES[id], `pathway ${id}`).toBe(SEQUENCE_NAMES[id][0]);
+      }
+    }
+  });
+
   it("falls back to the pathway name (or a generic) for unknown ids", () => {
     expect(trueGodName(999)).toBe("True God");
   });
