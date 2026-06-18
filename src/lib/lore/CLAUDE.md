@@ -52,7 +52,7 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 - `pathway-door.ts` — Door pathway lore (Seq 9-5).
 - `pathway-error.ts` — Error pathway lore (Seq 9-5).
 - `pathway-hanged-man.ts` — Hanged Man pathway lore (Seq 9-5).
-- `pathway-{white-tower,twilight-giant,justiciar,black-emperor,red-priest,demoness,mother,moon,hermit,paragon,wheel-of-fortune,abyss,chained}.ts` — The thirteen additional pathways (issue #28). Each holds a single player-safe **overview** entry (family/group + the canon Seq 9-5 progression); per-sequence lore depth awaits the novel source. The `pathway` field is the lowercased full name with spaces (e.g. `"white tower"`) so `selectCuratedLore` matches it.
+- `pathway-{white-tower,twilight-giant,justiciar,black-emperor,red-priest,demoness,mother,moon,hermit,paragon,wheel-of-fortune,abyss,chained}.ts` — The thirteen additional pathways (issue #28). Each holds a single player-safe **overview** entry naming the **full canon Seq 9 → 0 progression** (issue #99 Part A added the Saint/Angel/King-of-Angels rungs Seq 4-1 and the Sequence 0 Above-the-Sequence title — the rung names are canon, deeper per-sequence lore prose still awaits the novel source). The `pathway` field is the lowercased full name with spaces (e.g. `"white tower"`) so `selectCuratedLore` matches it.
 - `index.ts` — Re-exports and query helpers (`getLoreByCategory`, `getLoreByPathway`, `getLoreByEpoch`, `getLoreByEpochSetting`, etc.). `getLoreByEpochSetting(epoch)` returns the era's `metaphysics` overview entries (no city/faction) that `selectCuratedLore` injects so a character always carries its own epoch's world context regardless of the prose `startingLocation`.
 - `lore.test.ts` — Data integrity tests.
 

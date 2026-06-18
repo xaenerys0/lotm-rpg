@@ -23,7 +23,13 @@ import type { GameSession } from "./types";
 // Pure + deterministic under injected randomness; storage and AI narration
 // stay in the React layer like every other session subsystem.
 
-/** Canon honorific assumed on attaining Sequence 0, per pathway id. */
+/**
+ * Canon honorific assumed on attaining Sequence 0, per pathway id. The Seq 0
+ * title is the pathway's Above-the-Sequence name (the wiki
+ * Module:Sequence/standard Seq 0 entry — e.g. the Fool, the White Tower); the
+ * Fool keeps its definite-article styling. All twenty-two are covered (issue
+ * #99 Part A); `trueGodName` still falls back to the pathway name for safety.
+ */
 export const TRUE_GOD_NAMES: Record<number, string> = {
   1: "The Fool",
   2: "Visionary",
@@ -34,6 +40,19 @@ export const TRUE_GOD_NAMES: Record<number, string> = {
   7: "Door",
   8: "Error",
   9: "Hanged Man",
+  10: "White Tower",
+  11: "Twilight Giant",
+  12: "Justiciar",
+  13: "Black Emperor",
+  14: "Red Priest",
+  15: "Demoness",
+  16: "Mother",
+  17: "Moon",
+  18: "Hermit",
+  19: "Paragon",
+  20: "Wheel of Fortune",
+  21: "Abyss",
+  22: "Chained",
 };
 
 export function trueGodName(pathwayId: number): string {

@@ -23,3 +23,8 @@ export {
 } from "./laws";
 
 export { validateAdvancement, validateTransfer } from "./validation";
+
+// Canon sequence names (generated from corpus/wiki Module:Sequence/standard) —
+// the source of truth the reconciliation test holds pathways.ts + TRUE_GOD_NAMES
+// against (issue #99 Part A).
+export { SEQUENCE_NAMES } from "./sequence-names-canon";

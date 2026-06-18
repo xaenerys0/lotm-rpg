@@ -292,6 +292,242 @@ const whiteTowerSequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Prophet",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Prophecy",
+        description:
+          "Speak prophecies that lend the foretold future a weight of inevitability, bending events toward their predicted shape",
+        type: "active",
+      },
+      {
+        name: "Sealed Analysis",
+        description:
+          "Analyse a Beyonder power up to the Saint tier and reproduce it through Imitation, copying what you fully comprehend",
+        type: "active",
+      },
+      {
+        name: "Mystical Erudition",
+        description:
+          "A Saint's spirituality sharpens reason toward near-omniscient deduction within all you can observe",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Prophet, leaning into the pathway of white tower",
+      "Practise memory in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Prophet Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Prophet potion of the White Tower pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Mysticism Magister Characteristic",
+        description:
+          "The Beyonder characteristic of a Mysticism Magister, the core ingredient distilled for the Prophet advancement of the White Tower pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Knowledge and Wisdom, measured to the Prophet formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Prophet: digest the potion through faithful acting, then perform the White Tower pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Prophet potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Knowledge and Wisdom at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Cognizer",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Cognition of Truth",
+        description:
+          "Perceive the underlying principle and hidden flaw of a thing simply by reasoning upon it",
+        type: "active",
+      },
+      {
+        name: "Thought Acceleration",
+        description:
+          "Run countless lines of deduction at once, resolving in moments what others could not in years",
+        type: "passive",
+      },
+      {
+        name: "Conferral of Knowledge",
+        description:
+          "Grant sudden understanding to a willing mind or seal a truth away from an unwilling one",
+        type: "active",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Cognizer, leaning into the pathway of white tower",
+      "Practise memory in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Cognizer Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Cognizer potion of the White Tower pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Prophet Characteristic",
+        description:
+          "The Beyonder characteristic of a Prophet, the core ingredient distilled for the Cognizer advancement of the White Tower pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Knowledge and Wisdom, measured to the Cognizer formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Cognizer: digest the potion through faithful acting, then perform the White Tower pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Cognizer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Knowledge and Wisdom at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Wisdom Angel",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Angelic Omniscience",
+        description:
+          "Within your domain of knowledge the world lies open — few questions can be put to you that you cannot answer",
+        type: "active",
+      },
+      {
+        name: "Authority of Wisdom",
+        description:
+          "Command the principles of reason and revelation as an Angel of the White Tower",
+        type: "active",
+      },
+      {
+        name: "Overflowing Spirituality",
+        description:
+          "An Angel's spirituality renders ordinary harm meaningless, yet without anchors it strains toward the mythical form",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Wisdom Angel, leaning into the pathway of white tower",
+      "Practise memory in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Wisdom Angel Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Wisdom Angel potion of the White Tower pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Cognizer Characteristic",
+        description:
+          "The Beyonder characteristic of a Cognizer, the core ingredient distilled for the Wisdom Angel advancement of the White Tower pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Wisdom Angel: digest the potion through faithful acting, then perform the White Tower pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Wisdom Angel potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Knowledge and Wisdom at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Omniscient Eye",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "All-Seeing Gaze",
+        description:
+          "Open the Omniscient Eye to read truths across distance, concealment, and the veils of time",
+        type: "active",
+      },
+      {
+        name: "Foreknowledge",
+        description:
+          "Read the threads of what is to come and act upon them before they come to pass",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "The boundless spirituality of a King of Angels verges on godhood and will overwrite you without unfailing anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Omniscient Eye, leaning into the pathway of white tower",
+      "Practise memory in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Omniscient Eye Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Omniscient Eye potion of the White Tower pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Wisdom Angel Characteristic",
+        description:
+          "The Beyonder characteristic of a Wisdom Angel, the core ingredient distilled for the Omniscient Eye advancement of the White Tower pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Omniscient Eye: digest the potion through faithful acting, then perform the White Tower pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Omniscient Eye potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Knowledge and Wisdom at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
 ];
 
 const twilightGiantSequences: Sequence[] = [
@@ -580,6 +816,242 @@ const twilightGiantSequences: Sequence[] = [
         "Advance beyond Guardian: digest the potion through faithful acting, then perform the Twilight Giant pathway's ascent rite without losing yourself",
       requirements: [
         "Fully digest the Guardian potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Twilight, Decay and Glory at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Demon Hunter",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Demon-Hunting Might",
+        description:
+          "Channel a Saint's strength into blows that shatter monsters and Beyonders far above mortal scale",
+        type: "active",
+      },
+      {
+        name: "Banishing Light",
+        description:
+          "Loose searing twilight radiance that burns corruption and the undying back into the dark",
+        type: "active",
+      },
+      {
+        name: "Indomitable Frame",
+        description:
+          "A Saint of Twilight endures wounds that would fell an army, flesh hardened against decay",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Demon Hunter, leaning into the pathway of twilight giant",
+      "Practise overwhelming strength in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Demon Hunter Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Demon Hunter potion of the Twilight Giant pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Guardian Characteristic",
+        description:
+          "The Beyonder characteristic of a Guardian, the core ingredient distilled for the Demon Hunter advancement of the Twilight Giant pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Twilight, Decay and Glory, measured to the Demon Hunter formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Demon Hunter: digest the potion through faithful acting, then perform the Twilight Giant pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Demon Hunter potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Twilight, Decay and Glory at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Silver Knight",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Silver Aegis",
+        description:
+          "Clad yourself in silver glory that turns aside blades, spells, and curses alike",
+        type: "active",
+      },
+      {
+        name: "Glorious Charge",
+        description:
+          "Cross any distance in a single devastating advance, crushing what stands in your path",
+        type: "active",
+      },
+      {
+        name: "Twilight Vigil",
+        description:
+          "Stand sleepless watch over the failing day, sensing decay and threat across a battlefield",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Silver Knight, leaning into the pathway of twilight giant",
+      "Practise overwhelming strength in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Silver Knight Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Silver Knight potion of the Twilight Giant pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Demon Hunter Characteristic",
+        description:
+          "The Beyonder characteristic of a Demon Hunter, the core ingredient distilled for the Silver Knight advancement of the Twilight Giant pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Twilight, Decay and Glory, measured to the Silver Knight formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Silver Knight: digest the potion through faithful acting, then perform the Twilight Giant pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Silver Knight potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Twilight, Decay and Glory at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Glory",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Embodied Glory",
+        description:
+          "Become a beacon of glory that emboldens allies and unmakes the resolve of foes",
+        type: "active",
+      },
+      {
+        name: "Cataclysmic Strength",
+        description:
+          "Strike with the gathered force of the dying epoch, levelling fortresses with a blow",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but bleeds toward the Twilight Giant's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Glory, leaning into the pathway of twilight giant",
+      "Practise overwhelming strength in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Glory Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Glory potion of the Twilight Giant pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Silver Knight Characteristic",
+        description:
+          "The Beyonder characteristic of a Silver Knight, the core ingredient distilled for the Glory advancement of the Twilight Giant pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Glory: digest the potion through faithful acting, then perform the Twilight Giant pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Glory potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Twilight, Decay and Glory at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Hand of God",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Hand of God",
+        description:
+          "Bring down judgement as the very hand of a god, an irresistible blow against any single foe",
+        type: "active",
+      },
+      {
+        name: "Glory Incarnate",
+        description:
+          "Radiate a glory so total that lesser Beyonders cannot raise their will against you",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality borders on godhood and demands unbroken anchors to keep you yourself",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Hand of God, leaning into the pathway of twilight giant",
+      "Practise overwhelming strength in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Hand of God Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Hand of God potion of the Twilight Giant pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Glory Characteristic",
+        description:
+          "The Beyonder characteristic of a Glory, the core ingredient distilled for the Hand of God advancement of the Twilight Giant pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Hand of God: digest the potion through faithful acting, then perform the Twilight Giant pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Hand of God potion by acting in accordance with the sequence",
         "Carry out the ritual aligned to Twilight, Decay and Glory at the proper place and hour",
         "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
       ],
@@ -885,6 +1357,242 @@ const justiciarSequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Imperative Mage",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Imperative Decree",
+        description:
+          "Speak a binding command that the lawful and the bound cannot disobey",
+        type: "active",
+      },
+      {
+        name: "Law Weaving",
+        description:
+          "Lay down localised rules of conduct that reality enforces within a consecrated bound",
+        type: "active",
+      },
+      {
+        name: "Judge's Discernment",
+        description:
+          "A Saint of Order weighs guilt and truth at a glance, unmoved by deceit",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Imperative Mage, leaning into the pathway of justiciar",
+      "Practise setting binding laws in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Imperative Mage Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Imperative Mage potion of the Justiciar pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Disciplinary Paladin Characteristic",
+        description:
+          "The Beyonder characteristic of a Disciplinary Paladin, the core ingredient distilled for the Imperative Mage advancement of the Justiciar pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Order, measured to the Imperative Mage formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Imperative Mage: digest the potion through faithful acting, then perform the Justiciar pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Imperative Mage potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Chaos Hunter",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Chaos Hunt",
+        description:
+          "Track and suppress agents of disorder, your authority smothering their stolen powers",
+        type: "active",
+      },
+      {
+        name: "Binding Sentence",
+        description:
+          "Pass a sentence that fetters a target's body, fortune, or will to the letter of your law",
+        type: "active",
+      },
+      {
+        name: "Aura of Order",
+        description:
+          "Disorderly powers falter and misfire in your presence, the world bending toward your rule",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Chaos Hunter, leaning into the pathway of justiciar",
+      "Practise setting binding laws in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Chaos Hunter Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Chaos Hunter potion of the Justiciar pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Imperative Mage Characteristic",
+        description:
+          "The Beyonder characteristic of an Imperative Mage, the core ingredient distilled for the Chaos Hunter advancement of the Justiciar pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Order, measured to the Chaos Hunter formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Chaos Hunter: digest the potion through faithful acting, then perform the Justiciar pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Chaos Hunter potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Balancer",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "The Balance",
+        description:
+          "Hold the scales of order and chaos, restoring or withdrawing equilibrium across a region",
+        type: "active",
+      },
+      {
+        name: "Authority of Law",
+        description:
+          "Command the principle of Order as an Angel, your decrees carrying near-absolute weight",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but pulls toward the mythical Justiciar without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Balancer, leaning into the pathway of justiciar",
+      "Practise setting binding laws in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Balancer Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Balancer potion of the Justiciar pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Chaos Hunter Characteristic",
+        description:
+          "The Beyonder characteristic of a Chaos Hunter, the core ingredient distilled for the Balancer advancement of the Justiciar pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Balancer: digest the potion through faithful acting, then perform the Justiciar pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Balancer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Hand of Order",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Hand of Order",
+        description:
+          "Enact Order itself, your judgements rewriting the rules a place lives by",
+        type: "active",
+      },
+      {
+        name: "Absolute Edict",
+        description:
+          "Issue an edict so authoritative that even powerful Beyonders are compelled to obey",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality verges on godhood and unravels you without unfailing anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Hand of Order, leaning into the pathway of justiciar",
+      "Practise setting binding laws in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Hand of Order Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Hand of Order potion of the Justiciar pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Balancer Characteristic",
+        description:
+          "The Beyonder characteristic of a Balancer, the core ingredient distilled for the Hand of Order advancement of the Justiciar pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Hand of Order: digest the potion through faithful acting, then perform the Justiciar pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Hand of Order potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
 ];
 
 const blackEmperorSequences: Sequence[] = [
@@ -1164,6 +1872,242 @@ const blackEmperorSequences: Sequence[] = [
       requirements: [
         "Fully digest the Mentor of Disorder potion by acting in accordance with the sequence",
         "Carry out the ritual aligned to Disorder, the hidden faults of Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Earl of the Fallen",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Corruption's Gift",
+        description:
+          "Tempt and corrupt others into your service, bending the fallen to your design",
+        type: "active",
+      },
+      {
+        name: "Entropy Touch",
+        description:
+          "Sow decay and disorder into structures, oaths, and Beyonder powers, hastening their collapse",
+        type: "active",
+      },
+      {
+        name: "Fallen Resilience",
+        description:
+          "A Saint of Disorder thrives amid ruin, strengthened by the chaos it spreads",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Earl of the Fallen, leaning into the pathway of black emperor",
+      "Practise loophole exploitation in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Earl of the Fallen Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Earl of the Fallen potion of the Black Emperor pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Mentor of Disorder Characteristic",
+        description:
+          "The Beyonder characteristic of a Mentor of Disorder, the core ingredient distilled for the Earl of the Fallen advancement of the Black Emperor pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Disorder and the hidden faults of Order, measured to the Earl of the Fallen formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Earl of the Fallen: digest the potion through faithful acting, then perform the Black Emperor pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Earl of the Fallen potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Disorder and the hidden faults of Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Frenzied Mage",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Frenzied Casting",
+        description:
+          "Unleash disorderly magic that defies its own rules, unpredictable and hard to counter",
+        type: "active",
+      },
+      {
+        name: "Loophole Mastery",
+        description:
+          "Find and exploit the hidden fault in any law, contract, or ritual to undo it",
+        type: "active",
+      },
+      {
+        name: "Aura of Ruin",
+        description:
+          "Order and structure fray around you, allies of the law weakening in your shadow",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Frenzied Mage, leaning into the pathway of black emperor",
+      "Practise loophole exploitation in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Frenzied Mage Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Frenzied Mage potion of the Black Emperor pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Earl of the Fallen Characteristic",
+        description:
+          "The Beyonder characteristic of an Earl of the Fallen, the core ingredient distilled for the Frenzied Mage advancement of the Black Emperor pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Disorder and the hidden faults of Order, measured to the Frenzied Mage formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Frenzied Mage: digest the potion through faithful acting, then perform the Black Emperor pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Frenzied Mage potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Disorder and the hidden faults of Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Duke of Entropy",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Duke of Entropy",
+        description:
+          "Accelerate the heat-death of a place — machines fail, oaths break, fortunes scatter",
+        type: "active",
+      },
+      {
+        name: "Authority of Disorder",
+        description:
+          "Command the principle of Disorder as an Angel, unmaking the rules others rely upon",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but slides toward the Black Emperor's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Duke of Entropy, leaning into the pathway of black emperor",
+      "Practise loophole exploitation in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Duke of Entropy Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Duke of Entropy potion of the Black Emperor pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Frenzied Mage Characteristic",
+        description:
+          "The Beyonder characteristic of a Frenzied Mage, the core ingredient distilled for the Duke of Entropy advancement of the Black Emperor pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Duke of Entropy: digest the potion through faithful acting, then perform the Black Emperor pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Duke of Entropy potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Disorder and the hidden faults of Order at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Prince of Abolition",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Abolition",
+        description:
+          "Abolish a law, institution, or binding power outright, dissolving what once held",
+        type: "active",
+      },
+      {
+        name: "Throne of the Fallen",
+        description:
+          "Rally the corrupt and the disordered to your banner as their unquestioned prince",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality borders on godhood and overwrites you without constant anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Prince of Abolition, leaning into the pathway of black emperor",
+      "Practise loophole exploitation in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Prince of Abolition Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Prince of Abolition potion of the Black Emperor pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Duke of Entropy Characteristic",
+        description:
+          "The Beyonder characteristic of a Duke of Entropy, the core ingredient distilled for the Prince of Abolition advancement of the Black Emperor pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Prince of Abolition: digest the potion through faithful acting, then perform the Black Emperor pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Prince of Abolition potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Disorder and the hidden faults of Order at the proper place and hour",
         "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
       ],
     },
@@ -1482,6 +2426,241 @@ const redPriestSequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Iron-blooded Knight",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Iron Blood",
+        description:
+          "Forge your blood into weapons and armour, fighting on through wounds that would end others",
+        type: "active",
+      },
+      {
+        name: "War Fire",
+        description:
+          "Call down disciplined flame that scours the field and rallies your war-host",
+        type: "active",
+      },
+      {
+        name: "Battle Saint's Vigor",
+        description:
+          "A Saint of War grows stronger the longer the battle rages, fed by destruction",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Iron-blooded Knight, leaning into the pathway of red priest",
+      "Practise fire in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Iron-blooded Knight Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Iron-blooded Knight potion of the Red Priest pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Reaper Characteristic",
+        description:
+          "The Beyonder characteristic of a Reaper, the core ingredient distilled for the Iron-blooded Knight advancement of the Red Priest pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to War and Destruction, measured to the Iron-blooded Knight formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Iron-blooded Knight: digest the potion through faithful acting, then perform the Red Priest pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Iron-blooded Knight potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to War and Destruction at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "War Bishop",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Rite of War",
+        description:
+          "Bless a host so that their courage, aim, and ferocity rise beyond mortal limit",
+        type: "active",
+      },
+      {
+        name: "Pyre Judgement",
+        description: "Render foes and their works to ash in a consecrated conflagration",
+        type: "active",
+      },
+      {
+        name: "Aura of Destruction",
+        description:
+          "Fragile things crack and burn near you, the world tilting toward ruin in your wake",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a War Bishop, leaning into the pathway of red priest",
+      "Practise fire in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "War Bishop Potion Formula",
+        description:
+          "The recipe for the Sequence 3 War Bishop potion of the Red Priest pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Iron-blooded Knight Characteristic",
+        description:
+          "The Beyonder characteristic of an Iron-blooded Knight, the core ingredient distilled for the War Bishop advancement of the Red Priest pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to War and Destruction, measured to the War Bishop formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond War Bishop: digest the potion through faithful acting, then perform the Red Priest pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the War Bishop potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to War and Destruction at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Weather Warlock",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Weather of War",
+        description:
+          "Command storm, drought, and tempest to break armies and bend a campaign",
+        type: "active",
+      },
+      {
+        name: "Authority of War",
+        description:
+          "Wield the principle of War and Destruction as an Angel, an avatar of conflict",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but burns toward the Red Priest's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Weather Warlock, leaning into the pathway of red priest",
+      "Practise fire in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Weather Warlock Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Weather Warlock potion of the Red Priest pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 War Bishop Characteristic",
+        description:
+          "The Beyonder characteristic of a War Bishop, the core ingredient distilled for the Weather Warlock advancement of the Red Priest pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Weather Warlock: digest the potion through faithful acting, then perform the Red Priest pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Weather Warlock potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to War and Destruction at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Conqueror",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Conquest",
+        description:
+          "Subdue whole hosts and regions, your will to conquer made manifest and irresistible",
+        type: "active",
+      },
+      {
+        name: "All-Consuming Pyre",
+        description:
+          "Raise a fire of destruction vast enough to unmake a city, sparing only what you choose",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality verges on godhood and consumes you without unbroken anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Conqueror, leaning into the pathway of red priest",
+      "Practise fire in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Conqueror Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Conqueror potion of the Red Priest pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Weather Warlock Characteristic",
+        description:
+          "The Beyonder characteristic of a Weather Warlock, the core ingredient distilled for the Conqueror advancement of the Red Priest pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Conqueror: digest the potion through faithful acting, then perform the Red Priest pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Conqueror potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to War and Destruction at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
 ];
 
 const demonessSequences: Sequence[] = [
@@ -1660,7 +2839,7 @@ const demonessSequences: Sequence[] = [
   },
   {
     level: 6,
-    name: "Demoness of Pleasure",
+    name: "Pleasure",
     classification: "Mid",
     abilities: [
       {
@@ -1688,35 +2867,35 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Demoness of Pleasure, leaning into the pathway of demoness",
+      "Live the role of a Pleasure, leaning into the pathway of demoness",
       "Practise assassination in keeping with your sequence",
       "Let the act deceive the characteristic's imprint until the potion is digested",
     ],
     prerequisiteItems: [
       {
-        name: "Demoness of Pleasure Potion Formula",
+        name: "Pleasure Potion Formula",
         description:
-          "The recipe for the Sequence 6 Demoness of Pleasure potion of the Demoness pathway",
+          "The recipe for the Sequence 6 Pleasure potion of the Demoness pathway",
         category: "potion-formula",
       },
       {
         name: "Sequence 6 Demoness Beyonder Characteristic",
         description:
-          "The core supernatural ingredient of the Demoness of Pleasure potion, carrying the Demoness pathway's imprint",
+          "The core supernatural ingredient of the Pleasure potion, carrying the Demoness pathway's imprint",
         category: "main-ingredient",
       },
       {
         name: "Symbolic Supplementary Ingredients",
         description:
-          "Rare materials attuned to the Return of All Things to Chaos, Femininity and Charm, measured to the Demoness of Pleasure formula's exacting proportions",
+          "Rare materials attuned to the Return of All Things to Chaos, Femininity and Charm, measured to the Pleasure formula's exacting proportions",
         category: "supplementary-ingredient",
       },
     ],
     advancementRitual: {
       description:
-        "Advance beyond Demoness of Pleasure: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+        "Advance beyond Pleasure: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
       requirements: [
-        "Fully digest the Demoness of Pleasure potion by acting in accordance with the sequence",
+        "Fully digest the Pleasure potion by acting in accordance with the sequence",
         "Carry out the ritual aligned to the Return of All Things to Chaos, Femininity and Charm at the proper place and hour",
         "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
       ],
@@ -1724,65 +2903,297 @@ const demonessSequences: Sequence[] = [
   },
   {
     level: 5,
-    name: "Demoness of Affliction",
+    name: "Affliction",
     classification: "Mid",
     abilities: [
       {
         name: "Disease",
         description:
-          "A Demoness of Affliction can create multiple airborne pathogens that have their infection speed and the onset of diseases supernaturally accelerated",
+          "An Affliction can create multiple airborne pathogens that have their infection speed and the onset of diseases supernaturally accelerated",
         type: "active",
       },
       {
         name: "Threads",
-        description:
-          "A Demoness of Affliction 's Threads have been significantly enhanced",
+        description: "An Affliction's Threads have been significantly enhanced",
         type: "active",
       },
       {
         name: "Charm",
-        description:
-          "A Demoness of Affliction can now use their Charm as an active ability",
+        description: "An Affliction can now use their Charm as an active ability",
         type: "active",
       },
       {
         name: "Dark Magic",
-        description:
-          "A Demoness of Affliction's Dark Magic capabilities have also been enhanced",
+        description: "An Affliction's Dark Magic capabilities have also been enhanced",
         type: "passive",
       },
     ],
     actingRequirements: [
-      "Live the role of a Demoness of Affliction, leaning into the pathway of demoness",
+      "Live the role of an Affliction, leaning into the pathway of demoness",
       "Practise assassination in keeping with your sequence",
       "Let the act deceive the characteristic's imprint until the potion is digested",
     ],
     prerequisiteItems: [
       {
-        name: "Demoness of Affliction Potion Formula",
+        name: "Affliction Potion Formula",
         description:
-          "The recipe for the Sequence 5 Demoness of Affliction potion of the Demoness pathway",
+          "The recipe for the Sequence 5 Affliction potion of the Demoness pathway",
         category: "potion-formula",
       },
       {
         name: "Sequence 5 Demoness Beyonder Characteristic",
         description:
-          "The core supernatural ingredient of the Demoness of Affliction potion, carrying the Demoness pathway's imprint",
+          "The core supernatural ingredient of the Affliction potion, carrying the Demoness pathway's imprint",
         category: "main-ingredient",
       },
       {
         name: "Symbolic Supplementary Ingredients",
         description:
-          "Rare materials attuned to the Return of All Things to Chaos, Femininity and Charm, measured to the Demoness of Affliction formula's exacting proportions",
+          "Rare materials attuned to the Return of All Things to Chaos, Femininity and Charm, measured to the Affliction formula's exacting proportions",
         category: "supplementary-ingredient",
       },
     ],
     advancementRitual: {
       description:
-        "Advance beyond Demoness of Affliction: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+        "Advance beyond Affliction: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
       requirements: [
-        "Fully digest the Demoness of Affliction potion by acting in accordance with the sequence",
+        "Fully digest the Affliction potion by acting in accordance with the sequence",
         "Carry out the ritual aligned to the Return of All Things to Chaos, Femininity and Charm at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Despair",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Wave of Despair",
+        description:
+          "Flood the hearts of all who behold you with hopelessness that saps their will to resist",
+        type: "active",
+      },
+      {
+        name: "Charm's Ruin",
+        description:
+          "Bind admirers and foes alike with irresistible allure, then turn their devotion to calamity",
+        type: "active",
+      },
+      {
+        name: "Saint's Allure",
+        description:
+          "A Saint of the Demoness compels fascination, harm sliding off her like water",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Despair, leaning into the pathway of demoness",
+      "Practise assassination in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Despair Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Despair potion of the Demoness pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Affliction Characteristic",
+        description:
+          "The Beyonder characteristic of an Affliction, the core ingredient distilled for the Despair advancement of the Demoness pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Chaos, Femininity and Charm, measured to the Despair formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Despair: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Despair potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Chaos, Femininity and Charm at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Unaging",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Unaging Flesh",
+        description:
+          "Halt your own decay and mend grievous wounds, your beauty and youth unbroken by time",
+        type: "active",
+      },
+      {
+        name: "Chaos Caress",
+        description: "Sow chaos and undoing through a touch or a whispered promise",
+        type: "active",
+      },
+      {
+        name: "Aura of Temptation",
+        description:
+          "Order and restraint fray around you as desire and ruin take root in every heart",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Unaging, leaning into the pathway of demoness",
+      "Practise assassination in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Unaging Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Unaging potion of the Demoness pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Despair Characteristic",
+        description:
+          "The Beyonder characteristic of a Despair, the core ingredient distilled for the Unaging advancement of the Demoness pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Chaos, Femininity and Charm, measured to the Unaging formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Unaging: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Unaging potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Chaos, Femininity and Charm at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Catastrophe",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Catastrophe",
+        description:
+          "Call down disaster upon a place — its order, fortune, and safety collapsing together",
+        type: "active",
+      },
+      {
+        name: "Authority of Chaos",
+        description:
+          "Wield the Return of All Things to Chaos as an Angel, undoing what was made",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but draws toward the Demoness's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Catastrophe, leaning into the pathway of demoness",
+      "Practise assassination in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Catastrophe Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Catastrophe potion of the Demoness pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Unaging Characteristic",
+        description:
+          "The Beyonder characteristic of an Unaging, the core ingredient distilled for the Catastrophe advancement of the Demoness pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Catastrophe: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Catastrophe potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Chaos, Femininity and Charm at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Apocalypse",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Apocalypse",
+        description:
+          "Unleash ruin on the scale of an ending, charm and chaos fused into a tide nothing withstands",
+        type: "active",
+      },
+      {
+        name: "Empress of Calamity",
+        description:
+          "Rule the desperate and the smitten as their apocalypse-bringing queen",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality borders on godhood and dissolves you without ceaseless anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Apocalypse, leaning into the pathway of demoness",
+      "Practise assassination in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Apocalypse Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Apocalypse potion of the Demoness pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Catastrophe Characteristic",
+        description:
+          "The Beyonder characteristic of a Catastrophe, the core ingredient distilled for the Apocalypse advancement of the Demoness pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Apocalypse: digest the potion through faithful acting, then perform the Demoness pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Apocalypse potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Chaos, Femininity and Charm at the proper place and hour",
         "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
       ],
     },
@@ -2079,6 +3490,242 @@ const motherSequences: Sequence[] = [
         "Advance beyond Druid: digest the potion through faithful acting, then perform the Mother pathway's ascent rite without losing yourself",
       requirements: [
         "Fully digest the Druid potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Life, Growth and Creation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Classical Alchemist",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Classical Transmutation",
+        description:
+          "Transmute matter and living tissue through the old alchemy, mending or remaking the body",
+        type: "active",
+      },
+      {
+        name: "Bloom of Life",
+        description:
+          "Quicken growth and healing across a region, raising verdant life from barren ground",
+        type: "active",
+      },
+      {
+        name: "Saint's Vitality",
+        description:
+          "A Saint of Life overflows with vigour, wounds closing as fast as they are dealt",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Classical Alchemist, leaning into the pathway of mother",
+      "Practise life in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Classical Alchemist Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Classical Alchemist potion of the Mother pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Druid Characteristic",
+        description:
+          "The Beyonder characteristic of a Druid, the core ingredient distilled for the Classical Alchemist advancement of the Mother pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Life, Growth and Creation, measured to the Classical Alchemist formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Classical Alchemist: digest the potion through faithful acting, then perform the Mother pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Classical Alchemist potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Life, Growth and Creation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Pallbearer",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Pallbearer's Passage",
+        description:
+          "Usher life and death across their threshold, returning the newly fallen or laying the restless to rest",
+        type: "active",
+      },
+      {
+        name: "Cycle Mastery",
+        description:
+          "Bend the cycle of growth, decay, and rebirth to your design within a consecrated land",
+        type: "active",
+      },
+      {
+        name: "Aura of Growth",
+        description:
+          "Life flourishes wildly in your presence, the very soil answering your mood",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Pallbearer, leaning into the pathway of mother",
+      "Practise life in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Pallbearer Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Pallbearer potion of the Mother pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Classical Alchemist Characteristic",
+        description:
+          "The Beyonder characteristic of a Classical Alchemist, the core ingredient distilled for the Pallbearer advancement of the Mother pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Life, Growth and Creation, measured to the Pallbearer formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Pallbearer: digest the potion through faithful acting, then perform the Mother pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Pallbearer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Life, Growth and Creation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Desolate Matriarch",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Desolate Matriarch",
+        description:
+          "Command the cycle of life over a desolation, raising abundance or withering it at will",
+        type: "active",
+      },
+      {
+        name: "Authority of Life",
+        description:
+          "Wield the principle of Life and Growth as an Angel, mother to a region's living things",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but pulls toward the Mother's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Desolate Matriarch, leaning into the pathway of mother",
+      "Practise life in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Desolate Matriarch Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Desolate Matriarch potion of the Mother pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Pallbearer Characteristic",
+        description:
+          "The Beyonder characteristic of a Pallbearer, the core ingredient distilled for the Desolate Matriarch advancement of the Mother pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Desolate Matriarch: digest the potion through faithful acting, then perform the Mother pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Desolate Matriarch potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Life, Growth and Creation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Naturewalker",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Naturewalker",
+        description:
+          "Walk as the will of nature itself, forests and beasts moving to your unspoken command",
+        type: "active",
+      },
+      {
+        name: "Genesis",
+        description:
+          "Call new life into being and remake a ruined land into a living world",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality verges on godhood and overgrows your self without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Naturewalker, leaning into the pathway of mother",
+      "Practise life in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Naturewalker Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Naturewalker potion of the Mother pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Desolate Matriarch Characteristic",
+        description:
+          "The Beyonder characteristic of a Desolate Matriarch, the core ingredient distilled for the Naturewalker advancement of the Mother pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Naturewalker: digest the potion through faithful acting, then perform the Mother pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Naturewalker potion by acting in accordance with the sequence",
         "Carry out the ritual aligned to Life, Growth and Creation at the proper place and hour",
         "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
       ],
@@ -2398,6 +4045,242 @@ const moonSequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Shaman King",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Shaman's Summons",
+        description:
+          "Summon and bind spirits and beasts to fight and serve as a king of the old rites",
+        type: "active",
+      },
+      {
+        name: "Blood Rite",
+        description:
+          "Spend blood to fuel potent transformations, curses, and restorations",
+        type: "active",
+      },
+      {
+        name: "Saint's Regeneration",
+        description:
+          "A Saint of the Moon mends wounds with eerie speed, blood answering blood",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Shaman King, leaning into the pathway of moon",
+      "Practise potent restorative and buffing potions in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Shaman King Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Shaman King potion of the Moon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Scarlet Scholar Characteristic",
+        description:
+          "The Beyonder characteristic of a Scarlet Scholar, the core ingredient distilled for the Shaman King advancement of the Moon pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Fertility and Proliferation, measured to the Shaman King formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Shaman King: digest the potion through faithful acting, then perform the Moon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Shaman King potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Fertility and Proliferation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "High Summoner",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "High Summoning",
+        description:
+          "Call forth greater spirits, vampiric thralls, and night-creatures under your dominion",
+        type: "active",
+      },
+      {
+        name: "Lunar Transformation",
+        description:
+          "Reshape flesh — your own or another's — under the moon's fertile, mutable power",
+        type: "active",
+      },
+      {
+        name: "Aura of Night",
+        description:
+          "Night and moonlight bend to you, the creatures of the dark sensing their sovereign",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a High Summoner, leaning into the pathway of moon",
+      "Practise potent restorative and buffing potions in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "High Summoner Potion Formula",
+        description:
+          "The recipe for the Sequence 3 High Summoner potion of the Moon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Shaman King Characteristic",
+        description:
+          "The Beyonder characteristic of a Shaman King, the core ingredient distilled for the High Summoner advancement of the Moon pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Fertility and Proliferation, measured to the High Summoner formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond High Summoner: digest the potion through faithful acting, then perform the Moon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the High Summoner potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Fertility and Proliferation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Life-Giver",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Life-Giver",
+        description:
+          "Grant life and Beyonder gifts to the willing, siring spirits, thralls, and kindred",
+        type: "active",
+      },
+      {
+        name: "Authority of Fertility",
+        description:
+          "Wield the principle of Fertility and Proliferation as an Angel of the Moon",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but bleeds toward the Moon's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Life-Giver, leaning into the pathway of moon",
+      "Practise potent restorative and buffing potions in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Life-Giver Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Life-Giver potion of the Moon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 High Summoner Characteristic",
+        description:
+          "The Beyonder characteristic of a High Summoner, the core ingredient distilled for the Life-Giver advancement of the Moon pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Life-Giver: digest the potion through faithful acting, then perform the Moon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Life-Giver potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Fertility and Proliferation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Beauty Goddess",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Beauty Goddess",
+        description:
+          "Reign as the night's sovereign beauty, your charm and blood-rule near absolute",
+        type: "active",
+      },
+      {
+        name: "Proliferation",
+        description:
+          "Multiply life, thralls, and kindred across a domain until it answers only to you",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality borders on godhood and consumes you without unfailing anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Beauty Goddess, leaning into the pathway of moon",
+      "Practise potent restorative and buffing potions in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Beauty Goddess Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Beauty Goddess potion of the Moon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Life-Giver Characteristic",
+        description:
+          "The Beyonder characteristic of a Life-Giver, the core ingredient distilled for the Beauty Goddess advancement of the Moon pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Beauty Goddess: digest the potion through faithful acting, then perform the Moon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Beauty Goddess potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Fertility and Proliferation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
 ];
 
 const hermitSequences: Sequence[] = [
@@ -2703,6 +4586,241 @@ const hermitSequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Mysticologist",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Mysticological Lore",
+        description:
+          "Wield rare and forgotten rituals others cannot, bending mystical knowledge into power",
+        type: "active",
+      },
+      {
+        name: "Spell Invention",
+        description:
+          "Devise wholly new spells from first principles of the mystical arts",
+        type: "active",
+      },
+      {
+        name: "Saint's Insight",
+        description:
+          "A Saint of Hermit reads the mystical structure of the world at a glance",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Mysticologist, leaning into the pathway of hermit",
+      "Practise ritual magic in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Mysticologist Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Mysticologist potion of the Hermit pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Constellations Master Characteristic",
+        description:
+          "The Beyonder characteristic of a Constellations Master, the core ingredient distilled for the Mysticologist advancement of the Hermit pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Mystical Knowledge, measured to the Mysticologist formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Mysticologist: digest the potion through faithful acting, then perform the Hermit pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Mysticologist potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Mystical Knowledge at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Clairvoyant",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Clairvoyance",
+        description:
+          "See across distance and veil, perceiving the hidden and the far away with mystical sight",
+        type: "active",
+      },
+      {
+        name: "Ritual Mastery",
+        description:
+          "Perform grand rituals swiftly and flawlessly, their costs and risks bowing to your skill",
+        type: "active",
+      },
+      {
+        name: "Aura of Mysteries",
+        description:
+          "The mystical world clarifies around you while it clouds for everyone else",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Clairvoyant, leaning into the pathway of hermit",
+      "Practise ritual magic in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Clairvoyant Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Clairvoyant potion of the Hermit pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Mysticologist Characteristic",
+        description:
+          "The Beyonder characteristic of a Mysticologist, the core ingredient distilled for the Clairvoyant advancement of the Hermit pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Mystical Knowledge, measured to the Clairvoyant formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Clairvoyant: digest the potion through faithful acting, then perform the Hermit pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Clairvoyant potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Mystical Knowledge at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Sage",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Sage's Knowing",
+        description:
+          "Hold the accumulated mystical wisdom of ages, answering riddles that defeat lesser mages",
+        type: "active",
+      },
+      {
+        name: "Authority of Mystical Knowledge",
+        description:
+          "Wield the principle of Mystical Knowledge as an Angel of the Hermit",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but draws toward the Hermit's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Sage, leaning into the pathway of hermit",
+      "Practise ritual magic in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Sage Potion Formula",
+        description: "The recipe for the Sequence 2 Sage potion of the Hermit pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Clairvoyant Characteristic",
+        description:
+          "The Beyonder characteristic of a Clairvoyant, the core ingredient distilled for the Sage advancement of the Hermit pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Sage: digest the potion through faithful acting, then perform the Hermit pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Sage potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Mystical Knowledge at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Knowledge Emperor",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Knowledge Emperor",
+        description:
+          "Command mystical truth itself, sealing or unsealing the deep secrets of the world",
+        type: "active",
+      },
+      {
+        name: "Grand Ritual",
+        description:
+          "Enact rituals on a scale that reshapes regions and rewrites local mystical law",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality verges on godhood and unmakes you without ceaseless anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Knowledge Emperor, leaning into the pathway of hermit",
+      "Practise ritual magic in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Knowledge Emperor Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Knowledge Emperor potion of the Hermit pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Sage Characteristic",
+        description:
+          "The Beyonder characteristic of a Sage, the core ingredient distilled for the Knowledge Emperor advancement of the Hermit pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Knowledge Emperor: digest the potion through faithful acting, then perform the Hermit pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Knowledge Emperor potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Mystical Knowledge at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
 ];
 
 const paragonSequences: Sequence[] = [
@@ -2954,6 +5072,241 @@ const paragonSequences: Sequence[] = [
         "Advance beyond Astronomer: digest the potion through faithful acting, then perform the Paragon pathway's ascent rite without losing yourself",
       requirements: [
         "Fully digest the Astronomer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Civilisation and Craft at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Alchemist",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Grand Alchemy",
+        description:
+          "Transmute matter and craft wondrous devices through perfected, science-grounded alchemy",
+        type: "active",
+      },
+      {
+        name: "Inventive Genius",
+        description:
+          "Design and build machines and constructs no mundane craftsman could conceive",
+        type: "active",
+      },
+      {
+        name: "Saint's Acumen",
+        description:
+          "A Saint of Paragon grasps the workings of any mechanism or system on sight",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Alchemist, leaning into the pathway of paragon",
+      "Practise science in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Alchemist Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Alchemist potion of the Paragon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Astronomer Characteristic",
+        description:
+          "The Beyonder characteristic of an Astronomer, the core ingredient distilled for the Alchemist advancement of the Paragon pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Civilisation and Craft, measured to the Alchemist formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Alchemist: digest the potion through faithful acting, then perform the Paragon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Alchemist potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Civilisation and Craft at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Arcane Scholar",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Arcane Engineering",
+        description:
+          "Fuse arcana and craft into self-sustaining works of mystical machinery",
+        type: "active",
+      },
+      {
+        name: "Principle Analysis",
+        description:
+          "Lay bare the founding principles of a power or device and rebuild them to your design",
+        type: "active",
+      },
+      {
+        name: "Aura of Civilisation",
+        description:
+          "Tools, machines, and structures answer you readily, civilisation's craft at your fingertips",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Arcane Scholar, leaning into the pathway of paragon",
+      "Practise science in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Arcane Scholar Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Arcane Scholar potion of the Paragon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Alchemist Characteristic",
+        description:
+          "The Beyonder characteristic of an Alchemist, the core ingredient distilled for the Arcane Scholar advancement of the Paragon pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Civilisation and Craft, measured to the Arcane Scholar formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Arcane Scholar: digest the potion through faithful acting, then perform the Paragon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Arcane Scholar potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Civilisation and Craft at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Knowledge Magister",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Knowledge Magister",
+        description:
+          "Marshal the sum of civilisation's craft and learning to solve or build almost anything",
+        type: "active",
+      },
+      {
+        name: "Authority of Craft",
+        description:
+          "Wield the principle of Civilisation and Craft as an Angel of the Paragon",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but pulls toward the Paragon's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Knowledge Magister, leaning into the pathway of paragon",
+      "Practise science in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Knowledge Magister Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Knowledge Magister potion of the Paragon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Arcane Scholar Characteristic",
+        description:
+          "The Beyonder characteristic of an Arcane Scholar, the core ingredient distilled for the Knowledge Magister advancement of the Paragon pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Knowledge Magister: digest the potion through faithful acting, then perform the Paragon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Knowledge Magister potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Civilisation and Craft at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Illuminator",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Illuminator",
+        description:
+          "Shed the light of knowledge that advances and orders a civilisation to your design",
+        type: "active",
+      },
+      {
+        name: "Architect of Ages",
+        description: "Raise works of craft vast enough to remake a nation's foundations",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality borders on godhood and overwrites you without unbroken anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Illuminator, leaning into the pathway of paragon",
+      "Practise science in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Illuminator Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Illuminator potion of the Paragon pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Knowledge Magister Characteristic",
+        description:
+          "The Beyonder characteristic of a Knowledge Magister, the core ingredient distilled for the Illuminator advancement of the Paragon pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Illuminator: digest the potion through faithful acting, then perform the Paragon pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Illuminator potion by acting in accordance with the sequence",
         "Carry out the ritual aligned to Civilisation and Craft at the proper place and hour",
         "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
       ],
@@ -3237,6 +5590,240 @@ const wheelOfFortuneSequences: Sequence[] = [
       ],
     },
   },
+  {
+    level: 4,
+    name: "Misfortune Mage",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Misfortune Curse",
+        description:
+          "Lay ruinous bad luck on a target, accidents and failures gathering around them",
+        type: "active",
+      },
+      {
+        name: "Fortune Reading",
+        description:
+          "Read the branching possibilities of fate and nudge events toward the outcome you want",
+        type: "active",
+      },
+      {
+        name: "Saint's Providence",
+        description:
+          "A Saint of the Wheel turns chance in their favour, narrow escapes becoming routine",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Misfortune Mage, leaning into the pathway of wheel of fortune",
+      "Practise high spirituality in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Misfortune Mage Potion Formula",
+        description:
+          "The recipe for the Sequence 4 Misfortune Mage potion of the Wheel of Fortune pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Winner Characteristic",
+        description:
+          "The Beyonder characteristic of a Winner, the core ingredient distilled for the Misfortune Mage advancement of the Wheel of Fortune pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Possibility of Fate, measured to the Misfortune Mage formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Misfortune Mage: digest the potion through faithful acting, then perform the Wheel of Fortune pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Misfortune Mage potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Possibility of Fate at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Chaoswalker",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Chaoswalking",
+        description:
+          "Step through improbable paths, slipping between possibilities to be where fate did not expect",
+        type: "active",
+      },
+      {
+        name: "Probability Shift",
+        description: "Tilt the odds of an event sharply toward success or catastrophe",
+        type: "active",
+      },
+      {
+        name: "Aura of Fortune",
+        description: "Luck warps around you — allies find chances, foes meet mishap",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Chaoswalker, leaning into the pathway of wheel of fortune",
+      "Practise high spirituality in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Chaoswalker Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Chaoswalker potion of the Wheel of Fortune pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Misfortune Mage Characteristic",
+        description:
+          "The Beyonder characteristic of a Misfortune Mage, the core ingredient distilled for the Chaoswalker advancement of the Wheel of Fortune pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to the Possibility of Fate, measured to the Chaoswalker formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Chaoswalker: digest the potion through faithful acting, then perform the Wheel of Fortune pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Chaoswalker potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Possibility of Fate at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Soothsayer",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Soothsaying",
+        description:
+          "Foretell the shape of fate with uncanny accuracy and steer events along its threads",
+        type: "active",
+      },
+      {
+        name: "Authority of Fate",
+        description:
+          "Wield the Possibility of Fate as an Angel, bending probability across a region",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but draws toward the Wheel's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Soothsayer, leaning into the pathway of wheel of fortune",
+      "Practise high spirituality in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Soothsayer Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Soothsayer potion of the Wheel of Fortune pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Chaoswalker Characteristic",
+        description:
+          "The Beyonder characteristic of a Chaoswalker, the core ingredient distilled for the Soothsayer advancement of the Wheel of Fortune pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Soothsayer: digest the potion through faithful acting, then perform the Wheel of Fortune pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Soothsayer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Possibility of Fate at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Snake of Mercury",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Snake of Mercury",
+        description:
+          "Coil through the possibilities of fate, rewriting which future comes to pass",
+        type: "active",
+      },
+      {
+        name: "Decree of Fortune",
+        description:
+          "Pronounce a fortune or doom that the threads of fate hasten to fulfil",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality verges on godhood and dissolves you without unfailing anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Snake of Mercury, leaning into the pathway of wheel of fortune",
+      "Practise high spirituality in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Snake of Mercury Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Snake of Mercury potion of the Wheel of Fortune pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Soothsayer Characteristic",
+        description:
+          "The Beyonder characteristic of a Soothsayer, the core ingredient distilled for the Snake of Mercury advancement of the Wheel of Fortune pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Snake of Mercury: digest the potion through faithful acting, then perform the Wheel of Fortune pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Snake of Mercury potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to the Possibility of Fate at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
 ];
 
 const abyssSequences: Sequence[] = [
@@ -3499,6 +6086,241 @@ const abyssSequences: Sequence[] = [
         "Advance beyond Desire Apostle: digest the potion through faithful acting, then perform the Abyss pathway's ascent rite without losing yourself",
       requirements: [
         "Fully digest the Desire Apostle potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Desire and Corruption at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Demon",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Demonic Might",
+        description:
+          "Wield the raw strength and corruption of a demon, twisting flesh and will alike",
+        type: "active",
+      },
+      {
+        name: "Desire's Hook",
+        description:
+          "Read and inflame the desires of others, drawing them into corruption and ruin",
+        type: "active",
+      },
+      {
+        name: "Saint's Corruption",
+        description:
+          "A Saint of the Abyss festers and endures, wounds and poisons turned to fuel",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Demon, leaning into the pathway of abyss",
+      "Practise great strength and perception in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Demon Potion Formula",
+        description: "The recipe for the Sequence 4 Demon potion of the Abyss pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Desire Apostle Characteristic",
+        description:
+          "The Beyonder characteristic of a Desire Apostle, the core ingredient distilled for the Demon advancement of the Abyss pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Desire and Corruption, measured to the Demon formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Demon: digest the potion through faithful acting, then perform the Abyss pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Demon potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Desire and Corruption at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Blatherer",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Maddening Word",
+        description:
+          "Speak corrupting truths that erode sanity and fracture the resolve of all who hear",
+        type: "active",
+      },
+      {
+        name: "Abyssal Reach",
+        description:
+          "Extend tendrils of desire and decay across a place, snaring it in corruption",
+        type: "active",
+      },
+      {
+        name: "Aura of the Abyss",
+        description:
+          "Order and virtue rot in your presence as the world tilts toward desire",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Blatherer, leaning into the pathway of abyss",
+      "Practise great strength and perception in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Blatherer Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Blatherer potion of the Abyss pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Demon Characteristic",
+        description:
+          "The Beyonder characteristic of a Demon, the core ingredient distilled for the Blatherer advancement of the Abyss pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Desire and Corruption, measured to the Blatherer formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Blatherer: digest the potion through faithful acting, then perform the Abyss pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Blatherer potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Desire and Corruption at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Bloody Archduke",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Bloody Archduke",
+        description:
+          "Rule the corrupt as a lord of the Abyss, your decrees binding the fallen to you",
+        type: "active",
+      },
+      {
+        name: "Authority of Desire",
+        description:
+          "Wield the principle of Desire and Corruption as an Angel of the Abyss",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but slides toward the Abyss's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Bloody Archduke, leaning into the pathway of abyss",
+      "Practise great strength and perception in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Bloody Archduke Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Bloody Archduke potion of the Abyss pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Blatherer Characteristic",
+        description:
+          "The Beyonder characteristic of a Blatherer, the core ingredient distilled for the Bloody Archduke advancement of the Abyss pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Bloody Archduke: digest the potion through faithful acting, then perform the Abyss pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Bloody Archduke potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Desire and Corruption at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Filthy Monarch",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Filthy Monarch",
+        description:
+          "Reign over corruption itself, remaking a domain into a court of indulgence and decay",
+        type: "active",
+      },
+      {
+        name: "Tide of Corruption",
+        description:
+          "Loose a flood of desire and rot that drowns the will of a city in the Abyss",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality borders on godhood and consumes you without ceaseless anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Filthy Monarch, leaning into the pathway of abyss",
+      "Practise great strength and perception in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Filthy Monarch Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Filthy Monarch potion of the Abyss pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Bloody Archduke Characteristic",
+        description:
+          "The Beyonder characteristic of a Bloody Archduke, the core ingredient distilled for the Filthy Monarch advancement of the Abyss pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Filthy Monarch: digest the potion through faithful acting, then perform the Abyss pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Filthy Monarch potion by acting in accordance with the sequence",
         "Carry out the ritual aligned to Desire and Corruption at the proper place and hour",
         "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
       ],
@@ -3804,6 +6626,241 @@ const chainedSequences: Sequence[] = [
         "Advance beyond Wraith: digest the potion through faithful acting, then perform the Chained pathway's ascent rite without losing yourself",
       requirements: [
         "Fully digest the Wraith potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Madness and Mutation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 4,
+    name: "Puppet",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Puppet Strings",
+        description:
+          "Seize the dead and the broken-willed as puppets, fielding a host of the controlled",
+        type: "active",
+      },
+      {
+        name: "Madness Contagion",
+        description:
+          "Spread mutation and madness through touch and proximity, unmaking minds and bodies",
+        type: "active",
+      },
+      {
+        name: "Saint's Undeath",
+        description:
+          "A Saint of the Chained shrugs off death, mending from wounds that should be fatal",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Puppet, leaning into the pathway of chained",
+      "Practise summoning the dead in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Puppet Potion Formula",
+        description: "The recipe for the Sequence 4 Puppet potion of the Chained pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 5 Wraith Characteristic",
+        description:
+          "The Beyonder characteristic of a Wraith, the core ingredient distilled for the Puppet advancement of the Chained pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Madness and Mutation, measured to the Puppet formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Puppet: digest the potion through faithful acting, then perform the Chained pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Puppet potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Madness and Mutation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 3,
+    name: "Disciple of Silence",
+    classification: "High",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Silent Discipline",
+        description:
+          "Bind the dead and the mad to absolute silence and obedience under your will",
+        type: "active",
+      },
+      {
+        name: "Mutating Touch",
+        description:
+          "Reshape flesh into monstrous new forms, your own or another's, at a touch",
+        type: "active",
+      },
+      {
+        name: "Aura of Madness",
+        description:
+          "Sanity frays and the dead stir around you as the chains of reason loosen",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of a Disciple of Silence, leaning into the pathway of chained",
+      "Practise summoning the dead in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Disciple of Silence Potion Formula",
+        description:
+          "The recipe for the Sequence 3 Disciple of Silence potion of the Chained pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 4 Puppet Characteristic",
+        description:
+          "The Beyonder characteristic of a Puppet, the core ingredient distilled for the Disciple of Silence advancement of the Chained pathway",
+        category: "main-ingredient",
+      },
+      {
+        name: "Symbolic Supplementary Ingredients",
+        description:
+          "Rare materials attuned to Madness and Mutation, measured to the Disciple of Silence formula's exacting proportions",
+        category: "supplementary-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Disciple of Silence: digest the potion through faithful acting, then perform the Chained pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Disciple of Silence potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Madness and Mutation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 2,
+    name: "Ancient Bane",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Ancient Bane",
+        description:
+          "Loose an ancient plague of madness and mutation upon a region's living and dead",
+        type: "active",
+      },
+      {
+        name: "Authority of Madness",
+        description:
+          "Wield the principle of Madness and Mutation as an Angel of the Chained",
+        type: "active",
+      },
+      {
+        name: "Angelic Spirituality",
+        description:
+          "An Angel's spirituality nears immortality but drags toward the Chained's myth without anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Ancient Bane, leaning into the pathway of chained",
+      "Practise summoning the dead in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Ancient Bane Potion Formula",
+        description:
+          "The recipe for the Sequence 2 Ancient Bane potion of the Chained pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 3 Disciple of Silence Characteristic",
+        description:
+          "The Beyonder characteristic of a Disciple of Silence, the core ingredient distilled for the Ancient Bane advancement of the Chained pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Ancient Bane: digest the potion through faithful acting, then perform the Chained pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Ancient Bane potion by acting in accordance with the sequence",
+        "Carry out the ritual aligned to Madness and Mutation at the proper place and hour",
+        "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
+      ],
+    },
+  },
+  {
+    level: 1,
+    name: "Abomination",
+    classification: "Demigod",
+    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
+    // Module:Sequence/standard); abilities and acting are themed but invented,
+    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    abilities: [
+      {
+        name: "Abomination",
+        description:
+          "Become a horror of fused flesh and undeath, near-impossible to slay or restrain",
+        type: "active",
+      },
+      {
+        name: "Legion of the Dead",
+        description:
+          "Raise and command a legion of the dead and the mutated as their abominable sovereign",
+        type: "active",
+      },
+      {
+        name: "King of Angels' Spirituality",
+        description:
+          "A King of Angels' spirituality verges on godhood and unmakes you without unbroken anchors",
+        type: "passive",
+      },
+    ],
+    actingRequirements: [
+      "Live the role of an Abomination, leaning into the pathway of chained",
+      "Practise summoning the dead in keeping with your sequence",
+      "Let the act deceive the characteristic's imprint until the potion is digested",
+    ],
+    prerequisiteItems: [
+      {
+        name: "Abomination Potion Formula",
+        description:
+          "The recipe for the Sequence 1 Abomination potion of the Chained pathway",
+        category: "potion-formula",
+      },
+      {
+        name: "Sequence 2 Ancient Bane Characteristic",
+        description:
+          "The Beyonder characteristic of an Ancient Bane, the core ingredient distilled for the Abomination advancement of the Chained pathway",
+        category: "main-ingredient",
+      },
+    ],
+    advancementRitual: {
+      description:
+        "Advance beyond Abomination: digest the potion through faithful acting, then perform the Chained pathway's ascent rite without losing yourself",
+      requirements: [
+        "Fully digest the Abomination potion by acting in accordance with the sequence",
         "Carry out the ritual aligned to Madness and Mutation at the proper place and hour",
         "Anchor your self-consciousness against the surge of new characteristic and emerge unchanged",
       ],
