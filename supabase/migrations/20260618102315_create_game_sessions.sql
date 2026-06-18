@@ -56,9 +56,6 @@ begin
 end;
 $$;
 
--- Only signed-in players may flip their active character (matches the
--- purchase_listing / rate_world_message convention). An anon caller's
--- auth.uid() is null and would match no rows anyway, but lock it down so the
--- RPC is never exposed unauthenticated.
-revoke all on function public.set_active_session(uuid) from public, anon;
-grant execute on function public.set_active_session(uuid) to authenticated;
+-- NOTE: EXECUTE is locked down to signed-in players in a follow-up migration
+-- (20260618102520_harden_set_active_session_grants) — kept as a separate file
+-- to mirror the remote migration history exactly (it was applied out-of-band).

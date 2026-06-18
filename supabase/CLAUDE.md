@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Seventeen migrations in order:
+Migrations live in `migrations/`. Eighteen migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -72,6 +72,8 @@ Migrations live in `migrations/`. Seventeen migrations in order:
 16. `20260618102323_create_world_memory.sql` — Cloud-synced cross-timeline world memory (legacies + echoes), previously browser-only. `world_memory` — one row per user: `user_id` PK, `legacies` jsonb, `echoes` jsonb, `updated_at`. RLS owner-only.
 
 17. `20260618102336_create_user_preferences.sql` — Cloud-synced display preferences + first-time-hint dismissals (cross-device). `user_preferences` — one row per user: `user_id` PK, `preferences` jsonb, `dismissed_hints` text[], `updated_at`. RLS owner-only.
+
+18. `20260618102520_harden_set_active_session_grants.sql` — Locks the `set_active_session` RPC's EXECUTE to `authenticated` only (`revoke … from public, anon; grant … to authenticated`), matching the `purchase_listing`/`rate_world_message` convention and clearing the security advisor warning. Kept as its own versioned file so `migrations/` mirrors the remote history exactly (the grant was applied out-of-band alongside migration 15, so migration 15 creates the RPC but does NOT grant it — this file does).
 
 ## Auth Session Persistence
 
