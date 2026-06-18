@@ -190,6 +190,17 @@ export const DEMIGOD_SEQUENCE_THRESHOLD = 4;
  * such instruction and we save the tokens. Mirrors `buildSanityDirective`.
  */
 export function buildDemigodDirective(gameState: GameState): PromptLayer {
+  // A Pillar — above the sequences (issue #99 Part B; the engine's
+  // `PILLAR_SEQUENCE` sentinel is the only negative level). Cosmic scale beyond
+  // even a True God: the character is now one of the four things the gods answer
+  // to. Checked first, since the sentinel is < the demigod threshold.
+  if (gameState.sequenceLevel < 0) {
+    return {
+      role: "system",
+      content:
+        "## Above the Sequence\nThis character is no longer a Beyonder, nor merely a True God — they are one of the four PILLARS that hold the world's order open (the cosmic apex above Sequence 0). Narrate beyond godhood: they are a fixture of reality itself, the seat their entire family of pathways draws authority from; their attention alone reshapes faith, fate, and the boundaries between the sequences and what lies above them. The only forces that matter at this scale are the other Pillars (peers and counterweights), the outer unknowable things even Pillars regard warily, and the unbearable strain of holding a single human thread of self inside a load-bearing piece of the universe. There are no mortal or divine threats — only cosmic equilibrium, the politics of the apex, and what it costs to remain someone while being something. The acting method and sanity bind harder than ever.",
+    };
+  }
   if (gameState.sequenceLevel > DEMIGOD_SEQUENCE_THRESHOLD) {
     return { role: "system", content: "" };
   }

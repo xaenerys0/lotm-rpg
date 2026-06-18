@@ -338,6 +338,27 @@ export {
   type ApotheosisResult,
   type ApotheosisUnmade,
 } from "./apotheosis";
+
+// The Pillars — the mechanical apex above Sequence 0 (issue #99 Part B).
+export {
+  attemptPillarAscension,
+  canAttemptPillarAscension,
+  pillarAscensionSuccessChance,
+  pillarName,
+  pillarRequirements,
+  ABOVE_THE_SEQUENCE_TEASE,
+  PILLAR_ABILITIES,
+  PILLAR_ACTING,
+  PILLAR_REQUIRED_SUPPORT,
+  PILLAR_SANITY_RATIO,
+  PILLAR_SEQUENCE,
+  PILLAR_STAGES,
+  type PillarAscensionResult,
+  type PillarEnthroned,
+  type PillarRequirement,
+  type PillarUnmade,
+} from "./pillars";
+
 export {
   advancementHighRisk,
   advancementRequirements,

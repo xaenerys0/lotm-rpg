@@ -217,6 +217,24 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="apo-1" />);
   });
 
+  it("pillar ascension panel (Sequence 0 choices phase) has no violations", async () => {
+    // A True God of a Pillar family (Fool) — the PillarAscensionPanel renders
+    // above Sequence 0 (issue #99 Part B).
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-p", "Klein"),
+      sequenceLevel: 0,
+    };
+    const session = {
+      ...createSession(gameState, "pillar-1", 1000),
+      phase: "choices" as const,
+      currentNarrative:
+        "You are a True God. Above you, the sequences end — and something more begins.",
+      currentChoices: [{ id: "c1", text: "Look up", type: "action" as const }],
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "pillar-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="pillar-1" />);
+  });
+
   it("failure panel (zero sanity) has no violations", async () => {
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-f", "Klein"),

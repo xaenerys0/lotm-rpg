@@ -28,3 +28,14 @@ export { validateAdvancement, validateTransfer } from "./validation";
 // the source of truth the reconciliation test holds pathways.ts + TRUE_GOD_NAMES
 // against (issue #99 Part A).
 export { SEQUENCE_NAMES } from "./sequence-names-canon";
+
+// The Pillars — the cosmic apex above Sequence 0 (issue #99 Part B). Canon data;
+// the mechanical ascent lives in `@/lib/game/pillars`.
+export {
+  PILLARS,
+  pillarForPathway,
+  getPillar,
+  siblingPathwayIds,
+  siblingPathwayNames,
+} from "./pillars";
+export type { Pillar } from "./pillars";

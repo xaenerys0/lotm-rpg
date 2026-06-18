@@ -2065,6 +2065,15 @@ describe("prompts", () => {
       expect(layer.content).toContain("True God");
       expect(layer.content).not.toContain("Demigod Stakes");
     });
+
+    it("shifts to the Pillar directive above Sequence 0 (issue #99 Part B)", () => {
+      // PILLAR_SEQUENCE is the negative sentinel above the True Gods.
+      const layer = buildDemigodDirective(makeGameState({ sequenceLevel: -1 }));
+      expect(layer.content).toContain("Above the Sequence");
+      expect(layer.content).toContain("PILLARS");
+      expect(layer.content).not.toContain("Godhood");
+      expect(layer.content).not.toContain("Demigod Stakes");
+    });
   });
 
   describe("assemblePrompt", () => {

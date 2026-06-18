@@ -67,6 +67,13 @@ import {
   sequenceAbilities,
   trueGodName,
   APOTHEOSIS_STAGES,
+  attemptPillarAscension,
+  canAttemptPillarAscension,
+  pillarAscensionSuccessChance,
+  pillarName,
+  pillarRequirements,
+  PILLAR_SEQUENCE,
+  PILLAR_STAGES,
   advancementRequirements,
   advancementSuccessChance,
   attemptAdvancement,
@@ -164,7 +171,7 @@ import { retrieveLoreForTurn } from "./lore-retrieval-client";
 import { SceneArt } from "./scene-art";
 import { WorldMessages } from "./world-messages";
 import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
-import { getPathway, getSequence } from "@/lib/rules";
+import { getPathway, getSequence, pillarForPathway } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
 import {
   loadSessionById,
@@ -630,6 +637,43 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       result.verdict,
       descentAction(
         "Narrate the apotheosis ritual collapsing at the final threshold — the pathway rejects the ascent and the character is unmade. This is",
+        result.verdict.severity,
+      ),
+    );
+  }, [session, updateSession, concludeChronicle]);
+
+  // Pillar ascension (issue #99 Part B): a Sequence 0 True God of one of the
+  // four families rises above the sequences. Mirrors apotheosis — the engine
+  // decides, the attempt rolls once, success routes through the normal turn loop
+  // and failure is absolute (catastrophic permadeath via the shared path).
+  const handlePillarAscension = useCallback(async () => {
+    if (!session || endingInFlight.current) return;
+    endingInFlight.current = true;
+    const result = attemptPillarAscension(session);
+    if (result.outcome === "enthroned") {
+      appendJournalEntries(session.id, [
+        buildJournalEntry(session.gameState, session.turnCount, {
+          eventType: "advancement",
+          summary: `Ascended above Sequence 0 to become ${result.pillarName}, one of the four Pillars of the universe.`,
+          narrative: result.tease,
+          arc: "Above the Sequence",
+        }),
+      ]);
+      updateSession(
+        transition(result.session, {
+          type: "ENGINE_RESOLUTION",
+          result: engineResolution({ narrative: result.tease }),
+          playerAction: `I integrate my family's godhoods and ascend above the sequences, becoming ${result.pillarName}, a Pillar of the universe.`,
+        }),
+      );
+      endingInFlight.current = false;
+      return;
+    }
+    endingInFlight.current = false;
+    await concludeChronicle(
+      result.verdict,
+      descentAction(
+        "Narrate the ascent above the sequences collapsing — the role of a Pillar rejects the claimant and the would-be god is unmade utterly. This is",
         result.verdict.severity,
       ),
     );
@@ -1388,11 +1432,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const knowsMethod = resolveActingMethodState(session.actingMethodState).knowsMethod;
   const lostControl = isLossOfControl(session.gameState);
   // Sequence 0 (issue #30) has no rules-engine Sequence — present the honorific
-  // instead of the empty "Unknown" fallback.
+  // instead of the empty "Unknown" fallback; a Pillar (issue #99 Part B) shows
+  // its Above-the-Sequence name. (Part D consolidates this into a shared helper.)
   const sequenceLabel =
-    session.gameState.sequenceLevel === 0
-      ? trueGodName(session.gameState.pathwayId)
-      : (seq?.name ?? "Unknown");
+    session.gameState.sequenceLevel === PILLAR_SEQUENCE
+      ? pillarName(session.gameState.pathwayId)
+      : session.gameState.sequenceLevel === 0
+        ? trueGodName(session.gameState.pathwayId)
+        : (seq?.name ?? "Unknown");
   const epoch = getEpoch(session.gameState.epoch);
   // Combat only needs ability names; the True-God-aware derivation lives in one
   // place (sequenceAbilities) rather than running the full AI-call bundle.
@@ -1413,7 +1460,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             <span className="font-serif text-sm text-foreground/80">
               {sequenceLabel}{" "}
               <span className="text-muted">
-                ({pathway?.name ?? "?"} Seq. {session.gameState.sequenceLevel})
+                ({pathway?.name ?? "?"}{" "}
+                {session.gameState.sequenceLevel === PILLAR_SEQUENCE
+                  ? "— Above the Sequence"
+                  : `Seq. ${session.gameState.sequenceLevel}`}
+                )
               </span>
             </span>
             <span className="text-border" aria-hidden="true">
@@ -1583,6 +1634,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                     onAttempt={() => void handleApotheosis()}
                   />
                 )}
+                {session.gameState.sequenceLevel === 0 &&
+                  pillarForPathway(session.gameState.pathwayId) !== undefined && (
+                    <PillarAscensionPanel
+                      session={session}
+                      busy={facingFate}
+                      onAttempt={() => void handlePillarAscension()}
+                    />
+                  )}
                 <WorldMessages location={session.gameState.location} />
               </>
             )}
@@ -2801,6 +2860,47 @@ function ApotheosisPanel({
     >
       <ol className="mt-4 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-foreground/75">
         {APOTHEOSIS_STAGES.map((stage) => (
+          <li key={stage}>{stage}</li>
+        ))}
+      </ol>
+    </RitualAttemptPanel>
+  );
+}
+
+// Pillar ascension (issue #99 Part B): shown to a Sequence 0 True God whose
+// pathway belongs to one of the four Pillar families. Failure is permadeath at
+// the longest fall there is, so the staged ceremony is previewed once ready.
+function PillarAscensionPanel({
+  session,
+  busy,
+  onAttempt,
+}: {
+  session: GameSession;
+  busy: boolean;
+  onAttempt: () => void;
+}) {
+  const requirements = pillarRequirements(session);
+  const ready = canAttemptPillarAscension(session);
+  const chance = Math.round(pillarAscensionSuccessChance(session) * 100);
+  const name = pillarName(session.gameState.pathwayId);
+
+  return (
+    <RitualAttemptPanel
+      headingId="pillar-heading"
+      heading={`Above the sequences: the seat of ${name}`}
+      intro="A True God is the apex of a pathway. A Pillar is the apex of the world. Gather the godhoods of your family's pathways and become the role they all answer to — there is no climb beyond this one."
+      requirements={requirements}
+      ready={ready}
+      busy={busy}
+      armLabel="Begin the ascent above the sequences"
+      confirmLabel="Become a Pillar — irrevocably"
+      confirmBusyLabel="The order of things rewrites itself…"
+      cancelLabel="Remain a god"
+      oddsText={`The augurs put your odds near ${chance}%. Failure is not survivable.`}
+      onAttempt={onAttempt}
+    >
+      <ol className="mt-4 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-foreground/75">
+        {PILLAR_STAGES.map((stage) => (
           <li key={stage}>{stage}</li>
         ))}
       </ol>
