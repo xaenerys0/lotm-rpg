@@ -891,7 +891,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               eventType: "discovery",
               summary: `Hunted and claimed ${huntTarget} for the next potion.`,
               narrative: `You hunted down and claimed ${huntTarget}, taking its spoils for the climb ahead.`,
-              arc: `Sequence ${next.gameState.sequenceLevel}`,
+              // arc omitted — buildJournalEntry's default is apex-aware (#99 D).
             }),
           ]);
         }
@@ -926,7 +926,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             eventType: "discovery",
             summary: `Acquired ${itemName} for the next potion.`,
             narrative: `You secured ${itemName}, one step closer to the next Sequence's potion.`,
-            arc: `Sequence ${result.session.gameState.sequenceLevel}`,
+            // arc omitted — buildJournalEntry's default is apex-aware (#99 D).
           }),
         ]);
         updateSession(result.session);
@@ -955,7 +955,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             eventType: "discovery",
             summary: `Began the hunt for ${itemName}.`,
             narrative: `You set out to track down the creature that carries ${itemName} — the hunt for the next potion's Characteristic has begun.`,
-            arc: `Sequence ${result.session.gameState.sequenceLevel}`,
+            // arc omitted — buildJournalEntry's default is apex-aware (#99 D).
           }),
         ]);
         updateSession(result.session);

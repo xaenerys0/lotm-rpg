@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Item } from "@/lib/types/rules";
-import { SEQUENCE_NAMES } from "@/lib/rules";
+import { ALL_PATHWAYS, SEQUENCE_NAMES } from "@/lib/rules";
 
 import {
   ABOVE_SEQUENCE_TEASE,
@@ -245,9 +245,24 @@ describe("sequenceClassificationFor (issue #99 Part D)", () => {
     expect(sequenceClassificationFor(3)).toBe("High");
     expect(sequenceClassificationFor(4)).toBe("High");
     expect(sequenceClassificationFor(5)).toBe("Mid");
+    expect(sequenceClassificationFor(6)).toBe("Mid");
     expect(sequenceClassificationFor(7)).toBe("Mid");
     expect(sequenceClassificationFor(8)).toBe("Low");
     expect(sequenceClassificationFor(9)).toBe("Low");
+  });
+
+  it("stays in sync with the rules Sequence.classification (no drift)", () => {
+    // The level→tier boundaries are re-encoded here for the apex tiers, so guard
+    // them against the per-Sequence classification in pathways.ts: for every
+    // stored rung (Seq 9-1) the two must agree, across every pathway.
+    for (const pathway of ALL_PATHWAYS) {
+      for (const seq of pathway.sequences) {
+        expect(
+          sequenceClassificationFor(seq.level),
+          `pathway ${pathway.id} Seq ${seq.level}`,
+        ).toBe(seq.classification);
+      }
+    }
   });
 });
 

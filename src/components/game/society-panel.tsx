@@ -16,6 +16,7 @@ import {
   memberPathwayHint,
   recruitMember,
   resolveMemberArc,
+  sequenceLabel,
   serializeJournal,
   GATHERING_COOLDOWN_TURNS,
   JOURNAL_KEY_PREFIX,
@@ -109,7 +110,13 @@ export function SocietyPanel() {
                 summary: `${outcome.society.name} convened.`,
                 narrative: outcome.narrativeSeed,
                 involvedNpcs: outcome.society.members.map((m) => m.codeName),
-                arc: `Sequence ${session.gameState.sequenceLevel}`,
+                arc:
+                  session.gameState.sequenceLevel <= 0
+                    ? sequenceLabel(
+                        session.gameState.pathwayId,
+                        session.gameState.sequenceLevel,
+                      )
+                    : `Sequence ${session.gameState.sequenceLevel}`,
                 characterId: session.gameState.characterId,
                 ...(session.gameState.characterName
                   ? { characterName: session.gameState.characterName }
