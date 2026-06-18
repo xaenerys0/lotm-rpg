@@ -140,6 +140,13 @@ describe("attemptPillarAscension", () => {
     expect(result.pillarName).toBe("Lord of Mysteries");
     // Both sibling Uniquenesses are consumed.
     expect(result.session.gameState.inventory).toHaveLength(0);
+    // Digestion is reset to a fresh state for the new existence.
+    expect(result.session.gameState.digestion).toEqual({
+      pathwayId: 1,
+      sequenceLevel: PILLAR_SEQUENCE,
+      progress: expect.any(Number),
+      complete: false,
+    });
     // Memory records the ascent + the tease.
     expect(result.session.memory.sessionFacts.length).toBeGreaterThanOrEqual(2);
   });

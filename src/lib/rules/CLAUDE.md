@@ -16,6 +16,7 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 - `index.ts` — Public exports.
 - `rules.test.ts` — Comprehensive test suite (8 describe blocks, ~55 test cases).
 - `sequence-names-canon.test.ts` — Permanent **canon reconciliation** guard (issue #99 Part A): holds `pathways.ts` (Seq 9-1) and `apotheosis.ts`'s `TRUE_GOD_NAMES`/pathway names (Seq 0) against the generated `SEQUENCE_NAMES`, so curated names can never silently drift from the wiki corpus.
+- `pillars.test.ts` — Pillar canon-data tests (issue #99 Part B): the four Pillars, the family→pathway mapping (cross-checked against each pathway's `sefirah`), `pillarForPathway`/`getPillar`, and `siblingPathwayIds`/`siblingPathwayNames`.
 
 ## Key Types (from `@/lib/types/rules`)
 
