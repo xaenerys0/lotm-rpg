@@ -11,6 +11,8 @@ import {
 } from "@/lib/game";
 import { createClient } from "@/lib/supabase/client";
 
+import { deleteSessionFromCloud } from "./cloud-sync";
+
 // Shared deletion side-effects for a character, used by both the Character
 // sheet's danger zone and the Play dashboard's Manage view. Wipes every local
 // trace (save, journal, in-progress combat, usage estimate) via
@@ -32,7 +34,9 @@ export function purgeCharacter(sessionId: string): string[] {
     // Storage unavailable — callers still update their in-memory list.
   }
   // Best-effort durable cleanup; offline/signed-out players just keep the rows,
-  // which RLS already scopes to them.
+  // which RLS already scopes to them. Delete the cloud save (deletion parity, so
+  // it doesn't resurrect on the next cross-device hydrate) and its journal rows.
+  deleteSessionFromCloud(sessionId);
   void (async () => {
     try {
       const client = createClient() as unknown as JournalSyncClient;

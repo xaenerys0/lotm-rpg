@@ -6,6 +6,8 @@ import {
   type GamePreferences,
 } from "@/lib/game";
 
+import { pushPreferencesToCloud } from "./cloud-sync";
+
 /**
  * localStorage glue for player preferences. Kept in the component layer (the
  * `@/lib/game` preferences module stays pure) and shared by every consumer so
@@ -28,6 +30,8 @@ export function savePreferences(prefs: GamePreferences): void {
   } catch {
     // Storage unavailable — preference simply won't persist.
   }
+  // Best-effort cloud mirror so settings follow the player across devices.
+  pushPreferencesToCloud();
 }
 
 /** Reflect the high-contrast preference onto <html> (issue #13). */
