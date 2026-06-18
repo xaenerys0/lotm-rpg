@@ -6,7 +6,7 @@ import { effectiveSupport, requiredSupport, anchorHighRisk } from "./anchors";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
 import { hasItemMatching } from "./inventory";
-import { PILLAR_ABILITIES, PILLAR_ACTING, PILLAR_SEQUENCE } from "./pillars";
+import { PILLAR_ABILITIES, PILLAR_ACTING, PILLAR_SEQUENCE, pillarName } from "./pillars";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -143,6 +143,39 @@ export function sequenceAbilities(
     ),
     acting: seq?.actingRequirements ?? [],
   };
+}
+
+/**
+ * The tier a sequence level belongs to (issue #99 Part D). Extends the rules
+ * `SequenceClassification` upward with the two apex tiers that have no stored
+ * `Sequence`: `"True God"` (Seq 0) and `"Pillar"` (above the sequences,
+ * `PILLAR_SEQUENCE`). The single derivation every site shares so the new tiers
+ * can't render as a stray classification or a bare number.
+ */
+export type SequenceTier = "Pillar" | "True God" | "Demigod" | "High" | "Mid" | "Low";
+
+export function sequenceClassificationFor(level: number): SequenceTier {
+  if (level < 0) return "Pillar"; // PILLAR_SEQUENCE
+  if (level === 0) return "True God";
+  if (level <= 2) return "Demigod"; // Seq 2-1 (Angel / King of Angels)
+  if (level <= 4) return "High"; // Seq 4-3 (Saint)
+  if (level <= 7) return "Mid"; // Seq 7-5
+  return "Low"; // Seq 9-8
+}
+
+/**
+ * The display name for a character at any level (issue #99 Part D) — the single
+ * label helper every status bar, character sheet, showcase, leaderboard, and
+ * journal arc routes through, so Seq 0 reads as its True God honorific and a
+ * Pillar (`PILLAR_SEQUENCE`) as its Above-the-Sequence name rather than leaking
+ * "Sequence 0" / "Sequence -1". Below the apex it is the rules `Sequence` name
+ * (falling back to a plain "Sequence N" only when the data is unexpectedly
+ * absent).
+ */
+export function sequenceLabel(pathwayId: number, level: number): string {
+  if (level === PILLAR_SEQUENCE) return pillarName(pathwayId);
+  if (level === 0) return trueGodName(pathwayId);
+  return getSequence(pathwayId, level)?.name ?? `Sequence ${level}`;
 }
 
 export interface ApotheosisRequirement {

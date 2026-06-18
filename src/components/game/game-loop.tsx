@@ -65,6 +65,7 @@ import {
   canAttemptApotheosis,
   drawPetition,
   sequenceAbilities,
+  sequenceLabel,
   trueGodName,
   APOTHEOSIS_STAGES,
   attemptPillarAscension,
@@ -1390,7 +1391,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             nextState: gameState,
             response: resolution.response,
             turnNumber: session.turnCount,
-            arc: `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
+            arc:
+              gameState.sequenceLevel <= 0
+                ? sequenceLabel(gameState.pathwayId, gameState.sequenceLevel)
+                : `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
             // Followers travel with the player — their re-assertion into the
             // scene on a move is not a fresh encounter (issue #101).
             ignoreNpcs: companionsPresentOnMove(
@@ -1450,20 +1454,16 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   }
 
   const pathway = getPathway(session.gameState.pathwayId);
-  const seq = getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel);
   // Acting-method discovery (issue #95): the digestion meter/number stays hidden
   // until the method is discovered, even with the toggle on.
   const knowsMethod = resolveActingMethodState(session.actingMethodState).knowsMethod;
   const lostControl = isLossOfControl(session.gameState);
-  // Sequence 0 (issue #30) has no rules-engine Sequence — present the honorific
-  // instead of the empty "Unknown" fallback; a Pillar (issue #99 Part B) shows
-  // its Above-the-Sequence name. (Part D consolidates this into a shared helper.)
-  const sequenceLabel =
-    session.gameState.sequenceLevel === PILLAR_SEQUENCE
-      ? pillarName(session.gameState.pathwayId)
-      : session.gameState.sequenceLevel === 0
-        ? trueGodName(session.gameState.pathwayId)
-        : (seq?.name ?? "Unknown");
+  // The shared label helper (issue #99 Part D) presents Seq 0 as its True God
+  // honorific and a Pillar as its Above-the-Sequence name, never "Sequence 0/-1".
+  const seqLabel = sequenceLabel(
+    session.gameState.pathwayId,
+    session.gameState.sequenceLevel,
+  );
   const epoch = getEpoch(session.gameState.epoch);
   // Combat only needs ability names; the True-God-aware derivation lives in one
   // place (sequenceAbilities) rather than running the full AI-call bundle.
@@ -1482,7 +1482,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
             <span className="font-serif text-sm text-foreground/80">
-              {sequenceLabel}{" "}
+              {seqLabel}{" "}
               <span className="text-muted">
                 ({pathway?.name ?? "?"}{" "}
                 {session.gameState.sequenceLevel === PILLAR_SEQUENCE

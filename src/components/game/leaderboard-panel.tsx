@@ -6,6 +6,8 @@ import { createClient } from "@/lib/supabase/client";
 import { getPathway, ALL_PATHWAYS } from "@/lib/rules";
 import {
   fetchLeaderboard,
+  sequenceClassificationFor,
+  sequenceLabel,
   type LeaderboardEntry,
   type LeaderboardMetric,
   type ShowcaseClient,
@@ -101,8 +103,9 @@ export function LeaderboardPanel() {
                   {entry.displayName}
                 </span>
                 <span className="text-xs text-muted">
-                  Seq {entry.sequenceLevel} ·{" "}
-                  {getPathway(entry.pathwayId)?.name ?? "Unknown"}
+                  {entry.sequenceLevel <= 0
+                    ? `${sequenceLabel(entry.pathwayId, entry.sequenceLevel)} (${sequenceClassificationFor(entry.sequenceLevel)})`
+                    : `Seq ${entry.sequenceLevel} · ${getPathway(entry.pathwayId)?.name ?? "Unknown"}`}
                 </span>
               </span>
               <span className="text-xs text-muted">

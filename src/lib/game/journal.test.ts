@@ -186,6 +186,23 @@ describe("buildJournalEntry", () => {
     });
   });
 
+  it("labels the apex tiers' default arc by honorific, not 'Sequence 0/-1' (#99 D)", () => {
+    const trueGod = buildJournalEntry(
+      state({ sequenceLevel: 0 }),
+      9,
+      { eventType: "advancement", summary: "Ascended.", narrative: "..." },
+      { id: "e-tg", now: 1 },
+    );
+    expect(trueGod.arc).toBe("The Fool");
+    const pillar = buildJournalEntry(
+      state({ sequenceLevel: -1 }),
+      9,
+      { eventType: "advancement", summary: "Above.", narrative: "..." },
+      { id: "e-p", now: 1 },
+    );
+    expect(pillar.arc).toBe("Lord of Mysteries");
+  });
+
   it("honors an explicit arc and omits an absent character name", () => {
     const entry = buildJournalEntry(
       state({ characterName: undefined }),

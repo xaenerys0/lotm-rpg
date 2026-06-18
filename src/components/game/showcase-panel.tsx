@@ -10,6 +10,8 @@ import {
   evaluateAchievements,
   getAchievement,
   publishShowcase,
+  sequenceClassificationFor,
+  sequenceLabel,
   showcaseStats,
   toShowcaseRow,
   type ShowcaseClient,
@@ -83,8 +85,10 @@ export function ShowcasePanel() {
           {session.gameState.characterName ?? "Unnamed Beyonder"}
         </h2>
         <p className="mt-1 font-serif text-sm italic text-muted">
-          Sequence {session.gameState.sequenceLevel} · {pathway?.name ?? "Unknown"}{" "}
-          Pathway
+          {session.gameState.sequenceLevel <= 0
+            ? `${sequenceLabel(session.gameState.pathwayId, session.gameState.sequenceLevel)} — ${sequenceClassificationFor(session.gameState.sequenceLevel)}`
+            : `Sequence ${session.gameState.sequenceLevel} ${sequenceLabel(session.gameState.pathwayId, session.gameState.sequenceLevel)}`}{" "}
+          · {pathway?.name ?? "Unknown"} Pathway
         </p>
         <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
           <div>

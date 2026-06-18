@@ -1,5 +1,7 @@
 import type { AIResponse, GameState } from "@/lib/ai";
 
+import { sequenceLabel } from "./apotheosis";
+
 // ---------------------------------------------------------------------------
 // Story journal engine (issue #11)
 // ---------------------------------------------------------------------------
@@ -69,7 +71,13 @@ export function buildJournalEntry(
     summary: event.summary,
     narrative: event.narrative,
     involvedNpcs: state.npcsPresent,
-    arc: event.arc ?? `Sequence ${state.sequenceLevel}`,
+    // The apex tiers (Seq 0 True God, Pillar) have no rules `Sequence`, so a bare
+    // "Sequence 0/-1" arc would read wrong — use the shared label there (#99 D).
+    arc:
+      event.arc ??
+      (state.sequenceLevel <= 0
+        ? sequenceLabel(state.pathwayId, state.sequenceLevel)
+        : `Sequence ${state.sequenceLevel}`),
     characterId: state.characterId,
     ...(state.characterName ? { characterName: state.characterName } : {}),
   };
