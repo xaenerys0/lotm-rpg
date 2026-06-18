@@ -67,11 +67,11 @@ Migrations live in `migrations/`. Seventeen migrations in order:
 
 14. `20260614020000_seed_region_lore.sql` — Seed lore for the farther Fifth-Epoch start regions (varied story openings): Pritz Harbor, Enmat Harbor, and the Feysac Empire (3 entries). Generated from `src/lib/lore/regions.ts` (TS source is canonical). Same `lore_entries` INSERT format as migration 3.
 
-15. `20260615000000_create_game_sessions.sql` — Cloud-synced character saves (cross-device sync). The full `GameSession` lived only in localStorage; this is the durable, authoritative copy. `game_sessions` — `id` (client-supplied uuid), `user_id` (FK `auth.users`), `data` (jsonb — the whole serialized save), `is_active` (the active-character pointer), `updated_at`/`created_at`. Index `(user_id, updated_at desc)` (the save list); **partial-unique** `(user_id) where is_active` (one active character). RLS owner-only. `set_active_session(p_id uuid)` — SECURITY DEFINER: atomically clears the prior active row and sets the chosen one, scoped to `auth.uid()`. Keep `database.ts` in sync.
+15. `20260618102315_create_game_sessions.sql` — Cloud-synced character saves (cross-device sync). The full `GameSession` lived only in localStorage; this is the durable, authoritative copy. `game_sessions` — `id` (client-supplied uuid), `user_id` (FK `auth.users`), `data` (jsonb — the whole serialized save), `is_active` (the active-character pointer), `updated_at`/`created_at`. Index `(user_id, updated_at desc)` (the save list); **partial-unique** `(user_id) where is_active` (one active character). RLS owner-only. `set_active_session(p_id uuid)` — SECURITY DEFINER: atomically clears the prior active row and sets the chosen one, scoped to `auth.uid()`. Keep `database.ts` in sync.
 
-16. `20260615000100_create_world_memory.sql` — Cloud-synced cross-timeline world memory (legacies + echoes), previously browser-only. `world_memory` — one row per user: `user_id` PK, `legacies` jsonb, `echoes` jsonb, `updated_at`. RLS owner-only.
+16. `20260618102323_create_world_memory.sql` — Cloud-synced cross-timeline world memory (legacies + echoes), previously browser-only. `world_memory` — one row per user: `user_id` PK, `legacies` jsonb, `echoes` jsonb, `updated_at`. RLS owner-only.
 
-17. `20260615000200_create_user_preferences.sql` — Cloud-synced display preferences + first-time-hint dismissals (cross-device). `user_preferences` — one row per user: `user_id` PK, `preferences` jsonb, `dismissed_hints` text[], `updated_at`. RLS owner-only.
+17. `20260618102336_create_user_preferences.sql` — Cloud-synced display preferences + first-time-hint dismissals (cross-device). `user_preferences` — one row per user: `user_id` PK, `preferences` jsonb, `dismissed_hints` text[], `updated_at`. RLS owner-only.
 
 ## Auth Session Persistence
 

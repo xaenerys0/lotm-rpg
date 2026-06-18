@@ -55,3 +55,10 @@ begin
     where user_id = auth.uid() and id = p_id;
 end;
 $$;
+
+-- Only signed-in players may flip their active character (matches the
+-- purchase_listing / rate_world_message convention). An anon caller's
+-- auth.uid() is null and would match no rows anyway, but lock it down so the
+-- RPC is never exposed unauthenticated.
+revoke all on function public.set_active_session(uuid) from public, anon;
+grant execute on function public.set_active_session(uuid) to authenticated;
