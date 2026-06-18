@@ -6,6 +6,7 @@ import { effectiveSupport, requiredSupport, anchorHighRisk } from "./anchors";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
 import { hasItemMatching } from "./inventory";
+import { PILLAR_ABILITIES, PILLAR_ACTING, PILLAR_SEQUENCE } from "./pillars";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -126,6 +127,12 @@ export function sequenceAbilities(
   pathwayId: number,
   level: number,
 ): { abilities: string[]; acting: string[] } {
+  // A Pillar (above the sequences, issue #99 Part B) has neither a `Sequence`
+  // nor a True God's domain-bound authority — its abilities are the authority of
+  // a cosmic role itself.
+  if (level === PILLAR_SEQUENCE) {
+    return { abilities: [...PILLAR_ABILITIES], acting: [...PILLAR_ACTING] };
+  }
   if (level === 0) {
     return { abilities: [...TRUE_GOD_ABILITIES], acting: [...TRUE_GOD_ACTING] };
   }
