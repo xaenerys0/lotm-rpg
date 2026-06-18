@@ -35,7 +35,7 @@ export interface WorldMemorySyncClient {
 }
 
 /** Stable identity of a legacy (it carries no id): its character + when it fell. */
-function legacyKey(l: CharacterLegacy): string {
+export function legacyKey(l: CharacterLegacy): string {
   return `${l.characterId}:${l.timestamp}`;
 }
 
@@ -73,24 +73,42 @@ export async function fetchWorldMemory(
   };
 }
 
+/** The keys this device has previously seen in the cloud (for delete detection). */
+export interface WorldMemorySynced {
+  legacyKeys: ReadonlySet<string>;
+  echoIds: ReadonlySet<string>;
+}
+
 /**
- * Pure union merge of local and cloud world memory. Legacies and echoes are
- * append-mostly world records, so the merge is a de-duplicated union (legacies
- * keyed by character+timestamp, echoes by id) — neither side's history is lost,
- * and a full-timeline restart (which clears both locally) re-propagates only
- * after the cleared state is itself pushed.
+ * Pure merge of local and cloud world memory. Legacies and echoes are
+ * append-mostly world records, so shared entries are a de-duplicated union
+ * (legacies keyed by character+timestamp, echoes by id) — neither side's
+ * additions are lost. But a local-only entry is ambiguous: a fresh addition not
+ * yet pushed, or one REMOVED elsewhere (a full-timeline restart wipes both). The
+ * `synced` keys (what this device last saw in the cloud) disambiguate — a
+ * local-only entry that was synced before is a remote removal (drop it, so a
+ * restart on one device propagates instead of being resurrected by union); one
+ * never synced is a genuine local addition (keep + push it).
  */
 export function reconcileWorldMemory(
   local: WorldMemory,
   remote: WorldMemory,
+  synced: WorldMemorySynced = { legacyKeys: new Set(), echoIds: new Set() },
 ): WorldMemory {
   const legacies = new Map<string, CharacterLegacy>();
   for (const l of remote.legacies) legacies.set(legacyKey(l), l);
-  for (const l of local.legacies) legacies.set(legacyKey(l), l);
+  for (const l of local.legacies) {
+    const key = legacyKey(l);
+    // Keep a local legacy unless it was synced before yet is now gone from the
+    // cloud (removed elsewhere). Already-present remote keys stay either way.
+    if (legacies.has(key) || !synced.legacyKeys.has(key)) legacies.set(key, l);
+  }
 
   const echoes = new Map<string, TimelineArtifact>();
   for (const e of remote.echoes) echoes.set(e.id, e);
-  for (const e of local.echoes) echoes.set(e.id, e);
+  for (const e of local.echoes) {
+    if (echoes.has(e.id) || !synced.echoIds.has(e.id)) echoes.set(e.id, e);
+  }
 
   return {
     legacies: [...legacies.values()],

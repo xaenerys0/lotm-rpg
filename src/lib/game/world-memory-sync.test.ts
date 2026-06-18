@@ -151,4 +151,33 @@ describe("reconcileWorldMemory", () => {
     );
     expect(merged.legacies[0].epitaph).toBe("local");
   });
+
+  it("keeps a never-synced local-only entry (genuine addition)", () => {
+    const merged = reconcileWorldMemory(
+      { legacies: [legacy("a", 1)], echoes: [echo("e1")] },
+      { legacies: [], echoes: [] },
+      { legacyKeys: new Set(), echoIds: new Set() },
+    );
+    expect(merged.legacies).toHaveLength(1);
+    expect(merged.echoes).toHaveLength(1);
+  });
+
+  it("drops a previously-synced local-only entry removed in the cloud (restart)", () => {
+    const merged = reconcileWorldMemory(
+      { legacies: [legacy("a", 1)], echoes: [echo("e1")] },
+      { legacies: [], echoes: [] },
+      { legacyKeys: new Set(["a:1"]), echoIds: new Set(["e1"]) },
+    );
+    expect(merged.legacies).toEqual([]);
+    expect(merged.echoes).toEqual([]);
+  });
+
+  it("keeps a synced entry that still exists remotely", () => {
+    const merged = reconcileWorldMemory(
+      { legacies: [legacy("a", 1)], echoes: [] },
+      { legacies: [legacy("a", 1)], echoes: [] },
+      { legacyKeys: new Set(["a:1"]), echoIds: new Set() },
+    );
+    expect(merged.legacies).toHaveLength(1);
+  });
 });

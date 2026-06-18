@@ -24,7 +24,7 @@ function mockClient(
   opts: {
     upsertError?: Err;
     deleteError?: Err;
-    selectData?: { data: unknown }[] | null;
+    selectData?: { data: unknown; is_active: boolean }[] | null;
     selectError?: Err;
     rpcError?: Err;
   } = {},
@@ -55,7 +55,7 @@ function mockClient(
         select(columns) {
           calls.select(columns);
           return Promise.resolve({
-            data: (opts.selectData ?? null) as { data: never }[] | null,
+            data: (opts.selectData ?? null) as { data: never; is_active: never }[] | null,
             error: opts.selectError ?? null,
           });
         },
@@ -139,19 +139,30 @@ describe("setActiveRemote", () => {
 });
 
 describe("fetchSessions", () => {
-  it("returns [] when there is no data", async () => {
+  it("returns empty + null active when there is no data", async () => {
     const { client } = mockClient({ selectData: null });
-    expect(await fetchSessions(client)).toEqual([]);
+    expect(await fetchSessions(client)).toEqual({ sessions: [], activeId: null });
   });
 
-  it("deserializes valid rows and drops malformed ones", async () => {
-    const valid = JSON.parse(JSON.stringify(makeSession("a", 1)));
+  it("deserializes valid rows, drops malformed ones, and reads the active flag", async () => {
+    const a = JSON.parse(JSON.stringify(makeSession("a", 1)));
+    const b = JSON.parse(JSON.stringify(makeSession("b", 2)));
     const { client } = mockClient({
-      selectData: [{ data: valid }, { data: { not: "a session" } }],
+      selectData: [
+        { data: a, is_active: false },
+        { data: { not: "a session" }, is_active: false },
+        { data: b, is_active: true },
+      ],
     });
-    const sessions = await fetchSessions(client);
-    expect(sessions).toHaveLength(1);
-    expect(sessions[0].id).toBe("a");
+    const result = await fetchSessions(client);
+    expect(result.sessions.map((s) => s.id)).toEqual(["a", "b"]);
+    expect(result.activeId).toBe("b");
+  });
+
+  it("leaves activeId null when no row is flagged active", async () => {
+    const a = JSON.parse(JSON.stringify(makeSession("a", 1)));
+    const { client } = mockClient({ selectData: [{ data: a, is_active: false }] });
+    expect((await fetchSessions(client)).activeId).toBeNull();
   });
 
   it("throws when the select errors", async () => {
@@ -188,13 +199,32 @@ describe("reconcile", () => {
     expect(r.merged.map((s) => s.id)).toEqual(["x"]);
   });
 
-  it("adopts the cloud active id when it names an existing save", () => {
+  it("adopts the cloud active id when it names a surviving save", () => {
     const r = reconcile([], [makeSession("x", 1)], "x");
     expect(r.activeId).toBe("x");
   });
 
-  it("ignores a cloud active id that names no known save", () => {
+  it("ignores a cloud active id that names no surviving save", () => {
     const r = reconcile([], [makeSession("x", 1)], "ghost");
+    expect(r.activeId).toBeNull();
+  });
+
+  it("drops a local-only save that was previously synced (remote delete)", () => {
+    const r = reconcile([makeSession("gone", 10)], [], null, new Set(["gone"]));
+    expect(r.toDeleteLocal).toEqual(["gone"]);
+    expect(r.toPushRemote).toEqual([]);
+    expect(r.merged).toEqual([]);
+  });
+
+  it("pushes a local-only save that was never synced (genuinely new)", () => {
+    const r = reconcile([makeSession("new", 10)], [], null, new Set(["other"]));
+    expect(r.toDeleteLocal).toEqual([]);
+    expect(r.toPushRemote.map((s) => s.id)).toEqual(["new"]);
+  });
+
+  it("does not adopt an active id that was just deleted as a tombstone", () => {
+    const r = reconcile([makeSession("gone", 10)], [], "gone", new Set(["gone"]));
+    expect(r.toDeleteLocal).toEqual(["gone"]);
     expect(r.activeId).toBeNull();
   });
 });

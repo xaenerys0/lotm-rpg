@@ -35,7 +35,6 @@ import {
 import { GameLoop } from "./game-loop";
 import { CharacterCreation } from "./character-creation";
 import { purgeCharacter } from "./character-actions";
-import { useCloudSyncStatus } from "./cloud-sync";
 
 type DashboardView = "home" | "character-creation" | "playing" | "manage";
 
@@ -138,9 +137,6 @@ export function PlayDashboard() {
   const liveSummaries = useSessionSummaries();
   const sessions =
     sessionsOverride ?? [...liveSummaries].sort((a, b) => b.updatedAt - a.updatedAt);
-  // Cross-device sync status — gate "Continue" until the first hydrate settles
-  // so a stale local save can't be resumed (and re-saved) over a newer cloud one.
-  const cloudStatus = useCloudSyncStatus();
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   // Two-step confirm so a destructive delete is never a single misclick.
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -403,11 +399,7 @@ export function PlayDashboard() {
             <p className="mt-2 text-sm leading-relaxed text-muted">
               Resume your journey where you left off.
             </p>
-            {cloudStatus === "hydrating" ? (
-              <p role="status" className="mt-5 text-sm text-muted">
-                Syncing your chronicles from the cloud&hellip;
-              </p>
-            ) : sessions.length === 0 ? (
+            {sessions.length === 0 ? (
               <p className="mt-5 text-sm text-muted">No saved games found.</p>
             ) : (
               <div className="mt-4 space-y-2">

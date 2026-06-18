@@ -3,12 +3,14 @@
 import { useSyncExternalStore } from "react";
 
 import {
+  characterDeletionPlan,
   deleteSessionRemote,
   deserializeArtifacts,
   deserializeLegacies,
   fetchPreferences,
   fetchSessions,
   fetchWorldMemory,
+  legacyKey,
   pushPreferences,
   pushSessions,
   pushWorldMemory,
@@ -17,11 +19,14 @@ import {
   reconcileWorldMemory,
   serializeArtifacts,
   serializeLegacies,
+  serializePreferences,
   serializeSession,
   setActiveRemote,
+  CLOUD_SYNCED_KEY,
   ECHOES_KEY,
   HINT_KEY_PREFIX,
   LEGACIES_KEY,
+  PREFERENCES_KEY,
   SESSION_KEY_PREFIX,
   type CharacterLegacy,
   type GameSession,
@@ -39,7 +44,7 @@ import {
 } from "@/lib/react/session-store";
 import { createClient } from "@/lib/supabase/client";
 
-import { loadPreferences, savePreferences } from "./preferences-store";
+import { loadPreferences } from "./preferences-store";
 
 // ---------------------------------------------------------------------------
 // Cross-device cloud sync — the networking shell (cross-device sync)
@@ -85,6 +90,49 @@ async function ensureContext(): Promise<SyncContext | null> {
   return contextPromise;
 }
 
+/** Forget the cached identity (on sign-out / account switch) so it re-resolves. */
+function resetContext(): void {
+  context = null;
+  contextPromise = null;
+}
+
+// ── Cross-device sync ledger (the save ids / world-memory keys seen in cloud) ─
+interface SyncLedger {
+  sessions: Set<string>;
+  legacyKeys: Set<string>;
+  echoIds: Set<string>;
+}
+
+function readLedger(): SyncLedger {
+  try {
+    const raw = localStorage.getItem(CLOUD_SYNCED_KEY);
+    const o = (raw ? JSON.parse(raw) : {}) as Record<string, unknown>;
+    const arr = (v: unknown) => (Array.isArray(v) ? (v as string[]) : []);
+    return {
+      sessions: new Set(arr(o.sessions)),
+      legacyKeys: new Set(arr(o.legacyKeys)),
+      echoIds: new Set(arr(o.echoIds)),
+    };
+  } catch {
+    return { sessions: new Set(), legacyKeys: new Set(), echoIds: new Set() };
+  }
+}
+
+function writeLedger(ledger: SyncLedger): void {
+  try {
+    localStorage.setItem(
+      CLOUD_SYNCED_KEY,
+      JSON.stringify({
+        sessions: [...ledger.sessions],
+        legacyKeys: [...ledger.legacyKeys],
+        echoIds: [...ledger.echoIds],
+      }),
+    );
+  } catch {
+    // Storage unavailable — the ledger is best-effort.
+  }
+}
+
 // ── Reactive hydration status (drives the load-before-play gate) ─────
 type CloudStatus = "idle" | "hydrating" | "synced";
 let status: CloudStatus = "idle";
@@ -119,6 +167,17 @@ function writeSessionLocal(session: GameSession): void {
     localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
   } catch {
     // Storage unavailable — nothing to cache.
+  }
+}
+
+/** Remove every local trace of a save deleted on another device (delete parity). */
+function removeSessionLocal(id: string): void {
+  try {
+    for (const key of characterDeletionPlan(id, []).removeKeys) {
+      localStorage.removeItem(key);
+    }
+  } catch {
+    // Storage unavailable.
   }
 }
 
@@ -165,6 +224,13 @@ function persistToCloud(session: GameSession): void {
         [session],
         loadActiveSessionId(),
       );
+      // Record that this id now lives in the cloud, so a later remote delete is
+      // recognized (not resurrected) by the next reconcile.
+      const ledger = readLedger();
+      if (!ledger.sessions.has(session.id)) {
+        ledger.sessions.add(session.id);
+        writeLedger(ledger);
+      }
     } catch {
       // Offline / unreachable — localStorage already has the save.
     }
@@ -186,6 +252,10 @@ function setActiveToCloud(id: string | null): void {
 
 /** Best-effort delete of one cloud save (character removal, deletion parity). */
 export function deleteSessionFromCloud(sessionId: string): void {
+  // The save is gone locally; drop it from the ledger immediately so reconcile
+  // won't treat it as "deleted elsewhere" and re-delete (a no-op) nor resurrect.
+  const ledger = readLedger();
+  if (ledger.sessions.delete(sessionId)) writeLedger(ledger);
   void (async () => {
     try {
       const ctx = await ensureContext();
@@ -203,10 +273,18 @@ export function pushWorldMemoryToCloud(): void {
     try {
       const ctx = await ensureContext();
       if (!ctx) return;
+      const legacies = readLocalLegacies();
+      const echoes = readLocalEchoes();
       await pushWorldMemory(ctx.client as unknown as WorldMemorySyncClient, ctx.userId, {
-        legacies: readLocalLegacies(),
-        echoes: readLocalEchoes(),
+        legacies,
+        echoes,
       });
+      // The cloud now holds exactly these keys; record them so a removal here
+      // (e.g. a full-timeline restart) propagates instead of being resurrected.
+      const ledger = readLedger();
+      ledger.legacyKeys = new Set(legacies.map(legacyKey));
+      ledger.echoIds = new Set(echoes.map((e) => e.id));
+      writeLedger(ledger);
     } catch {
       // Best-effort.
     }
@@ -230,44 +308,51 @@ export function pushPreferencesToCloud(): void {
 }
 
 // ── Hydration: pull, reconcile, write both directions ───────────────
-async function hydrate(): Promise<void> {
+async function doHydrate(): Promise<void> {
   setStatus("hydrating");
   try {
     const ctx = await ensureContext();
     if (!ctx) return;
     const sessionClient = ctx.client as unknown as SessionSyncClient;
+    const ledger = readLedger();
 
-    // Sessions: reconcile local and cloud, write cloud-wins locally, push
-    // local-wins remotely, and adopt the cloud's active pointer when it names a
-    // known save (else self-heal the local one).
-    const [remoteSessions, remoteMemory, remotePrefs] = await Promise.all([
+    const [fetched, remoteMemory, remotePrefs] = await Promise.all([
       fetchSessions(sessionClient),
       fetchWorldMemory(ctx.client as unknown as WorldMemorySyncClient),
       fetchPreferences(ctx.client as unknown as PreferencesSyncClient),
     ]);
 
-    const merged = reconcile(loadAllSessions(), remoteSessions, null);
-    // The cloud's active id is the single is_active row; reconcile can't see it
-    // (sessions carry no flag), so resolve the pointer separately below.
+    // Sessions: cloud-wins copies land locally, genuinely-new local saves push,
+    // and saves deleted on another device (synced-but-now-absent) are removed.
+    const merged = reconcile(
+      loadAllSessions(),
+      fetched.sessions,
+      fetched.activeId,
+      ledger.sessions,
+    );
     for (const session of merged.toWriteLocal) writeSessionLocal(session);
+    for (const id of merged.toDeleteLocal) removeSessionLocal(id);
     saveSessionIndex(merged.merged.map((s) => s.id));
     if (merged.toPushRemote.length > 0) {
       await pushSessions(
         sessionClient,
         ctx.userId,
         merged.toPushRemote,
-        loadActiveSessionId(),
+        fetched.activeId,
       );
     }
-    // Re-resolve the active pointer against the merged index (self-heals a stale
-    // id) and mirror it to the cloud as the single active row.
-    const active = loadActiveSessionId();
-    saveActiveSessionId(active);
+    // Adopt the cloud's active character when it names a survivor; otherwise
+    // keep (and establish in the cloud) the local pointer, self-healed against
+    // the merged index. Writing it fires the sink → set_active RPC.
+    saveActiveSessionId(merged.activeId ?? loadActiveSessionId());
+    // The cloud now holds exactly the merged set.
+    ledger.sessions = new Set(merged.merged.map((s) => s.id));
 
-    // World memory: union merge, write both ways.
+    // World memory: union the additions, drop entries removed on another device.
     const mergedMemory = reconcileWorldMemory(
       { legacies: readLocalLegacies(), echoes: readLocalEchoes() },
       remoteMemory,
+      { legacyKeys: ledger.legacyKeys, echoIds: ledger.echoIds },
     );
     try {
       localStorage.setItem(LEGACIES_KEY, serializeLegacies(mergedMemory.legacies));
@@ -280,14 +365,21 @@ async function hydrate(): Promise<void> {
       ctx.userId,
       mergedMemory,
     );
+    ledger.legacyKeys = new Set(mergedMemory.legacies.map(legacyKey));
+    ledger.echoIds = new Set(mergedMemory.echoes.map((e) => e.id));
 
-    // Preferences + hint dismissals: cloud preference wins, hints union.
+    // Preferences + hint dismissals: cloud preference wins, hints union. Write
+    // locally WITHOUT savePreferences (its cloud-push side-effect would race the
+    // single explicit push below with a pre-merge hint set).
     const mergedPrefs = reconcilePreferences(
       { preferences: loadPreferences(), dismissedHints: readDismissedHints() },
       remotePrefs,
     );
-    savePreferences(mergedPrefs.preferences);
     try {
+      localStorage.setItem(
+        PREFERENCES_KEY,
+        serializePreferences(mergedPrefs.preferences),
+      );
       for (const hintId of mergedPrefs.dismissedHints) {
         localStorage.setItem(HINT_KEY_PREFIX + hintId, "1");
       }
@@ -299,6 +391,8 @@ async function hydrate(): Promise<void> {
       ctx.userId,
       mergedPrefs,
     );
+
+    writeLedger(ledger);
   } catch {
     // Any failure leaves localStorage intact — the player keeps playing.
   } finally {
@@ -306,16 +400,44 @@ async function hydrate(): Promise<void> {
   }
 }
 
+// Dedupe concurrent hydrate calls (the initial mount + an auth-change trigger)
+// so two passes never interleave their ledger read-modify-writes.
+let hydrateInFlight: Promise<void> | null = null;
+
+function hydrate(): Promise<void> {
+  if (!hydrateInFlight) {
+    hydrateInFlight = doHydrate().finally(() => {
+      hydrateInFlight = null;
+    });
+  }
+  return hydrateInFlight;
+}
+
 let started = false;
 
 /**
  * Begin cross-device sync: register the session-store sink (so every save and
- * active-character switch mirrors to the cloud) and run the initial hydrate.
- * Idempotent — safe to call from a mount effect on every game route.
+ * active-character switch mirrors to the cloud), watch for auth changes (so an
+ * account switch in the same tab re-syncs under the new identity instead of the
+ * cached one), and run the initial hydrate. Idempotent.
  */
 export function startCloudSync(): void {
   if (started) return;
   started = true;
   registerSessionSyncSink({ persist: persistToCloud, setActive: setActiveToCloud });
+  try {
+    createClient().auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_OUT") {
+        // Drop the cached identity; pushers no-op until a user signs back in.
+        resetContext();
+      } else if (event === "SIGNED_IN") {
+        // A (possibly different) user signed in — re-resolve and re-hydrate.
+        resetContext();
+        void hydrate();
+      }
+    });
+  } catch {
+    // Auth listener unavailable — the initial hydrate below still runs.
+  }
   void hydrate();
 }

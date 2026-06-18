@@ -30,8 +30,8 @@ export interface SessionSyncClient {
     delete(): {
       eq(column: "id", value: string): PromiseLike<{ error: { message: string } | null }>;
     };
-    select(columns: "data"): PromiseLike<{
-      data: { data: Json }[] | null;
+    select(columns: "data,is_active"): PromiseLike<{
+      data: { data: Json; is_active: boolean }[] | null;
       error: { message: string } | null;
     }>;
   };
@@ -91,25 +91,40 @@ export async function setActiveRemote(
   if (error) throw new Error(`Active session sync failed: ${error.message}`);
 }
 
+/** The caller's cloud saves plus which one the cloud marks active. */
+export interface FetchedSessions {
+  sessions: GameSession[];
+  /** The id of the single `is_active` row, or null when none is flagged. */
+  activeId: string | null;
+}
+
 /** Fetch every cloud save for the caller (RLS already scopes to their rows). */
-export async function fetchSessions(client: SessionSyncClient): Promise<GameSession[]> {
-  const { data, error } = await client.from("game_sessions").select("data");
+export async function fetchSessions(client: SessionSyncClient): Promise<FetchedSessions> {
+  const { data, error } = await client.from("game_sessions").select("data,is_active");
   if (error) throw new Error(`Session fetch failed: ${error.message}`);
-  if (!data) return [];
-  // Drop any row whose payload no longer deserializes (validation is strict)
-  // rather than throwing the whole hydrate away for one bad save.
-  return data
-    .map((row) => deserializeSession(JSON.stringify(row.data)))
-    .filter((s): s is GameSession => s !== null);
+  if (!data) return { sessions: [], activeId: null };
+  const sessions: GameSession[] = [];
+  let activeId: string | null = null;
+  for (const row of data) {
+    // Drop any row whose payload no longer deserializes (validation is strict)
+    // rather than throwing the whole hydrate away for one bad save.
+    const session = deserializeSession(JSON.stringify(row.data));
+    if (!session) continue;
+    sessions.push(session);
+    if (row.is_active) activeId = session.id;
+  }
+  return { sessions, activeId };
 }
 
 /** The outcome of merging local and cloud saves. */
 export interface SessionReconciliation {
   /** Saves to (over)write into localStorage — cloud was newer or local-absent. */
   toWriteLocal: GameSession[];
-  /** Saves to push to the cloud — local was newer or cloud-absent. */
+  /** Saves to push to the cloud — local was newer or cloud-absent and new. */
   toPushRemote: GameSession[];
-  /** Whole merged set (every id, winning copy) — the index after reconcile. */
+  /** Save ids to remove locally — they were deleted in the cloud (tombstone). */
+  toDeleteLocal: string[];
+  /** Whole merged set (every surviving id, winning copy) — the rebuilt index. */
   merged: GameSession[];
   /** The active character id the cloud asserts, or null to keep the local one. */
   activeId: string | null;
@@ -117,14 +132,19 @@ export interface SessionReconciliation {
 
 /**
  * Pure last-write-wins merge of local and cloud saves, keyed on `updatedAt`.
- * A save present on only one side propagates to the other; a save on both sides
- * resolves to the newer copy (ties keep the cloud copy — the authoritative
- * store). The cloud's active-character pointer wins when it still names a save.
+ * A save on both sides resolves to the newer copy (ties keep the cloud copy);
+ * a cloud-only save is written locally. A LOCAL-ONLY save is ambiguous: it is
+ * either a brand-new save not yet pushed, or one that was deleted on another
+ * device. `syncedIds` (the ids this device has previously seen in the cloud)
+ * disambiguates — a local-only id that was synced before is a remote DELETE
+ * (drop it locally, never resurrect it); one never synced is genuinely new
+ * (push it). The cloud's active-character pointer wins when it names a survivor.
  */
 export function reconcile(
   local: readonly GameSession[],
   remote: readonly GameSession[],
   remoteActiveId: string | null,
+  syncedIds: ReadonlySet<string> = new Set(),
 ): SessionReconciliation {
   const localById = new Map(local.map((s) => [s.id, s]));
   const remoteById = new Map(remote.map((s) => [s.id, s]));
@@ -132,14 +152,20 @@ export function reconcile(
 
   const toWriteLocal: GameSession[] = [];
   const toPushRemote: GameSession[] = [];
+  const toDeleteLocal: string[] = [];
   const merged: GameSession[] = [];
 
   for (const id of ids) {
     const l = localById.get(id);
     const r = remoteById.get(id);
     if (l && !r) {
-      toPushRemote.push(l);
-      merged.push(l);
+      if (syncedIds.has(id)) {
+        // Previously synced, now gone from the cloud → deleted elsewhere.
+        toDeleteLocal.push(id);
+      } else {
+        toPushRemote.push(l);
+        merged.push(l);
+      }
     } else if (r && !l) {
       toWriteLocal.push(r);
       merged.push(r);
@@ -159,8 +185,9 @@ export function reconcile(
   // Newest first, so the merged set doubles as the rebuilt session index.
   merged.sort((a, b) => b.updatedAt - a.updatedAt);
 
+  const mergedIds = new Set(merged.map((s) => s.id));
   const activeId =
-    remoteActiveId && remoteById.has(remoteActiveId) ? remoteActiveId : null;
+    remoteActiveId && mergedIds.has(remoteActiveId) ? remoteActiveId : null;
 
-  return { toWriteLocal, toPushRemote, merged, activeId };
+  return { toWriteLocal, toPushRemote, toDeleteLocal, merged, activeId };
 }

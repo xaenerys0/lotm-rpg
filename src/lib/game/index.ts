@@ -418,14 +418,17 @@ export {
   reconcile,
   setActiveRemote,
   toSessionRow,
+  type FetchedSessions,
   type SessionReconciliation,
   type SessionSyncClient,
 } from "./session-sync";
 export {
   fetchWorldMemory,
+  legacyKey,
   pushWorldMemory,
   reconcileWorldMemory,
   type WorldMemory,
+  type WorldMemorySynced,
   type WorldMemorySyncClient,
 } from "./world-memory-sync";
 export {
@@ -531,6 +534,7 @@ export {
   LEGACIES_KEY,
   ECHOES_KEY,
   HINT_KEY_PREFIX,
+  CLOUD_SYNCED_KEY,
   COMBAT_KEY_PREFIX,
   USAGE_KEY_PREFIX,
 } from "./constants";
