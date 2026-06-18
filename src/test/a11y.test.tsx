@@ -10,6 +10,7 @@ import { SanityPreferences } from "@/components/game/sanity-preferences";
 import { CharacterCreation } from "@/components/game/character-creation";
 import { PlayDashboard } from "@/components/game/play-dashboard";
 import { GameSidebar } from "@/components/game/game-sidebar";
+import { CloudHydrationGate } from "@/components/game/cloud-hydration-gate";
 import { MobileNav } from "@/components/game/mobile-nav";
 import { GameLoop } from "@/components/game/game-loop";
 import { CombatEncounterView } from "@/components/game/combat-encounter";
@@ -361,6 +362,16 @@ describe("accessibility — manage characters", () => {
     // Open the two-step confirm and re-check the live region + button group.
     fireEvent.click(screen.getByRole("button", { name: /Delete .*pathway/ }));
     await expectNoAxeViolationsInContainer(container);
+  });
+});
+
+describe("accessibility — cloud hydration gate", () => {
+  it("loading state has no violations", async () => {
+    await expectNoAxeViolations(
+      <CloudHydrationGate>
+        <p>hidden during sync</p>
+      </CloudHydrationGate>,
+    );
   });
 });
 

@@ -2,12 +2,13 @@
 
 import { useCallback, useRef, useSyncExternalStore, useState } from "react";
 
+import { HINT_KEY_PREFIX } from "@/lib/game";
 import { noopSubscribe } from "@/lib/react";
+
+import { pushPreferencesToCloud } from "./cloud-sync";
 
 // First-time hints (issue #14): a one-shot, dismissible pointer shown the
 // first time a player opens a screen. Dismissal persists per hint id.
-
-const HINT_KEY_PREFIX = "lotm-rpg-hint-";
 
 export function FirstTimeHint({
   id,
@@ -42,6 +43,9 @@ export function FirstTimeHint({
     } catch {
       // Storage unavailable — the hint will simply show again next visit.
     }
+    // Best-effort cloud mirror so the dismissal follows the player across
+    // devices (cross-device sync); never blocks the local dismissal.
+    pushPreferencesToCloud();
   }, [id]);
 
   if (initiallySeen || dismissed) return null;

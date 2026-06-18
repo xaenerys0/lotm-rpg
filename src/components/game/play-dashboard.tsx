@@ -29,6 +29,7 @@ import {
   saveActiveSessionId,
   saveSessionIndex,
   persistSession,
+  useSessionSummaries,
   useStoredValue,
 } from "@/lib/react/session-store";
 import { GameLoop } from "./game-loop";
@@ -129,7 +130,13 @@ export function PlayDashboard() {
   const [sessionsOverride, setSessionsOverride] = useState<
     InitialData["sessions"] | null
   >(null);
-  const sessions = sessionsOverride ?? initialData.sessions;
+  // Read the saved characters from the reactive session store rather than the
+  // one-shot `initialData` snapshot, so saves pulled in by the cross-device
+  // cloud hydrate (which writes localStorage and broadcasts a change) appear
+  // live without a manual refresh. Newest first, matching the old ordering.
+  const liveSummaries = useSessionSummaries();
+  const sessions =
+    sessionsOverride ?? [...liveSummaries].sort((a, b) => b.updatedAt - a.updatedAt);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   // Two-step confirm so a destructive delete is never a single misclick.
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
@@ -217,11 +224,9 @@ export function PlayDashboard() {
       // displayed list without re-reading every save. Functional updater against
       // the post-hydration snapshot so the first delete (before any override) is
       // based on the real roster, not a stale capture.
-      setSessionsOverride((prev) =>
-        (prev ?? initialData.sessions).filter((s) => s.id !== sessionId),
-      );
+      setSessionsOverride((prev) => (prev ?? sessions).filter((s) => s.id !== sessionId));
     },
-    [initialData.sessions],
+    [sessions],
   );
 
   if (view === "playing" && activeSessionId) {

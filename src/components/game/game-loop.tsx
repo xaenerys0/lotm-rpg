@@ -127,6 +127,7 @@ import {
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
 import { loadPreferences } from "./preferences-store";
+import { pushWorldMemoryToCloud } from "./cloud-sync";
 import type {
   GameState,
   DigestionState,
@@ -520,6 +521,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         // Storage unavailable — the echo is lost to the fog.
       }
 
+      // Mirror the updated world memory (legacies + echoes) to the cloud so it
+      // survives a browser wipe and follows the player across devices.
+      pushWorldMemoryToCloud();
+
       // AI narrates the descent; the deterministic scene covers any failure.
       let scene = fallbackDescentScene(verdict.severity, session.gameState);
       if (providerConfig) {
@@ -765,6 +770,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     } catch {
       // Storage unavailable
     }
+    // Mirror the cleared world memory to the cloud so the restart sticks across
+    // devices instead of the old legacies/echoes re-hydrating from Supabase.
+    pushWorldMemoryToCloud();
   }, []);
 
   const startCombat = useCallback(
