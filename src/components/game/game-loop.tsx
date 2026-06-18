@@ -78,6 +78,11 @@ import {
   advancementSuccessChance,
   attemptAdvancement,
   isAdvanceableSequence,
+  advanceRitualStep,
+  currentRitualStep,
+  isRitualComplete,
+  ritualStepsFor,
+  ritualRequiredFor,
   meetsRequirements,
   targetSequence,
   deliverHuntedItem,
@@ -1271,6 +1276,24 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     [session, updateSession],
   );
 
+  // Advancement ritual performed across turns (issue #99 Part C): enacting a step
+  // marks engine progress first (the engine owns the rite's truth), then narrates
+  // the step as a normal player action through the validated turn pipeline — so
+  // the rite plays out over several turns before the climb unlocks.
+  const handleEnactRitualStep = useCallback(() => {
+    if (!session) return;
+    const target = targetSequence(session.gameState.sequenceLevel);
+    const step = currentRitualStep(session, target);
+    if (step === null) return;
+    const advanced = advanceRitualStep(session, target);
+    const choice = freeTextToChoice(composeRitualAction([], step));
+    const withChoice = {
+      ...advanced,
+      currentChoices: [...(advanced.currentChoices ?? []), choice],
+    };
+    updateSession(transition(withChoice, { type: "SELECT_CHOICE", choiceId: choice.id }));
+  }, [session, updateSession]);
+
   const handleContinue = useCallback(() => {
     if (!session) return;
     const selectedChoice = session.currentChoices?.find(
@@ -1619,6 +1642,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                         notice={prepNotice}
                         onPurchase={handlePurchaseItem}
                         onHunt={handleHuntItem}
+                      />
+                      <RitualPerformancePanel
+                        session={session}
+                        busy={advancing || facingFate}
+                        onEnactStep={handleEnactRitualStep}
                       />
                       <AdvancementPanel
                         session={session}
@@ -2786,6 +2814,100 @@ function PotionPreparationPanel({
           {notice}
         </p>
       )}
+    </section>
+  );
+}
+
+// Advancement ritual performed across turns (issue #99 Part C): between potion
+// preparation and the climb, the Beyonder must enact the canon Advancement Ritual
+// step by step. Each "Enact this step" is a narrated turn; the engine marks
+// progress; the panel hides once the rite is complete and the AdvancementPanel's
+// ritual gate reads met. Renders nothing until the potion is prepared, the target
+// needs a ritual, and the rite is unfinished.
+function RitualPerformancePanel({
+  session,
+  busy,
+  onEnactStep,
+}: {
+  session: GameSession;
+  busy: boolean;
+  onEnactStep: () => void;
+}) {
+  const target = targetSequence(session.gameState.sequenceLevel);
+  const targetSeq = getSequence(session.gameState.pathwayId, target);
+  const ritual = targetSeq?.advancementRitual;
+  // Only once the potion is in hand, the rung needs a ritual, and it's defined.
+  if (!potionPreparationPlan(session).allOwned) return null;
+  if (!ritualRequiredFor(target) || !ritual) return null;
+  if (isRitualComplete(session, target)) return null;
+
+  const steps = ritualStepsFor(session, target);
+  const completed =
+    session.ritualState?.targetSeq === target ? session.ritualState.stepsCompleted : 0;
+  const roleName = targetSeq?.name ?? `Sequence ${target}`;
+
+  return (
+    <section
+      aria-labelledby="ritual-perform-heading"
+      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+    >
+      <h2
+        id="ritual-perform-heading"
+        className="gaslit font-serif text-base font-semibold text-occult-bright"
+      >
+        Perform the rite to become a {roleName}
+      </h2>
+      <p className="mt-1 text-sm leading-relaxed text-muted">{ritual.description}</p>
+      <div
+        role="progressbar"
+        aria-label="Advancement ritual progress"
+        aria-valuenow={completed}
+        aria-valuemin={0}
+        aria-valuemax={steps.length}
+        aria-valuetext={`${completed} of ${steps.length} steps performed`}
+        className="mt-3 h-2 overflow-hidden rounded-full bg-surface"
+      >
+        <div
+          className="h-full bg-occult/60"
+          style={{ width: `${steps.length > 0 ? (completed / steps.length) * 100 : 0}%` }}
+        />
+      </div>
+      <ol className="mt-4 space-y-2 text-sm">
+        {steps.map((step, i) => {
+          const done = i < completed;
+          const current = i === completed;
+          return (
+            <li key={`${step}-${i}`} className="flex flex-wrap items-center gap-2">
+              <span
+                aria-hidden="true"
+                className={done ? "text-occult-bright" : "text-muted"}
+              >
+                {done ? "✦" : "◇"}
+              </span>
+              <span
+                className={
+                  done ? "text-foreground/60 line-through" : "text-foreground/85"
+                }
+              >
+                {step}
+                <span className="sr-only">
+                  {done ? " — performed" : " — not yet performed"}
+                </span>
+              </span>
+              {current && (
+                <button
+                  type="button"
+                  onClick={onEnactStep}
+                  disabled={busy}
+                  className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-3 py-1 text-xs font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Enact this step
+                </button>
+              )}
+            </li>
+          );
+        })}
+      </ol>
     </section>
   );
 }

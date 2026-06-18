@@ -80,6 +80,18 @@ export {
   type HuntState,
 } from "./hunt";
 
+// Advancement rituals performed across turns (issue #99 Part C).
+export {
+  advanceRitualStep,
+  beginRitual,
+  clearRitual,
+  currentRitualStep,
+  isRitualComplete,
+  isValidRitualStateShape,
+  ritualStepsFor,
+  type RitualState,
+} from "./ritual";
+
 export {
   DIGESTION_MIN,
   DIGESTION_MAX,

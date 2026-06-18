@@ -11,6 +11,7 @@ import { createDigestionState } from "./digestion";
 import { isValidCustomLocationsShape, registerCustomLocation } from "./location";
 import { cityIdFromLocation } from "./travel";
 import { isValidHuntsShape } from "./hunt";
+import { isValidRitualStateShape } from "./ritual";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
 import { isValidTrackedNpcStateShape } from "./tracked-npcs";
@@ -317,6 +318,13 @@ export function isValidSessionShape(obj: unknown): boolean {
   // Hunt quests are optional but strict when present — they ride the deserialize
   // `...s` spread (no seeding); absent simply means no active hunts.
   if (s.hunts !== undefined && !isValidHuntsShape(s.hunts)) {
+    return false;
+  }
+
+  // Advancement ritual in progress (issue #99 Part C) is optional but strict
+  // when present — it rides the deserialize `...s` spread (no seeding); absent
+  // means no rite under way.
+  if (s.ritualState !== undefined && !isValidRitualStateShape(s.ritualState)) {
     return false;
   }
 

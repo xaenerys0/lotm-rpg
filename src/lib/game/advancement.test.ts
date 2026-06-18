@@ -14,8 +14,19 @@ import {
   ADVANCEMENT_SANITY_RATIO,
 } from "./advancement";
 import { consecrateAnchor, emptyAnchorState, requiredSupport } from "./anchors";
+import { advanceRitualStep, ritualStepsFor } from "./ritual";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
+
+// Drive the advancement rite for `target` to completion (issue #99 Part C: the
+// ritual must be performed before the climb unlocks). A no-op below Sequence 5.
+function performRitual(session: GameSession, target: number): GameSession {
+  let s = session;
+  for (let i = 0; i < ritualStepsFor(s, target).length; i++) {
+    s = advanceRitualStep(s, target);
+  }
+  return s;
+}
 
 // A character standing on `sequenceLevel` with a fully digested potion and every
 // canon ingredient for the next rung in hand — so each test can knock out one
@@ -33,7 +44,8 @@ function readyToAdvance(sequenceLevel: number, pathwayId = 1): GameSession {
     inventory: [...prerequisiteItems],
     digestion: { pathwayId, sequenceLevel, progress: 100, complete: true },
   };
-  return createSession(gameState, "session-1");
+  // "Ready to advance" now includes the rite performed (issue #99 Part C).
+  return performRitual(createSession(gameState, "session-1"), target);
 }
 
 // Anchors holding past the requirement for `target`, for high-tier fixtures.
@@ -133,17 +145,26 @@ describe("advancementRequirements", () => {
     expect(canAdvance(spoofed)).toBe(false);
   });
 
-  it("requires the Advancement Ritual from Sequence 5 onward (mandatory)", () => {
+  it("requires the Advancement Ritual to be performed from Sequence 5 onward", () => {
+    // readyToAdvance has already performed the rite (issue #99 Part C), so the
+    // gate reads met and the climb is allowed.
     const session = readyToAdvance(6); // target 5 — ritual tier
     const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
     expect(ritualReq).toBeDefined();
-    // A canon pathway defines the rite, so it is met and the climb is allowed.
     expect(ritualReq?.met).toBe(true);
-    // It is enacted DURING the climb, so it is flagged forthcoming (not a
-    // tick-box prerequisite) and worded as such — never "already complete".
-    expect(ritualReq?.forthcoming).toBe(true);
-    expect(ritualReq?.label).toMatch(/will be enacted as you climb/i);
+    expect(ritualReq?.label).toMatch(/Perform the Advancement Ritual/i);
     expect(canAdvance(session)).toBe(true);
+  });
+
+  it("blocks the climb until the ritual is actually performed (issue #99 Part C)", () => {
+    // A session ready in every way EXCEPT the rite has not been enacted.
+    const ready = readyToAdvance(6); // target 5 — rite already performed
+    const unperformed: GameSession = { ...ready, ritualState: undefined };
+    const ritualReq = advancementRequirements(unperformed).find((r) => r.id === "ritual");
+    expect(ritualReq?.met).toBe(false);
+    expect(canAdvance(unperformed)).toBe(false);
+    // Performing the rite unlocks the climb.
+    expect(canAdvance(ready)).toBe(true);
   });
 
   it("does not add a ritual requirement below Sequence 5", () => {
@@ -340,7 +361,12 @@ describe("canon-data fallbacks", () => {
     ).toBe(true);
   });
 
-  it("shows a generic ritual label when canon text is absent", () => {
+  it("shows a generic ritual label and does not block when no ritual is defined", () => {
+    // An unknown pathway has no sequence data, so the target rung defines no
+    // ritual. Per the issue #99 Part C gate (`met: ritual === undefined ||
+    // isRitualComplete`), an absent rite is nothing to perform — the gate passes
+    // with the generic label rather than hard-blocking. (Real pathways always
+    // define a Seq ≤5 ritual after Part A, so this branch is purely defensive.)
     const base = createDefaultGameState(1, "char-1", "Klein");
     const gameState = {
       ...base,
@@ -354,9 +380,7 @@ describe("canon-data fallbacks", () => {
     const session = createSession(gameState, "session-1");
     const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
     expect(ritualReq?.label).toMatch(/Advancement Ritual/i);
-    expect(ritualReq?.met).toBe(false);
-    // A mandatory ritual the pathway does not define is a hard block.
-    expect(canAdvance(session)).toBe(false);
+    expect(ritualReq?.met).toBe(true);
   });
 });
 
