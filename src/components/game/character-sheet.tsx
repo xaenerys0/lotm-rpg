@@ -33,9 +33,10 @@ import {
   resolveProfileState,
   resolveTrackedNpcState,
   shakeOff,
+  sequenceClassificationFor,
+  sequenceLabel,
   switchIdentity,
   transformationRiteFor,
-  trueGodName,
   DEFAULT_PREFERENCES,
   type DemeanorTrait,
   type GameSession,
@@ -188,10 +189,11 @@ export function CharacterSheet() {
               )}
             </h2>
             <p className="mt-1 font-serif text-sm italic text-muted">
-              Sequence {state.sequenceLevel}{" "}
-              {state.sequenceLevel === 0
-                ? `${trueGodName(state.pathwayId)} — True God`
-                : (sequence?.name ?? "Beyonder")}{" "}
+              {/* Apex tiers (Seq 0 True God, Pillar) read as their honorific +
+                  tier; ordinary rungs keep the "Sequence N — Role" form (#99 D). */}
+              {state.sequenceLevel <= 0
+                ? `${sequenceLabel(state.pathwayId, state.sequenceLevel)} — ${sequenceClassificationFor(state.sequenceLevel)}`
+                : `Sequence ${state.sequenceLevel} ${sequenceLabel(state.pathwayId, state.sequenceLevel)}`}{" "}
               · {pathway?.name ?? "Unknown"} Pathway
             </p>
             <p className="mt-2">

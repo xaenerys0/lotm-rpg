@@ -7,6 +7,8 @@ import type { GameSessionSummary } from "@/lib/game";
 import {
   createSession,
   createDefaultGameState,
+  sequenceClassificationFor,
+  sequenceLabel,
   sessionToSummary,
   PROVIDER_CONFIG_KEY,
   PROLOGUE_DRAFT_KEY,
@@ -282,7 +284,10 @@ export function PlayDashboard() {
               const pathway = ALL_PATHWAYS.find((p) => p.id === s.pathwayId);
               const seq = pathway ? getSequence(pathway.id, s.sequenceLevel) : null;
               const confirming = pendingDeleteId === s.id;
-              const title = `${seq?.name ?? "Unknown"} — ${pathway?.name ?? "?"} pathway, Sequence ${s.sequenceLevel}`;
+              const title =
+                s.sequenceLevel <= 0
+                  ? `${sequenceLabel(s.pathwayId, s.sequenceLevel)} — ${pathway?.name ?? "?"} pathway, ${sequenceClassificationFor(s.sequenceLevel)}`
+                  : `${seq?.name ?? "Unknown"} — ${pathway?.name ?? "?"} pathway, Sequence ${s.sequenceLevel}`;
               return (
                 <li
                   key={s.id}

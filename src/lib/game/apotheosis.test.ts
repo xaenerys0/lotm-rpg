@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Item } from "@/lib/types/rules";
-import { SEQUENCE_NAMES } from "@/lib/rules";
+import { ALL_PATHWAYS, SEQUENCE_NAMES } from "@/lib/rules";
 
 import {
   ABOVE_SEQUENCE_TEASE,
@@ -11,10 +11,13 @@ import {
   canAttemptApotheosis,
   drawPetition,
   sequenceAbilities,
+  sequenceClassificationFor,
+  sequenceLabel,
   trueGodName,
   TRUE_GOD_NAMES,
   uniquenessItemFor,
 } from "./apotheosis";
+import { PILLAR_SEQUENCE } from "./pillars";
 import { consecrateAnchor, emptyAnchorState } from "./anchors";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
@@ -217,6 +220,49 @@ describe("attemptApotheosis", () => {
     const noAnchors = { ...session, anchorState: undefined };
     const result = attemptApotheosis(noAnchors, () => 0);
     expect(result.outcome).toBe("unmade");
+  });
+});
+
+describe("sequenceLabel (issue #99 Part D)", () => {
+  it("labels the apex tiers by honorific, not a bare number", () => {
+    expect(sequenceLabel(1, PILLAR_SEQUENCE)).toBe("Lord of Mysteries"); // Pillar
+    expect(sequenceLabel(1, 0)).toBe("The Fool"); // True God
+    expect(sequenceLabel(1, 5)).toBe("Marionettist"); // ordinary rung
+  });
+
+  it("falls back to a plain label only when sequence data is absent", () => {
+    expect(sequenceLabel(20, PILLAR_SEQUENCE)).toBe("the Pillar"); // no Pillar family
+    expect(sequenceLabel(999, 4)).toBe("Sequence 4"); // unknown pathway
+  });
+});
+
+describe("sequenceClassificationFor (issue #99 Part D)", () => {
+  it("maps every tier including the two apex tiers", () => {
+    expect(sequenceClassificationFor(PILLAR_SEQUENCE)).toBe("Pillar");
+    expect(sequenceClassificationFor(0)).toBe("True God");
+    expect(sequenceClassificationFor(1)).toBe("Demigod");
+    expect(sequenceClassificationFor(2)).toBe("Demigod");
+    expect(sequenceClassificationFor(3)).toBe("High");
+    expect(sequenceClassificationFor(4)).toBe("High");
+    expect(sequenceClassificationFor(5)).toBe("Mid");
+    expect(sequenceClassificationFor(6)).toBe("Mid");
+    expect(sequenceClassificationFor(7)).toBe("Mid");
+    expect(sequenceClassificationFor(8)).toBe("Low");
+    expect(sequenceClassificationFor(9)).toBe("Low");
+  });
+
+  it("stays in sync with the rules Sequence.classification (no drift)", () => {
+    // The level→tier boundaries are re-encoded here for the apex tiers, so guard
+    // them against the per-Sequence classification in pathways.ts: for every
+    // stored rung (Seq 9-1) the two must agree, across every pathway.
+    for (const pathway of ALL_PATHWAYS) {
+      for (const seq of pathway.sequences) {
+        expect(
+          sequenceClassificationFor(seq.level),
+          `pathway ${pathway.id} Seq ${seq.level}`,
+        ).toBe(seq.classification);
+      }
+    }
   });
 });
 
