@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Seventeen migrations in order:
+Migrations live in `migrations/`. Eighteen migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -73,6 +73,8 @@ Migrations live in `migrations/`. Seventeen migrations in order:
 
 17. `20260618102336_create_user_preferences.sql` — Cloud-synced display preferences + first-time-hint dismissals (cross-device). `user_preferences` — one row per user: `user_id` PK, `preferences` jsonb, `dismissed_hints` text[], `updated_at`. RLS owner-only.
 
+18. `20260618102520_harden_set_active_session_grants.sql` — Locks the `set_active_session` RPC's EXECUTE to `authenticated` only (`revoke … from public, anon; grant … to authenticated`), matching the `purchase_listing`/`rate_world_message` convention and clearing the security advisor warning. Kept as its own versioned file so `migrations/` mirrors the remote history exactly (the grant was applied out-of-band alongside migration 15, so migration 15 creates the RPC but does NOT grant it — this file does).
+
 ## Auth Session Persistence
 
 Two settings control login persistence. **Both must be set in the hosted Supabase project** via the Dashboard → Authentication → Advanced settings:
@@ -95,6 +97,8 @@ Session cookies are set with a 400-day max-age by `@supabase/ssr`, so cookie per
 ## Auth Email Templates
 
 Custom HTML templates in `templates/`: confirmation, recovery, magic_link, invite, reauthentication, email_change. Victorian-themed to match the game UI.
+
+> **Email templates + SMTP are managed in the hosted Dashboard, NOT `config.toml`** (the `[auth.email.template.*]` blocks and `[auth.email.smtp]` are commented out — same pattern as `[auth.sessions]`). Two reasons: (1) Supabase **ignores Auth config on production deploys** ("All other configurations, including API, Auth, and seed files, are ignored by default"), so these never reach prod from `config.toml` anyway — prod's Resend SMTP + templates live in the Dashboard. (2) On a free-tier **branching preview** environment they actively break the branch action: applying a custom template on the default email provider returns HTTP 400 (`MIGRATIONS_FAILED`, unrelated to the SQL migrations), and adding SMTP to satisfy it needs a per-branch secret (`supabase secrets set RESEND_API_KEY=…`) for an ephemeral branch that gains nothing. Preview branches therefore use default email. Re-add the blocks only if branching moves to Pro with a branch SMTP secret.
 
 ## Conventions
 
