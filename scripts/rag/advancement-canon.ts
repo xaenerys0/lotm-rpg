@@ -1,15 +1,26 @@
 // Advancement-canon generator (corpus-grounded).
 //
 // Parses the committed Fandom wiki dump's `Module:Sequence/standard` Lua data
-// and emits `src/lib/rules/advancement-canon.ts` — the per-pathway, per-sequence
-// Advancement Ritual text and material list, keyed by the rules-engine pathway
-// id. Canon: the `ritual` field exists only for Sequence 5 and below, which is
-// exactly when an Advancement Ritual becomes mandatory.
+// and emits two generated rules-engine files, both keyed by the rules-engine
+// pathway id:
+//
+//   1. `src/lib/rules/advancement-canon.ts` — the per-pathway, per-sequence
+//      Advancement Ritual text and material list. Canon: the `ritual` field
+//      exists only for Sequence 5 and below, which is exactly when an
+//      Advancement Ritual becomes mandatory.
+//   2. `src/lib/rules/sequence-names-canon.ts` — the canonical sequence NAME for
+//      every level 9 → 0 of every pathway (the wiki entry key, e.g. `['Seer']`).
+//      This is the source of truth the reconciliation test (`sequence-names-
+//      canon.test.ts`) holds `pathways.ts` (Seq 9-1) and `TRUE_GOD_NAMES`
+//      (Seq 0) against, so names can never silently diverge from the corpus.
+//      The wiki dump also carries the sequel (Circle of Inevitability) rungs the
+//      novel never reached, so this covers Seq 4-1 of the thirteen pathways the
+//      novel stopped at Seq 5 and every Seq 0 honorific.
 //
 // Usage:
 //   pnpm rag:advancement-canon                 # reads the committed corpus
 //   pnpm rag:advancement-canon <pages.xml>     # explicit dump path
-//   pnpm format                                # tidy the emitted file afterwards
+//   pnpm format                                # tidy the emitted files afterwards
 //
 // The dump is committed under corpus/wiki/ (extract the .7z first); see
 // docs/rag-ingestion.md.
@@ -19,6 +30,7 @@ import { resolve } from "node:path";
 
 const DEFAULT_DUMP = "corpus/wiki/lordofthemystery_pages_current.xml";
 const OUTPUT = "src/lib/rules/advancement-canon.ts";
+const NAMES_OUTPUT = "src/lib/rules/sequence-names-canon.ts";
 
 /** Lowest sequence whose advancement is mandatory-ritual (canon). */
 const RITUAL_FROM_SEQUENCE = 5;
@@ -122,18 +134,31 @@ function main(): void {
 
   // id -> level -> ritual
   const byPathway = new Map<number, Map<number, RitualEntry>>();
+  // id -> level (9-0) -> canonical sequence name (the wiki entry key).
+  const names = new Map<number, Map<number, string>>();
 
   for (const entry of entries) {
     const body = entry;
     const pathwayName = field(body, "pathway");
     const seqRank = field(body, "seq_rank");
-    const ritual = field(body, "ritual");
-    if (!pathwayName || seqRank === null || !ritual) continue;
+    if (!pathwayName || seqRank === null) continue;
 
     const shortName = pathwayName.replace(/ Pathway$/, "").trim();
     const pathwayId = PATHWAY_IDS[shortName];
     const level = Number(seqRank);
     if (pathwayId === undefined || !Number.isInteger(level)) continue;
+
+    // The entry key (`['Seer']`) is the canonical sequence name. Collect it for
+    // every rung 9 → 0 (Seq 0 is the True God honorific), independent of whether
+    // the rung carries an Advancement Ritual.
+    const keyMatch = /^\['([^']+)'\]/.exec(body);
+    if (keyMatch && level >= 0 && level <= 9) {
+      if (!names.has(pathwayId)) names.set(pathwayId, new Map());
+      names.get(pathwayId)!.set(level, keyMatch[1].trim());
+    }
+
+    const ritual = field(body, "ritual");
+    if (!ritual) continue;
     // Sequence 0 is the apotheosis endgame, not a normal advancement rung.
     if (level < 1 || level > RITUAL_FROM_SEQUENCE) continue;
 
@@ -190,6 +215,50 @@ function main(): void {
   const total = [...byPathway.values()].reduce((n, m) => n + m.size, 0);
   process.stderr.write(
     `Wrote ${OUTPUT}: ${byPathway.size} pathways, ${total} ritual entries.\n`,
+  );
+
+  // ---- sequence-names-canon.ts ----------------------------------------------
+  const nameLines: string[] = [];
+  nameLines.push("// AUTO-GENERATED — do not edit by hand.");
+  nameLines.push("//");
+  nameLines.push(
+    "// Source: corpus/wiki Module:Sequence/standard (the committed Fandom dump).",
+  );
+  nameLines.push("// Regenerate with: pnpm rag:advancement-canon");
+  nameLines.push("//");
+  nameLines.push(
+    "// The canonical sequence name for every rung 9 -> 0 of all 22 pathways (the",
+  );
+  nameLines.push(
+    "// wiki entry key). Includes the sequel (Circle of Inevitability) rungs the",
+  );
+  nameLines.push(
+    "// novel never reached — Seq 4-1 of the thirteen later pathways and every Seq 0",
+  );
+  nameLines.push(
+    "// honorific. The reconciliation test holds pathways.ts and TRUE_GOD_NAMES",
+  );
+  nameLines.push("// against this map so curated names can't drift from the corpus.");
+  nameLines.push("");
+  nameLines.push("/** pathwayId -> sequence level (9-0) -> the canon sequence name. */");
+  nameLines.push(
+    "export const SEQUENCE_NAMES: Record<number, Record<number, string>> = {",
+  );
+  for (const pathwayId of [...names.keys()].sort((a, b) => a - b)) {
+    const levels = names.get(pathwayId)!;
+    nameLines.push(`  ${pathwayId}: {`);
+    for (const level of [...levels.keys()].sort((a, b) => b - a)) {
+      nameLines.push(`    ${level}: ${JSON.stringify(levels.get(level)!)},`);
+    }
+    nameLines.push("  },");
+  }
+  nameLines.push("};");
+  nameLines.push("");
+
+  writeFileSync(resolve(process.cwd(), NAMES_OUTPUT), nameLines.join("\n"), "utf-8");
+  const nameTotal = [...names.values()].reduce((n, m) => n + m.size, 0);
+  process.stderr.write(
+    `Wrote ${NAMES_OUTPUT}: ${names.size} pathways, ${nameTotal} sequence names.\n`,
   );
 
   // Surface any pathway the extractor produced NOTHING for, so a parsing/name

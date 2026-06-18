@@ -8,11 +8,13 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 
 - `pathways.ts` — Pathway and sequence definitions (abilities, ingredients, rituals) for all 22 pathways. Large block of game data. At module load `applyCanonAdvancement` overlays the corpus-derived `ADVANCEMENT_RITUALS` (`advancement-canon.ts`) so `ALL_PATHWAYS` reflects canon: an **Advancement Ritual exists only from Sequence 5 onward** — higher rungs (Seq 9-6) carry `advancementRitual: undefined`, Seq 5-1 take the canon ritual text + material list (falling back to the hand-authored placeholder where the corpus lacked one). Lookups: `getPathway`/`getSequence` (O(1) by id). **Abilities are cumulative** — `getCumulativeAbilities(pathwayId, level)` returns every ability from the rungs climbed (current Sequence up through Sequence 9), deduped current-rung-first, each tagged with its `sourceLevel` and an `enhanced` flag (true for earlier, now-strengthened rungs); `getCumulativeAbilityGroups` is the same set grouped by originating rung for display. Acting requirements stay scoped to the current rung (`getSequence`). The game/UI layers consume these via `sequenceAbilities` (`@/lib/game`) and the character sheet.
 - `advancement-canon.ts` — **AUTO-GENERATED** (`pnpm rag:advancement-canon`, do not hand-edit). `ADVANCEMENT_RITUALS[pathwayId][level]` (levels 5-1) and `RITUAL_FROM_SEQUENCE`, extracted from the committed wiki dump's `Module:Sequence/standard` (`corpus/wiki/`). The single source of canon Advancement Ritual data.
+- `sequence-names-canon.ts` — **AUTO-GENERATED** by the same `pnpm rag:advancement-canon` run (do not hand-edit). `SEQUENCE_NAMES[pathwayId][level]` — the canonical sequence NAME for every rung 9 → 0 of all 22 pathways (the wiki entry key), including the sequel (Circle of Inevitability) rungs the novel never reached. `sequence-names-canon.test.ts` is the permanent **reconciliation** guard: it holds `pathways.ts` (Seq 9-1) and `apotheosis.ts`'s `TRUE_GOD_NAMES`/pathway names (Seq 0) against this map, so curated names can never silently drift from the corpus.
 - `groups.ts` — Pathway group clustering (nine groups partitioning all 22 pathways) and neighbor relationships.
 - `laws.ts` — Three cosmic laws: indestructibility (conservation of total characteristic weight), conservation (sequential advancement only), convergence (same/neighboring pathway attraction).
 - `validation.ts` — High-level validation API: `validateAdvancement()` and `validateTransfer()`.
 - `index.ts` — Public exports.
 - `rules.test.ts` — Comprehensive test suite (8 describe blocks, ~55 test cases).
+- `sequence-names-canon.test.ts` — Permanent **canon reconciliation** guard (issue #99 Part A): holds `pathways.ts` (Seq 9-1) and `apotheosis.ts`'s `TRUE_GOD_NAMES`/pathway names (Seq 0) against the generated `SEQUENCE_NAMES`, so curated names can never silently drift from the wiki corpus.
 
 ## Key Types (from `@/lib/types/rules`)
 
@@ -23,12 +25,20 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 
 ## Current Scope
 
-All **22 pathways** implemented (issue #28). The original nine carry sequences
-**9 down to 1** (issue #25 added the demigod tiers Seq 4-1: Saint → Angel →
-King of Angels); the thirteen added in #28 ship at **Seq 9-5** and grow deeper
-when the private novel source is available (the same staged rollout used for
-#21/#25). Sequence 0 (True God) is reached via the apotheosis endgame in
-`@/lib/game/apotheosis` (issue #30), not stored as a `Sequence` here.
+All **22 pathways** are implemented to the **full Seq 9 → 1** (issue #99 Part A
+completed the demigod tiers Seq 4-1 for the thirteen pathways that previously
+stopped at Seq 5; the original nine reached Seq 1 earlier in #25). **The
+sequence NAMES are canon** — generated into `sequence-names-canon.ts` from the
+wiki `Module:Sequence/standard` (the sequel/Circle-of-Inevitability rungs the
+novel never reached) and held to `pathways.ts` by `sequence-names-canon.test.ts`.
+For the thirteen later pathways' Seq 4-1, only the names are canon; their
+**abilities, acting requirements, and advancement rituals are provisional**
+(flagged in-code) where the corpus is silent — the canon Advancement Ritual
+overlay (`advancement-canon.ts`) still fills any rung the wiki does carry.
+Sequence 0 (True God) is the apotheosis endgame in `@/lib/game/apotheosis`
+(issue #30) — its honorific is in `TRUE_GOD_NAMES` (all 22, issue #99) and the
+Above-the-Sequence Pillar apex sits above it (see issue #99 Part B), not stored
+as a `Sequence` here.
 
 Nine groups partition all 22 pathways (`PATHWAY_GROUPS`):
 

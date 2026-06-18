@@ -83,17 +83,14 @@ describe("pathway definitions", () => {
     expect(pathway.id).toBe(id);
   });
 
-  it("sequence depth matches pathway scope: 9..1 for the original 9, 9..5 for the new 13", () => {
-    // The original nine pathways are implemented to the demigod tiers (Seq 4-1,
-    // issue #25). The thirteen added in issue #28 ship at Seq 9-5; their deep
-    // sequences await the private novel source, mirroring the #21/#25 rollout.
+  it("every pathway runs the full Seq 9 → 1 (all 22 completed, issue #99)", () => {
+    // All twenty-two pathways now carry every rung Seq 9-1. The demigod tiers
+    // (Seq 4-1) of the thirteen later pathways were completed in issue #99 Part
+    // A: the sequence NAMES are canon (wiki Module:Sequence/standard, reconciled
+    // by sequence-names-canon.test.ts); their abilities/acting are provisional.
     for (const pathway of ALL_PATHWAYS) {
       const levels = pathway.sequences.map((s) => s.level).sort((a, b) => b - a);
-      if (pathway.id <= 9) {
-        expect(levels).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
-      } else {
-        expect(levels).toEqual([9, 8, 7, 6, 5]);
-      }
+      expect(levels).toEqual([9, 8, 7, 6, 5, 4, 3, 2, 1]);
     }
   });
 

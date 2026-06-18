@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Item } from "@/lib/types/rules";
+import { SEQUENCE_NAMES } from "@/lib/rules";
 
 import {
   ABOVE_SEQUENCE_TEASE,
@@ -11,6 +12,7 @@ import {
   drawPetition,
   sequenceAbilities,
   trueGodName,
+  TRUE_GOD_NAMES,
   uniquenessItemFor,
 } from "./apotheosis";
 import { consecrateAnchor, emptyAnchorState } from "./anchors";
@@ -50,6 +52,31 @@ describe("trueGodName", () => {
   it("maps the nine pathways to their honorifics", () => {
     expect(trueGodName(1)).toBe("The Fool");
     expect(trueGodName(9)).toBe("Hanged Man");
+  });
+
+  it("covers all 22 pathways' Seq 0 (issue #99 Part A)", () => {
+    // Every pathway now has a True God honorific; the later thirteen use their
+    // canon Above-the-Sequence name (the wiki Seq 0 entry), reconciled below.
+    for (let id = 10; id <= 22; id++) {
+      expect(TRUE_GOD_NAMES[id], `pathway ${id} honorific`).toBeDefined();
+      expect(trueGodName(id)).toBe(SEQUENCE_NAMES[id][0]);
+    }
+    expect(Object.keys(TRUE_GOD_NAMES).length).toBe(22);
+  });
+
+  it("matches canon Seq 0 names except the Fool's intentional article", () => {
+    // The wiki Seq 0 entry key is the bare pathway name; TRUE_GOD_NAMES mirrors
+    // it for all pathways save the Fool, whose honorific is the definite-article
+    // "The Fool" by design (the Lord of Mysteries' canon title). This guards
+    // that deliberate divergence so it can't be accidentally widened.
+    for (let id = 1; id <= 22; id++) {
+      if (id === 1) {
+        expect(TRUE_GOD_NAMES[id]).toBe("The Fool");
+        expect(SEQUENCE_NAMES[id][0]).toBe("Fool");
+      } else {
+        expect(TRUE_GOD_NAMES[id], `pathway ${id}`).toBe(SEQUENCE_NAMES[id][0]);
+      }
+    }
   });
 
   it("falls back to the pathway name (or a generic) for unknown ids", () => {
