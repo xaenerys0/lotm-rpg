@@ -245,7 +245,7 @@ port = 465
 user = "resend"
 pass = "env(RESEND_API_KEY)"
 admin_email = "noreply@lotm-rpg.atgames.cc"
-sender_name = "LOTM RPG"
+sender_name = "Lord of Mysteries"
 
 [auth.email.template.confirmation]
 subject = "A new soul stirs in the fog"
