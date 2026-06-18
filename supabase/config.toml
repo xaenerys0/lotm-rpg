@@ -230,46 +230,46 @@ otp_length = 6
 # Number of seconds before the email OTP expires (defaults to 1 hour).
 otp_expiry = 3600
 
-# Production SMTP (Resend). Configured here — not dashboard-only — so the Supabase
-# branching PREVIEW environments inherit it too. A preview branch starts as a fresh
-# project that does NOT inherit the dashboard's SMTP, so without this it falls back
-# to the default email provider and the free tier rejects the custom email-template
-# apply with HTTP 400 ("Email template modification is not available for free tier
-# projects using the default email provider"), failing the whole branch action
-# (MIGRATIONS_FAILED). RESEND_API_KEY is set as a Supabase project secret, so the
-# env() reference resolves in the branch/config pipeline (no secret is committed).
-[auth.email.smtp]
-enabled = true
-host = "smtp.resend.com"
-port = 465
-user = "resend"
-pass = "env(RESEND_API_KEY)"
-admin_email = "noreply@lotm-rpg.atgames.cc"
-sender_name = "Lord of Mysteries"
+# Use a production-ready SMTP server.
+# [auth.email.smtp]
+# enabled = true
+# host = "smtp.sendgrid.net"
+# port = 587
+# user = "apikey"
+# pass = "env(SENDGRID_API_KEY)"
+# admin_email = "admin@email.com"
+# sender_name = "Admin"
 
-[auth.email.template.confirmation]
-subject = "A new soul stirs in the fog"
-content_path = "./supabase/templates/confirmation.html"
-
-[auth.email.template.magic_link]
-subject = "A lantern lit in your name"
-content_path = "./supabase/templates/magic_link.html"
-
-[auth.email.template.recovery]
-subject = "Re-forge your sealed name"
-content_path = "./supabase/templates/recovery.html"
-
-[auth.email.template.email_change]
-subject = "A new name beneath the fog"
-content_path = "./supabase/templates/email_change.html"
-
-[auth.email.template.invite]
-subject = "A summons to the Tarot Club"
-content_path = "./supabase/templates/invite.html"
-
-[auth.email.template.reauthentication]
-subject = "Speak the word of passage"
-content_path = "./supabase/templates/reauthentication.html"
+# Custom auth email templates (Victorian-themed; HTML in supabase/templates/) are
+# managed in the hosted project's DASHBOARD, NOT here. They are commented out of
+# config.toml on purpose — same pattern as [auth.sessions] below:
+#   • Supabase IGNORES Auth config (SMTP + templates) on production deploys, so
+#     these blocks never reach prod from config.toml anyway (prod templates +
+#     Resend SMTP live in the dashboard).
+#   • On a free-tier branching PREVIEW environment they actively break the branch
+#     action: applying a custom template on the default email provider returns
+#     HTTP 400, and adding SMTP to satisfy it needs a per-branch secret — all for
+#     an ephemeral branch that gains nothing. So branches just use default email.
+# To customize them again, set them in the Dashboard (Authentication → Emails) or,
+# if branching ever moves to Pro with a branch SMTP secret, re-add the blocks here.
+# [auth.email.template.confirmation]
+# subject = "A new soul stirs in the fog"
+# content_path = "./supabase/templates/confirmation.html"
+# [auth.email.template.magic_link]
+# subject = "A lantern lit in your name"
+# content_path = "./supabase/templates/magic_link.html"
+# [auth.email.template.recovery]
+# subject = "Re-forge your sealed name"
+# content_path = "./supabase/templates/recovery.html"
+# [auth.email.template.email_change]
+# subject = "A new name beneath the fog"
+# content_path = "./supabase/templates/email_change.html"
+# [auth.email.template.invite]
+# subject = "A summons to the Tarot Club"
+# content_path = "./supabase/templates/invite.html"
+# [auth.email.template.reauthentication]
+# subject = "Speak the word of passage"
+# content_path = "./supabase/templates/reauthentication.html"
 
 # Uncomment to customize notification email template
 # [auth.email.notification.password_changed]
