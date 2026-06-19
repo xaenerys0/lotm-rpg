@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getEmbeddingModel } from "@/lib/ai";
+import { DEFAULT_EMBEDDING_MODEL_ID, getEmbeddingModel } from "@/lib/ai";
 import { createClient } from "@/lib/supabase/server";
 
 // Server-side proxy for Cloudflare Workers AI embeddings (the hosted RAG query
@@ -33,7 +33,11 @@ function parseEmbedRequest(
   } catch {
     return null;
   }
-  const modelId = typeof parsed.model === "string" ? parsed.model : DEFAULT_MODEL_ID;
+  // Require a real `text` payload (Cloudflare's run endpoint needs it) so a
+  // text-less request is rejected here rather than firing a doomed upstream call.
+  if (typeof parsed.text !== "string" && !Array.isArray(parsed.text)) return null;
+  const modelId =
+    typeof parsed.model === "string" ? parsed.model : DEFAULT_EMBEDDING_MODEL_ID;
   try {
     // getEmbeddingModel throws for an unknown id (the allowlist); cloudflareModel
     // is present for every approved model.
@@ -43,8 +47,6 @@ function parseEmbedRequest(
     return null;
   }
 }
-
-const DEFAULT_MODEL_ID = "qwen3-embedding-0.6b";
 
 /** The shared `rate_limits` bucket this route counts under. */
 const RATE_LIMIT_BUCKET = "embed";
