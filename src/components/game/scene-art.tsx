@@ -47,8 +47,15 @@ export function SceneArt({
         const dataUrl = await generateImage(imageConfig, buildSceneArtPrompt(context));
         await putCachedArt(artKey, dataUrl);
         if (!cancelled) setSrc(dataUrl);
-      } catch {
-        // Art is optional — never surface an error for it.
+      } catch (err) {
+        // Art is optional — never surface an error to the player. But DO log it:
+        // a silent failure (wrong/unsupported image model, unreachable endpoint)
+        // is otherwise impossible to diagnose. The key is never part of `err`.
+        console.error("[scene-art] image generation failed", {
+          provider: imageConfig.providerId,
+          model: imageConfig.model,
+          reason: err instanceof Error ? err.message : String(err),
+        });
       } finally {
         if (!cancelled) setGenerating(false);
       }

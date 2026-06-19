@@ -26,14 +26,12 @@ const ok = (payload: unknown) =>
 describe("image provider metadata", () => {
   it("classifies key/base-url/model requirements per provider", () => {
     expect(imageProviderRequiresKey("openai")).toBe(true);
-    expect(imageProviderRequiresKey("ollama-cloud")).toBe(true);
     expect(imageProviderRequiresKey("ollama")).toBe(false);
     expect(imageProviderRequiresKey("local-sd")).toBe(false);
 
     expect(imageProviderNeedsBaseUrl("ollama")).toBe(true);
     expect(imageProviderNeedsBaseUrl("local-sd")).toBe(true);
     expect(imageProviderNeedsBaseUrl("openai")).toBe(false);
-    expect(imageProviderNeedsBaseUrl("ollama-cloud")).toBe(false);
 
     // Only the Stable Diffusion WebUI runs without a chosen model id.
     expect(imageProviderNeedsModel("local-sd")).toBe(false);
@@ -43,7 +41,6 @@ describe("image provider metadata", () => {
   it("exposes sensible default base URLs", () => {
     expect(defaultImageBaseUrl("openai")).toBe("https://api.openai.com/v1");
     expect(defaultImageBaseUrl("ollama")).toBe("http://localhost:11434/v1");
-    expect(defaultImageBaseUrl("ollama-cloud")).toBe("/api/proxy/ollama-cloud");
     expect(defaultImageBaseUrl("local-sd")).toBe("http://localhost:7860");
   });
 
@@ -58,9 +55,6 @@ describe("imageArtSupported", () => {
   it("requires a key when the provider needs one", () => {
     expect(imageArtSupported(config())).toBe(true);
     expect(imageArtSupported(config({ apiKey: "" }))).toBe(false);
-    expect(imageArtSupported(config({ providerId: "ollama-cloud", apiKey: "" }))).toBe(
-      false,
-    );
   });
 
   it("requires a model for the OpenAI-compatible backends, not for local-sd", () => {
@@ -155,7 +149,7 @@ describe("generateImage — OpenAI", () => {
   });
 });
 
-describe("generateImage — Ollama / Ollama Cloud", () => {
+describe("generateImage — Ollama (local)", () => {
   it("posts a minimal body to the local OpenAI-compatible endpoint", async () => {
     const fetchFn = ok({ data: [{ b64_json: "QUJD" }] });
     const cfg = config({ providerId: "ollama", apiKey: "", model: "z-image-turbo" });
@@ -182,14 +176,17 @@ describe("generateImage — Ollama / Ollama Cloud", () => {
     expect(fetchFn.mock.calls[0][0]).toBe("http://box:11434/v1/images/generations");
   });
 
-  it("routes Ollama Cloud through the same-origin proxy with the bearer key", async () => {
+  it("sends a bearer header when the local endpoint is key-protected", async () => {
     const fetchFn = ok({ data: [{ b64_json: "QUJD" }] });
-    const cfg = config({ providerId: "ollama-cloud", model: "x/flux2-klein:9b" });
+    const cfg = config({
+      providerId: "ollama",
+      apiKey: "secret",
+      model: "z-image-turbo",
+    });
     await generateImage(cfg, "p", fetchFn);
-    const [url, init] = fetchFn.mock.calls[0];
-    expect(url).toBe("/api/proxy/ollama-cloud/images/generations");
+    const [, init] = fetchFn.mock.calls[0];
     expect((init as RequestInit).headers).toMatchObject({
-      Authorization: "Bearer sk-test",
+      Authorization: "Bearer secret",
     });
   });
 });

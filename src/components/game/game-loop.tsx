@@ -1630,6 +1630,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             gameState={session.gameState}
             abilities={combatAbilities}
             config={providerConfig}
+            sessionId={session.id}
+            imageConfig={imageConfig}
+            sceneArtEnabled={preferences.sceneArtEnabled}
             // Persona / true-self / recognition contexts (shared with the normal
             // turn) so the fight is narrated as the face the player wears.
             {...personaPromptContexts(session)}

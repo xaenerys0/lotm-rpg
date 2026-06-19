@@ -15,12 +15,17 @@ import { fetchWithErrorHandling } from "./providers";
 //   - openai        → OpenAI Images `/images/generations` (dall-e-3 / gpt-image-1)
 //   - ollama        → local Ollama's OpenAI-compatible `/v1/images/generations`
 //                     (experimental image generation, e.g. z-image / flux2-klein)
-//   - ollama-cloud  → same OpenAI-compatible shape, via the CORS proxy
 //   - local-sd      → a local Stable Diffusion WebUI (Automatic1111/Forge)
 //                     `/sdapi/v1/txt2img`, returning base64 PNGs
+//
+// NOTE: Ollama *Cloud* is intentionally NOT an image backend. ollama.com hosts
+// only chat/vision models — its image-generation models (z-image / flux2-klein)
+// ship as LOCAL, on-device generation only (per Ollama's docs), so a cloud key
+// has no image endpoint to call. Image generation runs via local Ollama, OpenAI,
+// or a local Stable Diffusion WebUI instead.
 // ---------------------------------------------------------------------------
 
-export type ImageProviderId = "openai" | "ollama" | "ollama-cloud" | "local-sd";
+export type ImageProviderId = "openai" | "ollama" | "local-sd";
 
 export interface ImageProviderConfig {
   providerId: ImageProviderId;
@@ -65,14 +70,6 @@ const IMAGE_PROVIDERS: Record<ImageProviderId, ImageProviderMeta> = {
     defaultBaseUrl: "http://localhost:11434/v1",
     transport: "openai-images",
   },
-  "ollama-cloud": {
-    requiresKey: true,
-    needsBaseUrl: false,
-    // Same-origin proxy — ollama.com sends no CORS headers (see the text
-    // adapter's `/api/proxy/ollama-cloud` workaround).
-    defaultBaseUrl: "/api/proxy/ollama-cloud",
-    transport: "openai-images",
-  },
   "local-sd": {
     requiresKey: false,
     needsBaseUrl: true,
@@ -92,10 +89,6 @@ export const IMAGE_PROVIDER_MODELS: Record<ImageProviderId, ImageModelOption[]> 
   ollama: [
     { id: "z-image-turbo", name: "Z-Image Turbo" },
     { id: "x/flux2-klein:4b", name: "FLUX.2 Klein 4B" },
-    { id: "x/flux2-klein:9b", name: "FLUX.2 Klein 9B" },
-  ],
-  "ollama-cloud": [
-    { id: "z-image-turbo", name: "Z-Image Turbo" },
     { id: "x/flux2-klein:9b", name: "FLUX.2 Klein 9B" },
   ],
   // The WebUI uses its loaded checkpoint; the model field is an optional override.
