@@ -24,21 +24,22 @@ import { createBrowserClientSafe } from "@/lib/supabase/client";
 
 /**
  * Resolve an embedding transport for the query vector, or `null` when none is
- * available. Preference: the operator's hosted Ollama Cloud endpoint (reached
- * through the same-origin proxy, which injects the operator key) when enabled;
- * then a self-hosted operator box; otherwise the player's own Ollama if that is
- * their chat provider. The first two give EVERY signed-in player retrieval; the
- * last only players already running Ollama. The embedding model is the save's
- * LOCKED model, never a free pick.
+ * available. Preference: the operator's hosted Cloudflare Workers AI endpoint
+ * (reached through the same-origin proxy, which injects the operator token) when
+ * enabled; then a self-hosted operator box; otherwise the player's own Ollama if
+ * that is their chat provider. The first two give EVERY signed-in player
+ * retrieval; the last only players already running Ollama. The embedding model is
+ * the save's LOCKED model, never a free pick.
  */
 function resolveEmbedder(session: GameSession, config: ProviderConfig | null) {
   const modelId = session.embeddingModelId;
   // A boolean flag, not a URL — so an explicit "0"/"false" must turn it OFF, not
-  // count as truthy and silently keep spending the operator's key.
-  if (isFlagEnabled(process.env.NEXT_PUBLIC_OLLAMA_CLOUD_EMBEDDING)) {
-    // Browser hits the same-origin proxy; the operator key stays server-side, so
-    // no key is passed here.
-    return createEmbeddingProvider({ id: "ollama-cloud", modelId });
+  // count as truthy and silently keep spending the operator's quota.
+  if (isFlagEnabled(process.env.NEXT_PUBLIC_CLOUDFLARE_EMBEDDING)) {
+    // Browser hits the same-origin proxy; the operator token stays server-side,
+    // so no key is passed here. (Throws for a save locked to a non-Cloudflare
+    // model — caught by retrieveLoreForTurn, degrading to curated lore only.)
+    return createEmbeddingProvider({ id: "cloudflare", modelId });
   }
   if (process.env.NEXT_PUBLIC_OPERATOR_EMBEDDING_URL) {
     return createEmbeddingProvider({ id: "operator", modelId });

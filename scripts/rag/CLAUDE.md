@@ -24,18 +24,19 @@ model without re-parsing or re-chunking.
 - `embed.ts` (`pnpm rag:embed`) — the **embed** stage (issue #60). Reads `ChunkRecord`
   JSONL and writes `ChunkRecord` JSONL with `embedding` filled via `embedChunks` + an
   `EmbeddingProvider`. Run once **per** approved model to build each map.
-  - `pnpm rag:embed --model qwen3-embedding-0.6b < chunks.jsonl > embedded.qwen3.jsonl`
   - `pnpm rag:embed --model bge-m3 chunks.jsonl embedded.bge.jsonl`
-  - Flags: `--provider ollama|operator|ollama-cloud` (default `ollama`), `--base-url <url>`,
-    `--batch <n>`. For `ollama-cloud` the operator's ollama.com key is read from the
-    `OLLAMA_CLOUD_API_KEY` env var (sent as the Bearer token); point `--base-url` at
-    `https://ollama.com` (CI is Node — no CORS, so it hits ollama.com directly, not the
-    browser proxy).
+  - `pnpm rag:embed --model qwen3-embedding-0.6b < chunks.jsonl > embedded.qwen3.jsonl`
+  - Flags: `--provider ollama|operator|cloudflare` (default `ollama`), `--base-url <url>`,
+    `--batch <n>`. For `cloudflare` (Cloudflare Workers AI, model `bge-m3`) the operator's
+    token is read from the `CF_API_TOKEN` env var (sent as the Bearer); point `--base-url`
+    at the full Workers AI run URL
+    `https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/ai/run/@cf/baai/bge-m3`
+    (CI is Node — no CORS, so it hits Cloudflare directly, not the browser proxy).
   - Offline/occasional operator batch — needs a running embedder (local Ollama, the
-    self-hosted operator box, or Ollama Cloud); never part of the app bundle. The one CI
-    use is the secret-gated `rag-ingest` workflow (`.github/workflows/rag-ingest.yml`,
-    main-only / dispatch), which runs `--provider ollama-cloud --base-url https://ollama.com`
-    with the `OLLAMA_CLOUD_API_KEY` secret.
+    self-hosted operator box, or Cloudflare Workers AI); never part of the app bundle. The
+    one CI use is the secret-gated `rag-ingest` workflow (`.github/workflows/rag-ingest.yml`,
+    main-only / dispatch), which runs `--provider cloudflare` against the CF run URL built
+    from the `CF_ACCOUNT_ID` + `CF_API_TOKEN` secrets (model `bge-m3`).
 
 - `novel.ts` (`pnpm rag:novel`) — the novel **parse + normalize** stages (issue #62).
   Reads an EPUB, a one-file-per-chapter directory (md/txt/html), or a single
