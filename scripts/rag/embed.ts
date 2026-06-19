@@ -11,8 +11,12 @@
 //   pnpm rag:embed --model qwen3-embedding-0.6b < chunks.jsonl > embedded.qwen3.jsonl
 //   pnpm rag:embed --model bge-m3 chunks.jsonl embedded.bge.jsonl
 //
-// Provider defaults to the operator's local Ollama box; override with:
-//   --provider ollama|operator   --base-url <url>   --batch <n>
+// Provider defaults to the player's local Ollama; override with:
+//   --provider ollama|operator|ollama-cloud   --base-url <url>   --batch <n>
+//
+// For `ollama-cloud` the operator's ollama.com key is read from the
+// OLLAMA_CLOUD_API_KEY env var and sent as the Bearer token; point --base-url at
+// https://ollama.com (CI is Node, so it hits ollama.com directly — no proxy).
 
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -32,8 +36,10 @@ interface Args {
 }
 
 function parseProviderId(value: string | undefined): EmbeddingProviderId {
-  if (value !== "ollama" && value !== "operator") {
-    throw new Error(`Invalid --provider "${value}". Use "ollama" or "operator".`);
+  if (value !== "ollama" && value !== "operator" && value !== "ollama-cloud") {
+    throw new Error(
+      `Invalid --provider "${value}". Use "ollama", "operator", or "ollama-cloud".`,
+    );
   }
   return value;
 }
@@ -63,6 +69,10 @@ async function main(): Promise<void> {
     id: args.provider,
     modelId: args.modelId,
     baseUrl: args.baseUrl,
+    // The hosted cloud endpoint needs the operator's ollama.com key; the local
+    // and self-hosted transports run unauthenticated.
+    apiKey:
+      args.provider === "ollama-cloud" ? process.env.OLLAMA_CLOUD_API_KEY : undefined,
   });
   const embedded = await embedChunks(records, provider, {
     batchSize: args.batchSize,

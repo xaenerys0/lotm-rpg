@@ -46,9 +46,9 @@ jobs:
         env:
           SUPA_URL: ${{ secrets.RAG_SUPABASE_URL }}
           SERVICE_ROLE: ${{ secrets.RAG_SUPABASE_SERVICE_ROLE_KEY }}
-          EMBED_URL: ${{ secrets.RAG_EMBEDDING_URL }}
+          CLOUD_KEY: ${{ secrets.OLLAMA_CLOUD_API_KEY }}
         run: |
-          if [ -n "$SUPA_URL" ] && [ -n "$SERVICE_ROLE" ] && [ -n "$EMBED_URL" ]; then
+          if [ -n "$SUPA_URL" ] && [ -n "$SERVICE_ROLE" ] && [ -n "$CLOUD_KEY" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "::notice::RAG ingestion secrets absent — skipping (expected on forks/Dependabot)."
@@ -90,7 +90,9 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.RAG_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.RAG_SUPABASE_SERVICE_ROLE_KEY }}
-          NEXT_PUBLIC_OPERATOR_EMBEDDING_URL: ${{ secrets.RAG_EMBEDDING_URL }}
+          # Hosted embedding via Ollama Cloud — CI is Node (no CORS), so the embed
+          # stage hits https://ollama.com directly with the operator's key.
+          OLLAMA_CLOUD_API_KEY: ${{ secrets.OLLAMA_CLOUD_API_KEY }}
           MODELS: ${{ inputs.models || 'qwen3-embedding-0.6b' }}
           # Pin the wiki spoiler gate so a re-ingest never silently lowers it:
           # dispatch input → repo variable → 0. `load` upserts concealment_tier,
@@ -124,9 +126,11 @@ jobs:
             model="${model%"${model##*[![:space:]]}"}"
             [ -z "$model" ] && continue
             echo "::group::Embed + load ($model)"
-            pnpm rag:embed --model "$model" --provider operator \
+            pnpm rag:embed --model "$model" --provider ollama-cloud \
+              --base-url https://ollama.com \
               /tmp/novel-chunks.jsonl "/tmp/novel.$model.jsonl"
-            pnpm rag:embed --model "$model" --provider operator \
+            pnpm rag:embed --model "$model" --provider ollama-cloud \
+              --base-url https://ollama.com \
               /tmp/wiki-chunks.jsonl "/tmp/wiki.$model.jsonl"
             pnpm rag:load "/tmp/novel.$model.jsonl" --model "$model"
             pnpm rag:load "/tmp/wiki.$model.jsonl" --model "$model"
