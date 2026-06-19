@@ -455,6 +455,28 @@ export interface Database {
         };
         Relationships: [];
       };
+      rate_limits: {
+        // Per-user fixed-window counters; written only via check_rate_limit().
+        Row: {
+          user_id: string;
+          bucket: string;
+          window_start: string;
+          counter: number;
+        };
+        Insert: {
+          user_id: string;
+          bucket: string;
+          window_start?: string;
+          counter?: number;
+        };
+        Update: {
+          user_id?: string;
+          bucket?: string;
+          window_start?: string;
+          counter?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
