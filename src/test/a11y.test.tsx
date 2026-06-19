@@ -41,6 +41,7 @@ import {
   SESSION_INDEX_KEY,
   SESSION_KEY_PREFIX,
   JOURNAL_KEY_PREFIX,
+  PROVIDER_CONFIG_KEY,
   createEncounter,
   applyPreparation,
   chooseOption,
@@ -406,6 +407,31 @@ describe("accessibility — manage characters", () => {
 
     // Open the two-step confirm and re-check the live region + button group.
     fireEvent.click(screen.getByRole("button", { name: /Delete .*pathway/ }));
+    await expectNoAxeViolationsInContainer(container);
+  });
+
+  it("populated 'Your Characters' roster (paginated) has no violations", async () => {
+    // A provider config flips `hasConfig` so the home dashboard renders the
+    // Start New Game CTA and the resume roster (not the configure banner).
+    localStorage.setItem(PROVIDER_CONFIG_KEY, JSON.stringify({ provider: "ollama" }));
+    // Seed more than one page (PAGE_SIZE is 6) so the pagination controls render.
+    const ids: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const id = `roster-${i}`;
+      ids.push(id);
+      const session = createSession(
+        createDefaultGameState((i % 9) + 1, `char-${i}`, `Beyonder ${i}`),
+        id,
+      );
+      localStorage.setItem(SESSION_KEY_PREFIX + id, serializeSession(session));
+    }
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(ids));
+
+    const { container } = render(<PlayDashboard />);
+    // Page 1: clickable resume cards + pagination controls.
+    await expectNoAxeViolationsInContainer(container);
+    // Page 2 surfaces the remaining character(s).
+    fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     await expectNoAxeViolationsInContainer(container);
   });
 });
