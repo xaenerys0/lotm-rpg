@@ -18,7 +18,7 @@ on:
     inputs:
       models:
         description: Approved embedding model id(s), comma-separated.
-        default: qwen3-embedding-0.6b
+        default: qwen3-embedding-0.6b,bge-m3
       wiki_concealment_tier:
         description: >
           Concealment tier to load wiki chunks at (spoiler gate). Leave blank to
@@ -46,9 +46,10 @@ jobs:
         env:
           SUPA_URL: ${{ secrets.RAG_SUPABASE_URL }}
           SERVICE_ROLE: ${{ secrets.RAG_SUPABASE_SERVICE_ROLE_KEY }}
-          CLOUD_KEY: ${{ secrets.OLLAMA_CLOUD_API_KEY }}
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
         run: |
-          if [ -n "$SUPA_URL" ] && [ -n "$SERVICE_ROLE" ] && [ -n "$CLOUD_KEY" ]; then
+          if [ -n "$SUPA_URL" ] && [ -n "$SERVICE_ROLE" ] && [ -n "$CF_ACCOUNT_ID" ] && [ -n "$CF_API_TOKEN" ]; then
             echo "enabled=true" >> "$GITHUB_OUTPUT"
           else
             echo "::notice::RAG ingestion secrets absent — skipping (expected on forks/Dependabot)."
@@ -94,10 +95,12 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.RAG_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.RAG_SUPABASE_SERVICE_ROLE_KEY }}
-          # Hosted embedding via Ollama Cloud — CI is Node (no CORS), so the embed
-          # stage hits https://ollama.com directly with the operator's key.
-          OLLAMA_CLOUD_API_KEY: ${{ secrets.OLLAMA_CLOUD_API_KEY }}
-          MODELS: ${{ inputs.models || 'qwen3-embedding-0.6b' }}
+          # Hosted embedding via Cloudflare Workers AI — CI is Node (no CORS), so
+          # the embed stage hits the Cloudflare REST API directly with the
+          # operator's token. Cloudflare hosts BOTH approved models.
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+          MODELS: ${{ inputs.models || 'qwen3-embedding-0.6b,bge-m3' }}
           # Pin the wiki spoiler gate so a re-ingest never silently lowers it:
           # dispatch input → repo variable → 0. `load` upserts concealment_tier,
           # so this must match the intended tier on every run.
@@ -130,11 +133,13 @@ jobs:
             model="${model%"${model##*[![:space:]]}"}"
             [ -z "$model" ] && continue
             echo "::group::Embed + load ($model)"
-            pnpm rag:embed --model "$model" --provider ollama-cloud \
-              --base-url https://ollama.com \
+            # Account run base; the embed stage appends each model's Cloudflare id.
+            cf_base="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/ai/run"
+            pnpm rag:embed --model "$model" --provider cloudflare \
+              --base-url "$cf_base" \
               /tmp/novel-chunks.jsonl "/tmp/novel.$model.jsonl"
-            pnpm rag:embed --model "$model" --provider ollama-cloud \
-              --base-url https://ollama.com \
+            pnpm rag:embed --model "$model" --provider cloudflare \
+              --base-url "$cf_base" \
               /tmp/wiki-chunks.jsonl "/tmp/wiki.$model.jsonl"
             pnpm rag:load "/tmp/novel.$model.jsonl" --model "$model"
             pnpm rag:load "/tmp/wiki.$model.jsonl" --model "$model"

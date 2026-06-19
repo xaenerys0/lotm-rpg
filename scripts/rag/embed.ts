@@ -12,11 +12,13 @@
 //   pnpm rag:embed --model bge-m3 chunks.jsonl embedded.bge.jsonl
 //
 // Provider defaults to the player's local Ollama; override with:
-//   --provider ollama|operator|ollama-cloud   --base-url <url>   --batch <n>
+//   --provider ollama|operator|cloudflare   --base-url <url>   --batch <n>
 //
-// For `ollama-cloud` the operator's ollama.com key is read from the
-// OLLAMA_CLOUD_API_KEY env var and sent as the Bearer token; point --base-url at
-// https://ollama.com (CI is Node, so it hits ollama.com directly — no proxy).
+// For `cloudflare` (Cloudflare Workers AI, model bge-m3) the operator's token is
+// read from the CF_API_TOKEN env var and sent as the Bearer; point --base-url at
+// the full Workers AI run URL, e.g.
+//   https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/ai/run/@cf/baai/bge-m3
+// (CI is Node, so it hits Cloudflare directly — no proxy.)
 
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -36,9 +38,9 @@ interface Args {
 }
 
 function parseProviderId(value: string | undefined): EmbeddingProviderId {
-  if (value !== "ollama" && value !== "operator" && value !== "ollama-cloud") {
+  if (value !== "ollama" && value !== "operator" && value !== "cloudflare") {
     throw new Error(
-      `Invalid --provider "${value}". Use "ollama", "operator", or "ollama-cloud".`,
+      `Invalid --provider "${value}". Use "ollama", "operator", or "cloudflare".`,
     );
   }
   return value;
@@ -69,10 +71,9 @@ async function main(): Promise<void> {
     id: args.provider,
     modelId: args.modelId,
     baseUrl: args.baseUrl,
-    // The hosted cloud endpoint needs the operator's ollama.com key; the local
-    // and self-hosted transports run unauthenticated.
-    apiKey:
-      args.provider === "ollama-cloud" ? process.env.OLLAMA_CLOUD_API_KEY : undefined,
+    // The hosted Cloudflare endpoint needs the operator's CF token; the local and
+    // self-hosted Ollama transports run unauthenticated.
+    apiKey: args.provider === "cloudflare" ? process.env.CF_API_TOKEN : undefined,
   });
   const embedded = await embedChunks(records, provider, {
     batchSize: args.batchSize,

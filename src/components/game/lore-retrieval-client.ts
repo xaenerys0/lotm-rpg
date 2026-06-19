@@ -24,27 +24,30 @@ import { createBrowserClientSafe } from "@/lib/supabase/client";
 
 /**
  * Resolve an embedding transport for the query vector, or `null` when none is
- * available. Preference: the operator's hosted Ollama Cloud endpoint (reached
- * through the same-origin proxy, which injects the operator key) when enabled;
- * then a self-hosted operator box; otherwise the player's own Ollama if that is
- * their chat provider. The first two give EVERY signed-in player retrieval; the
- * last only players already running Ollama. The embedding model is the save's
- * LOCKED model, never a free pick.
+ * available. Preference: a player who runs **their own Ollama** (their chat
+ * provider) embeds locally on their machine — free, private, and it keeps off the
+ * operator's quota; then a self-hosted operator box; then the operator's hosted
+ * **Cloudflare Workers AI** endpoint as the general fallback for everyone else
+ * (reached through the same-origin proxy, which injects the operator token). The
+ * embedding model is the save's LOCKED model — both approved models are served by
+ * each transport, so any save resolves on any transport.
  */
 function resolveEmbedder(session: GameSession, config: ProviderConfig | null) {
   const modelId = session.embeddingModelId;
-  // A boolean flag, not a URL — so an explicit "0"/"false" must turn it OFF, not
-  // count as truthy and silently keep spending the operator's key.
-  if (isFlagEnabled(process.env.NEXT_PUBLIC_OLLAMA_CLOUD_EMBEDDING)) {
-    // Browser hits the same-origin proxy; the operator key stays server-side, so
-    // no key is passed here.
-    return createEmbeddingProvider({ id: "ollama-cloud", modelId });
+  // The player's own Ollama wins when it's their chat provider — localhost embeds
+  // its own copy of the locked model browser-direct (the BYOK pattern).
+  if (config?.providerId === "ollama") {
+    return createEmbeddingProvider({ id: "ollama", modelId, baseUrl: config.baseUrl });
   }
   if (process.env.NEXT_PUBLIC_OPERATOR_EMBEDDING_URL) {
     return createEmbeddingProvider({ id: "operator", modelId });
   }
-  if (config?.providerId === "ollama") {
-    return createEmbeddingProvider({ id: "ollama", modelId, baseUrl: config.baseUrl });
+  // General fallback. A boolean flag, not a URL — so an explicit "0"/"false" must
+  // turn it OFF, not count as truthy and silently keep spending the operator's
+  // quota. Browser hits the same-origin proxy; the operator token stays
+  // server-side, so no key is passed here.
+  if (isFlagEnabled(process.env.NEXT_PUBLIC_CLOUDFLARE_EMBEDDING)) {
+    return createEmbeddingProvider({ id: "cloudflare", modelId });
   }
   return null;
 }

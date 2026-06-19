@@ -24,14 +24,15 @@ cloning needs `git lfs install` + `git lfs pull` to materialize them.
 
 ## Prerequisites
 
-- **An embedding endpoint** serving the approved 1024-dim models via Ollama's
-  `/api/embed`: `qwen3-embedding:0.6b` (the default/locked model) and, ideally,
-  `bge-m3:567m` (the alternate map). Any of: the player-Ollama transport
-  (`--provider ollama --base-url http://host:11434`), a self-hosted operator box
-  (`--provider operator`, `NEXT_PUBLIC_OPERATOR_EMBEDDING_URL`), or hosted Ollama
-  Cloud (`--provider ollama-cloud --base-url https://ollama.com` with the
-  operator's `OLLAMA_CLOUD_API_KEY` — the same key the CI workflow and the
-  gameplay query proxy use).
+- **An embedding endpoint** for the approved 1024-dim models (`qwen3-embedding-0.6b`
+  default + `bge-m3`). Any of: hosted **Cloudflare Workers AI**
+  (`--provider cloudflare --base-url https://api.cloudflare.com/client/v4/accounts/<ID>/ai/run`
+  with the operator's `CF_API_TOKEN` — the same token the CI workflow and the
+  gameplay query proxy use; Cloudflare hosts **both** models on its free tier, no
+  Worker to deploy), the player-Ollama transport (`--provider ollama --base-url
+http://host:11434`), or a self-hosted operator box (`--provider operator`,
+  `NEXT_PUBLIC_OPERATOR_EMBEDDING_URL`). (Ollama Cloud / ollama.com is **not**
+  usable — it hosts no embedding models.)
 - **The Supabase service-role key** — the load stage writes past RLS, so it must
   run operator-side only: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
 
@@ -96,17 +97,18 @@ have to be re-embedded by hand. It is deliberately conservative:
 - **Trigger**: `push` to `main` (i.e. after a PR merges), **path-filtered** to
   `corpus/**`, `scripts/rag/**`, `src/lib/rag/**`, and `src/lib/ai/embeddings.ts`
   so unrelated merges don't re-embed; plus `workflow_dispatch` (manual, with an
-  optional comma-separated `models` input, default `qwen3-embedding-0.6b`).
+  optional comma-separated `models` input, default both `qwen3-embedding-0.6b,bge-m3`).
 - **Wiki spoiler gate**: the load stage upserts `concealment_tier`, so a re-ingest
   re-writes it. The workflow pins the wiki tier from the `wiki_concealment_tier`
   dispatch input → the `RAG_WIKI_CONCEALMENT_TIER` repo **variable** → `0`, so an
   automated re-ingest can never silently lower a tier the operator set. Set the
   repo variable if your wiki canon needs a tier above 0.
 - **Secret-gated**: needs `RAG_SUPABASE_URL`, `RAG_SUPABASE_SERVICE_ROLE_KEY`,
-  and `OLLAMA_CLOUD_API_KEY` (the operator's ollama.com key — CI embeds against
-  `https://ollama.com` directly) as repo/environment **secrets**. A `gate` job
-  checks they're present and the `ingest` job is skipped cleanly when any is
-  absent (forks/Dependabot can't read secrets).
+  and `CF_ACCOUNT_ID` + `CF_API_TOKEN` (the operator's Cloudflare Workers AI creds
+  — CI embeds both models against the Cloudflare REST API directly) as
+  repo/environment **secrets**. A `gate` job checks they're present and the
+  `ingest` job is skipped cleanly when any is absent (forks/Dependabot can't read
+  secrets).
 - **Sources**: checks out and `git lfs pull`s only the EPUB + wiki `.7z`, then
   extracts the dump with `7z` (`p7zip-full`).
 - **Safe by construction**: the embed stage validates `--model` against
