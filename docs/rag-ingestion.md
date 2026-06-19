@@ -88,16 +88,17 @@ pnpm rag:load /tmp/wiki-chunks.jsonl  --chunks-only
 
 Add the `chunk_embeddings` later (step 3-4) to light up the vector half.
 
-## In CI (automated re-embed)
+## In CI (manual re-embed)
 
 The `rag-ingest` workflow (`.github/workflows/rag-ingest.yml`) runs this whole
 pipeline on a runner — parse → chunk → embed → load — so a canon change doesn't
 have to be re-embedded by hand. It is deliberately conservative:
 
-- **Trigger**: `push` to `main` (i.e. after a PR merges), **path-filtered** to
-  `corpus/**`, `scripts/rag/**`, `src/lib/rag/**`, and `src/lib/ai/embeddings.ts`
-  so unrelated merges don't re-embed; plus `workflow_dispatch` (manual, with an
-  optional comma-separated `models` input, default both `qwen3-embedding-0.6b,bge-m3`).
+- **Trigger**: `workflow_dispatch` **only** (manual — Actions tab → "RAG ingest"
+  → Run workflow), with an optional comma-separated `models` input (default both
+  `qwen3-embedding-0.6b,bge-m3`). It does **not** run automatically on a merge —
+  the ~45-min embed is expensive, so re-embed deliberately only when the canon
+  sources or the RAG pipeline actually change.
 - **Wiki spoiler gate**: the load stage upserts `concealment_tier`, so a re-ingest
   re-writes it. The workflow pins the wiki tier from the `wiki_concealment_tier`
   dispatch input → the `RAG_WIKI_CONCEALMENT_TIER` repo **variable** → `0`, so an

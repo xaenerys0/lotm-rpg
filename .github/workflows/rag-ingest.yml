@@ -1,19 +1,11 @@
 name: RAG ingest
 
 # Embed the canon corpus (novel + wiki) into the private source_chunks /
-# chunk_embeddings tables. The corpus rarely changes, embedding is expensive,
-# and it writes past RLS with a service-role key — so this runs ONLY on main
-# (i.e. after a PR merges), and only when the canon sources or the RAG pipeline
-# itself changed. It can also be dispatched manually.
+# chunk_embeddings tables. The corpus rarely changes, embedding is expensive
+# (~45 min), and it writes past RLS with a service-role key — so it runs
+# MANUALLY ONLY (workflow_dispatch), never automatically on a merge. Trigger it
+# from the Actions tab whenever the canon sources or the RAG pipeline change.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "corpus/**"
-      - "scripts/rag/**"
-      - "src/lib/rag/**"
-      - "src/lib/ai/embeddings.ts"
-      - ".github/workflows/rag-ingest.yml"
   workflow_dispatch:
     inputs:
       models:
