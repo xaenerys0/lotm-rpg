@@ -335,7 +335,7 @@ function EntryCard({
           <SceneArt
             artKey={sceneArtKey(sessionId, entry.turnNumber)}
             context={{ summary: entry.summary, location: entry.location }}
-            config={null}
+            imageConfig={null}
             enabled={false}
           />
           <p className="font-serif text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">

@@ -78,10 +78,14 @@ function parseModelCatalog(raw: unknown, nameKey?: string): ModelOption[] {
     });
 }
 
-async function fetchWithErrorHandling(url: string, init: RequestInit): Promise<unknown> {
+export async function fetchWithErrorHandling(
+  url: string,
+  init: RequestInit,
+  fetchFn: typeof fetch = fetch,
+): Promise<unknown> {
   let response: Response;
   try {
-    response = await fetch(url, init);
+    response = await fetchFn(url, init);
   } catch (err) {
     throw createNetworkError(err);
   }

@@ -35,6 +35,7 @@ import {
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
   PROVIDER_CONFIG_KEY,
+  IMAGE_PROVIDER_CONFIG_KEY,
   type GamePreferences,
   type SanityTier,
   type LossOfControlSeverity,
@@ -146,6 +147,7 @@ import type {
   GameState,
   DigestionState,
   ProviderConfig,
+  ImageProviderConfig,
   Choice,
   InstructionType,
   AIErrorCode,
@@ -199,6 +201,18 @@ function loadProviderConfig(): ProviderConfig | null {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as ProviderConfig;
+  } catch {
+    return null;
+  }
+}
+
+// Scene art rides a SEPARATE image provider (image model selection), configured
+// independently of the text narrator — so it has its own localStorage entry.
+function loadImageProviderConfig(): ImageProviderConfig | null {
+  try {
+    const raw = localStorage.getItem(IMAGE_PROVIDER_CONFIG_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as ImageProviderConfig;
   } catch {
     return null;
   }
@@ -431,6 +445,18 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         configCacheRef.current = loadProviderConfig();
       }
       return configCacheRef.current;
+    },
+    () => null,
+  );
+
+  const imageConfigCacheRef = useRef<ImageProviderConfig | null | undefined>(undefined);
+  const imageConfig = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (imageConfigCacheRef.current === undefined) {
+        imageConfigCacheRef.current = loadImageProviderConfig();
+      }
+      return imageConfigCacheRef.current;
     },
     () => null,
   );
@@ -1687,7 +1713,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 <ConsequencesPhase
                   session={session}
                   onContinue={handleContinue}
-                  config={providerConfig}
+                  imageConfig={imageConfig}
                   sceneArtEnabled={preferences.sceneArtEnabled}
                   knowsMethod={knowsMethod}
                   digestionMeterVisible={preferences.digestionMeterVisible}
@@ -3033,7 +3059,7 @@ function PillarAscensionPanel({
 function ConsequencesPhase({
   session,
   onContinue,
-  config,
+  imageConfig,
   sceneArtEnabled,
   knowsMethod,
   digestionMeterVisible,
@@ -3041,7 +3067,7 @@ function ConsequencesPhase({
 }: {
   session: GameSession;
   onContinue: () => void;
-  config: ProviderConfig | null;
+  imageConfig: ImageProviderConfig | null;
   sceneArtEnabled: boolean;
   knowsMethod: boolean;
   digestionMeterVisible: boolean;
@@ -3112,7 +3138,7 @@ function ConsequencesPhase({
               location: session.gameState.location,
               ...(seq ? { pathwayName: seq.name } : {}),
             }}
-            config={config}
+            imageConfig={imageConfig}
             enabled={sceneArtEnabled}
           />
         )}
