@@ -1,26 +1,18 @@
-import type { ProviderConfig } from "./types";
-import { AIError } from "./errors";
-
 // ---------------------------------------------------------------------------
-// AI scene art (issue #20)
+// AI scene art (issue #20) — prompt + trigger helpers
 // ---------------------------------------------------------------------------
 //
-// Illustrations for key story moments, generated browser-direct with the
-// player's own key (the BYOK pattern — we never proxy or pay).
-//
-// Research summary (issue task):
-//   - OpenAI Images (dall-e-3 / gpt-image-1): browser-CORS friendly, works
-//     with the OpenAI key players already configure; ~$0.04 per 1024px
-//     standard dall-e-3 image. CHOSEN — zero new credentials.
-//   - Stability AI: cheaper per image but a second API key + no benefit.
-//   - Midjourney: no official API. Local SD: no setup-free path.
-//   Cost guidance: at one image per key event (~every 5-10 turns), art adds
-//   roughly $0.04-0.30/session — hence OPT-IN (default off) via preferences.
+// The pure half of scene art: which moments warrant an illustration, the fixed
+// visual style, the per-moment prompt, and the cache key. Generation itself is
+// provider-agnostic and lives in `image-providers.ts` — scene art is rendered
+// by a SEPARATE, independently-configured image provider (image model
+// selection), so the narrator can run on one provider while illustrations come
+// from another (or none).
 //
 // Style consistency comes from one fixed style prelude; per-event content is
 // appended from the journal entry that triggered the moment. Images are
 // cached client-side (IndexedDB, components layer) keyed by session+turn so
-// a moment is never paid for twice.
+// a moment is never generated twice.
 
 /** Journal event types that warrant an illustration. */
 const ART_TRIGGERS = new Set(["advancement", "death", "combat", "major-event"]);
@@ -54,60 +46,6 @@ export function buildSceneArtPrompt(context: SceneArtContext): string {
     .join(" ")
     .slice(0, MAX_SCENE_DESCRIPTION);
   return `${SCENE_ART_STYLE}. Scene: ${scene}`;
-}
-
-/** Scene art rides the player's OpenAI key; other providers have no
- * browser-reachable image endpoint, so the feature simply stays hidden. */
-export function sceneArtSupported(config: ProviderConfig | null): boolean {
-  return config?.providerId === "openai" && !!config.apiKey;
-}
-
-export const SCENE_ART_MODEL = "dall-e-3";
-
-/**
- * Generate one illustration, returning a `data:` URL ready for an <img> and
- * the IndexedDB cache. Browser-direct; errors map onto the shared AIError
- * codes so the UI's existing handling applies.
- */
-export async function generateSceneArt(
-  config: ProviderConfig,
-  prompt: string,
-  fetchFn: typeof fetch = fetch,
-): Promise<string> {
-  if (!sceneArtSupported(config)) {
-    throw new AIError("VALIDATION_FAILED", "Scene art requires an OpenAI key.");
-  }
-  const response = await fetchFn("https://api.openai.com/v1/images/generations", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${config.apiKey}`,
-    },
-    body: JSON.stringify({
-      model: SCENE_ART_MODEL,
-      prompt,
-      n: 1,
-      size: "1024x1024",
-      response_format: "b64_json",
-    }),
-  });
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      throw new AIError("AUTH_ERROR", "The provider rejected your API key.");
-    }
-    if (response.status === 429) {
-      throw new AIError("RATE_LIMITED", "Image generation is rate limited.");
-    }
-    throw new AIError("PROVIDER_ERROR", `Image generation failed (${response.status}).`);
-  }
-
-  const payload = (await response.json()) as { data?: { b64_json?: string }[] };
-  const b64 = payload.data?.[0]?.b64_json;
-  if (!b64) {
-    throw new AIError("MALFORMED_OUTPUT", "The provider returned no image data.");
-  }
-  return `data:image/png;base64,${b64}`;
 }
 
 /** Cache key for one illustrated moment: a session's turn is the identity. */

@@ -58,7 +58,7 @@ export function SanityPreferences() {
       />
       <PreferenceToggle
         label="Scene illustrations"
-        description="Illustrate key moments (advancement, deaths, battles) with AI-generated art via your own OpenAI key. Roughly $0.04 per image — off by default."
+        description="Illustrate key moments (advancement, deaths, battles) with AI-generated art. Uses a separate image provider and model you configure in Settings → Scene art (OpenAI, a local/cloud Ollama image model, or local Stable Diffusion) — off by default."
         checked={prefs.sceneArtEnabled}
         onToggle={() => toggle("sceneArtEnabled")}
       />

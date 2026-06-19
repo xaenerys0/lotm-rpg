@@ -4,28 +4,29 @@ import { useEffect, useState } from "react";
 
 import {
   buildSceneArtPrompt,
-  generateSceneArt,
-  sceneArtSupported,
-  type ProviderConfig,
+  generateImage,
+  imageArtSupported,
+  type ImageProviderConfig,
   type SceneArtContext,
 } from "@/lib/ai";
 
 import { getCachedArt, putCachedArt } from "./scene-art-cache";
 
 // Scene illustration (issue #20): renders a cached image immediately; when
-// absent (and the player has opted in with a supporting provider) it
+// absent (and the player has opted in with a configured image provider) it
 // generates once, caches, and fades in. Failures stay silent — art is
-// garnish, never a blocker.
+// garnish, never a blocker. The image provider/model is configured separately
+// from the text narrator (image model selection).
 
 export function SceneArt({
   artKey,
   context,
-  config,
+  imageConfig,
   enabled,
 }: {
   artKey: string;
   context: SceneArtContext;
-  config: ProviderConfig | null;
+  imageConfig: ImageProviderConfig | null;
   enabled: boolean;
 }) {
   const [src, setSrc] = useState<string | null>(null);
@@ -40,10 +41,10 @@ export function SceneArt({
         setSrc(cached);
         return;
       }
-      if (!enabled || !config || !sceneArtSupported(config)) return;
+      if (!enabled || !imageConfig || !imageArtSupported(imageConfig)) return;
       setGenerating(true);
       try {
-        const dataUrl = await generateSceneArt(config, buildSceneArtPrompt(context));
+        const dataUrl = await generateImage(imageConfig, buildSceneArtPrompt(context));
         await putCachedArt(artKey, dataUrl);
         if (!cancelled) setSrc(dataUrl);
       } catch {

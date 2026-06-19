@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ProviderConfig } from "@/components/game/provider-config";
+import { ImageProviderConfig } from "@/components/game/image-provider-config";
 import { SanityPreferences } from "@/components/game/sanity-preferences";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -24,6 +25,18 @@ export default function SettingsPage() {
             locally in this browser and never sent to our servers.
           </p>
           <ProviderConfig />
+        </section>
+
+        <section className="rounded-lg border border-border bg-surface p-6 transition-colors duration-200 hover:border-amber/20">
+          <h2 className="font-serif text-lg font-semibold text-foreground">Scene art</h2>
+          <p className="mt-2 mb-6 text-sm leading-relaxed text-muted">
+            Optional AI illustrations for key moments use their own provider and model,
+            chosen independently of your narrator. Enable &ldquo;Scene
+            illustrations&rdquo; in Preferences below, then configure the image provider
+            here. Your key is stored locally in this browser and never sent to our
+            servers.
+          </p>
+          <ImageProviderConfig />
         </section>
 
         <section className="rounded-lg border border-border bg-surface p-6 transition-colors duration-200 hover:border-amber/20">

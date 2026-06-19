@@ -6,6 +6,7 @@ import { expectNoAxeViolations, expectNoAxeViolationsInContainer } from "@/test/
 import { LoginForm } from "@/components/auth/login-form";
 import { SignupForm } from "@/components/auth/signup-form";
 import { ProviderConfig } from "@/components/game/provider-config";
+import { ImageProviderConfig } from "@/components/game/image-provider-config";
 import { SanityPreferences } from "@/components/game/sanity-preferences";
 import { CharacterCreation } from "@/components/game/character-creation";
 import { PlayDashboard } from "@/components/game/play-dashboard";
@@ -95,6 +96,10 @@ describe("accessibility — game shell", () => {
 
   it("settings provider config has no violations", async () => {
     await expectNoAxeViolations(<ProviderConfig />);
+  });
+
+  it("settings image provider config has no violations", async () => {
+    await expectNoAxeViolations(<ImageProviderConfig />);
   });
 
   it("sanity preferences toggle has no violations", async () => {

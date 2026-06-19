@@ -101,13 +101,24 @@ export {
 
 export {
   buildSceneArtPrompt,
-  generateSceneArt,
   sceneArtKey,
-  sceneArtSupported,
   shouldGenerateSceneArt,
   SCENE_ART_STYLE,
   type SceneArtContext,
 } from "./scene-art";
+
+export {
+  generateImage,
+  imageArtSupported,
+  imageProviderRequiresKey,
+  imageProviderNeedsBaseUrl,
+  imageProviderNeedsModel,
+  defaultImageBaseUrl,
+  IMAGE_PROVIDER_MODELS,
+  type ImageProviderId,
+  type ImageProviderConfig,
+  type ImageModelOption,
+} from "./image-providers";
 
 export {
   addUsage,

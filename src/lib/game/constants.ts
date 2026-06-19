@@ -3,6 +3,8 @@ export const SESSION_INDEX_KEY = "lotm-rpg-session-index";
 /** Which character every page shows — the single active-character pointer. */
 export const ACTIVE_SESSION_KEY = "lotm-rpg-active-session";
 export const PROVIDER_CONFIG_KEY = "lotm-rpg-provider-config";
+/** Independent image-provider config for scene art (image model selection). */
+export const IMAGE_PROVIDER_CONFIG_KEY = "lotm-rpg-image-provider-config";
 export const PROLOGUE_DRAFT_KEY = "lotm-rpg-prologue-draft";
 export const MODELS_CACHE_KEY = "lotm-rpg-models-cache";
 export const PREFERENCES_KEY = "lotm-rpg-preferences";
