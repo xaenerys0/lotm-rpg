@@ -75,10 +75,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Rate limit unavailable" }, { status: 503 });
     }
     if (!decision.allowed) {
-      const retryAfter = Math.max(
-        1,
-        Math.ceil((new Date(decision.reset_at).getTime() - Date.now()) / 1000),
-      );
+      // Fall back to the window length if reset_at is somehow unparseable, so
+      // the Retry-After header is always a valid delay-seconds integer (never
+      // "NaN").
+      const resetMs = new Date(decision.reset_at).getTime();
+      const retryAfter = Number.isFinite(resetMs)
+        ? Math.max(1, Math.ceil((resetMs - Date.now()) / 1000))
+        : windowSeconds;
       return NextResponse.json(
         { error: "Rate limit exceeded" },
         { status: 429, headers: { "Retry-After": String(retryAfter) } },
