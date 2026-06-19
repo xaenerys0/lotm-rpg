@@ -82,9 +82,15 @@ import {
   generatePrologueFinale,
   MIN_PROLOGUE_SCENES,
   MAX_PROLOGUE_SCENES,
-  PROLOGUE_AFFINITY_COUNT,
+  PROLOGUE_MIN_CHOICES,
+  PROLOGUE_MAX_CHOICES,
+  PROLOGUE_MIN_REGIONS_PER_SCENE,
+  PROLOGUE_MAX_AFFINITIES_PER_CHOICE,
+  PROLOGUE_AFFINITY_REGIONS,
+  PROLOGUE_PLAYABLE_PATHWAY_IDS,
   type PrologueTurn,
 } from "./prologue-client";
+import { PATHWAY_GROUPS, getGroupForPathway } from "@/lib/rules";
 
 // ── Test Helpers ──
 
@@ -4519,10 +4525,21 @@ describe("generatePrologueScene", () => {
     );
 
     expect(result.narrative).toBe("The fog thickens around you.");
-    expect(result.choices).toHaveLength(PROLOGUE_AFFINITY_COUNT);
-    // Each choice carries an affinities map; the four affinities are all present.
-    const dominants = result.choices.map((c) => Number(Object.keys(c.affinities)[0]));
-    expect(new Set(dominants)).toEqual(new Set([1, 2, 3, 4]));
+    expect(result.choices).toHaveLength(4);
+    // Each choice carries a within-region affinity map over playable pathway ids.
+    for (const choice of result.choices) {
+      const ids = Object.keys(choice.affinities).map(Number);
+      expect(ids.length).toBeGreaterThanOrEqual(1);
+      expect(ids.length).toBeLessThanOrEqual(PROLOGUE_MAX_AFFINITIES_PER_CHOICE);
+      for (const id of ids) expect(PROLOGUE_PLAYABLE_PATHWAY_IDS).toContain(id);
+    }
+    // The scene branches across at least two affinity regions.
+    const regionIds = new Set(
+      result.choices.map(
+        (c) => getGroupForPathway(Number(Object.keys(c.affinities)[0]))?.id,
+      ),
+    );
+    expect(regionIds.size).toBeGreaterThanOrEqual(PROLOGUE_MIN_REGIONS_PER_SCENE);
     expect(result.readyToConclude).toBe(true);
     expect(result.rawResponse).toBe(rawContent);
   });
@@ -4622,11 +4639,124 @@ describe("generatePrologueScene", () => {
 
   // ── Strict validation: no silent pathway default ──
 
-  it("rejects when there are fewer than four choices", async () => {
+  it("rejects when there are fewer than PROLOGUE_MIN_CHOICES choices", async () => {
     const parsed = JSON.parse(makePrologueApiResponse()) as {
       choices: unknown[];
     };
-    parsed.choices = parsed.choices.slice(0, 3);
+    parsed.choices = parsed.choices.slice(0, PROLOGUE_MIN_CHOICES - 1);
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("rejects when there are more than PROLOGUE_MAX_CHOICES choices", async () => {
+    const parsed = JSON.parse(makePrologueApiResponse()) as {
+      choices: Record<string, unknown>[];
+    };
+    // Pad past the cap with extra (valid) choices.
+    while (parsed.choices.length <= PROLOGUE_MAX_CHOICES) {
+      parsed.choices.push({
+        id: `extra-${parsed.choices.length}`,
+        text: "An extra choice.",
+        affinities: { 1: 1 },
+      });
+    }
+    mockOpenAIFetch(JSON.stringify(parsed));
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("accepts a blended within-region choice (1–2 neighboring ids)", async () => {
+    // A Mysteries-leaning choice weighting Fool (1) over its neighbor Door (7).
+    mockOpenAIFetch(
+      makePrologueApiResponse({
+        choices: [
+          { id: "a", text: "Trace the pattern in the rust.", affinities: { 1: 2, 7: 1 } },
+          {
+            id: "b",
+            text: "Step between the thief and the widow.",
+            affinities: { 3: 2 },
+          },
+          { id: "c", text: "Wonder where the dead are carried.", affinities: { 4: 2 } },
+        ],
+      }),
+    );
+
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+    const blended = result.choices.find((c) => c.id === "a")!;
+    expect(blended.affinities).toEqual({ 1: 2, 7: 1 });
+  });
+
+  it("snaps a cross-region choice to the dominant id's region (within-region only)", async () => {
+    // The model strays across regions: Death (4) dominant + a stray Sun (3).
+    // The Sun weight is dropped so the lean stays within Eternal Darkness.
+    mockOpenAIFetch(
+      makePrologueApiResponse({
+        choices: [
+          { id: "a", text: "Linger at the body, unafraid.", affinities: { 4: 3, 3: 1 } },
+          { id: "b", text: "Map the courier's route.", affinities: { 1: 2 } },
+          { id: "c", text: "Step in to protect the woman.", affinities: { 2: 2 } },
+        ],
+      }),
+    );
+
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+    const snapped = result.choices.find((c) => c.id === "a")!;
+    expect(snapped.affinities).toEqual({ 4: 3 });
+    expect(snapped.affinities[3]).toBeUndefined();
+  });
+
+  it("caps a choice at PROLOGUE_MAX_AFFINITIES_PER_CHOICE neighbors", async () => {
+    // Three God-Almighty ids on one choice — keep the top two by weight.
+    mockOpenAIFetch(
+      makePrologueApiResponse({
+        choices: [
+          {
+            id: "a",
+            text: "Read the whole room at once.",
+            affinities: { 2: 3, 3: 2, 6: 1 },
+          },
+          { id: "b", text: "Note the seal.", affinities: { 1: 2 } },
+          { id: "c", text: "Wonder about the hollow-eyed man.", affinities: { 4: 2 } },
+        ],
+      }),
+    );
+
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+    const capped = result.choices.find((c) => c.id === "a")!;
+    expect(Object.keys(capped.affinities).length).toBe(
+      PROLOGUE_MAX_AFFINITIES_PER_CHOICE,
+    );
+    expect(capped.affinities).toEqual({ 2: 3, 3: 2 });
+  });
+
+  it("rejects when every choice leans on the same region (no real branch)", async () => {
+    // All three ids are Mysteries (1, 7, 8) — the scene must span ≥2 regions.
+    mockOpenAIFetch(
+      makePrologueApiResponse({
+        choices: [
+          { id: "a", text: "Trace the pattern.", affinities: { 1: 2 } },
+          { id: "b", text: "Slip the latch.", affinities: { 8: 2 } },
+          { id: "c", text: "Find the back way out.", affinities: { 7: 2 } },
+        ],
+      }),
+    );
+
+    await expect(
+      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("rejects a choice whose affinities all fall outside the playable set", async () => {
+    // ids 10+ are not playable; the choice has no usable signal → rejected.
+    const parsed = JSON.parse(makePrologueApiResponse()) as {
+      choices: { affinities: Record<number, number> }[];
+    };
+    parsed.choices[0]!.affinities = { 17: 1 };
     mockOpenAIFetch(JSON.stringify(parsed));
 
     await expect(
@@ -4704,17 +4834,17 @@ describe("generatePrologueScene", () => {
     ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
   });
 
-  it("rejects when the four affinities are not all represented (duplicate dominant)", async () => {
+  it("allows two choices to lean on the same dominant pathway (no all-affinities rule)", async () => {
+    // Two Mysteries-dominant choices plus two other regions — still a valid
+    // branch; the old "every affinity exactly once" rule is gone (issue #119).
     const parsed = JSON.parse(makePrologueApiResponse()) as {
       choices: { affinities: Record<number, number> }[];
     };
-    // Make two choices dominate the same affinity, dropping one of the four.
     parsed.choices[0]!.affinities = { 1: 1 };
     mockOpenAIFetch(JSON.stringify(parsed));
 
-    await expect(
-      generatePrologueScene(makeProviderConfig(), "Klein", "", []),
-    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+    expect(result.choices).toHaveLength(4);
   });
 
   it("throws AIError with MALFORMED_OUTPUT when the response is a JSON array", async () => {
@@ -4725,13 +4855,74 @@ describe("generatePrologueScene", () => {
     ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
   });
 
-  it("exports MIN_PROLOGUE_SCENES as 4 and MAX_PROLOGUE_SCENES as 12", () => {
-    expect(MIN_PROLOGUE_SCENES).toBe(4);
+  it("exports MIN_PROLOGUE_SCENES as 6 and MAX_PROLOGUE_SCENES as 12 (typical 6–8)", () => {
+    expect(MIN_PROLOGUE_SCENES).toBe(6);
     expect(MAX_PROLOGUE_SCENES).toBe(12);
   });
 
-  it("exports PROLOGUE_AFFINITY_COUNT as 4", () => {
-    expect(PROLOGUE_AFFINITY_COUNT).toBe(4);
+  it("exposes the affinity regions in the system prompt", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content: makePrologueApiResponse() } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+          }),
+        ),
+    } as Response);
+
+    await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    const messages: ChatMessage[] = body.messages as ChatMessage[];
+    const systemPrompt = messages[0]!.content;
+    // Each region id appears in the affinity guide.
+    for (const region of PROLOGUE_AFFINITY_REGIONS) {
+      expect(systemPrompt).toContain(region.groupId);
+    }
+    // The prompt no longer hard-codes "exactly four" affinities.
+    expect(systemPrompt).not.toContain("THE FOUR AFFINITIES");
+  });
+});
+
+// ── Neighborhood affinity catalog (issue #119) ──
+
+describe("PROLOGUE_AFFINITY_REGIONS", () => {
+  it("covers exactly the nine playable pathways (1–9), disjointly", () => {
+    const ids = PROLOGUE_AFFINITY_REGIONS.flatMap((r) => [...r.pathwayIds]).sort(
+      (a, b) => a - b,
+    );
+    expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(new Set(ids).size).toBe(ids.length); // disjoint — no id in two regions
+  });
+
+  it("PROLOGUE_PLAYABLE_PATHWAY_IDS lists the same nine ids", () => {
+    expect([...PROLOGUE_PLAYABLE_PATHWAY_IDS].sort((a, b) => a - b)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9,
+    ]);
+  });
+
+  it("every region has a non-empty narrator theme", () => {
+    for (const region of PROLOGUE_AFFINITY_REGIONS) {
+      expect(region.theme.length).toBeGreaterThan(0);
+    }
+  });
+
+  // Reconciliation guard: the prologue's self-contained regions can never drift
+  // from the canon PATHWAY_GROUPS in the rules engine.
+  it("reconciles with the canon PATHWAY_GROUPS (group id + membership subset)", () => {
+    for (const region of PROLOGUE_AFFINITY_REGIONS) {
+      const canon = PATHWAY_GROUPS[region.groupId as keyof typeof PATHWAY_GROUPS];
+      expect(canon).toBeDefined();
+      for (const id of region.pathwayIds) {
+        // Each prologue pathway belongs to the canon group it claims.
+        expect(getGroupForPathway(id)?.id).toBe(region.groupId);
+        expect(canon!.pathwayIds).toContain(id);
+      }
+    }
   });
 });
 

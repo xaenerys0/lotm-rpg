@@ -4,18 +4,83 @@ import { executeWithRetry } from "./client";
 import { ensureUniqueChoiceIds } from "./validation";
 import type { ProviderConfig, ChatMessage } from "./types";
 
-export const MIN_PROLOGUE_SCENES = 4; // AI may not conclude before this many scenes
+export const MIN_PROLOGUE_SCENES = 6; // AI may not conclude before this many scenes (typical 6–8)
 export const MAX_PROLOGUE_SCENES = 12; // forced conclusion safety cap
 
-// Number of distinct Beyonder affinities surfaced per scored scene. Scoped to
-// the four shipped pathways today; the engine-side tally is generic over N, so
-// only this scene-shape contract changes when more pathways are added.
-export const PROLOGUE_AFFINITY_COUNT = 4;
+// Scene-shape contract (issue #119). A scored scene offers a handful of choices,
+// each leaning toward a pathway REGION rather than a single pathway, and must
+// branch across at least two regions so the player is choosing between
+// neighborhoods (not re-picking one pathway every scene).
+export const PROLOGUE_MIN_CHOICES = 3;
+export const PROLOGUE_MAX_CHOICES = 5;
+export const PROLOGUE_MIN_REGIONS_PER_SCENE = 2;
+// A choice may lean toward 1–2 NEIGHBORING pathways within one region — never a
+// clean 1:1 to a single pathway, never spread across regions.
+export const PROLOGUE_MAX_AFFINITIES_PER_CHOICE = 2;
+
+// ── Neighborhood affinity catalog (issue #119) ──
+// The prologue's affinities are the canonical pathway "regions" (the Sefirah
+// groups) over the PLAYABLE pathways — the ids with full potion/sequence
+// content. A choice leans toward 1–2 neighboring pathways within ONE region, so
+// the specific pathway emerges from the pattern of picks instead of being
+// telegraphed by a single "the Death option" choice.
+//
+// This catalog is intentionally SELF-CONTAINED so the provider-agnostic AI layer
+// keeps no dependency on the rules engine. A reconciliation test in `ai.test.ts`
+// holds these ids/groups against `@/lib/rules` PATHWAY_GROUPS so the prologue's
+// regions can never drift from canon. The engine-side tally
+// (`tallyAffinities`/`selectTopCandidates` in `@/lib/game`) stays generic over
+// any ids and is unchanged.
+
+export interface PrologueAffinityRegion {
+  /** Matches a `@/lib/rules` PATHWAY_GROUPS id (reconciled in tests). */
+  groupId: string;
+  /** Narrator-internal label — NEVER shown to or hinted at the player. */
+  name: string;
+  /** The playable pathways in this region (a subset of the canon group). */
+  pathwayIds: readonly number[];
+  /** The shared texture the region's pathways express — shapes choice writing. */
+  theme: string;
+}
+
+export const PROLOGUE_AFFINITY_REGIONS: readonly PrologueAffinityRegion[] = [
+  {
+    groupId: "mysteries",
+    name: "Mysteries",
+    pathwayIds: [1, 7, 8],
+    theme:
+      "Observation before action; hidden patterns and forbidden knowledge; trickery, secrets, and the long view. The instinct to understand a thing — to read it, map it, or quietly outwit it — before ever touching it.",
+  },
+  {
+    groupId: "god-almighty",
+    name: "God Almighty",
+    pathwayIds: [2, 3, 6, 9],
+    theme:
+      "The inner life of others and the will that moves them; light, warmth, and protection offered freely; command and dominion; sacrifice and the weight one chooses to carry for others.",
+  },
+  {
+    groupId: "eternal-darkness",
+    name: "Eternal Darkness",
+    pathwayIds: [4, 5],
+    theme:
+      "Mortality and what persists beyond it; spirits, the dead, and the night; concealment and the quiet of the dark. Curiosity rather than fear at the edge where life ends.",
+  },
+] as const;
+
+// Every playable pathway id the prologue can lead to, and the region each is in.
+export const PROLOGUE_PLAYABLE_PATHWAY_IDS: readonly number[] =
+  PROLOGUE_AFFINITY_REGIONS.flatMap((r) => r.pathwayIds);
+
+const REGION_OF_PATHWAY: ReadonlyMap<number, string> = new Map(
+  PROLOGUE_AFFINITY_REGIONS.flatMap((r) =>
+    r.pathwayIds.map((id) => [id, r.groupId] as const),
+  ),
+);
 
 export interface AIPrologueChoice {
   id: string;
   text: string;
-  affinities: Record<number, number>; // { pathwayId: weight }, weights > 0
+  affinities: Record<number, number>; // { pathwayId: weight }, weights > 0, within one region
 }
 
 export interface PrologueTurn {
@@ -26,12 +91,12 @@ export interface PrologueTurn {
   rawResponse: string; // the raw JSON string from the AI (for conversation reconstruction)
 }
 
-// Scored scene generator: the AI narrates and tags choices, but NEVER decides
-// the pathway. The engine accumulates `selectedAffinities` and computes the
-// finale candidates.
+// Scored scene generator: the AI narrates and tags choices with region-leaning
+// affinity weights, but NEVER decides the pathway. The engine accumulates the
+// picked `selectedAffinities` and computes the finale candidates.
 export interface AIPrologueResponse {
   narrative: string;
-  choices: AIPrologueChoice[]; // exactly PROLOGUE_AFFINITY_COUNT, one per affinity
+  choices: AIPrologueChoice[]; // PROLOGUE_MIN_CHOICES..PROLOGUE_MAX_CHOICES, spanning ≥2 regions
   readyToConclude: boolean; // advisory only; the engine enforces MIN/MAX
   rawResponse: string;
 }
@@ -44,11 +109,20 @@ export interface AIPrologueFinale {
   rawResponse: string;
 }
 
+// The narrator-facing description of the affinity regions — built from the
+// single-source catalog so the prompt and validation can never disagree.
+function buildAffinityGuide(): string {
+  return PROLOGUE_AFFINITY_REGIONS.map(
+    (r) =>
+      `• Region "${r.groupId}" (affinity ids ${r.pathwayIds.join(", ")}): ${r.theme}`,
+  ).join("\n");
+}
+
 export const PROLOGUE_SYSTEM_PROMPT = `You are running an interactive character creation prologue for a Lord of the Mysteries text RPG.
 
 SETTING: Tingen City, Kingdom of Loen. Year 1349 of the Gregorian Calendar. Victorian-era industrial city — gaslamps, steam trams, telegrams, coal smoke, brick tenements, horse-drawn cabs. The character begins as an ordinary person with no knowledge of the supernatural world.
 
-YOUR TASK: Guide the player through an atmospheric prologue of natural length — typically 5 to 8 scenes. You narrate scenes and offer choices. Do NOT judge or score the character — the system determines the character's Beyonder affinity from the choices the player actually makes. You never decide, name, or hint at a pathway.
+YOUR TASK: Guide the player through an atmospheric prologue of natural length — typically 6 to 8 scenes. You narrate scenes and offer choices. Do NOT judge or score the character — the system determines the character's Beyonder affinity from the choices the player actually makes. You never decide, name, or hint at a pathway.
 
 CHARACTER'S STARTING KNOWLEDGE — the character does NOT know:
 • That Beyonders, potions, or any supernatural power system exists
@@ -57,23 +131,22 @@ CHARACTER'S STARTING KNOWLEDGE — the character does NOT know:
 • The internal workings, hierarchy, or Beyonder nature of any organization
 The supernatural, when it appears, must feel genuinely mysterious and frightening — not categorized or understood by the character.
 
-THE FOUR AFFINITIES (NEVER name or hint at these in narration — they only shape what each choice expresses):
-• Affinity 1 — Divination, hidden patterns, occult perception, forbidden knowledge. Signs: analytical curiosity, preference for observation over action, seeing through surfaces, the long view.
-• Affinity 2 — Mind, perception, empathy, the inner life of others. Signs: acute awareness of others' states, reading people effortlessly, observing without being drawn in, fascination with what lies behind the mask.
-• Affinity 3 — Light, warmth, protection, music as something sacred. Signs: protective instinct, spreading warmth and hope, moral courage, carrying light into darkness.
-• Affinity 4 — Death, spirits, the boundary between life and the beyond. Signs: comfort with mortality, sensing what has ended, curiosity about what persists when life is gone, unafraid of the dark or departed.
-
-SCENE STRUCTURE:
-• Scenes 1–3: Daily life in Tingen. Grounded and atmospheric. Reveal instincts and values through ordinary situations.
-• Scenes 4+: Something uncanny fractures the ordinary. A disturbing discovery, an inexplicable encounter, a moment of crisis.
+THE AFFINITY REGIONS (NEVER name or hint at these in narration — they only shape what each choice expresses). Each region is a cluster of kindred temperaments; the affinity ids in each region are NEIGHBORS that share a texture:
+${buildAffinityGuide()}
 
 CHOICE CONTRACT (every scene):
-• Each scene MUST present EXACTLY ${PROLOGUE_AFFINITY_COUNT} choices, each expressing exactly one of the four affinities. All four must appear — one choice each.
-• Tag each choice with its \`affinities\` map, e.g. {"3":1}. Weights must be positive.
-• VARY which affinity appears in which position from scene to scene. No choice may be the obviously "right" option.
+• Present ${PROLOGUE_MIN_CHOICES}–${PROLOGUE_MAX_CHOICES} choices (aim for 4).
+• Each choice LEANS toward one region. Tag it with an \`affinities\` map of 1 or 2 ids — and if you use 2, they MUST be neighbors from the SAME region (e.g. {"4":2,"5":1}). Never mix ids from different regions in one choice. Weights are positive numbers; the larger weight is the stronger lean.
+• A choice must NOT map cleanly to a single, obvious "right" pathway. Express a leaning through behaviour and instinct, never a label.
+• Across the scene's choices, span at least ${PROLOGUE_MIN_REGIONS_PER_SCENE} different regions, so the player is genuinely choosing between temperaments.
+• VARY which regions and which ids appear from scene to scene. Do not surface the same options in lockstep every scene.
+
+SCENE STRUCTURE:
+• Early scenes: daily life in Tingen. Grounded and atmospheric. Reveal instincts and values through ordinary situations.
+• Later scenes: something uncanny fractures the ordinary — a disturbing discovery, an inexplicable encounter, a moment of crisis.
 
 READINESS:
-• Set \`readyToConclude: true\` only once the story feels complete (typically 5–8 scenes). It is advisory — the system enforces the minimum and maximum scene counts and authors the conclusion itself. You do not author the conclusion or choose a pathway.
+• Set \`readyToConclude: true\` only once the story feels complete (typically 6–8 scenes). It is advisory — the system enforces the minimum and maximum scene counts and authors the conclusion itself. You do not author the conclusion or choose a pathway.
 
 WRITING GUIDELINES:
 • Rich Victorian atmosphere: gaslamps, wool coats, telegraph wires, coal dust, fog, sounds of industry.
@@ -82,9 +155,9 @@ WRITING GUIDELINES:
 
 RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
 {"narrative":"...","choices":[
-  {"id":"a","text":"...","affinities":{"3":1}},
-  {"id":"b","text":"...","affinities":{"1":1}},
-  {"id":"c","text":"...","affinities":{"4":1}},
+  {"id":"a","text":"...","affinities":{"3":2}},
+  {"id":"b","text":"...","affinities":{"1":2,"8":1}},
+  {"id":"c","text":"...","affinities":{"4":2,"5":1}},
   {"id":"d","text":"...","affinities":{"2":1}}
 ],"readyToConclude":false}`;
 
@@ -181,10 +254,17 @@ async function executePrologueRequest(
 
 /**
  * Validate and normalize a single AI choice. Requires `id`, `text`, and an
- * `affinities` map whose keys are positive integers with positive weights.
- * Returns the choice plus its dominant (argmax) affinity id.
+ * `affinities` map. Out-of-range or malformed weights are dropped (the engine
+ * tally is additive — a stray weight is forgiven, not thrown). The choice's
+ * affinities are then snapped to the dominant id's REGION (within-region only,
+ * issue #119) and capped at {@link PROLOGUE_MAX_AFFINITIES_PER_CHOICE} neighbors.
+ * Returns the normalized choice plus its dominant (argmax) affinity id and region.
  */
-function parseChoice(raw: unknown): { choice: AIPrologueChoice; dominant: number } {
+function parseChoice(raw: unknown): {
+  choice: AIPrologueChoice;
+  dominant: number;
+  regionId: string;
+} {
   if (typeof raw !== "object" || raw === null) {
     throw new AIError("MALFORMED_OUTPUT", "Prologue choice is not an object");
   }
@@ -201,28 +281,40 @@ function parseChoice(raw: unknown): { choice: AIPrologueChoice; dominant: number
     throw new AIError("MALFORMED_OUTPUT", "Prologue choice missing affinities map");
   }
 
-  const affinities: Record<number, number> = {};
-  let dominant = 0;
-  let dominantWeight = -Infinity;
+  // Keep only well-formed weights for PLAYABLE pathway ids; drop the rest.
+  const cleaned: Array<{ id: number; weight: number }> = [];
   for (const [key, value] of Object.entries(rawAffinities as Record<string, unknown>)) {
     const id = Number(key);
-    if (!Number.isInteger(id) || id < 1) {
-      throw new AIError("MALFORMED_OUTPUT", `Invalid affinity pathway id: ${key}`);
-    }
-    if (typeof value !== "number" || !(value > 0)) {
-      throw new AIError("MALFORMED_OUTPUT", `Invalid affinity weight for ${key}`);
-    }
-    affinities[id] = value;
-    if (value > dominantWeight || (value === dominantWeight && id < dominant)) {
-      dominantWeight = value;
-      dominant = id;
+    if (
+      Number.isInteger(id) &&
+      REGION_OF_PATHWAY.has(id) &&
+      typeof value === "number" &&
+      value > 0
+    ) {
+      cleaned.push({ id, weight: value });
     }
   }
-  if (dominant === 0) {
-    throw new AIError("MALFORMED_OUTPUT", "Prologue choice has an empty affinities map");
+  if (cleaned.length === 0) {
+    throw new AIError(
+      "MALFORMED_OUTPUT",
+      "Prologue choice has no valid playable-pathway affinity",
+    );
   }
 
-  return { choice: { id: c["id"], text: c["text"], affinities }, dominant };
+  // Dominant = greatest weight; ties break toward the lowest id (determinism).
+  cleaned.sort((a, b) => b.weight - a.weight || a.id - b.id);
+  const dominant = cleaned[0]!.id;
+  const regionId = REGION_OF_PATHWAY.get(dominant)!;
+
+  // Within-region only: keep the dominant's region, capped to the top neighbors.
+  const affinities: Record<number, number> = {};
+  for (const { id, weight } of cleaned) {
+    if (REGION_OF_PATHWAY.get(id) !== regionId) continue;
+    if (Object.keys(affinities).length >= PROLOGUE_MAX_AFFINITIES_PER_CHOICE) break;
+    affinities[id] = weight;
+  }
+
+  return { choice: { id: c["id"], text: c["text"], affinities }, dominant, regionId };
 }
 
 export async function generatePrologueScene(
@@ -238,30 +330,31 @@ export async function generatePrologueScene(
   const { content, obj, narrative } = await executePrologueRequest(config, messages);
 
   const rawChoices = obj["choices"];
-  if (!Array.isArray(rawChoices) || rawChoices.length !== PROLOGUE_AFFINITY_COUNT) {
+  if (
+    !Array.isArray(rawChoices) ||
+    rawChoices.length < PROLOGUE_MIN_CHOICES ||
+    rawChoices.length > PROLOGUE_MAX_CHOICES
+  ) {
     throw new AIError(
       "MALFORMED_OUTPUT",
-      `Prologue scene must have exactly ${PROLOGUE_AFFINITY_COUNT} choices`,
+      `Prologue scene must have between ${PROLOGUE_MIN_CHOICES} and ${PROLOGUE_MAX_CHOICES} choices`,
     );
   }
 
   const choices: AIPrologueChoice[] = [];
-  const dominants = new Set<number>();
+  const regions = new Set<string>();
   for (const raw of rawChoices) {
-    const { choice, dominant } = parseChoice(raw);
+    const { choice, regionId } = parseChoice(raw);
     choices.push(choice);
-    dominants.add(dominant);
+    regions.add(regionId);
   }
 
-  // Every affinity must be represented exactly once (no duplicate dominants).
-  const expected = Array.from({ length: PROLOGUE_AFFINITY_COUNT }, (_, i) => i + 1);
-  if (
-    dominants.size !== PROLOGUE_AFFINITY_COUNT ||
-    !expected.every((id) => dominants.has(id))
-  ) {
+  // A scene must branch across regions so the player is choosing between
+  // neighborhoods, not re-picking the same pathway.
+  if (regions.size < PROLOGUE_MIN_REGIONS_PER_SCENE) {
     throw new AIError(
       "MALFORMED_OUTPUT",
-      `Prologue scene must express each of the ${PROLOGUE_AFFINITY_COUNT} affinities exactly once`,
+      `Prologue scene must span at least ${PROLOGUE_MIN_REGIONS_PER_SCENE} affinity regions`,
     );
   }
 
@@ -270,8 +363,7 @@ export async function generatePrologueScene(
     typeof obj["readyToConclude"] === "boolean" ? obj["readyToConclude"] : false;
 
   // Ids are React keys in the choice list — guarantee they are unique/non-empty
-  // even if the model repeats or omits one. Affinity uniqueness is checked above
-  // but does not constrain ids.
+  // even if the model repeats or omits one.
   ensureUniqueChoiceIds(choices);
   return { narrative, choices, readyToConclude, rawResponse: content };
 }

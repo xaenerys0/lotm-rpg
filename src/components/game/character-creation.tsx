@@ -328,7 +328,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     const name = characterName.trim();
     const bg = characterBackground.trim();
     const memory = skipPrologue
-      ? createPrologueMemory([], name, bg)
+      ? createPrologueMemory(name, bg)
       : createAIPrologueMemory(
           prologueHistory.map((t) => t.selectedChoiceText),
           name,

@@ -660,29 +660,16 @@ export { isValidDraftShape, isActivePrologueDraft, clearDraft } from "./prologue
 export type { PrologueDraft } from "./prologue-draft";
 
 export {
-  PROLOGUE_SCENES,
-  PATHWAY_JUSTIFICATIONS,
   POTION_HEADINGS,
   FIRST_POTION_NARRATIVE,
-  scoreSelections,
-  recommendPathway,
   dominantAffinity,
   tallyAffinities,
   rankPathways,
   selectTopCandidates,
-  createPrologueState,
   createPrologueMemory,
   createAIPrologueMemory,
   buildPrologueRecap,
   RECAP_FINALE_CHAR_CAP,
 } from "./prologue";
 
-export type {
-  PrologueChoice,
-  PrologueScene,
-  PrologueSelection,
-  PathwayScore,
-  PrologueRecommendation,
-  PrologueState,
-  PrologueRecapInput,
-} from "./prologue";
+export type { PathwayScore, PrologueRecapInput } from "./prologue";
