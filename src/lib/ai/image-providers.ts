@@ -1,4 +1,5 @@
-import { AIError, classifyHttpError, createNetworkError } from "./errors";
+import { AIError } from "./errors";
+import { fetchWithErrorHandling } from "./providers";
 
 // ---------------------------------------------------------------------------
 // Image providers (image model selection) — a provider/model choice for scene
@@ -141,40 +142,19 @@ function effectiveBaseUrl(config: ImageProviderConfig): string {
   return raw.replace(/\/+$/, "");
 }
 
-async function postJson(
+/** POST a JSON body through the shared fetch/parse/AIError seam (`providers.ts`),
+ * with an injectable `fetchFn` for tests. */
+function postJson(
   url: string,
   headers: Record<string, string>,
   body: unknown,
   fetchFn: typeof fetch,
 ): Promise<unknown> {
-  let response: Response;
-  try {
-    response = await fetchFn(url, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(body),
-    });
-  } catch (err) {
-    throw createNetworkError(err);
-  }
-  let text: string;
-  try {
-    text = await response.text();
-  } catch (err) {
-    throw createNetworkError(err);
-  }
-  if (!response.ok) {
-    throw classifyHttpError(response.status, text);
-  }
-  try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    throw new AIError(
-      "MALFORMED_OUTPUT",
-      "The image provider returned a non-JSON response.",
-      text.slice(0, 500),
-    );
-  }
+  return fetchWithErrorHandling(
+    url,
+    { method: "POST", headers, body: JSON.stringify(body) },
+    fetchFn,
+  );
 }
 
 /** Read an OpenAI-style images reply, preferring inline base64 over a URL. */
