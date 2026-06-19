@@ -40,6 +40,15 @@ import { purgeCharacter } from "./character-actions";
 
 type DashboardView = "home" | "character-creation" | "playing" | "manage";
 
+// How many characters the "Your Characters" roster shows per page. Six fills the
+// sm:grid-cols-2 / lg:grid-cols-3 grid as a tidy two rows before paginating.
+const PAGE_SIZE = 6;
+
+// "Last played" line on each roster card. Deterministic, dependency-free.
+function formatLastPlayed(updatedAt: number): string {
+  return `Last played ${new Date(updatedAt).toLocaleDateString()}`;
+}
+
 function loadConfig(): ProviderConfig | null {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
@@ -142,6 +151,16 @@ export function PlayDashboard() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   // Two-step confirm so a destructive delete is never a single misclick.
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  // "Your Characters" roster pagination. `safePage` clamps the page during render
+  // (rather than a setState-in-render) so the roster shrinking — e.g. after a
+  // delete drops the last page — never leaves us pointing past the end.
+  const [page, setPage] = useState(0);
+  const pageCount = Math.max(1, Math.ceil(sessions.length / PAGE_SIZE));
+  const safePage = Math.min(page, pageCount - 1);
+  const pageItems = sessions.slice(
+    safePage * PAGE_SIZE,
+    safePage * PAGE_SIZE + PAGE_SIZE,
+  );
 
   const handleStartNewGame = useCallback(
     (
@@ -382,53 +401,20 @@ export function PlayDashboard() {
 
       {/* Provider Configured */}
       {hasConfig && (
-        <div className="grid gap-6 sm:grid-cols-2">
-          <div className="group rounded-lg border border-border bg-surface p-6 transition-colors duration-200 hover:border-amber/20">
-            <h2 className="font-serif text-xl font-semibold text-foreground">
-              Start New Game
-            </h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              Choose your Beyonder pathway and begin your chronicle in Tingen City.
-            </p>
-            <button
-              type="button"
-              onClick={() => setView("character-creation")}
-              className="mt-5 rounded bg-amber/90 px-4 py-2 text-sm font-medium text-background transition-all duration-200 hover:bg-amber"
-            >
-              Begin Journey
-            </button>
-          </div>
-
-          <div className="group rounded-lg border border-border bg-surface p-6 transition-colors duration-200 hover:border-amber/20">
-            <h2 className="font-serif text-xl font-semibold text-foreground">Continue</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
-              Resume your journey where you left off.
-            </p>
-            {sessions.length === 0 ? (
-              <p className="mt-5 text-sm text-muted">No saved games found.</p>
-            ) : (
-              <div className="mt-4 space-y-2">
-                {sessions.slice(0, 3).map((s) => (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => handleContinue(s.id)}
-                    className="w-full rounded border border-border/60 bg-background/50 px-3 py-2 text-left text-sm transition-all duration-200 hover:border-amber/20 hover:bg-surface/50"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-foreground/80">
-                        {ALL_PATHWAYS.find((p) => p.id === s.pathwayId)?.name ??
-                          "Unknown"}{" "}
-                        &mdash; Seq. {s.sequenceLevel}
-                      </span>
-                      <span className="text-xs text-muted">Turn {s.turnCount}</span>
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted">{s.location}</p>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+        <div className="group rounded-lg border border-border bg-surface p-6 transition-colors duration-200 hover:border-amber/20">
+          <h2 className="font-serif text-xl font-semibold text-foreground">
+            Start New Game
+          </h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Choose your Beyonder pathway and begin your chronicle in Tingen City.
+          </p>
+          <button
+            type="button"
+            onClick={() => setView("character-creation")}
+            className="mt-5 rounded bg-amber/90 px-4 py-2 text-sm font-medium text-background transition-all duration-200 hover:bg-amber"
+          >
+            Begin Journey
+          </button>
         </div>
       )}
 
@@ -441,7 +427,7 @@ export function PlayDashboard() {
       <section>
         <div className="flex items-center justify-between gap-4">
           <h2 className="font-serif text-lg font-semibold text-foreground/70">
-            Character Summary
+            Your Characters
           </h2>
           {sessions.length > 0 && (
             <button
@@ -453,26 +439,70 @@ export function PlayDashboard() {
             </button>
           )}
         </div>
+        <p className="mt-1 text-xs text-muted">
+          Select a character to resume their chronicle where you left off.
+        </p>
         {sessions.length > 0 ? (
-          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {sessions.slice(0, 3).map((s) => {
-              const pathway = ALL_PATHWAYS.find((p) => p.id === s.pathwayId);
-              const seq = pathway ? getSequence(pathway.id, s.sequenceLevel) : null;
-              return (
-                <div
-                  key={s.id}
-                  className="rounded-lg border border-border/60 bg-surface/30 p-4"
+          <>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {pageItems.map((s) => {
+                const pathway = ALL_PATHWAYS.find((p) => p.id === s.pathwayId);
+                const seq = pathway ? getSequence(pathway.id, s.sequenceLevel) : null;
+                const rungName =
+                  s.sequenceLevel <= 0
+                    ? sequenceLabel(s.pathwayId, s.sequenceLevel)
+                    : (seq?.name ?? "Unknown");
+                const title = s.characterName ?? rungName;
+                return (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => handleContinue(s.id)}
+                    aria-label={`Resume ${title} — ${pathway?.name ?? "?"} pathway, ${rungName} (Sequence ${s.sequenceLevel}), Turn ${s.turnCount}`}
+                    className="rounded-lg border border-border/60 bg-surface/30 p-4 text-left transition-all duration-200 hover:border-amber/30 hover:bg-surface/50"
+                  >
+                    <p className="font-serif text-sm font-medium text-foreground">
+                      {title}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted">
+                      {rungName} <span>(Seq. {s.sequenceLevel})</span>
+                    </p>
+                    <p className="text-xs text-muted">{pathway?.name ?? "?"} pathway</p>
+                    <p className="mt-2 text-xs text-muted">{s.location}</p>
+                    <p className="mt-2 flex items-center justify-between text-xs text-muted">
+                      <span>Turn {s.turnCount}</span>
+                      <span>{formatLastPlayed(s.updatedAt)}</span>
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
+            {pageCount > 1 && (
+              <div className="mt-4 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  disabled={safePage === 0}
+                  className="min-h-[24px] rounded border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-muted"
+                  aria-label="Previous page"
                 >
-                  <p className="font-serif text-sm font-medium text-foreground/80">
-                    {seq?.name ?? "Unknown"}{" "}
-                    <span className="text-muted">(Seq. {s.sequenceLevel})</span>
-                  </p>
-                  <p className="text-xs text-muted">{pathway?.name ?? "?"} pathway</p>
-                  <p className="mt-2 text-xs text-muted">{s.location}</p>
-                </div>
-              );
-            })}
-          </div>
+                  Previous
+                </button>
+                <span className="text-xs text-muted" role="status">
+                  Page {safePage + 1} of {pageCount}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                  disabled={safePage === pageCount - 1}
+                  className="min-h-[24px] rounded border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-muted"
+                  aria-label="Next page"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <div className="mt-3 rounded-lg border border-dashed border-border/60 p-8 text-center">
             <p className="font-serif text-sm italic text-muted">
