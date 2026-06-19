@@ -17,16 +17,18 @@ import { fetchWithErrorHandling, OllamaAdapter } from "./providers";
 //                    also `/api/embed`. Cannot be a Vercel serverless function (no
 //                    resident model) — the "Vercel wrinkle".
 //   - `cloudflare` — the operator's hosted embedder on Cloudflare Workers AI,
-//                    which runs the OPEN `@cf/baai/bge-m3` model (one of our
-//                    approved 1024-dim models) on its free tier. Reached
-//                    browser-side through the same-origin proxy at
+//                    which runs BOTH our approved open models (`@cf/baai/bge-m3`
+//                    and `@cf/qwen/qwen3-embedding-0.6b`) on its free tier — no
+//                    Worker to deploy, just an account id + a Workers-AI-scoped
+//                    token. Reached browser-side through the same-origin proxy at
 //                    `/api/proxy/cloudflare/embed` (which injects the operator's
-//                    server-held Cloudflare token); in CI (Node, no CORS) the same
-//                    transport targets the Cloudflare REST endpoint directly with
-//                    the token from env. This is the zero-box hosted path —
-//                    Cloudflare hosts the model, not us. (Ollama Cloud was
-//                    evaluated and rejected: ollama.com hosts only chat models,
-//                    never embedding models, so its `/api/embed` 401s.)
+//                    server-held token and maps the locked model id → Cloudflare
+//                    model id); in CI (Node, no CORS) the transport targets the
+//                    Cloudflare REST run base directly with the token from env.
+//                    This is the zero-box hosted path — Cloudflare hosts the
+//                    models, not us. (Ollama Cloud was evaluated and rejected:
+//                    ollama.com hosts only chat models, never embedding models,
+//                    so its `/api/embed` 401s.)
 
 /** Which transport produced a vector. */
 export type EmbeddingProviderId = "ollama" | "operator" | "cloudflare";
@@ -59,32 +61,33 @@ export interface EmbeddingModel {
   dims: number;
   /** Pinned Ollama pull tag — the model's home on Ollama and the operator box. */
   ollamaTag: string;
-  /** Cloudflare Workers AI model id, when the model is hosted there. */
-  cloudflareModel?: string;
+  /** Cloudflare Workers AI model id — every approved model is CF-hosted (the
+   * hosted fallback), so this is required, not optional. */
+  cloudflareModel: string;
 }
 
-/** The default model. `bge-m3` is the one approved model Cloudflare Workers AI
- * hosts, so it backs the zero-setup hosted (`cloudflare`) path. */
-export const DEFAULT_EMBEDDING_MODEL_ID = "bge-m3";
+/** The zero-setup default model. */
+export const DEFAULT_EMBEDDING_MODEL_ID = "qwen3-embedding-0.6b";
 
 /**
- * The two approved 1024-dim models, each pre-embedded as a separate map:
- * `bge-m3` (default — also hosted on Cloudflare Workers AI) and
- * `qwen3-embedding-0.6b` (alt; local/operator Ollama only).
+ * The two approved 1024-dim models, each pre-embedded as a separate map.
+ * BOTH are hosted on Cloudflare Workers AI (so the hosted transport can serve
+ * either) AND pullable into a local/operator Ollama.
  */
 export const APPROVED_EMBEDDING_MODELS: readonly EmbeddingModel[] = [
+  {
+    id: "qwen3-embedding-0.6b",
+    name: "Qwen3 Embedding 0.6B",
+    dims: EMBEDDING_DIMS,
+    ollamaTag: "qwen3-embedding:0.6b",
+    cloudflareModel: "@cf/qwen/qwen3-embedding-0.6b",
+  },
   {
     id: "bge-m3",
     name: "BGE-M3",
     dims: EMBEDDING_DIMS,
     ollamaTag: "bge-m3:567m",
     cloudflareModel: "@cf/baai/bge-m3",
-  },
-  {
-    id: "qwen3-embedding-0.6b",
-    name: "Qwen3 Embedding 0.6B",
-    dims: EMBEDDING_DIMS,
-    ollamaTag: "qwen3-embedding:0.6b",
   },
 ];
 
@@ -202,19 +205,24 @@ function parseCloudflareEmbeddings(raw: unknown): number[][] {
   });
 }
 
-/** Cloudflare Workers AI transport. POSTs `{ text }` to the Workers AI run
- * endpoint (browser → the injecting proxy; CI → the REST URL directly with the
- * token) and reads `result.data`. */
+/** Cloudflare Workers AI transport, supporting either approved model.
+ *  - Browser: POSTs `{ text, model }` (the approved model id) to the same-origin
+ *    proxy, which injects the token and maps the model id → Cloudflare model id.
+ *  - CI: POSTs `{ text }` directly to `<run base>/<cloudflareModel>` with the
+ *    token (the model id rides in the URL path, as Cloudflare's REST API expects).
+ * Reads `result.data`. */
 class CloudflareEmbeddingProvider implements EmbeddingProvider {
   readonly id: EmbeddingProviderId = "cloudflare";
   readonly dims: number;
   readonly model_id: string;
   private readonly endpoint: string;
+  private readonly cloudflareModel: string;
   private readonly apiKey: string;
 
   constructor(args: { model: EmbeddingModel; endpoint: string; apiKey?: string }) {
     this.model_id = args.model.id;
     this.dims = args.model.dims;
+    this.cloudflareModel = args.model.cloudflareModel;
     this.endpoint = args.endpoint;
     this.apiKey = args.apiKey ?? "";
   }
@@ -224,10 +232,14 @@ class CloudflareEmbeddingProvider implements EmbeddingProvider {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     // Browser sends no key — the same-origin proxy injects the operator token.
     if (this.apiKey) headers["Authorization"] = `Bearer ${this.apiKey}`;
-    const raw = await fetchWithErrorHandling(this.endpoint, {
+    // A same-origin proxy path is relative; the CI run base is an absolute URL.
+    const direct = /^https?:\/\//.test(this.endpoint);
+    const url = direct ? `${this.endpoint}/${this.cloudflareModel}` : this.endpoint;
+    const body = direct ? { text: texts } : { text: texts, model: this.model_id };
+    const raw = await fetchWithErrorHandling(url, {
       method: "POST",
       headers,
-      body: JSON.stringify({ text: texts }),
+      body: JSON.stringify(body),
     });
     return assertEmbeddingShape(parseCloudflareEmbeddings(raw), texts.length, this.dims);
   }
@@ -264,14 +276,6 @@ export function createEmbeddingProvider(
   const model = getEmbeddingModel(options.modelId ?? DEFAULT_EMBEDDING_MODEL_ID);
   const baseUrl = options.baseUrl ?? defaultBaseUrlFor(options.id);
   if (options.id === "cloudflare") {
-    // Guard correctness: a save locked to a model Cloudflare doesn't host (e.g.
-    // qwen3-embedding-0.6b) must NOT silently get bge-m3 vectors under its id.
-    if (!model.cloudflareModel) {
-      throw new AIError(
-        "VALIDATION_FAILED",
-        `Model "${model.id}" is not hosted on Cloudflare Workers AI.`,
-      );
-    }
     return new CloudflareEmbeddingProvider({
       model,
       endpoint: baseUrl,

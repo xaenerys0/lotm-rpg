@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { getEmbeddingModel } from "@/lib/ai";
 import { createClient } from "@/lib/supabase/server";
 
 // Server-side proxy for Cloudflare Workers AI embeddings (the hosted RAG query
@@ -11,13 +12,39 @@ import { createClient } from "@/lib/supabase/server";
 //     player, so it is auth-gated AND per-user rate-limited (one account can't
 //     exhaust the operator's allowance).
 //
-// It forwards the embedder's `{ text: [...] }` body to Cloudflare's `@cf/baai/bge-m3`
-// run endpoint with the operator's token and relays Cloudflare's response
-// (`{ result: { data }, success }`) verbatim. The corpus is embedded with the SAME
-// bge-m3 model in CI, so query and corpus vectors are comparable.
+// It maps the caller's approved `model` id → the Cloudflare model id (an
+// allowlist via getEmbeddingModel — no caller-supplied path reaches Cloudflare),
+// forwards the `{ text: [...] }` body to that model's run endpoint with the
+// operator's token, and relays Cloudflare's response verbatim. The corpus is
+// embedded with the SAME model in CI, so query and corpus vectors are comparable.
 
-/** The only approved model Cloudflare Workers AI hosts (1024-dim, free tier). */
-const CLOUDFLARE_EMBEDDING_MODEL = "@cf/baai/bge-m3";
+/**
+ * Parse the embedder's `{ text, model }` request into the Cloudflare model id (via
+ * the approved-model allowlist — an arbitrary `model` can never steer the upstream
+ * path) and a clean `{ text }` body for Cloudflare (which rejects extra fields).
+ * `model` defaults to qwen3 when absent. Returns null on a bad/unsupported request.
+ */
+function parseEmbedRequest(
+  body: string,
+): { cloudflareModel: string; upstreamBody: string } | null {
+  let parsed: { text?: unknown; model?: unknown };
+  try {
+    parsed = JSON.parse(body) as { text?: unknown; model?: unknown };
+  } catch {
+    return null;
+  }
+  const modelId = typeof parsed.model === "string" ? parsed.model : DEFAULT_MODEL_ID;
+  try {
+    // getEmbeddingModel throws for an unknown id (the allowlist); cloudflareModel
+    // is present for every approved model.
+    const cloudflareModel = getEmbeddingModel(modelId).cloudflareModel;
+    return { cloudflareModel, upstreamBody: JSON.stringify({ text: parsed.text }) };
+  } catch {
+    return null;
+  }
+}
+
+const DEFAULT_MODEL_ID = "qwen3-embedding-0.6b";
 
 /** The shared `rate_limits` bucket this route counts under. */
 const RATE_LIMIT_BUCKET = "embed";
@@ -92,19 +119,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
   }
 
-  const body = await request.text();
+  // Map the approved model id → Cloudflare model id (allowlist) and strip the
+  // request to the `{ text }` shape Cloudflare expects. Reject anything unknown so
+  // a caller can't steer the upstream path to an arbitrary model.
+  const parsed = parseEmbedRequest(await request.text());
+  if (!parsed) {
+    return NextResponse.json({ error: "Unsupported embedding model" }, { status: 400 });
+  }
 
   let upstream: Response;
   try {
     upstream = await fetch(
-      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${CLOUDFLARE_EMBEDDING_MODEL}`,
+      `https://api.cloudflare.com/client/v4/accounts/${accountId}/ai/run/${parsed.cloudflareModel}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${apiToken}`,
         },
-        body,
+        body: parsed.upstreamBody,
       },
     );
   } catch {

@@ -27,16 +27,17 @@ model without re-parsing or re-chunking.
   - `pnpm rag:embed --model bge-m3 chunks.jsonl embedded.bge.jsonl`
   - `pnpm rag:embed --model qwen3-embedding-0.6b < chunks.jsonl > embedded.qwen3.jsonl`
   - Flags: `--provider ollama|operator|cloudflare` (default `ollama`), `--base-url <url>`,
-    `--batch <n>`. For `cloudflare` (Cloudflare Workers AI, model `bge-m3`) the operator's
-    token is read from the `CF_API_TOKEN` env var (sent as the Bearer); point `--base-url`
-    at the full Workers AI run URL
-    `https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/ai/run/@cf/baai/bge-m3`
-    (CI is Node — no CORS, so it hits Cloudflare directly, not the browser proxy).
+    `--batch <n>`. For `cloudflare` (Cloudflare Workers AI — hosts BOTH approved models)
+    the operator's token is read from the `CF_API_TOKEN` env var (sent as the Bearer);
+    point `--base-url` at the Workers AI run **base**
+    `https://api.cloudflare.com/client/v4/accounts/<ACCOUNT_ID>/ai/run` — the embed stage
+    appends the `--model`'s Cloudflare id (`@cf/qwen/qwen3-embedding-0.6b` /
+    `@cf/baai/bge-m3`). CI is Node — no CORS, so it hits Cloudflare directly, not the proxy.
   - Offline/occasional operator batch — needs a running embedder (local Ollama, the
     self-hosted operator box, or Cloudflare Workers AI); never part of the app bundle. The
     one CI use is the secret-gated `rag-ingest` workflow (`.github/workflows/rag-ingest.yml`,
-    main-only / dispatch), which runs `--provider cloudflare` against the CF run URL built
-    from the `CF_ACCOUNT_ID` + `CF_API_TOKEN` secrets (model `bge-m3`).
+    main-only / dispatch), which runs `--provider cloudflare` against the CF run base built
+    from the `CF_ACCOUNT_ID` + `CF_API_TOKEN` secrets (both models).
 
 - `novel.ts` (`pnpm rag:novel`) — the novel **parse + normalize** stages (issue #62).
   Reads an EPUB, a one-file-per-chapter directory (md/txt/html), or a single

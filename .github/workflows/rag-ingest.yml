@@ -18,7 +18,7 @@ on:
     inputs:
       models:
         description: Approved embedding model id(s), comma-separated.
-        default: bge-m3
+        default: qwen3-embedding-0.6b,bge-m3
       wiki_concealment_tier:
         description: >
           Concealment tier to load wiki chunks at (spoiler gate). Leave blank to
@@ -95,13 +95,12 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.RAG_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.RAG_SUPABASE_SERVICE_ROLE_KEY }}
-          # Hosted embedding via Cloudflare Workers AI (model bge-m3) — CI is Node
-          # (no CORS), so the embed stage hits the Cloudflare REST API directly
-          # with the operator's token.
+          # Hosted embedding via Cloudflare Workers AI — CI is Node (no CORS), so
+          # the embed stage hits the Cloudflare REST API directly with the
+          # operator's token. Cloudflare hosts BOTH approved models.
           CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
           CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
-          # Cloudflare hosts only bge-m3 of our approved models.
-          MODELS: ${{ inputs.models || 'bge-m3' }}
+          MODELS: ${{ inputs.models || 'qwen3-embedding-0.6b,bge-m3' }}
           # Pin the wiki spoiler gate so a re-ingest never silently lowers it:
           # dispatch input → repo variable → 0. `load` upserts concealment_tier,
           # so this must match the intended tier on every run.
@@ -134,12 +133,13 @@ jobs:
             model="${model%"${model##*[![:space:]]}"}"
             [ -z "$model" ] && continue
             echo "::group::Embed + load ($model)"
-            cf_url="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/ai/run/@cf/baai/bge-m3"
+            # Account run base; the embed stage appends each model's Cloudflare id.
+            cf_base="https://api.cloudflare.com/client/v4/accounts/$CF_ACCOUNT_ID/ai/run"
             pnpm rag:embed --model "$model" --provider cloudflare \
-              --base-url "$cf_url" \
+              --base-url "$cf_base" \
               /tmp/novel-chunks.jsonl "/tmp/novel.$model.jsonl"
             pnpm rag:embed --model "$model" --provider cloudflare \
-              --base-url "$cf_url" \
+              --base-url "$cf_base" \
               /tmp/wiki-chunks.jsonl "/tmp/wiki.$model.jsonl"
             pnpm rag:load "/tmp/novel.$model.jsonl" --model "$model"
             pnpm rag:load "/tmp/wiki.$model.jsonl" --model "$model"

@@ -40,20 +40,23 @@ function mockCloudflare(data: number[][]) {
 }
 
 describe("approved embedding models", () => {
-  it("are all 1024-dim with the default first; bge-m3 is Cloudflare-hosted", () => {
+  it("are all 1024-dim and Cloudflare-hosted, default first", () => {
     expect(APPROVED_EMBEDDING_MODELS.map((m) => m.id)).toEqual([
-      "bge-m3",
       "qwen3-embedding-0.6b",
+      "bge-m3",
     ]);
     for (const model of APPROVED_EMBEDDING_MODELS) {
       expect(model.dims).toBe(EMBEDDING_DIMS);
       // Pinned by an explicit tag, never `:latest`.
       expect(model.ollamaTag).toMatch(/:.+/);
       expect(model.ollamaTag).not.toContain(":latest");
+      // Every approved model is hosted on Cloudflare Workers AI.
+      expect(model.cloudflareModel).toMatch(/^@cf\//);
     }
-    // Only bge-m3 carries a Cloudflare Workers AI model id.
     expect(getEmbeddingModel("bge-m3").cloudflareModel).toBe("@cf/baai/bge-m3");
-    expect(getEmbeddingModel("qwen3-embedding-0.6b").cloudflareModel).toBeUndefined();
+    expect(getEmbeddingModel("qwen3-embedding-0.6b").cloudflareModel).toBe(
+      "@cf/qwen/qwen3-embedding-0.6b",
+    );
   });
 
   it("default id resolves to an approved model", () => {
@@ -135,7 +138,7 @@ describe("createEmbeddingProvider", () => {
     vi.unstubAllEnvs();
   });
 
-  it("defaults to the bge-m3 model on the player's Ollama", async () => {
+  it("defaults to the qwen3 model on the player's Ollama", async () => {
     const provider = createEmbeddingProvider({ id: "ollama" });
     expect(provider.id).toBe("ollama");
     expect(provider.model_id).toBe(DEFAULT_EMBEDDING_MODEL_ID);
@@ -149,7 +152,7 @@ describe("createEmbeddingProvider", () => {
     await provider.embed(["q"]);
     // Uses the pinned Ollama tag, not the registry id, when calling the daemon.
     expect(JSON.parse(fetchSpy.mock.calls[0][1]!.body as string).model).toBe(
-      "bge-m3:567m",
+      "qwen3-embedding:0.6b",
     );
     expect(fetchSpy.mock.calls[0][0]).toBe("http://localhost:11434/api/embed");
   });
@@ -158,9 +161,9 @@ describe("createEmbeddingProvider", () => {
     vi.stubEnv("NEXT_PUBLIC_OPERATOR_EMBEDDING_URL", "https://embed.example.com");
     const provider = createEmbeddingProvider({
       id: "operator",
-      modelId: "qwen3-embedding-0.6b",
+      modelId: "bge-m3",
     });
-    expect(provider.model_id).toBe("qwen3-embedding-0.6b");
+    expect(provider.model_id).toBe("bge-m3");
 
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
       ok: true,
@@ -185,47 +188,46 @@ describe("createEmbeddingProvider", () => {
     expect(fetchSpy.mock.calls[0][0]).toBe("https://override.example.com/api/embed");
   });
 
-  it("routes cloudflare through the same-origin proxy by default (no key)", async () => {
+  it("routes cloudflare through the same-origin proxy by default, sending the model id", async () => {
     const provider = createEmbeddingProvider({ id: "cloudflare" });
     expect(provider.id).toBe("cloudflare");
-    expect(provider.model_id).toBe("bge-m3");
+    expect(provider.model_id).toBe("qwen3-embedding-0.6b");
 
     const fetchSpy = mockCloudflare([vec()]);
     const out = await provider.embed(["q"]);
 
     expect(out).toHaveLength(1);
+    // Relative proxy path → send the approved model id; the proxy maps + injects.
     expect(fetchSpy.mock.calls[0][0]).toBe(CLOUDFLARE_EMBEDDING_PROXY_PATH);
     const init = fetchSpy.mock.calls[0][1]!;
-    expect(JSON.parse(init.body as string)).toEqual({ text: ["q"] });
+    expect(JSON.parse(init.body as string)).toEqual({
+      text: ["q"],
+      model: "qwen3-embedding-0.6b",
+    });
     // The browser sends no key — the proxy injects the operator token server-side.
     expect((init.headers as Record<string, string>).Authorization).toBeUndefined();
   });
 
-  it("targets the Cloudflare REST endpoint with a key (the CI path)", async () => {
-    const url =
-      "https://api.cloudflare.com/client/v4/accounts/acc/ai/run/@cf/baai/bge-m3";
+  it("appends the Cloudflare model id to an absolute run base with a key (CI path)", async () => {
+    const base = "https://api.cloudflare.com/client/v4/accounts/acc/ai/run";
     const provider = createEmbeddingProvider({
       id: "cloudflare",
-      baseUrl: url,
+      modelId: "bge-m3",
+      baseUrl: base,
       apiKey: "cf-token",
     });
 
     const fetchSpy = mockCloudflare([vec()]);
     await provider.embed(["q"]);
 
-    expect(fetchSpy.mock.calls[0][0]).toBe(url);
+    // Absolute URL → append the CF model id to the path; body carries only text.
+    expect(fetchSpy.mock.calls[0][0]).toBe(`${base}/@cf/baai/bge-m3`);
+    expect(JSON.parse(fetchSpy.mock.calls[0][1]!.body as string)).toEqual({
+      text: ["q"],
+    });
     expect(
       (fetchSpy.mock.calls[0][1]!.headers as Record<string, string>).Authorization,
     ).toBe("Bearer cf-token");
-  });
-
-  it("rejects a model Cloudflare does not host", () => {
-    expect(() =>
-      createEmbeddingProvider({ id: "cloudflare", modelId: "qwen3-embedding-0.6b" }),
-    ).toThrow(AIError);
-    expect(() =>
-      createEmbeddingProvider({ id: "cloudflare", modelId: "qwen3-embedding-0.6b" }),
-    ).toThrow(/Cloudflare/);
   });
 
   it("throws MALFORMED_OUTPUT when the cloudflare response lacks result.data", async () => {
