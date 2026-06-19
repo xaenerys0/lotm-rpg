@@ -36,7 +36,7 @@ model without re-parsing or re-chunking.
   - Offline/occasional operator batch — needs a running embedder (local Ollama, the
     self-hosted operator box, or Cloudflare Workers AI); never part of the app bundle. The
     one CI use is the secret-gated `rag-ingest` workflow (`.github/workflows/rag-ingest.yml`,
-    main-only / dispatch), which runs `--provider cloudflare` against the CF run base built
+    manual `workflow_dispatch` only), which runs `--provider cloudflare` against the CF run base built
     from the `CF_ACCOUNT_ID` + `CF_API_TOKEN` secrets (both models).
 
 - `novel.ts` (`pnpm rag:novel`) — the novel **parse + normalize** stages (issue #62).
@@ -81,7 +81,7 @@ model without re-parsing or re-chunking.
   (deterministic uuid from the pipeline id). Requires `SUPABASE_URL` +
   `SUPABASE_SERVICE_ROLE_KEY` (RLS denies everyone else by design) — run it
   **operator-side only**, never in the app. The only CI caller is the
-  secret-gated `rag-ingest` workflow (main-only / dispatch), which provides the
+  secret-gated `rag-ingest` workflow (manual `workflow_dispatch` only), which provides the
   service-role key as a secret; without those secrets the workflow skips cleanly.
   - `pnpm rag:load embedded.qwen3.jsonl --model qwen3-embedding-0.6b`
   - `pnpm rag:load chunks.jsonl --chunks-only`
