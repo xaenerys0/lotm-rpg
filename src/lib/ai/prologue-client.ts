@@ -35,8 +35,6 @@ export const PROLOGUE_MAX_AFFINITIES_PER_CHOICE = 2;
 export interface PrologueAffinityRegion {
   /** Matches a `@/lib/rules` PATHWAY_GROUPS id (reconciled in tests). */
   groupId: string;
-  /** Narrator-internal label — NEVER shown to or hinted at the player. */
-  name: string;
   /** The playable pathways in this region (a subset of the canon group). */
   pathwayIds: readonly number[];
   /** The shared texture the region's pathways express — shapes choice writing. */
@@ -46,21 +44,18 @@ export interface PrologueAffinityRegion {
 export const PROLOGUE_AFFINITY_REGIONS: readonly PrologueAffinityRegion[] = [
   {
     groupId: "mysteries",
-    name: "Mysteries",
     pathwayIds: [1, 7, 8],
     theme:
       "Observation before action; hidden patterns and forbidden knowledge; trickery, secrets, and the long view. The instinct to understand a thing — to read it, map it, or quietly outwit it — before ever touching it.",
   },
   {
     groupId: "god-almighty",
-    name: "God Almighty",
     pathwayIds: [2, 3, 6, 9],
     theme:
       "The inner life of others and the will that moves them; light, warmth, and protection offered freely; command and dominion; sacrifice and the weight one chooses to carry for others.",
   },
   {
     groupId: "eternal-darkness",
-    name: "Eternal Darkness",
     pathwayIds: [4, 5],
     theme:
       "Mortality and what persists beyond it; spirits, the dead, and the night; concealment and the quiet of the dark. Curiosity rather than fear at the edge where life ends.",
