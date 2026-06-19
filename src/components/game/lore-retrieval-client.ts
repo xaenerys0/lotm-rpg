@@ -24,12 +24,22 @@ import { createBrowserClientSafe } from "@/lib/supabase/client";
 
 /**
  * Resolve an embedding transport for the query vector, or `null` when none is
- * available. Preference: the always-on operator endpoint (zero-setup default)
- * when configured; otherwise the player's own Ollama if that is their chat
- * provider. The embedding model is the save's LOCKED model, never a free pick.
+ * available. Preference: the operator's hosted Ollama Cloud endpoint (reached
+ * through the same-origin proxy, which injects the operator key) when enabled;
+ * then a self-hosted operator box; otherwise the player's own Ollama if that is
+ * their chat provider. The first two give EVERY signed-in player retrieval; the
+ * last only players already running Ollama. The embedding model is the save's
+ * LOCKED model, never a free pick.
  */
 function resolveEmbedder(session: GameSession, config: ProviderConfig | null) {
   const modelId = session.embeddingModelId;
+  // A boolean flag, not a URL — so an explicit "0"/"false" must turn it OFF, not
+  // count as truthy and silently keep spending the operator's key.
+  if (isFlagEnabled(process.env.NEXT_PUBLIC_OLLAMA_CLOUD_EMBEDDING)) {
+    // Browser hits the same-origin proxy; the operator key stays server-side, so
+    // no key is passed here.
+    return createEmbeddingProvider({ id: "ollama-cloud", modelId });
+  }
   if (process.env.NEXT_PUBLIC_OPERATOR_EMBEDDING_URL) {
     return createEmbeddingProvider({ id: "operator", modelId });
   }
@@ -37,6 +47,14 @@ function resolveEmbedder(session: GameSession, config: ProviderConfig | null) {
     return createEmbeddingProvider({ id: "ollama", modelId, baseUrl: config.baseUrl });
   }
   return null;
+}
+
+/** Treat an env flag as on only for a real truthy value — `undefined`, empty,
+ * `"0"`, and `"false"` all mean off (env vars are always strings). */
+function isFlagEnabled(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized !== "" && normalized !== "0" && normalized !== "false";
 }
 
 /**

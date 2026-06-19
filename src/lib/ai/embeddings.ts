@@ -12,16 +12,32 @@ import { OllamaAdapter } from "./providers";
 // fixed, approved choice locked per save, NOT a free-form pick like the chat
 // provider.
 //
-// Both transports speak Ollama's `/api/embed`:
-//   - `ollama`   — the player's own Ollama (BYO, browser-direct), mirroring the
-//                  existing BYOK chat pattern;
-//   - `operator` — the always-on CPU box the operator runs as the zero-setup
-//                  default/fallback for players whose chat provider isn't
-//                  Ollama. It cannot live in a Vercel serverless function (no
-//                  resident model) — the persistent "Vercel wrinkle".
+// All transports speak Ollama's `/api/embed`:
+//   - `ollama`       — the player's own Ollama (BYO, browser-direct), mirroring
+//                      the existing BYOK chat pattern;
+//   - `operator`     — a self-hosted always-on CPU box the operator runs as a
+//                      zero-setup default/fallback. It cannot live in a Vercel
+//                      serverless function (no resident model) — the "Vercel
+//                      wrinkle";
+//   - `ollama-cloud` — the operator's hosted Ollama Cloud (ollama.com) endpoint,
+//                      reached browser-side through the same-origin proxy at
+//                      `/api/proxy/ollama-cloud` (ollama.com sends no CORS
+//                      headers, and the operator's key must stay server-side, so
+//                      the proxy injects it). Sidesteps the "Vercel wrinkle"
+//                      entirely — the model is resident on ollama.com, not on us.
+//                      In CI (Node, no CORS) the same transport targets
+//                      `https://ollama.com` directly with the key from env.
 
-/** Which transport produced a vector. Both use the same `/api/embed` route. */
-export type EmbeddingProviderId = "ollama" | "operator";
+/** Which transport produced a vector. All use the same `/api/embed` route. */
+export type EmbeddingProviderId = "ollama" | "operator" | "ollama-cloud";
+
+/**
+ * Same-origin path of the Ollama Cloud embed proxy — the browser default base URL
+ * for the `ollama-cloud` transport. The proxy (`src/app/api/proxy/ollama-cloud`)
+ * forwards `/api/embed` to ollama.com with the operator's server-held key; CI
+ * overrides this with `https://ollama.com` (no proxy needed outside the browser).
+ */
+export const OLLAMA_CLOUD_EMBEDDING_PROXY_PATH = "/api/proxy/ollama-cloud";
 
 /** Every approved model is 1024-dim, so `vector(1024)` holds for the whole store. */
 export const EMBEDDING_DIMS = 1024;
@@ -162,16 +178,25 @@ export interface CreateEmbeddingProviderOptions {
   apiKey?: string;
 }
 
+/** Resolve a transport's default base URL when the caller doesn't pin one. */
+function defaultBaseUrlFor(id: EmbeddingProviderId): string {
+  switch (id) {
+    case "operator":
+      return operatorBaseUrl();
+    case "ollama-cloud":
+      // Browser default: the same-origin proxy. CI overrides with --base-url.
+      return OLLAMA_CLOUD_EMBEDDING_PROXY_PATH;
+    case "ollama":
+      return new OllamaAdapter().getDefaultBaseUrl();
+  }
+}
+
 /** Build an {@link EmbeddingProvider} for one transport + approved model. */
 export function createEmbeddingProvider(
   options: CreateEmbeddingProviderOptions,
 ): EmbeddingProvider {
   const model = getEmbeddingModel(options.modelId ?? DEFAULT_EMBEDDING_MODEL_ID);
-  const baseUrl =
-    options.baseUrl ??
-    (options.id === "operator"
-      ? operatorBaseUrl()
-      : new OllamaAdapter().getDefaultBaseUrl());
+  const baseUrl = options.baseUrl ?? defaultBaseUrlFor(options.id);
   return new OllamaEmbeddingProvider({
     id: options.id,
     model,

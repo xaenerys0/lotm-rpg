@@ -5,6 +5,7 @@ import {
   APPROVED_EMBEDDING_MODELS,
   DEFAULT_EMBEDDING_MODEL_ID,
   EMBEDDING_DIMS,
+  OLLAMA_CLOUD_EMBEDDING_PROXY_PATH,
   createEmbeddingProvider,
   getEmbeddingModel,
 } from "./embeddings";
@@ -161,6 +162,48 @@ describe("createEmbeddingProvider", () => {
     } as Response);
     await provider.embed(["q"]);
     expect(fetchSpy.mock.calls[0][0]).toBe("https://override.example.com/api/embed");
+  });
+
+  it("routes ollama-cloud through the same-origin proxy by default (no key)", async () => {
+    const provider = createEmbeddingProvider({ id: "ollama-cloud" });
+    expect(provider.id).toBe("ollama-cloud");
+    expect(provider.model_id).toBe(DEFAULT_EMBEDDING_MODEL_ID);
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify({ embeddings: [vec()] })),
+    } as Response);
+    await provider.embed(["q"]);
+
+    // Browser default: the proxy path, which injects the operator key server-side.
+    expect(fetchSpy.mock.calls[0][0]).toBe(
+      `${OLLAMA_CLOUD_EMBEDDING_PROXY_PATH}/api/embed`,
+    );
+    // The browser sends no Authorization header — the key never leaves the server.
+    expect(
+      (fetchSpy.mock.calls[0][1]!.headers as Record<string, string>).Authorization,
+    ).toBeUndefined();
+  });
+
+  it("targets ollama.com directly with a key when given (the CI path)", async () => {
+    const provider = createEmbeddingProvider({
+      id: "ollama-cloud",
+      baseUrl: "https://ollama.com",
+      apiKey: "op-secret",
+    });
+
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () => Promise.resolve(JSON.stringify({ embeddings: [vec()] })),
+    } as Response);
+    await provider.embed(["q"]);
+
+    expect(fetchSpy.mock.calls[0][0]).toBe("https://ollama.com/api/embed");
+    expect(
+      (fetchSpy.mock.calls[0][1]!.headers as Record<string, string>).Authorization,
+    ).toBe("Bearer op-secret");
   });
 
   it("throws when the operator endpoint is unconfigured", () => {

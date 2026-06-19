@@ -26,11 +26,16 @@ model without re-parsing or re-chunking.
   `EmbeddingProvider`. Run once **per** approved model to build each map.
   - `pnpm rag:embed --model qwen3-embedding-0.6b < chunks.jsonl > embedded.qwen3.jsonl`
   - `pnpm rag:embed --model bge-m3 chunks.jsonl embedded.bge.jsonl`
-  - Flags: `--provider ollama|operator` (default `ollama`), `--base-url <url>`, `--batch <n>`.
-  - Offline/occasional operator batch — needs a running embedder (local Ollama or the
-    operator box); never part of the app bundle. The one CI use is the secret-gated
-    `rag-ingest` workflow (`.github/workflows/rag-ingest.yml`, main-only / dispatch),
-    which runs `--provider operator` against the operator endpoint secret.
+  - Flags: `--provider ollama|operator|ollama-cloud` (default `ollama`), `--base-url <url>`,
+    `--batch <n>`. For `ollama-cloud` the operator's ollama.com key is read from the
+    `OLLAMA_CLOUD_API_KEY` env var (sent as the Bearer token); point `--base-url` at
+    `https://ollama.com` (CI is Node — no CORS, so it hits ollama.com directly, not the
+    browser proxy).
+  - Offline/occasional operator batch — needs a running embedder (local Ollama, the
+    self-hosted operator box, or Ollama Cloud); never part of the app bundle. The one CI
+    use is the secret-gated `rag-ingest` workflow (`.github/workflows/rag-ingest.yml`,
+    main-only / dispatch), which runs `--provider ollama-cloud --base-url https://ollama.com`
+    with the `OLLAMA_CLOUD_API_KEY` secret.
 
 - `novel.ts` (`pnpm rag:novel`) — the novel **parse + normalize** stages (issue #62).
   Reads an EPUB, a one-file-per-chapter directory (md/txt/html), or a single

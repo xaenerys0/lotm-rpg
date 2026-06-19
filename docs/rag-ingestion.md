@@ -26,9 +26,12 @@ cloning needs `git lfs install` + `git lfs pull` to materialize them.
 
 - **An embedding endpoint** serving the approved 1024-dim models via Ollama's
   `/api/embed`: `qwen3-embedding:0.6b` (the default/locked model) and, ideally,
-  `bge-m3:567m` (the alternate map). Either the player-Ollama transport
-  (`--provider ollama --base-url http://host:11434`) or the operator box
-  (`--provider operator`, `NEXT_PUBLIC_OPERATOR_EMBEDDING_URL`).
+  `bge-m3:567m` (the alternate map). Any of: the player-Ollama transport
+  (`--provider ollama --base-url http://host:11434`), a self-hosted operator box
+  (`--provider operator`, `NEXT_PUBLIC_OPERATOR_EMBEDDING_URL`), or hosted Ollama
+  Cloud (`--provider ollama-cloud --base-url https://ollama.com` with the
+  operator's `OLLAMA_CLOUD_API_KEY` — the same key the CI workflow and the
+  gameplay query proxy use).
 - **The Supabase service-role key** — the load stage writes past RLS, so it must
   run operator-side only: `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`.
 
@@ -100,9 +103,10 @@ have to be re-embedded by hand. It is deliberately conservative:
   automated re-ingest can never silently lower a tier the operator set. Set the
   repo variable if your wiki canon needs a tier above 0.
 - **Secret-gated**: needs `RAG_SUPABASE_URL`, `RAG_SUPABASE_SERVICE_ROLE_KEY`,
-  and `RAG_EMBEDDING_URL` (the operator `/api/embed` endpoint) as repo/environment
-  **secrets**. A `gate` job checks they're present and the `ingest` job is
-  skipped cleanly when any is absent (forks/Dependabot can't read secrets).
+  and `OLLAMA_CLOUD_API_KEY` (the operator's ollama.com key — CI embeds against
+  `https://ollama.com` directly) as repo/environment **secrets**. A `gate` job
+  checks they're present and the `ingest` job is skipped cleanly when any is
+  absent (forks/Dependabot can't read secrets).
 - **Sources**: checks out and `git lfs pull`s only the EPUB + wiki `.7z`, then
   extracts the dump with `7z` (`p7zip-full`).
 - **Safe by construction**: the embed stage validates `--model` against

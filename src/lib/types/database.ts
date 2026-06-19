@@ -455,6 +455,28 @@ export interface Database {
         };
         Relationships: [];
       };
+      rate_limits: {
+        // Per-user fixed-window counters; written only via check_rate_limit().
+        Row: {
+          user_id: string;
+          bucket: string;
+          window_start: string;
+          counter: number;
+        };
+        Insert: {
+          user_id: string;
+          bucket: string;
+          window_start?: string;
+          counter?: number;
+        };
+        Update: {
+          user_id?: string;
+          bucket?: string;
+          window_start?: string;
+          counter?: number;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: {
@@ -469,6 +491,18 @@ export interface Database {
       rate_world_message: {
         Args: { p_message_id: string; p_helpful: boolean };
         Returns: undefined;
+      };
+      check_rate_limit: {
+        Args: {
+          p_bucket: string;
+          p_max_requests: number;
+          p_window_seconds: number;
+        };
+        Returns: {
+          allowed: boolean;
+          remaining: number;
+          reset_at: string;
+        }[];
       };
       match_source_chunks: {
         Args: {
