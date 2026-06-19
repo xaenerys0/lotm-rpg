@@ -481,7 +481,7 @@ export function PlayDashboard() {
               <div className="mt-4 flex items-center justify-center gap-3">
                 <button
                   type="button"
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  onClick={() => setPage(Math.max(0, safePage - 1))}
                   disabled={safePage === 0}
                   className="min-h-[24px] rounded border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-muted"
                   aria-label="Previous page"
@@ -493,7 +493,7 @@ export function PlayDashboard() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))}
+                  onClick={() => setPage(Math.min(pageCount - 1, safePage + 1))}
                   disabled={safePage === pageCount - 1}
                   className="min-h-[24px] rounded border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-border disabled:hover:text-muted"
                   aria-label="Next page"
