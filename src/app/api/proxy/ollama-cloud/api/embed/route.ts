@@ -12,8 +12,25 @@ import { createClient } from "@/lib/supabase/server";
 //     RAG retrieval regardless of their chat provider. That key lives only here
 //     (`OLLAMA_CLOUD_API_KEY`, server-only, never `NEXT_PUBLIC_`); the browser
 //     sends no key. Because it spends the operator's key, the route is gated to
-//     authenticated Supabase users (a baseline abuse limit; rate-limiting is a
-//     future hardening).
+//     authenticated Supabase users AND a per-user rate limit (below), so one
+//     account can't run up the operator's bill.
+
+/** The shared `rate_limits` bucket this route counts under. */
+const RATE_LIMIT_BUCKET = "embed";
+
+/**
+ * Per-user limit, env-tunable (server-only). `EMBED_RATE_LIMIT_MAX=0` disables
+ * the check entirely (operator opt-out). Defaults: 30 requests / 60s.
+ */
+function rateLimitConfig(): { max: number; windowSeconds: number } {
+  const max = Number(process.env.EMBED_RATE_LIMIT_MAX ?? "30");
+  const windowSeconds = Number(process.env.EMBED_RATE_LIMIT_WINDOW_SECONDS ?? "60");
+  return {
+    max: Number.isFinite(max) ? max : 30,
+    windowSeconds:
+      Number.isFinite(windowSeconds) && windowSeconds > 0 ? windowSeconds : 60,
+  };
+}
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   // Auth gate: only signed-in players may spend the operator's key.
@@ -35,6 +52,38 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       "[ollama-cloud proxy] api/embed disabled — OLLAMA_CLOUD_API_KEY is not set",
     );
     return NextResponse.json({ error: "Cloud embedding disabled" }, { status: 503 });
+  }
+
+  // Per-user rate limit: bound the operator's spend before the key is used. The
+  // counter is atomic in Postgres (keyed by auth.uid() inside the RPC), shared
+  // across all serverless instances. Fails CLOSED — if the limit can't be
+  // verified we don't spend the key. A 4xx/5xx here is swallowed best-effort by
+  // `retrieveLoreForTurn`, so a throttled turn just runs on curated lore.
+  const { max, windowSeconds } = rateLimitConfig();
+  if (max > 0) {
+    const { data, error } = await supabase.rpc("check_rate_limit", {
+      p_bucket: RATE_LIMIT_BUCKET,
+      p_max_requests: max,
+      p_window_seconds: windowSeconds,
+    });
+    const decision = data?.[0];
+    if (error || !decision) {
+      console.error(
+        "[ollama-cloud proxy] api/embed rate-limit check failed",
+        JSON.stringify({ error: error?.message ?? "no decision row" }),
+      );
+      return NextResponse.json({ error: "Rate limit unavailable" }, { status: 503 });
+    }
+    if (!decision.allowed) {
+      const retryAfter = Math.max(
+        1,
+        Math.ceil((new Date(decision.reset_at).getTime() - Date.now()) / 1000),
+      );
+      return NextResponse.json(
+        { error: "Rate limit exceeded" },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } },
+      );
+    }
   }
 
   const body = await request.text();
