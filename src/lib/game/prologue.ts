@@ -1,170 +1,13 @@
 import { createMemoryState, capWithEllipsis } from "@/lib/ai";
 import type { MemoryState, SessionFact } from "@/lib/ai";
 
-export interface PrologueChoice {
-  id: string;
-  text: string;
-  affinities: Readonly<Record<number, number>>;
-}
-
-export interface PrologueScene {
-  id: string;
-  title: string;
-  setting: string;
-  narrative: string;
-  choices: PrologueChoice[];
-}
-
-export interface PrologueSelection {
-  sceneId: string;
-  choiceId: string;
-}
-
 export interface PathwayScore {
   pathwayId: number;
   score: number;
 }
 
-export interface PrologueRecommendation {
-  pathwayId: number;
-  score: number;
-  maxPossible: number;
-  justification: string;
-}
-
-export interface PrologueState {
-  currentScene: number;
-  selections: PrologueSelection[];
-  isComplete: boolean;
-}
-
-// Pathway IDs: 1=Fool, 2=Visionary, 3=Sun, 4=Death
-export const PROLOGUE_SCENES: readonly PrologueScene[] = [
-  {
-    id: "scene-1",
-    title: "The Widow's Misfortune",
-    setting: "Tingen City Market District, Early Autumn",
-    narrative:
-      "A cold autumn morning in Tingen City. The market district hums with commerce — coal smoke drifting from factory chimneys, vendors crying their wares, the distant clank of a steam tram. You have paused at a pie stall when you witness it: a nimble-fingered youth in a grey coat lifts a small purse from an elderly widow's shawl pocket. The old woman is still counting out coins for a loaf of bread. The thief has already begun to walk away.",
-    choices: [
-      {
-        id: "s1-fool",
-        text: "Follow the thief at a distance. He didn't act alone — someone is directing these young pickpockets.",
-        affinities: { 1: 2, 2: 0, 3: 0, 4: 0 },
-      },
-      {
-        id: "s1-sun",
-        text: "Call out and plant yourself in the thief's path. The widow needs her money back.",
-        affinities: { 1: 0, 2: 0, 3: 2, 4: 0 },
-      },
-      {
-        id: "s1-visionary",
-        text: "Go to the widow first. She looks frightened and confused — that matters more right now.",
-        affinities: { 1: 0, 2: 2, 3: 0, 4: 0 },
-      },
-      {
-        id: "s1-death",
-        text: "Study the thief's face. His eyes are sunken and empty — the look of someone haunted, or hollow.",
-        affinities: { 1: 0, 2: 0, 3: 0, 4: 2 },
-      },
-    ],
-  },
-  {
-    id: "scene-2",
-    title: "The Sealed Basement",
-    setting: "An Abandoned Warehouse, East Tingen",
-    narrative:
-      "You have taken a shortcut through a derelict industrial block when you notice it: a heavy iron door set flush with the ground, secured by a padlock as large as your fist. A faint smell — chemical, with something organic beneath it — seeps through the gap. Whatever is stored here, the owners do not want it found. The street is empty. No one will see what you do next.",
-    choices: [
-      {
-        id: "s2-fool",
-        text: "Examine the lock and the hinges. Patterns in the rust and scratch marks reveal when this was last used.",
-        affinities: { 1: 2, 2: 0, 3: 0, 4: 0 },
-      },
-      {
-        id: "s2-sun",
-        text: "If someone is trapped down there, waiting is not an option. You look for something to break the padlock.",
-        affinities: { 1: 0, 2: 0, 3: 2, 4: 0 },
-      },
-      {
-        id: "s2-visionary",
-        text: "Press your ear to the door and hold very still. Beneath the chemical smell — yes. A soft, rhythmic sound.",
-        affinities: { 1: 0, 2: 2, 3: 0, 4: 0 },
-      },
-      {
-        id: "s2-death",
-        text: "The smell reminds you of something you once encountered at a mortuary. You have learned to recognise the dead.",
-        affinities: { 1: 0, 2: 0, 3: 0, 4: 2 },
-      },
-    ],
-  },
-  {
-    id: "scene-3",
-    title: "The Veteran's Orders",
-    setting: "The Iron Anchor Tavern, Dockside District",
-    narrative:
-      "Rain drums against the tavern windows. A soldier sits across the room, alone with a pewter mug and a letter bearing an unfamiliar seal. His hands shake, though not from the cold. He reads the letter again. And again. The regulars ignore him — they know better than to notice an officer reading orders in a place like this. But you notice. And you notice that the seal is not one issued by the Loen military.",
-    choices: [
-      {
-        id: "s3-fool",
-        text: "Watch him. His reactions tell you more than the letter ever could. Who gave him this, and why does it frighten him?",
-        affinities: { 1: 2, 2: 0, 3: 0, 4: 0 },
-      },
-      {
-        id: "s3-sun",
-        text: "Move to his table. Whatever he is facing, he should not face it without someone at his side.",
-        affinities: { 1: 0, 2: 0, 3: 2, 4: 0 },
-      },
-      {
-        id: "s3-visionary",
-        text: "Catch his eye for a moment — a steady, unhurried look. You want him to know someone sees him.",
-        affinities: { 1: 0, 2: 2, 3: 0, 4: 0 },
-      },
-      {
-        id: "s3-death",
-        text: "You find yourself wondering — if those orders lead him somewhere fatal, what will remain of him afterward?",
-        affinities: { 1: 0, 2: 0, 3: 0, 4: 2 },
-      },
-    ],
-  },
-  {
-    id: "scene-4",
-    title: "The Old Book",
-    setting: "Falser's Second-Hand Books, Upper Tingen",
-    narrative:
-      "A browsing afternoon turns strange when a waterlogged volume slides from an overpacked shelf and falls open at your feet. The pages show a circular diagram — geometric lines radiating from a central symbol you cannot quite focus on. The ink is faded brown, but the central glyph seems to absorb light rather than reflect it. The bookseller doesn't notice. The diagram looks like something drawn by a very careful, very frightened person.",
-    choices: [
-      {
-        id: "s4-fool",
-        text: "Copy the diagram into your notebook before touching anything else. You have a feeling you should not close this book.",
-        affinities: { 1: 2, 2: 0, 3: 0, 4: 0 },
-      },
-      {
-        id: "s4-sun",
-        text: "Bring it to the counter immediately. This is not something for idle hands — the bookseller should know.",
-        affinities: { 1: 0, 2: 0, 3: 2, 4: 0 },
-      },
-      {
-        id: "s4-visionary",
-        text: "Place your hand on the page without thinking. The paper feels faintly warm, like a palm pressed flat just a moment ago.",
-        affinities: { 1: 0, 2: 2, 3: 0, 4: 0 },
-      },
-      {
-        id: "s4-death",
-        text: "The central glyph reminds you of runes you saw carved on a grave marker in Old Tingen cemetery, years ago.",
-        affinities: { 1: 0, 2: 0, 3: 0, 4: 2 },
-      },
-    ],
-  },
-] as const;
-
-export const PATHWAY_JUSTIFICATIONS: Readonly<Record<number, string>> = {
-  1: "Your instinct is to observe before you act — to see the shape of a thing before naming it. You are drawn to patterns hidden beneath the surface, to questions that most people don't think to ask. The Fool pathway calls to those who prefer the long view, who understand that knowledge carefully gathered is its own form of power.",
-  2: "You read people the way others read books. Before intellect or action, you reach for understanding — of what a person feels, of what they fear, of what they carry. The Visionary pathway calls to those who believe the world is moved more by the weight of inner lives than by any physical force.",
-  3: "When something is wrong, you act. Not recklessly — but with a clear sense that standing by is itself a choice, and not one you're willing to make. The Sun pathway calls to those who carry a light inside them, who protect without being asked, who know that courage is ordinary kindness made extraordinary by circumstance.",
-  4: "You see the edges others avoid. You notice when someone is hollow-eyed, when a smell carries the wrong weight, when stillness is not peace but absence. The Death pathway calls to those who look unflinching at what lies beneath the surface of living — curious, rather than afraid, about what persists when the rest is gone.",
-};
-
+// Pathway ids: 1=Fool, 2=Visionary, 3=Sun, 4=Death, 5=Darkness, 6=Tyrant/Sailor,
+// 7=Door/Apprentice, 8=Error/Marauder, 9=Hanged Man/Secrets Suppliant.
 export const POTION_HEADINGS: Readonly<Record<number, string>> = {
   1: "The First Vision",
   2: "The First Glimpse",
@@ -189,33 +32,15 @@ export const FIRST_POTION_NARRATIVE: Readonly<Record<number, string>> = {
   9: `The Secrets Suppliant potion is the colour of old blood, thick and dark, and it carries a smell of cold ash and graveyard wormwood. The Shadow-Touched Toad's heart and the sacrificial altar-ash give it that hue; the black goat's blood makes the surface gleam dully. You speak the small rite over it, as the knowledge in your head insists you must, and you drink.\n\nThe knowledge comes with it — names you did not know an hour ago, shapes of ritual and sacrifice, a handful of honorific titles that your mind shies from even as it holds them. The candle gutters. The shadows in the corners feel, briefly, attentive.\n\nSomething has been given, and something — you sense — will be asked in return.\n\nYou are a Secrets Suppliant now. The hidden things, you are beginning to understand, answer those willing to pay, and the price is never named in advance.`,
 };
 
-export function scoreSelections(selections: PrologueSelection[]): PathwayScore[] {
-  const totals: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
-
-  for (const selection of selections) {
-    const scene = PROLOGUE_SCENES.find((s) => s.id === selection.sceneId);
-    if (!scene) continue;
-    const choice = scene.choices.find((c) => c.id === selection.choiceId);
-    if (!choice) continue;
-    for (const [idStr, score] of Object.entries(choice.affinities)) {
-      const pathwayId = Number(idStr);
-      totals[pathwayId] = (totals[pathwayId] ?? 0) + score;
-    }
-  }
-
-  return Object.entries(totals)
-    .map(([id, score]) => ({ pathwayId: Number(id), score }))
-    .sort((a, b) => b.score - a.score);
-}
-
 // ───────────────────────────────────────────────────────────────────────────
-// Generic, deterministic affinity tallying (issue #53)
+// Generic, deterministic affinity tallying (issues #53, #119)
 //
-// These helpers are generic over ANY set of pathway ids — they never assume
-// "4". They power the live AI-prologue decision: the AI only narrates and tags
-// choices with affinity weights; the engine accumulates those weights here and
-// computes the candidate set the player picks from. Scales unchanged from the 4
-// pathways shipped today to the full 22 later.
+// These helpers are generic over ANY set of pathway ids — they never assume a
+// fixed count. They power the live AI-prologue decision: the AI only narrates
+// and tags choices with affinity weights (leaning toward a pathway region), the
+// engine accumulates those weights here and computes the candidate set the
+// player picks from. The neighborhood-affinity catalog the prologue scenes use
+// lives in `@/lib/ai` `prologue-client.ts`.
 // ───────────────────────────────────────────────────────────────────────────
 
 /**
@@ -293,28 +118,6 @@ export function selectTopCandidates(
   }
 
   return selected.map((p) => p.pathwayId);
-}
-
-export function recommendPathway(
-  selections: PrologueSelection[],
-): PrologueRecommendation {
-  const tally: Record<number, number> = {};
-  for (const { pathwayId, score } of scoreSelections(selections)) {
-    tally[pathwayId] = score;
-  }
-  const top = rankPathways(tally)[0];
-  const maxPossible = PROLOGUE_SCENES.length * 2;
-  // De-biased: with no affinity signal at all, refuse to default to a specific
-  // pathway (the old code hardcoded Seer/pathway 1 here). pathwayId 0 == none.
-  if (!top || top.score === 0) {
-    return { pathwayId: 0, score: 0, maxPossible, justification: "" };
-  }
-  return {
-    pathwayId: top.pathwayId,
-    score: top.score,
-    maxPossible,
-    justification: PATHWAY_JUSTIFICATIONS[top.pathwayId] ?? "",
-  };
 }
 
 export function createAIPrologueMemory(
@@ -401,46 +204,20 @@ export function buildPrologueRecap(input: PrologueRecapInput): string {
   return parts.join("\n");
 }
 
-export function createPrologueState(): PrologueState {
-  return {
-    currentScene: 0,
-    selections: [],
-    isComplete: false,
-  };
-}
-
+/**
+ * Seed session memory for the manual character-creation path (no AI prologue).
+ * Records only the character-created fact — the manual path has no prologue
+ * scenes to recap.
+ */
 export function createPrologueMemory(
-  selections: PrologueSelection[],
   characterName: string,
   background: string,
 ): MemoryState {
   const memory = createMemoryState();
-
-  const facts: SessionFact[] = [
-    {
-      type: "event",
-      description: `Character created: ${characterName}${background ? `. Background: ${background}` : ""}`,
-      turnNumber: 0,
-    },
-    ...(selections.length > 0
-      ? [
-          {
-            type: "event" as const,
-            description: `Completed the Beyonder prologue. Narrative choices revealed ${selections.length} defining moments.`,
-            turnNumber: 0,
-          },
-        ]
-      : []),
-    ...selections.map((sel): SessionFact => {
-      const scene = PROLOGUE_SCENES.find((s) => s.id === sel.sceneId);
-      const choice = scene?.choices.find((c) => c.id === sel.choiceId);
-      return {
-        type: "event",
-        description: `Prologue — "${scene?.title ?? sel.sceneId}": ${choice?.text ?? sel.choiceId}`,
-        turnNumber: 0,
-      };
-    }),
-  ];
-
-  return { ...memory, sessionFacts: [...memory.sessionFacts, ...facts] };
+  const fact: SessionFact = {
+    type: "event",
+    description: `Character created: ${characterName}${background ? `. Background: ${background}` : ""}`,
+    turnNumber: 0,
+  };
+  return { ...memory, sessionFacts: [...memory.sessionFacts, fact] };
 }
