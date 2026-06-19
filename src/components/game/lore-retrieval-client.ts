@@ -33,7 +33,9 @@ import { createBrowserClientSafe } from "@/lib/supabase/client";
  */
 function resolveEmbedder(session: GameSession, config: ProviderConfig | null) {
   const modelId = session.embeddingModelId;
-  if (process.env.NEXT_PUBLIC_OLLAMA_CLOUD_EMBEDDING) {
+  // A boolean flag, not a URL — so an explicit "0"/"false" must turn it OFF, not
+  // count as truthy and silently keep spending the operator's key.
+  if (isFlagEnabled(process.env.NEXT_PUBLIC_OLLAMA_CLOUD_EMBEDDING)) {
     // Browser hits the same-origin proxy; the operator key stays server-side, so
     // no key is passed here.
     return createEmbeddingProvider({ id: "ollama-cloud", modelId });
@@ -45,6 +47,14 @@ function resolveEmbedder(session: GameSession, config: ProviderConfig | null) {
     return createEmbeddingProvider({ id: "ollama", modelId, baseUrl: config.baseUrl });
   }
   return null;
+}
+
+/** Treat an env flag as on only for a real truthy value — `undefined`, empty,
+ * `"0"`, and `"false"` all mean off (env vars are always strings). */
+function isFlagEnabled(value: string | undefined): boolean {
+  if (!value) return false;
+  const normalized = value.trim().toLowerCase();
+  return normalized !== "" && normalized !== "0" && normalized !== "false";
 }
 
 /**

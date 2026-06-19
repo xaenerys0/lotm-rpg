@@ -28,6 +28,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   const apiKey = process.env.OLLAMA_CLOUD_API_KEY;
   if (!apiKey) {
     // Cloud embedding isn't configured — the caller falls back to [] retrieval.
+    // Surface it: with NEXT_PUBLIC_OLLAMA_CLOUD_EMBEDDING on but the server key
+    // missing, EVERY player silently loses retrieval, so log the misconfig (the
+    // client swallows the 503 best-effort and shows nothing).
+    console.error(
+      "[ollama-cloud proxy] api/embed disabled — OLLAMA_CLOUD_API_KEY is not set",
+    );
     return NextResponse.json({ error: "Cloud embedding disabled" }, { status: 503 });
   }
 
