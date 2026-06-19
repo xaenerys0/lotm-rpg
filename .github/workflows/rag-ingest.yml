@@ -81,6 +81,10 @@ jobs:
           sudo apt-get install -y p7zip-full
           mkdir -p /tmp/wiki
           7z x -y -o/tmp/wiki corpus/wiki/lordofthemystery_pages_current.xml.7z
+          # 7z restores each entry's stored Unix mode, and this archive's is
+          # missing owner-read — so the parser (createReadStream) hits EACCES.
+          # The runner owns the extracted file, so re-grant read/search here.
+          chmod -R u+rwX /tmp/wiki
 
       # parse → chunk → embed → load. The embed stage validates --model against
       # APPROVED_EMBEDDING_MODELS (no new id leaks into the model-keyed store)
