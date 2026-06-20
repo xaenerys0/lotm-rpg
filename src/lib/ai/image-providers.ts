@@ -8,8 +8,9 @@ import { fetchWithErrorHandling } from "./providers";
 // the player configures images separately, with their own key/base URL/model.
 //
 // Browser-direct, BYOK — exactly like the text providers (`providers.ts`). The
-// key never touches our servers; only Ollama Cloud is proxied (for CORS), the
-// same workaround the text adapter uses.
+// key never touches our servers, and no image request is proxied: every backend
+// here (OpenAI, local Ollama, local Stable Diffusion) is reachable directly from
+// the browser. (Ollama *Cloud* is not an image backend — see the NOTE below.)
 //
 // Supported backends and their transports:
 //   - openai        → OpenAI Images `/images/generations` (dall-e-3 / gpt-image-1)

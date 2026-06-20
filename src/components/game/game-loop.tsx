@@ -655,10 +655,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     endingInFlight.current = true;
     const result = attemptApotheosis(session);
     if (result.outcome === "ascended") {
+      const apotheosisSummary = `Became ${result.honorific} — the Sequence 0 True God of the pathway.`;
       appendJournalEntries(session.id, [
         buildJournalEntry(session.gameState, session.turnCount, {
           eventType: "advancement",
-          summary: `Became ${result.honorific} — the Sequence 0 True God of the pathway.`,
+          summary: apotheosisSummary,
           narrative: result.tease,
           arc: "Sequence 0",
         }),
@@ -671,10 +672,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           type: "ENGINE_RESOLUTION",
           result: engineResolution(
             { narrative: result.tease },
-            {
-              eventType: "advancement",
-              summary: `Became ${result.honorific} — the Sequence 0 True God of the pathway.`,
-            },
+            { eventType: "advancement", summary: apotheosisSummary },
           ),
           playerAction: `I seize the throne and ascend to Sequence 0, becoming ${result.honorific}, a True God of the pathway.`,
         }),
@@ -703,10 +701,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     endingInFlight.current = true;
     const result = attemptPillarAscension(session);
     if (result.outcome === "enthroned") {
+      const pillarSummary = `Ascended above Sequence 0 to become ${result.pillarName}, one of the four Pillars of the universe.`;
       appendJournalEntries(session.id, [
         buildJournalEntry(session.gameState, session.turnCount, {
           eventType: "advancement",
-          summary: `Ascended above Sequence 0 to become ${result.pillarName}, one of the four Pillars of the universe.`,
+          summary: pillarSummary,
           narrative: result.tease,
           arc: "Above the Sequence",
         }),
@@ -716,10 +715,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           type: "ENGINE_RESOLUTION",
           result: engineResolution(
             { narrative: result.tease },
-            {
-              eventType: "advancement",
-              summary: `Ascended above Sequence 0 to become ${result.pillarName}, one of the four Pillars of the universe.`,
-            },
+            { eventType: "advancement", summary: pillarSummary },
           ),
           playerAction: `I integrate my family's godhoods and ascend above the sequences, becoming ${result.pillarName}, a Pillar of the universe.`,
         }),
@@ -805,10 +801,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             // Deterministic scene already set.
           }
         }
+        const advancementSummary = `Advanced to Sequence ${result.newSequenceLevel}, ${result.roleName}.`;
         appendJournalEntries(session.id, [
           buildJournalEntry(advanced.gameState, advanced.turnCount, {
             eventType: "advancement",
-            summary: `Advanced to Sequence ${result.newSequenceLevel}, ${result.roleName}.`,
+            summary: advancementSummary,
             narrative: scene,
             arc: `Sequence ${result.newSequenceLevel}`,
           }),
@@ -822,10 +819,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           aiResponse
             ? { ...narrationOnly(aiResponse), narrative: scene }
             : { narrative: scene },
-          {
-            eventType: "advancement",
-            summary: `Advanced to Sequence ${result.newSequenceLevel}, ${result.roleName}.`,
-          },
+          { eventType: "advancement", summary: advancementSummary },
         );
         const playerAction = `I drink the Sequence ${result.newSequenceLevel} potion and undergo the advancement to ${result.roleName}${
           result.ritual ? `, performing the rite: ${result.ritual.description}` : ""
