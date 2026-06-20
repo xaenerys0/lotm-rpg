@@ -170,9 +170,9 @@ const ORIGIN_STARTS: readonly StartScenario[] = [
     location: "Silver City",
     origin: "forsaken-land",
     blurb:
-      "Born in the City of Silver — the last living city of the sealed Forsaken Land of the Gods, under its perpetual lightning.",
+      "Born in the City of Silver — a surviving city of the sealed Forsaken Land of the Gods, under its perpetual lightning.",
     openingBeat: `The strange potion still burns on my tongue as the City of Silver's perpetual lightning walks the sky overhead; I have never known any world but this sealed continent, and now I am something new beneath its grey-white stone. ${SCENE_CUE}`,
-    pathwayAffinity: [3],
+    pathwayAffinity: [11],
   },
 ] as const;
 

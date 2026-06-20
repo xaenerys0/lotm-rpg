@@ -117,7 +117,7 @@ export const NPC_LORE: LoreEntry[] = [
     slug: "npc-derrick-berg",
     title: "Derrick Berg — The Sun of the Tarot Club",
     category: "npc",
-    content: `Derrick Berg is a young man born and raised in the City of Silver, the last living city of the Forsaken Land of the Gods, and one of the rare souls to leave it by the Dream-World passage. A devout, earnest, and physically powerful Beyonder of the Sun pathway, he was a defender of the City before the wider world opened to him. He becomes a member of the Tarot Club under the code name "The Sun," where his sincerity and raw strength make him both a reliable ally and, at times, an unwitting source of comedy among subtler members. His defining ties are to his home: his family and the brotherhood of the City of Silver's defenders, the faith of the abandoned that he carries with unshaken conviction, and — through the Tarot Club — a growing bond with The Fool (Klein Moretti) and the other members "above the gray fog." Derrick's arc is one of a sheltered believer discovering how vast and dangerous the real world is, without ever losing the openhearted decency the City raised in him.`,
+    content: `Derrick Berg is a young man born and raised in the City of Silver, one of the surviving cities of the Forsaken Land of the Gods, and one of the rare souls to leave it by the Dream-World passage. A devout, earnest, and physically powerful Beyonder of the Sun pathway, he was a defender of the City before the wider world opened to him. He becomes a member of the Tarot Club under the code name "The Sun," where his sincerity and raw strength make him both a reliable ally and, at times, an unwitting source of comedy among subtler members. His defining ties are to his home: his family and the brotherhood of the City of Silver's defenders, the faith of the abandoned that he carries with unshaken conviction, and — through the Tarot Club — a growing bond with The Fool (Klein Moretti) and the other members "above the gray fog." Derrick's arc is one of a sheltered believer discovering how vast and dangerous the real world is, without ever losing the openhearted decency the City raised in him.`,
     epoch: 5,
     city: "silver",
     // Deliberately NOT pathway-keyed (issue #132 leak control): selectCuratedLore
@@ -147,43 +147,69 @@ export const NPC_LORE: LoreEntry[] = [
   // City-keyed to "backlund" so the narrator carries them for a character in the
   // capital. Deliberately NOT pathway-keyed (the issue #132 leak rule): a
   // `pathway` field would inject a Backlund NPC into any same-pathway character's
-  // prompt regardless of where they are. Audrey's pathway is named only in prose.
-  // Alger Wilson roams the sea and belongs to no one city, so he carries no city
-  // key (corpus/integrity only), mirroring the cross-cutting secret-society lore.
+  // prompt regardless of where they are. Pathways are named only in prose.
+  // All canon (names, families, pathways, identities) verified against corpus/wiki
+  // (see CLAUDE.md "Canon & Source Material") — NOT memory.
   {
     slug: "npc-audrey-hall",
     title: "Audrey Hall — Lady of Empress Borough, the Tarot Club's Justice",
     category: "npc",
-    content: `Audrey Hall is the youngest daughter of the aristocratic Hall family of Backlund's Empress Borough, a poised and famously charming young noblewoman who moves easily through the salons and balls of the capital's high society. Behind that public face she is a Beyonder of the Spectator (Visionary) pathway, gifted in reading and gently swaying the minds and emotions of others, and — known to no one in her ordinary world — a member of the secret Tarot Club, where she takes the name "Justice." Audrey is idealistic, quick-witted, and far braver than her sheltered upbringing would suggest, determined to use her gifts to do genuine good. Her ties define her: her stern father the Earl, her sociable elder brother Hibbert Hall, and her devoted dog Susie at home; and, above the gray fog, the mysterious The Fool and her fellow Tarot members, whom she comes to trust more than almost anyone in her daylight life. She is a living bridge between Backlund's gilded surface and its hidden Beyonder depths.`,
+    content: `Audrey Hall is the youngest child and only daughter of the aristocratic Hall family of Backlund's Empress Borough — her father an Earl who sits in the Cabinet and ranks among Loen's foremost bankers, her mother Caitlyn, and her two elder brothers Hibbert and Alfred. A poised and famously charming young noblewoman, called "Backlund's most dazzling gem," she moves easily through the salons and balls of the capital's high society. Behind that public face she is a Beyonder of the Visionary (Spectator) pathway, gifted in reading and gently swaying the minds and hearts of others, and — known to no one in her ordinary world — a member of the secret Tarot Club, where she takes the name "Justice." Idealistic, quick-witted, and braver than her sheltered upbringing would suggest, she is determined to use her gifts for genuine good. Her devoted golden retriever Susie — who drank one of her early potions and is no ordinary dog — is rarely far from her side. She is a living bridge between Backlund's gilded surface and its hidden Beyonder depths.`,
     epoch: 5,
     city: "backlund",
-    npcs: ["Audrey Hall", "Hibbert Hall"],
+    npcs: ["Audrey Hall", "Hibbert Hall", "Alfred Hall", "Caitlyn Hall"],
     sequences: [],
     tags: ["backlund", "hall-family", "tarot-club", "the-justice", "visionary-pathway"],
-    tokenCount: 245,
+    tokenCount: 250,
   },
   {
     slug: "npc-hall-family",
     title: "The Hall Family — A Noble House of Empress Borough",
     category: "npc",
-    content: `The Hall family is one of the established aristocratic houses of Backlund, seated in a fine townhouse in Empress Borough on the refined bank of the Tussock. Headed by the Earl — a proud, conventional patriarch concerned above all with the family's standing — the household includes his elder son and heir Hibbert Hall, who is sociable, a touch idle, and fond of the capital's pleasures, and his youngest daughter Audrey, the family's brightest light in society. Like the great families around them, the Halls live by the rituals of their class: the season's balls, advantageous marriages, parliamentary connections, and the careful management of reputation. On the surface they are exactly what they appear to be — old money in a city built on it. What the Earl does not know is that his daughter walks in a hidden world far stranger and more dangerous than any drawing-room intrigue, and that the Hall name has quietly become a thread in the Beyonder affairs of the capital.`,
+    content: `The Hall family is one of the most prominent aristocratic houses of Backlund, seated in the Earl Hall Villa in Empress Borough on the refined bank of the Tussock. The Earl himself is a power in the capital — a member of the Cabinet and one of the foremost bankers of the Loen Kingdom — and with his wife Caitlyn he has raised three children: the eldest son and heir Hibbert, the second son Alfred, and the youngest, his only daughter Audrey, the family's brightest light in society. Like the great families around them the Halls live by the rituals of their class: the season's balls, advantageous marriages, parliamentary connection, and the careful management of reputation and fortune. On the surface they are exactly what they appear to be — old money and high office in a city built on both. What the Earl does not know is that his daughter walks a hidden world far stranger and more dangerous than any drawing-room intrigue.`,
     epoch: 5,
     city: "backlund",
-    npcs: ["Hibbert Hall", "Audrey Hall"],
+    npcs: ["Caitlyn Hall", "Hibbert Hall", "Alfred Hall", "Audrey Hall"],
     sequences: [],
     tags: ["backlund", "hall-family", "nobility", "empress-borough"],
-    tokenCount: 225,
+    tokenCount: 220,
   },
   {
-    slug: "npc-alger-wilson",
-    title: "Alger Wilson — The Hanged Man",
+    slug: "npc-klein-backlund-identities",
+    title: "Sherlock Moriarty & Dwayne Dantès — Backlund Cover Identities",
     category: "npc",
-    content: `Alger Wilson is a sea-faring Beyonder, a hard and watchful man shaped by years aboard ship and in the harbour underworlds of the Northern Continent. Within the Beyonder world he belongs to the Rose School of Thought, the secret Loen mystic society, and — above the gray fog — to the Tarot Club, where he is known as "The Hanged Man." Cautious to the point of paranoia and slow to trust, Alger has clawed his survival and his advancement out of dangerous waters by being careful, and he brings that wariness to the Club's table, trading intelligence and Beyonder goods like a man who expects every bargain to be a trap. His ties run to the sea and its sailor-Beyonders, to the Rose School's hidden network, and to his fellow Tarot members — above all the enigmatic The Fool, whose power he respects and fears in equal measure. He is the kind of ally who keeps a promise precisely because he assumes everyone else will break theirs.`,
+    content: `In Backlund, one extraordinarily capable Beyonder operates behind two carefully built faces. SHERLOCK MORIARTY is a private detective working out of an office on Minsk Street in Cherwood Borough — sharp, theatrical, and uncannily good at the cases the police cannot close; he moves through the capital's underworld and its tragedies, the smog-choked economic crisis among them, gathering what no badge ever could. DWAYNE DANTÈS is the other face: a mysterious, fabulously wealthy tycoon and philanthropist who buys his way into Empress Borough high society, founds a charitable bursary, donates to the Church of the Evernight Goddess, and trades quietly in influence and arms. The two never appear to be the same man, and neither appears to be what he truly is — a powerful Beyonder, the Tarot Club's masked "Fool," using Backlund as his stage. To the city they are a clever detective and a generous magnate; to those who could see clearly, they are two masks worn by a single mind.`,
     epoch: 5,
-    npcs: ["Alger Wilson"],
-    sequences: [7],
-    tags: ["tarot-club", "the-hanged-man", "rose-school-of-thought", "sailor"],
-    tokenCount: 220,
+    city: "backlund",
+    npcs: ["Sherlock Moriarty", "Dwayne Dantès", "Klein Moretti"],
+    sequences: [],
+    tags: [
+      "backlund",
+      "klein-identities",
+      "sherlock-moriarty",
+      "dwayne-dantes",
+      "tarot-club",
+    ],
+    tokenCount: 230,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-bravehearts-temperance",
+    title: "Sharron & Maric — the Bravehearts Bar Exiles",
+    category: "npc",
+    content: `Sharron and Maric are two Beyonders of the Chained pathway who fled the Rose School of Thought when its Temperance faction was shattered, and who found refuge in Backlund under the protection of the Tarot Club's "The Fool." They keep to the Bravehearts Bar near the Backlund Bridge and to lodgings in Hillston Borough — Sharron a formidable, watchful bodyguard (hired more than once by their mysterious patron) who carries the Tarot name "Temperance," and Maric her steadfast companion, the "Knight of Swords." Survivors of an order that turned to devouring desire, they hold instead to the discipline of restraint the Rose School abandoned. To ordinary Backlunders they are simply foreign regulars at a riverside bar; in truth they are exiles of a heresy, sheltering with the very network that opposes the Mother Tree of Desire, and fiercely loyal to the patron who took them in when their own kind hunted them.`,
+    epoch: 5,
+    city: "backlund",
+    npcs: ["Sharron", "Maric", "Reinette Tinekerr"],
+    sequences: [],
+    tags: [
+      "backlund",
+      "rose-school-of-thought",
+      "temperance",
+      "tarot-club",
+      "chained-pathway",
+    ],
+    tokenCount: 215,
     narratorOnly: true,
   },
 ];

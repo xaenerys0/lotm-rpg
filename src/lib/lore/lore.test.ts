@@ -215,45 +215,69 @@ describe("Lore content coverage", () => {
     }
   });
 
-  it("has the Backlund organizations with gated spoilers (issue #133)", () => {
-    // Rose School of Thought — Backlund-local, city-keyed; surface ungated,
-    // heterodox doctrine sequence-gated + narrator-only.
+  it("has the Backlund organizations, corpus-corrected and leak-safe (issue #133)", () => {
+    // Rose School of Thought (canon: Mother Tree of Desire / Chained pathway, an
+    // Indulgence-vs-Temperance schism — NOT the Evernight Goddess). It is a
+    // cross-cutting secret society, not Backlund-local, so like the Numinous
+    // Episcopate it carries NO city (never curated-injected): surface ungated,
+    // the schism sequence-gated + narrator-only.
     const roseSurface = getLoreBySlug("rose-school-of-thought-overview");
-    const roseDeep = getLoreBySlug("rose-school-of-thought-doctrine");
-    expect(roseSurface?.city).toBe("backlund");
+    const roseDeep = getLoreBySlug("rose-school-of-thought-factions");
+    expect(roseSurface?.city).toBeUndefined();
     expect(roseSurface?.narratorOnly).toBe(false);
     expect(roseSurface!.sequences).toEqual([]);
+    expect(roseSurface!.tags).toContain("chained-pathway");
+    // The corrected entry must not reattach the wrong Evernight-Goddess framing.
+    expect(roseSurface!.tags).not.toContain("evernight-goddess");
     expect(roseDeep?.narratorOnly).toBe(true);
     expect(roseDeep!.sequences.length).toBeGreaterThan(0);
-    // The capital's own Nighthawks division (city-keyed).
+    // The capital's own Nighthawks division stays city-keyed (Backlund-local).
     expect(getLoreBySlug("backlund-nighthawks-team")?.city).toBe("backlund");
   });
 
-  it("keeps the Tarot Club leak-safe: no city and no pathway key (issue #133)", () => {
-    // The Tarot Club convenes "above the gray fog", not in Backlund, and is a
-    // profound Fool-pathway secret. selectCuratedLore injects by city AND by
-    // pathway, so a city/pathway key would leak it into every Backlund or every
-    // Fool character's prompt. It must carry neither (corpus/integrity only).
-    const tarot = ORGANIZATION_LORE.filter((e) => e.tags.includes("tarot-club"));
-    expect(tarot.length).toBeGreaterThanOrEqual(2);
-    for (const e of tarot) {
+  it("keeps the Rose School and Tarot Club leak-safe: no city and no pathway key (issue #133)", () => {
+    // selectCuratedLore injects by city AND by pathway, so a city/pathway key on a
+    // cross-cutting secret would leak it into every Backlund or every same-pathway
+    // character's prompt. The Rose School and Tarot Club must carry neither.
+    const crossCutting = ORGANIZATION_LORE.filter(
+      (e) => e.tags.includes("tarot-club") || e.tags.includes("rose-school-of-thought"),
+    );
+    expect(crossCutting.length).toBeGreaterThanOrEqual(4);
+    for (const e of crossCutting) {
       expect(e.city).toBeUndefined();
       expect(e.pathway).toBeUndefined();
+    }
+    // Both Tarot entries are narrator-only + sequence-gated secrets.
+    for (const e of ORGANIZATION_LORE.filter((x) => x.tags.includes("tarot-club"))) {
       expect(e.narratorOnly).toBe(true);
       expect(e.sequences.length).toBeGreaterThan(0);
     }
   });
 
-  it("has the Backlund NPCs with relationship data, not pathway-keyed (issue #133)", () => {
+  it("has the corrected Backlund NPCs + the Great Smog event, not pathway-keyed (issue #133)", () => {
     const names = NPC_LORE.flatMap((e) => e.npcs);
-    expect(names).toContain("Audrey Hall");
-    expect(names).toContain("Hibbert Hall");
-    expect(names).toContain("Alger Wilson");
-    // City-keyed Backlund NPCs are NOT pathway-keyed (the issue #132 leak rule),
-    // so a Backlund face never leaks into another region's same-pathway prompt.
+    // Audrey's full family (corpus): father the Earl, mother Caitlyn, brothers
+    // Hibbert and Alfred.
+    for (const name of ["Audrey Hall", "Hibbert Hall", "Alfred Hall", "Caitlyn Hall"]) {
+      expect(names).toContain(name);
+    }
+    // Klein's Backlund cover identities and the Bravehearts (Temperance) exiles.
+    expect(names).toContain("Sherlock Moriarty");
+    expect(names).toContain("Dwayne Dantès");
+    expect(names).toContain("Sharron");
+    expect(names).toContain("Maric");
+    // Alger Wilson was REMOVED — he is a Sonia Sea figure, not Backlund, and the
+    // earlier Rose-School attribution was a memory error caught against the corpus.
+    expect(names).not.toContain("Alger Wilson");
+    // City-keyed Backlund NPCs are NOT pathway-keyed (the issue #132 leak rule).
     const audrey = getLoreBySlug("npc-audrey-hall");
     expect(audrey?.city).toBe("backlund");
     expect(audrey?.pathway).toBeUndefined();
+    // The Great Smog is a Backlund historical event (gated — its true cause is secret).
+    const smog = getLoreBySlug("backlund-great-smog");
+    expect(smog?.category).toBe("event");
+    expect(smog?.city).toBe("backlund");
+    expect(smog!.sequences.length).toBeGreaterThan(0);
   });
 
   it("has rich, correctly-tagged lore for each pre-Iron-Age epoch", () => {

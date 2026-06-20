@@ -131,51 +131,55 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     narratorOnly: true,
   },
   // ── Backlund deep-dive (world build-out 4, issue #133) ──
-  // The Rose School of Thought and the capital's Nighthawks division are
-  // Backlund-LOCAL and city-keyed ("backlund"), so the narrator carries them for
-  // a character actually in the capital (surface ungated, the heterodox doctrine
-  // sequence-gated + narratorOnly). The Tarot Club, by contrast, is NOT a
-  // physical Backlund body — it convenes "above the gray fog" — and is a profound
-  // secret of the Fool pathway, so (mirroring the Numinous Episcopate) it carries
-  // NEITHER a city NOR a pathway key: selectCuratedLore would otherwise inject it
-  // into every Backlund character (city) or every Fool character (pathway) and
-  // leak it. It lives here for corpus/RAG + integrity only, narratorOnly + gated.
+  // The capital's Nighthawks division is Backlund-LOCAL and city-keyed
+  // ("backlund"). The Rose School of Thought is NOT Backlund-based — it is a
+  // cross-cutting Chained-pathway secret society of the wider world (its
+  // Temperance refugees are the Backlund hook, carried by the Sharron/Maric NPC
+  // entry) — and the Tarot Club convenes "above the gray fog", a profound
+  // Fool-pathway secret. So both the Rose School and the Tarot Club carry NEITHER
+  // a city NOR a pathway key: selectCuratedLore would otherwise inject them into
+  // every Backlund or every same-pathway character and leak them. They live here
+  // for corpus/RAG + integrity only (the Numinous Episcopate pattern).
+  //
+  // CANON NOTE (verified against corpus/wiki — see CLAUDE.md): the Rose School
+  // worships the Mother Tree of Desire (Indulgence) / the Primordial Moon, on the
+  // Chained and Moon pathways, riven by an Indulgence-vs-Temperance schism. It has
+  // NOTHING to do with the Evernight Goddess (an earlier draft and the issue's
+  // hint were both wrong); the corpus is authoritative.
   {
     slug: "rose-school-of-thought-overview",
     title: "Rose School of Thought — Overview",
     category: "organization",
-    content: `The Rose School of Thought is a secret society rooted in Backlund and the wider Loen Kingdom, drawn chiefly from the nobility, the wealthy, and the educated. Standing outside the authority of the orthodox Church of the Evernight Goddess, its members privately revere the Goddess in their own heterodox fashion — as patrons of mysticism, collectors of the rare and the forbidden, and seekers after the truths the orthodox clergy keep locked away. To the little of the world that knows it exists at all, the Rose School is a rumour of a refined salon where titled men and women trade in curios and secrets behind respectable doors; its true membership, reach, and purposes it keeps well hidden. It recruits quietly from those with standing to lose and curiosity enough to risk it, and it takes a particular interest in Beyonders who can be made useful to its discreet designs.`,
+    content: `The Rose School of Thought is a secret society of the Beyonder world, infamous in hushed rumour as a cult of unbound desire. It began long ago as an order devoted to TEMPERANCE — the disciplined restraint of want — but its god was corrupted by the Mother Tree of Desire, and the dominant Indulgence faction that grew from the ruin now preaches the opposite: the release and gratification of every appetite, sealed in blood and depravity. Drawn largely from the Chained pathway, with a faction of moon-worshippers sheltering uneasily among them, the School keeps to the shadows of the wider world and is reckoned by the orthodox Churches a heresy to be hunted rather than an open enemy. Where it surfaces it leaves ruin and willing converts behind it in equal measure, and it has no love for the secrecy-keeping Churches that would see it burned.`,
     epoch: 5,
-    city: "backlund",
     npcs: [],
     sequences: [],
     tags: [
       "rose-school-of-thought",
       "secret-organization",
-      "evernight-goddess",
-      "backlund",
-      "nobility",
+      "chained-pathway",
+      "mother-tree-of-desire",
     ],
     tokenCount: 200,
     narratorOnly: false,
   },
   {
-    slug: "rose-school-of-thought-doctrine",
-    title: "Rose School of Thought — Heterodox Doctrine",
+    slug: "rose-school-of-thought-factions",
+    title: "Rose School of Thought — The Schism of Desire",
     category: "organization",
-    content: `Behind its salon face the Rose School of Thought is a genuine mystic order with its own theology and its own ambitions. Its inner teaching holds that the orthodox Church has tamed and diminished the Evernight Goddess's mysteries, and that the night, the soul, the moon, and the boundary of death conceal deeper truths the Church will not pursue — so the School pursues them itself. It keeps its own rites, its own collection of sealed artifacts and forbidden texts, and quiet ties to Beyonders of the moonlit and night-bound pathways who would find no welcome among the orthodox. Its highest circles guard knowledge the Church would call heresy and the Mandated Punishers would call a crime, advancing it patiently, under cover of respectability, across generations of Loen's great families. To rise within the Rose School is to learn how much of the capital's quiet power already answers to it.`,
+    content: `Behind the rumour the Rose School is split by a long and bloody schism. The INDULGENCE faction, corrupted by and devoted to the Mother Tree of Desire, holds the School and hunts all who resist it; a separate band, the Primordial Moon faction of the Moon pathway, shelters uneasily within it. Against them once stood the TEMPERANCE faction — keepers of the order's original creed of restraint — who were shattered in a surprise attack and driven into exile. Its survivors, among them Reinette Tinekerr and her students Sharron and Maric, fled across the world and took protection under the mysterious founder of the Tarot Club, "The Fool," joining the Church of the Fool rather than be consumed by the Mother Tree. The School's war over desire and restraint is one of the quiet fronts of the Beyonder world's larger struggle, and the Indulgence faction's reach now touches the Devil families and other servants of desire.`,
     epoch: 5,
-    city: "backlund",
-    npcs: [],
+    npcs: ["Reinette Tinekerr", "Sharron", "Maric"],
     sequences: [4],
     tags: [
       "rose-school-of-thought",
       "secret-organization",
-      "evernight-goddess",
-      "moon-pathway",
+      "chained-pathway",
+      "temperance",
+      "mother-tree-of-desire",
       "spoiler",
     ],
-    tokenCount: 200,
+    tokenCount: 205,
     narratorOnly: true,
   },
   {

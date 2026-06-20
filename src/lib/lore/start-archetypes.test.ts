@@ -118,7 +118,7 @@ describe("START_ARCHETYPES data integrity", () => {
     expect(backlund.length).toBeGreaterThanOrEqual(2);
     const ids = backlund.map((a) => a.id);
     expect(ids).toContain("backlund-hall-attendant");
-    expect(ids).toContain("backlund-harbor-deckhand");
+    expect(ids).toContain("backlund-detective-assistant");
     // Each is a default (non-origin) Fifth-Epoch archetype tied to a Backlund NPC.
     for (const a of backlund) {
       expect(a.epoch).toBe(5);
@@ -127,7 +127,7 @@ describe("START_ARCHETYPES data integrity", () => {
     }
     // They appear in the default picker alongside Tingen's.
     expect(startArchetypesForEpoch(5).map((a) => a.id)).toEqual(
-      expect.arrayContaining(["backlund-hall-attendant", "backlund-harbor-deckhand"]),
+      expect.arrayContaining(["backlund-hall-attendant", "backlund-detective-assistant"]),
     );
   });
 });

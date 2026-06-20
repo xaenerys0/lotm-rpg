@@ -181,20 +181,20 @@ const BACKLUND_ARCHETYPES: readonly StartArchetype[] = [
     },
   },
   {
-    id: "backlund-harbor-deckhand",
-    label: "A deckhand on the Backlund docks, known to Alger Wilson",
+    id: "backlund-detective-assistant",
+    label: "An assistant to the Backlund detective Sherlock Moriarty",
     epoch: 5,
     location: "Backlund",
-    relationship: "circle-member",
-    circleNpcs: ["Alger Wilson"],
+    relationship: "assistant",
+    circleNpcs: ["Sherlock Moriarty"],
     blurb:
-      "You work the Backlund docklands aboard a ship known to the wary sailor-Beyonder Alger Wilson.",
-    openingBeat: `The change still churns in my gut as I haul lines on the fog-wet Backlund docks, the Tussock thick with masts and the reek of the sea, and I keep my head down — the hard-eyed sailor Alger Wilson misses nothing, and what I drank tonight is mine alone to hide. ${SCENE_CUE}`,
-    pathwayAffinity: [6],
+      "You keep the case files for the enigmatic private detective Sherlock Moriarty in Cherwood Borough.",
+    openingBeat: `The strange potion still burns in me as I climb the stairs to the Minsk Street office of Sherlock Moriarty, the famous private detective I assist through Backlund's soot-yellow fog — and I realise the strangest case in this city of secrets may now be myself. ${SCENE_CUE}`,
+    pathwayAffinity: [2],
     seeds: {
-      trackedAllies: ["Alger Wilson"],
+      trackedAllies: ["Sherlock Moriarty"],
       facts: [
-        "You crew a vessel on the Backlund docklands and are known to Alger Wilson, a wary sailor with dangerous hidden connections; he keeps a watchful eye on you.",
+        "You assist the private detective Sherlock Moriarty from his office on Minsk Street in Backlund's Cherwood Borough; he knows your face and trusts you with his case files.",
       ],
     },
   },
@@ -207,20 +207,20 @@ const BACKLUND_ARCHETYPES: readonly StartArchetype[] = [
 const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
   {
     id: "forsaken-silver-knight",
-    label: "A Silver Knight of the City of Silver",
+    label: "A giant-blooded warden of the City of Silver",
     epoch: 5,
     location: "Silver City",
     relationship: "circle-member",
     circleNpcs: ["Derrick Berg"],
     origin: "forsaken-land",
     blurb:
-      "A sworn defender of the City of Silver's night-watch, raised in the sealed Forsaken Land and its old faith.",
-    openingBeat: `The strange potion still burns in me as I stand my watch on the grey-white walls of the City of Silver, the perpetual lightning walking the sky above the dead country beyond — I have guarded this last city all my life, and now I am something it has no rite for. ${SCENE_CUE}`,
-    pathwayAffinity: [3],
+      "A giant-descended defender of the City of Silver, raised to the watch in the sealed Forsaken Land.",
+    openingBeat: `The strange potion still burns in me as I stand the watch on the grey-white walls of the City of Silver, the perpetual lightning walking the sky above the dead country beyond — my line has guarded this sealed city since the world forgot us, and now I am something even our oldest customs have no name for. ${SCENE_CUE}`,
+    pathwayAffinity: [11],
     seeds: {
       trackedAllies: ["Derrick Berg"],
       facts: [
-        "You are a Silver Knight of the City of Silver in the Forsaken Land, sworn to its night-watch and its old faith, and you know Derrick Berg among the City's defenders.",
+        "You are a giant-blooded warden of the City of Silver in the Forsaken Land, sworn to its watch, and you know Derrick Berg among the City's defenders.",
       ],
     },
   },

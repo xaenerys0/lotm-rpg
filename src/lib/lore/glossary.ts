@@ -363,7 +363,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     term: "The City of Silver",
     category: "Geography",
     definition:
-      "The last living city of the Forsaken Land, the former seat of the Kingdom of Silver — grey-white stone under a sky of perpetual lightning, home to the abandoned faithful who keep the old rites alone.",
+      "A surviving city of the Forsaken Land, the former seat of the Kingdom of Silver — grey-white stone under a sky of perpetual lightning, home to a giant-descended people (the strongest walking the Twilight Giant path) who endure their isolation alone.",
     revealAtSequence: 9,
     epoch: 5,
     requiresFlag: "dream-world-passage",
@@ -393,7 +393,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     term: "The Silver Knights",
     category: "Organizations",
     definition:
-      "The martial order of the City of Silver — part guard, part priesthood — who hold the night streets and the walls against the dead country, and keep the strict observances of the abandoned faith.",
+      "The honoured elite of the City of Silver's giant-blooded warriors — Beyonders of the Twilight Giant path, the title marking a high rung of that pathway — who hold the walls against the dead country and keep the watch over Giant King's Court.",
     revealAtSequence: 9,
     epoch: 5,
     requiresFlag: "dream-world-passage",

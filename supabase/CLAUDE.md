@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Twenty-two migrations in order:
+Migrations live in `migrations/`. Twenty-three migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -82,6 +82,8 @@ Migrations live in `migrations/`. Twenty-two migrations in order:
 21. `20260620125028_seed_forsaken_land_lore.sql` — Seed the Forsaken Land of the Gods (world build-out 3, issue #132): the City of Silver / Giant King's Court locations + the Third-Epoch fall, the Numinous Episcopate organization, and the City-of-Silver NPCs (12 entries). Generated from the TS source (`src/lib/lore/{forsaken-land,organizations,npcs}.ts` — canonical); same `lore_entries` INSERT format as migration 3. `narratorOnly` is a TS-only prompt flag (no column), intentionally not persisted, matching the prior lore seeds. Parity (TS ↔ rows) verified via the Supabase MCP after apply.
 
 22. `20260620152919_seed_backlund_deepdive_lore.sql` — Seed the Backlund deep-dive (world build-out 4, issue #133): notable boroughs/landmarks (borough structure, harbour & docklands, the underground & Tudor-Trunsoest ruins, the financial district), the Rose School of Thought, the capital's Nighthawks division, the Tarot Club, and the Backlund NPCs (Audrey Hall, the Hall family, Alger Wilson) — 12 entries. Generated from the TS source (`src/lib/lore/{backlund,organizations,npcs}.ts` — canonical); same `lore_entries` INSERT format as migration 3. `narratorOnly` is a TS-only prompt flag (no column), intentionally not persisted. Parity (TS ↔ rows: 12 rows, total `token_count` 2605) verified via the Supabase MCP after apply.
+
+23. `20260620161223_correct_world_buildout_lore.sql` — Resync the world-build-out lore to the canon corpus (issues #132/#133), in the `resync_pathway_lore_seq0` pattern. The Forsaken-Land (21) and Backlund (22) seeds carried memory-sourced errors caught against `corpus/wiki` (see the root `CLAUDE.md` "Canon & Source Material"): the Rose School of Thought worships the Mother Tree of Desire on the Chained pathway (NOT the Evernight Goddess); Alger Wilson is not a Rose-School/Backlund figure; the City of Silver is giant-descended (Twilight Giant), not a faith-order with a "Silver Knights" corps. Upserts (delete-then-insert) the corrected rows from the canonical TS and deletes the obsolete slugs (`npc-alger-wilson`, `rose-school-of-thought-doctrine`). Applied + parity-verified via the Supabase MCP.
 
 ## Auth Session Persistence
 

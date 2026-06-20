@@ -415,7 +415,7 @@ const SILVER_CITY_DISTRICTS: GazetteerDistrict[] = [
     slug: "silver-knights-bastion",
     name: "The Knights' Bastion",
     blurb:
-      "The walled seat of the Silver Knights — barracks, watch-halls, and muster-yards for the martial order that holds the night streets and the City's walls against the dead country beyond.",
+      "The walled seat of the Silver Knights — barracks, watch-halls, and muster-yards for the giant-blooded warriors (Beyonders of the Twilight Giant path) who hold the City's walls against the dead country beyond.",
     keywords: ["bastion", "knight", "knights", "watch"],
   },
   {
