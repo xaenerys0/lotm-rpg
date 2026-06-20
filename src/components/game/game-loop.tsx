@@ -1262,6 +1262,16 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // reveal shown the turn the player earns the secret.
   const [methodNotice, setMethodNotice] = useState<string | null>(null);
 
+  // Identity exposure (issue #22) is an engine-decided "major-event" computed at
+  // Continue-time — after the consequences panel has rendered — so it gets its
+  // own scene-art moment (issue #20) in the following scene, the way the death
+  // screen mounts its own illustration. Carries the turn it fired on so the
+  // cache key is stable; cleared when the next turn resolves.
+  const [exposureMoment, setExposureMoment] = useState<{
+    turn: number;
+    summary: string;
+  } | null>(null);
+
   // In-turn true-self change (character-info storage): the AI may flag a
   // declaration the player made; it is NEVER applied without this confirm.
   const [selfChangeHandledTurn, setSelfChangeHandledTurn] = useState<number | null>(null);
@@ -1347,6 +1357,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
   const handleContinue = useCallback(() => {
     if (!session) return;
+    // A prior turn's exposure illustration only lingers for the one scene.
+    setExposureMoment(null);
     const selectedChoice = session.currentChoices?.find(
       (c) => c.id === session.selectedChoiceId,
     );
@@ -1394,6 +1406,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           identityState = applyExposure(identityState, exposure);
           exposureNarrative = `${exposure.npc} looks at you a heartbeat too long — and you see the recognition land. Two of your faces are now one person to them.`;
           setFreeTextNotice(exposureNarrative);
+          // A "major-event" worth illustrating (issue #20) — shown in the next scene.
+          setExposureMoment({
+            turn: session.turnCount,
+            summary: `An identity unravels — ${exposure.npc} sees two faces become one`,
+          });
         }
       }
 
@@ -1646,7 +1663,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
         {/* Permadeath: the story is over; the record remains (issue #12). */}
         {session.ended ? (
-          <DeathScreen ended={session.ended} onFullRestart={handleFullRestart} />
+          <DeathScreen
+            ended={session.ended}
+            session={session}
+            imageConfig={imageConfig}
+            sceneArtEnabled={preferences.sceneArtEnabled}
+            onFullRestart={handleFullRestart}
+          />
         ) : combat ? (
           <CombatEncounterView
             encounter={combat}
@@ -1678,6 +1701,20 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   onFreeText={handleFreeText}
                   freeTextNotice={freeTextNotice}
                 />
+                {/* Identity-exposure illustration (issues #22/#20): an engine
+                    major-event computed at Continue, illustrated in the scene
+                    that follows it. */}
+                {exposureMoment && (
+                  <SceneArt
+                    artKey={`${session.id}:exposure:${exposureMoment.turn}`}
+                    context={{
+                      summary: exposureMoment.summary,
+                      location: session.gameState.location,
+                    }}
+                    imageConfig={imageConfig}
+                    enabled={preferences.sceneArtEnabled}
+                  />
+                )}
                 <QuestLogPanel
                   session={session}
                   busy={facingFate}
@@ -1906,11 +1943,18 @@ function FailurePanel({
 
 function DeathScreen({
   ended,
+  session,
+  imageConfig,
+  sceneArtEnabled,
   onFullRestart,
 }: {
   ended: NonNullable<GameSession["ended"]>;
+  session: GameSession;
+  imageConfig: ImageProviderConfig | null;
+  sceneArtEnabled: boolean;
   onFullRestart: () => void;
 }) {
+  const seq = getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel);
   return (
     <div className="rounded-lg border border-crimson/40 bg-crimson/[0.05] p-8 text-center animate-fade-in">
       <h2 className="font-serif text-2xl font-bold text-sanity-low">
@@ -1919,6 +1963,22 @@ function DeathScreen({
       <p className="mx-auto mt-4 max-w-xl font-serif text-base leading-relaxed whitespace-pre-wrap text-foreground/85">
         {ended.scene}
       </p>
+      {/* Death is a scene-art trigger (issue #20). The end screen replaces the
+          consequences phase, so it mounts SceneArt itself — keyed `:death` so it
+          never collides with the per-turn or combat cache. */}
+      <SceneArt
+        artKey={`${session.id}:death`}
+        context={{
+          summary:
+            ended.fate === "dead"
+              ? "A Beyonder's final descent into the dark — the story ends here"
+              : "A Beyonder loses control and becomes something else entirely",
+          location: session.gameState.location,
+          ...(seq ? { pathwayName: seq.name } : {}),
+        }}
+        imageConfig={imageConfig}
+        enabled={sceneArtEnabled}
+      />
       <p className="mt-6 text-xs leading-relaxed text-muted">
         This chronicle is closed, but it is not erased — its journal remains readable as a
         historical record, and the world remembers what happened here.

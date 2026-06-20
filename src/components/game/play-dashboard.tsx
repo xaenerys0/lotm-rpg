@@ -22,6 +22,9 @@ import {
   echoFacts,
   pickStartingEcho,
   ECHOES_KEY,
+  createTestCharacter,
+  devToolsEnabled,
+  isUndeletableCharacter,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import { selectStartScenario, selectStartScenarioForLocation } from "@/lib/lore";
@@ -226,6 +229,20 @@ export function PlayDashboard() {
     setView("playing");
   }, []);
 
+  // Dev-only: seed a premade test character poised at the scene-art triggers
+  // (fixed id → idempotent re-seed; gated by NEXT_PUBLIC_DEV_TOOLS at render).
+  const handleSeedTestCharacter = useCallback(() => {
+    const session = createTestCharacter();
+    persistSession(session);
+    // Fixed id — only add to the index the first time so re-seeding doesn't
+    // duplicate the entry.
+    const index = loadSessionIndex();
+    if (!index.includes(session.id)) saveSessionIndex([session.id, ...index]);
+    saveActiveSessionId(session.id);
+    setActiveSessionId(session.id);
+    setView("playing");
+  }, []);
+
   const handleBackToDashboard = useCallback(() => {
     setView("home");
     setActiveSessionId(null);
@@ -323,7 +340,11 @@ export function PlayDashboard() {
                         {s.turnCount}
                       </p>
                     </div>
-                    {confirming ? (
+                    {isUndeletableCharacter(s.id) ? (
+                      <span className="text-xs italic text-muted" role="status">
+                        Protected — test character
+                      </span>
+                    ) : confirming ? (
                       <div
                         className="flex items-center gap-2"
                         role="group"
@@ -415,6 +436,21 @@ export function PlayDashboard() {
           >
             Begin Journey
           </button>
+          {devToolsEnabled() && (
+            <div className="mt-5 border-t border-border/60 pt-4">
+              <p className="text-xs text-muted">
+                Dev tools: seed a premade Sequence&nbsp;9 character ready to advance (and
+                fight) so you can reach the scene-art moments in a click or two.
+              </p>
+              <button
+                type="button"
+                onClick={handleSeedTestCharacter}
+                className="mt-3 min-h-[24px] rounded border border-occult/50 px-3 py-1.5 text-xs font-medium text-occult-bright transition-colors hover:border-occult hover:bg-occult/10"
+              >
+                Seed test character
+              </button>
+            </div>
+          )}
         </div>
       )}
 

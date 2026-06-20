@@ -595,6 +595,13 @@ export {
 export { characterDeletionPlan, type CharacterDeletionPlan } from "./character-admin";
 
 export {
+  TEST_CHARACTER_ID,
+  createTestCharacter,
+  devToolsEnabled,
+  isUndeletableCharacter,
+} from "./dev-tools";
+
+export {
   SANITY_MIN,
   SANITY_TIER_THRESHOLDS,
   SANITY_EFFECTS,
