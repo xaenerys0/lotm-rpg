@@ -188,6 +188,39 @@ export function foundSociety(
   };
 }
 
+// Organization → society shape, for the start-archetype pre-membership seam
+// (issue #131). An archetype embeds the character in an existing org's circle at
+// creation; this maps the org slug to the society KIND and display NAME the
+// pre-membership should carry. Append-only as later regions add affiliations; an
+// unknown slug falls back to a neutral scholars' circle rather than throwing.
+const ORG_MEMBERSHIPS: Record<string, { kind: SocietyKind; name: string }> = {
+  "nighthawks-tingen-team": { kind: "nighthawk-squad", name: "The Tingen Nighthawks" },
+};
+
+/**
+ * Seed a pre-existing society membership for a start archetype (issue #131) — the
+ * character begins ALREADY embedded in an org's circle, so this bypasses the
+ * Sequence-gated `foundSociety` (a fresh Beyonder is Sequence 9 and could never
+ * found one, yet a junior Nighthawk plainly belongs to a squad). Returns a valid
+ * `SocietyState` with no members yet (the player still recruits/convenes through
+ * the society panel). The `role` is flavour recorded by the caller in the
+ * relationship grounding, not stored on the state. Pure.
+ */
+export function seedSocietyMembership(orgSlug: string): SocietyState {
+  const org = ORG_MEMBERSHIPS[orgSlug];
+  const kind = org?.kind ?? "scholars-circle";
+  return {
+    kind,
+    // Reuse the canonical kind label as the fallback name so an unmapped org
+    // never drifts from the founding-path display name (SOCIETY_KIND_LABELS is
+    // the single source of truth).
+    name: org?.name ?? SOCIETY_KIND_LABELS[kind],
+    members: [],
+    gatheringCount: 0,
+    lastGatheringTurn: -GATHERING_COOLDOWN_TURNS,
+  };
+}
+
 /** Recruit one new member, deterministically under the injected randomness. */
 export function recruitMember(
   society: SocietyState,

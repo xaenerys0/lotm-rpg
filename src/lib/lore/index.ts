@@ -45,6 +45,21 @@ export {
   type StartLocationOption,
 } from "./start-scenarios";
 export {
+  startArchetypesForEpoch,
+  getStartArchetype,
+  archetypeGrounding,
+  buildCustomArchetype,
+  circleNpcSuggestions,
+  START_ARCHETYPES,
+  MAX_TIE_LENGTH,
+  MAX_COMPANIONS,
+  MAX_COMPANION_LENGTH,
+  type StartArchetype,
+  type ArchetypeRelationship,
+  type CustomStartCircle,
+  type StartSelection,
+} from "./start-archetypes";
+export {
   gazetteerForEpoch,
   uncertainFifthGazetteer,
   CONTINENT_CROSSING_FLAG,

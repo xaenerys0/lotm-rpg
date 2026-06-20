@@ -7,6 +7,7 @@ import type { GameSessionSummary } from "@/lib/game";
 import {
   createSession,
   createDefaultGameState,
+  seedArchetype,
   sequenceClassificationFor,
   sequenceLabel,
   sessionToSummary,
@@ -27,7 +28,14 @@ import {
   isUndeletableCharacter,
 } from "@/lib/game";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
-import { selectStartScenario, selectStartScenarioForLocation } from "@/lib/lore";
+import {
+  selectStartScenario,
+  selectStartScenarioForLocation,
+  getStartArchetype,
+  buildCustomArchetype,
+  type StartArchetype,
+  type StartSelection,
+} from "@/lib/lore";
 import {
   loadAllSessions,
   loadSessionIndex,
@@ -173,15 +181,27 @@ export function PlayDashboard() {
       initialMemory: MemoryState,
       epoch: number,
       prologueRecap: string,
-      startLocation: string | null,
+      start: StartSelection,
     ) => {
-      // Varied story openings: a chosen preferred location sets the start (the
-      // scene still varies among that place's openings); "Surprise me" (null)
-      // draws a fully random start for the epoch. Pathway never biases the draw.
-      const startScenario =
-        startLocation === null
-          ? selectStartScenario(epoch)
-          : selectStartScenarioForLocation(epoch, startLocation);
+      // Start archetypes (issue #131): beginning embedded in a circle — either a
+      // curated preset OR a player-authored custom circle (built into a normal
+      // archetype). It carries its own location + opening beat and seeds a real
+      // social position; it takes precedence over the plain location pick.
+      let archetype: StartArchetype | undefined;
+      if (start.kind === "archetype") {
+        archetype = getStartArchetype(start.archetypeId);
+      } else if (start.kind === "custom") {
+        archetype = buildCustomArchetype(start.circle, epoch);
+      }
+      // Varied story openings: a preferred location sets the start (the scene
+      // still varies among that place's openings); "random" draws a fully random
+      // start for the epoch. Pathway never biases the draw. Skipped when a circle
+      // (preset or custom) is chosen — it supplies the opening itself.
+      const startScenario = archetype
+        ? undefined
+        : start.kind === "location"
+          ? selectStartScenarioForLocation(epoch, start.location)
+          : selectStartScenario(epoch);
       const gameState = createDefaultGameState(
         pathwayId,
         undefined,
@@ -190,6 +210,7 @@ export function PlayDashboard() {
         epoch,
         prologueRecap,
         startScenario,
+        archetype,
       );
       // Cross-epoch echoes (issue #31): a fallen predecessor's artifact may
       // begin the chronicle in this character's possession, and the narrator
@@ -205,10 +226,13 @@ export function PlayDashboard() {
       // inherits the world's memory of the fallen — the narrator can surface
       // tangible evidence of previous characters.
       const memory = withLegacyFacts(initialMemory);
-      const session = createSession(seededState, undefined, undefined, {
+      const baseSession = createSession(seededState, undefined, undefined, {
         ...memory,
         sessionFacts: [...memory.sessionFacts, ...echoes.facts],
       });
+      // Archetype GameSession-level seeds (issue #131): tracked allies, optional
+      // society pre-membership, and relationship grounding facts.
+      const session = archetype ? seedArchetype(baseSession, archetype) : baseSession;
 
       persistSession(session);
       saveSessionIndex([session.id, ...loadSessionIndex()]);

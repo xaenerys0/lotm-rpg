@@ -119,6 +119,36 @@ describe("accessibility — character creation", () => {
       <CharacterCreation onComplete={vi.fn()} onBack={vi.fn()} />,
     );
   });
+
+  it("the start picker (location + archetypes) has no violations (issue #131)", async () => {
+    // Drive the manual path to the first-potion step, where the start picker —
+    // now offering plain locations AND start archetypes (begin in an NPC's
+    // circle) — renders, and assert the new optgroup-bearing select is clean.
+    const { container } = render(
+      <CharacterCreation onComplete={vi.fn()} onBack={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Choose Your Path/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Fool/ }));
+    fireEvent.change(screen.getByLabelText(/Character Name/i), {
+      target: { value: "Test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Continue$/ }));
+    // The picker is present (its label) AND actually lists a start archetype —
+    // so this guards the new optgroup-bearing control, not just the plain select.
+    const picker = screen.getByLabelText(/Where Your Chronicle Begins/i);
+    screen.getByRole("option", { name: /junior Nighthawk/i });
+    await expectNoAxeViolationsInContainer(container);
+
+    // Open the "Describe your own circle" form and re-scan — the custom inputs
+    // (tie, companions add-control + chips, location) must be accessible too.
+    fireEvent.change(picker, { target: { value: "custom" } });
+    screen.getByLabelText(/Your tie to this world/i);
+    const companion = screen.getByLabelText(/Who stands with you/i);
+    fireEvent.change(companion, { target: { value: "Mara" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Add$/ }));
+    screen.getByRole("button", { name: /Remove Mara/i });
+    await expectNoAxeViolationsInContainer(container);
+  });
 });
 
 describe("accessibility — game loop", () => {
