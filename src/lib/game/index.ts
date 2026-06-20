@@ -508,6 +508,7 @@ export {
 export {
   CITIES,
   CONTINENT_CROSSING_DAYS,
+  CROSSING_CITY,
   canTravelTo,
   cityIdFromLocation,
   continentOf,

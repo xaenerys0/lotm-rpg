@@ -170,6 +170,53 @@ const TRAVEL_LEGS: TravelLeg[] = [
 export const CONTINENT_CROSSING_DAYS = 7;
 
 /**
+ * The single city through which every continent crossing is routed (issue #132):
+ * the Dream-World threshold of Giant King's Court, the only entrance to (and exit
+ * from) the sealed Forsaken Land. Cross-continent travel is permitted ONLY when
+ * one endpoint is this chokepoint — you can never journey straight between the
+ * mainland and the City of Silver, even holding the passage. "Finding the correct
+ * path" is canon: you reach the Forsaken Land at the Court and travel inward from
+ * there, and you leave the same way. Mirrored in the lore gazetteer's display
+ * filter (a reconciliation test holds the two literals together).
+ */
+export const CROSSING_CITY = "giant-kings-court";
+
+/**
+ * Whether a continent crossing between `fromId` (the current city, or `undefined`
+ * when the current location names no known city) and `dest` is permitted by the
+ * chokepoint rule (issue #132). A same-continent move is never blocked here. A
+ * crossing is allowed only when one endpoint is the {@link CROSSING_CITY}; from an
+ * unknown origin only the crossing city itself is reachable on a non-central
+ * continent (never straight to the City of Silver). The capability-flag gate is
+ * checked separately by {@link meetsAccessGate}. Pure.
+ */
+/**
+ * The character's origin city id for travel decisions: the `location` string's
+ * leading word when it names a known city, else the engine-tracked
+ * `GameState.currentCity` (validated), else `undefined`. Mirrors the origin
+ * resolution used by `place-graph` / the movement gate / `resolveCityId` so a
+ * character sitting at a bare district stays anchored to the city they are in.
+ * Pure.
+ */
+function originCityId(
+  state: Pick<GameState, "location" | "currentCity">,
+): string | undefined {
+  const fromLocation = cityIdFromLocation(state.location);
+  if (fromLocation) return fromLocation;
+  return state.currentCity && getCity(state.currentCity) ? state.currentCity : undefined;
+}
+
+function crossingPermitted(fromId: string | undefined, dest: City): boolean {
+  if (fromId === undefined) {
+    // Unknown current city: a central destination is always fine; a Forsaken one
+    // is reachable only AT the crossing city (the dream threshold), never direct.
+    return continentOf(dest) === "central" || dest.id === CROSSING_CITY;
+  }
+  if (!crossesContinent(fromId, dest.id)) return true;
+  return fromId === CROSSING_CITY || dest.id === CROSSING_CITY;
+}
+
+/**
  * Travel time in days between two same-continent city ids. Symmetric by
  * construction — built once from `TRAVEL_LEGS` (both halves filled), so the
  * matrix can never be hand-broken. A city to itself is 0; cross-continent pairs
@@ -311,7 +358,19 @@ export function canTravelTo(state: GameState, toId: string): boolean {
   // An access-gated continent is unreachable without the capability (issue #130)
   // — even from an "unknown" current location.
   if (!meetsAccessGate(state, dest)) return false;
-  const fromId = cityIdFromLocation(state.location);
+  // Resolve the origin city the way the rest of the engine does (place-graph,
+  // the movement gate, resolveCityId): the location string's leading word, then
+  // the engine-tracked `currentCity` when the string is a bare district that
+  // names no city. Without this fallback a character parked at a Forsaken
+  // district (e.g. in the City of Silver) reads as an unknown — central — origin,
+  // which both leaks a straight mainland jump and falsely blocks same-continent
+  // travel (issue #132 chokepoint).
+  const fromId = originCityId(state);
+  // A continent crossing is chokepointed at the Giant King's Court dream
+  // threshold (issue #132): even holding the passage, you cannot travel straight
+  // between the mainland and the City of Silver — you must route through the
+  // crossing city. Checked for both known and unknown current locations.
+  if (!crossingPermitted(fromId, dest)) return false;
   // If the current location is an unknown city, travel to any reachable known
   // city is allowed (the character is "somewhere else" and sets out for a city).
   if (fromId === undefined) return true;

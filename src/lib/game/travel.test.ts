@@ -257,9 +257,59 @@ describe("canTravelTo", () => {
     expect(canTravelTo(stateAt("A Lonely Moor"), "silver-city")).toBe(false);
   });
 
-  it("permits a Forsaken city once the passage flag is held", () => {
+  it("routes the continent crossing through the Giant King's Court chokepoint (issue #132)", () => {
+    // Holding the passage opens the crossing, but ONLY through the dream
+    // threshold at Giant King's Court — never straight to the City of Silver.
     const passenger = stateAt("Tingen City", { accessFlags: [PASSAGE] });
-    expect(canTravelTo(passenger, "silver-city")).toBe(true);
+    expect(canTravelTo(passenger, "giant-kings-court")).toBe(true);
+    expect(canTravelTo(passenger, "silver-city")).toBe(false);
+  });
+
+  it("lets a character at the crossing city reach the City of Silver and the mainland (issue #132)", () => {
+    const atCourt = stateAt("Giant King's Court", { accessFlags: [PASSAGE] });
+    // Inward to Silver City (same continent) and back out to the mainland.
+    expect(canTravelTo(atCourt, "silver-city")).toBe(true);
+    expect(canTravelTo(atCourt, "tingen")).toBe(true);
+  });
+
+  it("blocks a Silver City character from going straight to the mainland (issue #132)", () => {
+    // The reported bug: a Silver City origin character (who HOLDS the passage)
+    // could travel direct to the mainland. They must reach the Court first.
+    const atSilver = stateAt("Silver City", { accessFlags: [PASSAGE] });
+    expect(canTravelTo(atSilver, "tingen")).toBe(false);
+    expect(canTravelTo(atSilver, "giant-kings-court")).toBe(true);
+  });
+
+  it("blocks a cross-continent jump to Silver City from an unknown origin even with the flag (issue #132)", () => {
+    const passenger = stateAt("A Lonely Moor", { accessFlags: [PASSAGE] });
+    expect(canTravelTo(passenger, "silver-city")).toBe(false);
+    // The crossing city itself remains reachable as the way in.
+    expect(canTravelTo(passenger, "giant-kings-court")).toBe(true);
+  });
+
+  it("anchors the origin to currentCity when parked at a bare Forsaken district (issue #132)", () => {
+    // A character physically in the City of Silver but standing at a district
+    // whose name resolves to no city must still be treated as being in Silver
+    // City — not as an unknown (central) origin. Otherwise the chokepoint both
+    // leaks a straight mainland jump and falsely blocks same-continent travel.
+    const inSilver = stateAt("The High Quarter", {
+      accessFlags: [PASSAGE],
+      currentCity: "silver-city",
+    });
+    // Same-continent travel to the Court is allowed; a straight jump out to the
+    // mainland is refused (must route through the Court).
+    expect(canTravelTo(inSilver, "giant-kings-court")).toBe(true);
+    expect(canTravelTo(inSilver, "tingen")).toBe(false);
+
+    // At the crossing city itself (parked at one of its districts) the inward
+    // leg to Silver City is reachable — it was wrongly blocked before the
+    // currentCity fallback, because the display showed it but travel refused it.
+    const atCourt = stateAt("The Broken Colonnades", {
+      accessFlags: [PASSAGE],
+      currentCity: "giant-kings-court",
+    });
+    expect(canTravelTo(atCourt, "silver-city")).toBe(true);
+    expect(canTravelTo(atCourt, "tingen")).toBe(true);
   });
 });
 
@@ -322,13 +372,26 @@ describe("travelTo", () => {
     expect(result!.state.npcsPresent).toEqual([]);
   });
 
-  it("uses the fixed crossing duration for a cross-continent journey (issue #130)", () => {
+  it("uses the fixed crossing duration for a cross-continent journey to the chokepoint (issues #130, #132)", () => {
+    // The crossing is routed through Giant King's Court; from the mainland that is
+    // the only valid cross-continent destination.
     const passenger = stateAt("Tingen City", { accessFlags: [PASSAGE] });
-    const result = travelTo(passenger, "silver-city", 2);
+    const result = travelTo(passenger, "giant-kings-court", 2);
     expect(result).not.toBeNull();
-    expect(result!.state.location).toBe("Silver City");
-    expect(result!.state.currentCity).toBe("silver-city");
+    expect(result!.state.location).toBe("Giant King's Court");
+    expect(result!.state.currentCity).toBe("giant-kings-court");
     expect(result!.fact.description).toContain(`${CONTINENT_CROSSING_DAYS} day`);
+  });
+
+  it("reaches the City of Silver only by way of the Court (issue #132)", () => {
+    // Direct from the mainland is refused; the within-continent leg from the Court
+    // succeeds.
+    const passenger = stateAt("Tingen City", { accessFlags: [PASSAGE] });
+    expect(travelTo(passenger, "silver-city", 2)).toBeNull();
+    const atCourt = stateAt("Giant King's Court", { accessFlags: [PASSAGE] });
+    const inward = travelTo(atCourt, "silver-city", 3);
+    expect(inward).not.toBeNull();
+    expect(inward!.state.location).toBe("Silver City");
   });
 
   it("returns null for a Forsaken destination without the passage flag", () => {
