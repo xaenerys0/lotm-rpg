@@ -100,18 +100,20 @@ export function classifyHttpError(status: number, body: string): AIError {
     );
   }
   // A 400 (bad request) or 404 (not found) is a deterministic, client-side
-  // configuration problem — almost always a selected model id this provider
-  // doesn't recognize, or a wrong base URL — not a transient fault. Retrying
-  // sends the identical request and fails identically, so these must NOT be
-  // retryable (a bare PROVIDER_ERROR would burn the full 2s/4s/8s backoff before
-  // surfacing). AUTH_ERROR keeps the "Go to Settings" recovery CTA without
-  // blaming the key (mirroring the 403 treatment), and the provider's own
-  // wording (e.g. Anthropic's "model: … not found") is surfaced.
+  // fault — not a transient one. Retrying sends the identical request and fails
+  // identically, so these must NOT be retryable (a bare PROVIDER_ERROR would burn
+  // the full 2s/4s/8s backoff before surfacing). AUTH_ERROR keeps the "Go to
+  // Settings" recovery CTA without blaming the key (mirroring the 403 treatment).
+  // The prefix lists the common causes WITHOUT asserting one — a 400 is often an
+  // unrecognized model id or wrong base URL, but providers also 400 on an account
+  // quota/billing limit (e.g. OpenAI "Billing hard limit has been reached") or a
+  // malformed request, so the authoritative cause is the surfaced `Provider
+  // said:` wording (e.g. Anthropic's "model: … not found").
   if (status === 400 || status === 404) {
     return new AIError(
       "AUTH_ERROR",
       withReason(
-        `The provider rejected the request (HTTP ${status}). The selected model id may be invalid or unavailable on this provider, or the base URL is wrong. Check your models and base URL in Settings.`,
+        `The provider rejected the request (HTTP ${status}). Common causes: an unavailable model id, a wrong base URL, or an account quota/billing limit — see the provider's message below and check your Settings.`,
       ),
       body,
       status,
