@@ -119,7 +119,7 @@ describe("seedArchetype", () => {
       epoch: 5,
       location: "Tingen City",
       relationship: "circle-member",
-      anchorNpcs: ["Klein Moretti"],
+      circleNpcs: ["Klein Moretti"],
       blurb: "b",
       openingBeat: "o",
       seeds: {},

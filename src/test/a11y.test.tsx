@@ -135,8 +135,18 @@ describe("accessibility — character creation", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Continue$/ }));
     // The picker is present (its label) AND actually lists a start archetype —
     // so this guards the new optgroup-bearing control, not just the plain select.
-    screen.getByLabelText(/Where Your Chronicle Begins/i);
+    const picker = screen.getByLabelText(/Where Your Chronicle Begins/i);
     screen.getByRole("option", { name: /junior Nighthawk/i });
+    await expectNoAxeViolationsInContainer(container);
+
+    // Open the "Describe your own circle" form and re-scan — the custom inputs
+    // (tie, companions add-control + chips, location) must be accessible too.
+    fireEvent.change(picker, { target: { value: "custom" } });
+    screen.getByLabelText(/Your tie to this world/i);
+    const companion = screen.getByLabelText(/Who stands with you/i);
+    fireEvent.change(companion, { target: { value: "Mara" } });
+    fireEvent.click(screen.getByRole("button", { name: /^Add$/ }));
+    screen.getByRole("button", { name: /Remove Mara/i });
     await expectNoAxeViolationsInContainer(container);
   });
 });

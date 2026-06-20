@@ -5,10 +5,13 @@ import {
   startArchetypesForEpoch,
   getStartArchetype,
   archetypeGrounding,
+  buildCustomArchetype,
+  circleNpcSuggestions,
   type ArchetypeRelationship,
 } from "./start-archetypes";
 import { NPC_LORE } from "./npcs";
 import { ORGANIZATION_LORE } from "./organizations";
+import { getEpoch } from "./epochs";
 import { ALL_PATHWAYS } from "@/lib/rules";
 
 // Every NPC name the lore knows (flattened from each entry's `npcs` list).
@@ -57,10 +60,10 @@ describe("START_ARCHETYPES data integrity", () => {
     }
   });
 
-  it("every anchor NPC references a real NPC name", () => {
+  it("every circle NPC references a real NPC name", () => {
     for (const a of START_ARCHETYPES) {
-      expect(a.anchorNpcs.length).toBeGreaterThan(0);
-      for (const name of a.anchorNpcs) {
+      expect(a.circleNpcs.length).toBeGreaterThan(0);
+      for (const name of a.circleNpcs) {
         expect(KNOWN_NPC_NAMES.has(name)).toBe(true);
       }
     }
@@ -74,10 +77,10 @@ describe("START_ARCHETYPES data integrity", () => {
     }
   });
 
-  it("every anchor org and society seed references a real org slug", () => {
+  it("every affiliation org and society seed references a real org slug", () => {
     for (const a of START_ARCHETYPES) {
-      if (a.anchorOrg !== undefined) {
-        expect(KNOWN_ORG_SLUGS.has(a.anchorOrg)).toBe(true);
+      if (a.affiliationOrg !== undefined) {
+        expect(KNOWN_ORG_SLUGS.has(a.affiliationOrg)).toBe(true);
       }
       if (a.seeds.society) {
         expect(KNOWN_ORG_SLUGS.has(a.seeds.society.orgSlug)).toBe(true);
@@ -150,5 +153,96 @@ describe("archetypeGrounding", () => {
     expect(archetypeGrounding(a)).toBe(
       "You begin your chronicle as an assistant to Old Neil, the Nighthawks' artificer.",
     );
+  });
+});
+
+describe("buildCustomArchetype (player-authored circles)", () => {
+  it("turns a tie + companions into a normal archetype with seeds", () => {
+    const a = buildCustomArchetype(
+      {
+        tie: "a fence who owes the Tingen Nighthawks",
+        companions: ["Leonard Mitchell", "Mara"],
+        location: "Tingen City",
+      },
+      5,
+    );
+    expect(a.id).toBe("custom");
+    expect(a.epoch).toBe(5);
+    expect(a.location).toBe("Tingen City");
+    expect(a.label).toBe("a fence who owes the Tingen Nighthawks");
+    expect(a.relationship).toBe("circle-member");
+    // Companions (canon AND invented) become tracked allies.
+    expect(a.seeds.trackedAllies).toEqual(["Leonard Mitchell", "Mara"]);
+    expect(a.circleNpcs).toEqual(["Leonard Mitchell", "Mara"]);
+    // The tie + companions are recorded as durable grounding facts.
+    expect(a.seeds.facts?.[0]).toContain("a fence who owes the Tingen Nighthawks");
+    expect(a.seeds.facts?.some((f) => f.includes("Mara"))).toBe(true);
+    // The grounding line reads naturally and the opening beat names the place.
+    expect(archetypeGrounding(a)).toBe(
+      "You begin your chronicle as a fence who owes the Tingen Nighthawks.",
+    );
+    expect(a.openingBeat).toContain("Tingen City");
+    expect(a.openingBeat).toContain("Describe the opening scene and give me choices.");
+    // Custom circles never seed a canon-org society pre-membership.
+    expect(a.seeds.society).toBeUndefined();
+  });
+
+  it("accepts an invented-only circle (no canon NPC required)", () => {
+    const a = buildCustomArchetype(
+      { tie: "the last heir of a drowned house", companions: ["Captain Rell"] },
+      5,
+    );
+    expect(a.seeds.trackedAllies).toEqual(["Captain Rell"]);
+  });
+
+  it("falls back to the epoch default location when none is given", () => {
+    const a = buildCustomArchetype({ tie: "a wanderer", companions: [] }, 5);
+    expect(a.location).toBe(getEpoch(5).startingLocation);
+    // No companions → no trackedAllies seed.
+    expect(a.seeds.trackedAllies).toBeUndefined();
+  });
+
+  it("handles a blank circle with a neutral label and no seeds", () => {
+    const a = buildCustomArchetype({ tie: "   ", companions: ["  "] }, 5);
+    expect(a.label).toBe("an outsider with ties of their own");
+    expect(a.seeds.trackedAllies).toBeUndefined();
+    expect(a.seeds.facts).toBeUndefined();
+    expect(a.circleNpcs).toEqual([]);
+  });
+
+  it("trims, de-duplicates, and bounds the free text", () => {
+    const a = buildCustomArchetype(
+      {
+        tie: "x".repeat(500),
+        companions: ["Klein Moretti", "klein moretti", "A", "B", "C", "D", "E", "F"],
+        location: "L".repeat(500),
+      },
+      5,
+    );
+    expect(a.label.length).toBeLessThanOrEqual(200);
+    // Case-insensitive de-dupe keeps the first spelling; max 5 companions.
+    expect(a.seeds.trackedAllies).toEqual(["Klein Moretti", "A", "B", "C", "D"]);
+    // A free-text location is length-bounded too (prompt-budget guarantee).
+    expect(a.location.length).toBeLessThanOrEqual(80);
+  });
+
+  it("resolves an unknown epoch to the Fifth", () => {
+    const a = buildCustomArchetype({ tie: "a stranger", companions: [] }, undefined);
+    expect(a.epoch).toBe(5);
+  });
+});
+
+describe("circleNpcSuggestions", () => {
+  it("suggests canon NPC names for the epoch", () => {
+    const fifth = circleNpcSuggestions(5);
+    expect(fifth).toContain("Klein Moretti");
+    expect(fifth).toContain("Dunn Smith");
+    // Sorted and de-duplicated.
+    expect([...fifth].sort((a, b) => a.localeCompare(b))).toEqual(fifth);
+    expect(new Set(fifth).size).toBe(fifth.length);
+  });
+
+  it("does not leak Fifth-Epoch NPCs into an earlier epoch", () => {
+    expect(circleNpcSuggestions(1)).not.toContain("Klein Moretti");
   });
 });

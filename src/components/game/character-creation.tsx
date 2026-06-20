@@ -21,6 +21,11 @@ import {
   EPOCHS,
   startLocationsForEpoch,
   startArchetypesForEpoch,
+  circleNpcSuggestions,
+  MAX_TIE_LENGTH,
+  MAX_COMPANIONS,
+  MAX_COMPANION_LENGTH,
+  type StartSelection,
 } from "@/lib/lore";
 import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
@@ -78,10 +83,9 @@ interface CharacterCreationProps {
     initialMemory: MemoryState,
     epoch: number,
     prologueRecap: string,
-    /** Preferred starting location, or null for a random ("Surprise me") start. */
-    startLocation: string | null,
-    /** Chosen start archetype id (issue #131), or null for a plain location start. */
-    archetypeId: string | null,
+    /** How the chronicle opens — place, curated archetype, custom circle, or
+     * random (issue #131). One discriminated value, never a set of nullables. */
+    start: StartSelection,
   ) => void;
   onBack: () => void;
 }
@@ -134,15 +138,19 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const [epoch, setEpoch] = useState(DEFAULT_EPOCH_ID);
   const [skipPrologue, setSkipPrologue] = useState(false);
   // The single start pick on the final step (varied story openings + start
-  // archetypes, issue #131). One field so the location/archetype choice can never
-  // be inconsistent: `""` = "Surprise me" (random), `"archetype:<id>"` = begin in
-  // an NPC's circle, anything else = a preferred location. The picker surfaces,
-  // per place/archetype, which pathways it thematically suits (a suggestion only).
+  // archetypes, issue #131). One field so the choice can never be inconsistent:
+  // `""` = "Surprise me" (random), `"archetype:<id>"` = a curated circle preset,
+  // `"custom"` = describe-your-own-circle, anything else = a preferred location.
   const [startChoice, setStartChoice] = useState<string>("");
   const archetypeId = startChoice.startsWith("archetype:")
     ? startChoice.slice("archetype:".length)
     : null;
-  const startLocation = archetypeId === null && startChoice !== "" ? startChoice : null;
+  // Custom-circle form (the "Describe your own circle" path). Creativity is never
+  // capped by the presets: any tie, and companions that may be canon OR invented.
+  const [customTie, setCustomTie] = useState("");
+  const [customCompanions, setCustomCompanions] = useState<string[]>([]);
+  const [customCompanionDraft, setCustomCompanionDraft] = useState("");
+  const [customLocation, setCustomLocation] = useState("");
 
   // Character identity — restored from draft when available
   const [characterName, setCharacterName] = useState(savedDraft?.characterName ?? "");
@@ -361,17 +369,26 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             (c) => dominantAffinity(c.affinities) === selectedPathwayId,
           )?.text,
         });
+    // Resolve the single picker value into the discriminated start selection.
+    let start: StartSelection;
+    if (archetypeId !== null) {
+      start = { kind: "archetype", archetypeId };
+    } else if (startChoice === "custom") {
+      start = {
+        kind: "custom",
+        circle: {
+          tie: customTie,
+          companions: customCompanions,
+          location: customLocation || undefined,
+        },
+      };
+    } else if (startChoice !== "") {
+      start = { kind: "location", location: startChoice };
+    } else {
+      start = { kind: "random" };
+    }
     clearDraft();
-    onComplete(
-      selectedPathwayId,
-      name,
-      bg,
-      memory,
-      epoch,
-      prologueRecap,
-      startLocation,
-      archetypeId,
-    );
+    onComplete(selectedPathwayId, name, bg, memory, epoch, prologueRecap, start);
   }, [
     epoch,
     selectedPathwayId,
@@ -380,10 +397,37 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     skipPrologue,
     prologueHistory,
     finale,
-    startLocation,
+    startChoice,
     archetypeId,
+    customTie,
+    customCompanions,
+    customLocation,
     onComplete,
   ]);
+
+  // Add a companion to the custom circle (canon-suggested or invented), de-duped
+  // case-insensitively; bounded so the form can't grow without limit (the same
+  // bound `buildCustomArchetype` enforces, sourced from one constant).
+  const addCustomCompanion = useCallback(() => {
+    const name = customCompanionDraft.trim();
+    if (!name) return;
+    setCustomCompanions((prev) =>
+      prev.length >= MAX_COMPANIONS ||
+      prev.some((n) => n.toLowerCase() === name.toLowerCase())
+        ? prev
+        : [...prev, name],
+    );
+    setCustomCompanionDraft("");
+  }, [customCompanionDraft]);
+
+  // Clear the custom-circle form so reopening it (or switching epoch) starts
+  // fresh — the pick is the single source of truth; stale fields never linger.
+  const clearCustomCircle = useCallback(() => {
+    setCustomTie("");
+    setCustomCompanions([]);
+    setCustomCompanionDraft("");
+    setCustomLocation("");
+  }, []);
 
   // ── Progress Dots ──
 
@@ -512,6 +556,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 // would otherwise resolve epoch-agnostically and leak that epoch's
                 // location/NPCs into the new one, breaking epoch isolation).
                 setStartChoice("");
+                clearCustomCircle();
               }}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
             >
@@ -1054,26 +1099,30 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           {(() => {
             const options = startLocationsForEpoch(epoch);
             const archetypes = startArchetypesForEpoch(epoch);
+            const npcSuggestions = circleNpcSuggestions(epoch);
             const pathwayName = ALL_PATHWAYS.find(
               (p) => p.id === selectedPathwayId,
             )?.name;
-            const selectedLoc = options.find((o) => o.location === startLocation);
+            const isCustom = startChoice === "custom";
+            const selectedLoc = options.find((o) => o.location === startChoice);
             const selectedArchetype = archetypes.find((a) => a.id === archetypeId);
             const suitsSelectedLoc =
               selectedLoc?.pathwayAffinity.includes(selectedPathwayId) ?? false;
-            // One control: plain locations and archetypes share the picker. An
-            // archetype option's value is `archetype:<id>`; a location's is the
-            // bare location string; "" is the random start (the single
-            // `startChoice` state holds exactly this value).
+            // One control: a plain location's value is the bare location string,
+            // an archetype's is `archetype:<id>`, `"custom"` opens the author-
+            // your-own form, and "" is the random start (the single `startChoice`
+            // state holds exactly this value).
             const describe = selectedArchetype
               ? selectedArchetype.blurb
-              : selectedLoc
-                ? `${selectedLoc.blurb}${
-                    suitsSelectedLoc && pathwayName
-                      ? ` A fitting start for the ${pathwayName} pathway.`
-                      : ""
-                  }`
-                : "The fog will decide where you wake — a different place, and a different opening, each time.";
+              : isCustom
+                ? "Describe your own place in the world — your tie, and who stands with you. They can be characters from the world or your own invention."
+                : selectedLoc
+                  ? `${selectedLoc.blurb}${
+                      suitsSelectedLoc && pathwayName
+                        ? ` A fitting start for the ${pathwayName} pathway.`
+                        : ""
+                    }`
+                  : "The fog will decide where you wake — a different place, and a different opening, each time.";
             return (
               <div className="mb-8">
                 <label
@@ -1085,10 +1134,17 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 <select
                   id="start-location"
                   value={startChoice}
-                  onChange={(e) => setStartChoice(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setStartChoice(v);
+                    // Leaving the custom path discards its form so reopening it
+                    // starts fresh (the pick is the single source of truth).
+                    if (v !== "custom") clearCustomCircle();
+                  }}
                   className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
                 >
                   <option value="">Surprise me — a random start</option>
+                  <option value="custom">Describe your own circle…</option>
                   <optgroup label="Begin in a place">
                     {options.map((o) => {
                       const suits = o.pathwayAffinity.includes(selectedPathwayId);
@@ -1101,7 +1157,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     })}
                   </optgroup>
                   {archetypes.length > 0 && (
-                    <optgroup label="Begin in someone's circle">
+                    <optgroup label="Begin in someone's circle (examples)">
                       {archetypes.map((a) => {
                         const suits = (a.pathwayAffinity ?? []).includes(
                           selectedPathwayId,
@@ -1119,6 +1175,126 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 <p className="mt-1.5 text-xs leading-relaxed text-muted" role="status">
                   {describe}
                 </p>
+
+                {isCustom && (
+                  <div className="mt-4 space-y-4 rounded-md border border-border/60 bg-surface/30 p-4">
+                    <div>
+                      <label
+                        htmlFor="custom-tie"
+                        className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                      >
+                        Your tie to this world
+                      </label>
+                      <input
+                        id="custom-tie"
+                        type="text"
+                        value={customTie}
+                        onChange={(e) =>
+                          setCustomTie(e.target.value.slice(0, MAX_TIE_LENGTH))
+                        }
+                        maxLength={MAX_TIE_LENGTH}
+                        placeholder="e.g. a fence who owes the Tingen Nighthawks a favour"
+                        className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="custom-companion"
+                        className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                      >
+                        Who stands with you{" "}
+                        <span className="text-muted normal-case tracking-normal">
+                          (canon or your own — optional)
+                        </span>
+                      </label>
+                      {customCompanions.length > 0 && (
+                        <ul className="mb-2 flex flex-wrap gap-1.5">
+                          {customCompanions.map((name) => (
+                            <li
+                              key={name}
+                              className="inline-flex items-center gap-1 rounded border border-amber/30 bg-amber/[0.06] px-2 py-0.5 text-xs text-foreground"
+                            >
+                              {name}
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setCustomCompanions((prev) =>
+                                    prev.filter((n) => n !== name),
+                                  )
+                                }
+                                aria-label={`Remove ${name}`}
+                                className="inline-flex min-h-[24px] items-center px-1 text-muted transition-colors hover:text-crimson"
+                              >
+                                <span aria-hidden="true">×</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      <div className="flex gap-2">
+                        <input
+                          id="custom-companion"
+                          type="text"
+                          list="custom-companion-suggestions"
+                          value={customCompanionDraft}
+                          onChange={(e) =>
+                            setCustomCompanionDraft(
+                              e.target.value.slice(0, MAX_COMPANION_LENGTH),
+                            )
+                          }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              addCustomCompanion();
+                            }
+                          }}
+                          maxLength={MAX_COMPANION_LENGTH}
+                          placeholder="a name — known or invented"
+                          className="min-w-0 flex-1 rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                        />
+                        <datalist id="custom-companion-suggestions">
+                          {npcSuggestions.map((name) => (
+                            <option key={name} value={name} />
+                          ))}
+                        </datalist>
+                        <button
+                          type="button"
+                          onClick={addCustomCompanion}
+                          disabled={
+                            customCompanionDraft.trim().length === 0 ||
+                            customCompanions.length >= MAX_COMPANIONS
+                          }
+                          className="rounded border border-amber/40 px-3 py-2 text-sm font-medium text-amber transition-colors hover:bg-amber/10 disabled:opacity-40"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="custom-location"
+                        className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                      >
+                        Begins in
+                      </label>
+                      <select
+                        id="custom-location"
+                        value={customLocation}
+                        onChange={(e) => setCustomLocation(e.target.value)}
+                        className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                      >
+                        <option value="">The default starting place</option>
+                        {options.map((o) => (
+                          <option key={o.location} value={o.location}>
+                            {o.location}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })()}
