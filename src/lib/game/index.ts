@@ -680,6 +680,7 @@ export type { PrologueDraft } from "./prologue-draft";
 export {
   POTION_HEADINGS,
   FIRST_POTION_NARRATIVE,
+  PATHWAY_DESCRIPTIONS,
   dominantAffinity,
   tallyAffinities,
   rankPathways,

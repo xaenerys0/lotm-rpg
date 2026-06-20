@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from "
 import {
   POTION_HEADINGS,
   FIRST_POTION_NARRATIVE,
+  PATHWAY_DESCRIPTIONS,
   createPrologueMemory,
   createAIPrologueMemory,
   buildPrologueRecap,
@@ -55,18 +56,6 @@ type CreationStep =
   | "recommendation"
   | "character-sheet"
   | "first-potion";
-
-const PATHWAY_DESCRIPTIONS: Record<number, string> = {
-  1: "Seer, Clown, Magician — divination and hidden knowledge",
-  2: "Spectator, Telepathist, Psychiatrist — mind and imagination",
-  3: "Bard, Light Suppliant, Solar High Priest — radiance and healing",
-  4: "Corpse Collector, Gravedigger, Spirit Medium — spirits and the dead",
-  5: "Sleepless, Midnight Poet, Nightmare — night, dreams, and concealment",
-  6: "Sailor, Folk of Rage, Seafarer — sea, storm, and wrath",
-  7: "Apprentice, Trickmaster, Astrologer — travel, doors, and space",
-  8: "Marauder, Swindler, Cryptologist — theft, trickery, and secrets",
-  9: "Secrets Suppliant, Listener, Shadow Ascetic — sacrifice, shadow, and taboo",
-};
 
 const AI_PATH: CreationStep[] = ["character-setup", "ai-prologue", "first-potion"];
 const MANUAL_PATH: CreationStep[] = ["recommendation", "character-sheet", "first-potion"];

@@ -4752,11 +4752,12 @@ describe("generatePrologueScene", () => {
   });
 
   it("rejects a choice whose affinities all fall outside the playable set", async () => {
-    // ids 10+ are not playable; the choice has no usable signal → rejected.
+    // ids beyond the 22 pathways are not playable; the choice has no usable
+    // signal → rejected.
     const parsed = JSON.parse(makePrologueApiResponse()) as {
       choices: { affinities: Record<number, number> }[];
     };
-    parsed.choices[0]!.affinities = { 17: 1 };
+    parsed.choices[0]!.affinities = { 99: 1 };
     mockOpenAIFetch(JSON.stringify(parsed));
 
     await expect(
@@ -4891,17 +4892,19 @@ describe("generatePrologueScene", () => {
 // ── Neighborhood affinity catalog (issue #119) ──
 
 describe("PROLOGUE_AFFINITY_REGIONS", () => {
-  it("covers exactly the nine playable pathways (1–9), disjointly", () => {
+  it("covers exactly all twenty-two playable pathways (1–22), disjointly", () => {
     const ids = PROLOGUE_AFFINITY_REGIONS.flatMap((r) => [...r.pathwayIds]).sort(
       (a, b) => a - b,
     );
-    expect(ids).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(ids).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+    ]);
     expect(new Set(ids).size).toBe(ids.length); // disjoint — no id in two regions
   });
 
-  it("PROLOGUE_PLAYABLE_PATHWAY_IDS lists the same nine ids", () => {
+  it("PROLOGUE_PLAYABLE_PATHWAY_IDS lists the same twenty-two ids", () => {
     expect([...PROLOGUE_PLAYABLE_PATHWAY_IDS].sort((a, b) => a - b)).toEqual([
-      1, 2, 3, 4, 5, 6, 7, 8, 9,
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
     ]);
   });
 

@@ -50,15 +50,51 @@ export const PROLOGUE_AFFINITY_REGIONS: readonly PrologueAffinityRegion[] = [
   },
   {
     groupId: "god-almighty",
-    pathwayIds: [2, 3, 6, 9],
+    pathwayIds: [2, 3, 6, 9, 10],
     theme:
-      "The inner life of others and the will that moves them; light, warmth, and protection offered freely; command and dominion; sacrifice and the weight one chooses to carry for others.",
+      "The inner life of others and the will that moves them; light, warmth, and protection offered freely; command and dominion; sacrifice and the weight one chooses to carry for others; the scholar's drive to grasp and order the world by reason.",
   },
   {
     groupId: "eternal-darkness",
-    pathwayIds: [4, 5],
+    pathwayIds: [4, 5, 11],
     theme:
-      "Mortality and what persists beyond it; spirits, the dead, and the night; concealment and the quiet of the dark. Curiosity rather than fear at the edge where life ends.",
+      "Mortality and what persists beyond it; spirits, the dead, and the night; concealment and the quiet of the dark; and the raw, enduring strength that outlasts the dying of the light. Curiosity rather than fear at the edge where life ends.",
+  },
+  {
+    groupId: "order",
+    pathwayIds: [12, 13],
+    theme:
+      "Law, judgement, and authority; the binding force of rules and the bearing of one expected to be obeyed; the will to set a thing right — or to find the loophole and turn it to advantage.",
+  },
+  {
+    groupId: "combat",
+    pathwayIds: [14, 15],
+    theme:
+      "Violence answered with violence; the hunt, the sharpened senses, the readiness to strike first; fury, ruin, and the cold patience of one who means harm.",
+  },
+  {
+    groupId: "life",
+    pathwayIds: [16, 17],
+    theme:
+      "Growth, healing, and the tending of living things; nurture, remedy, and the patient husbandry of the land and its beasts; the gentler power over life — and the stranger turns it can take.",
+  },
+  {
+    groupId: "knowledge",
+    pathwayIds: [18, 19],
+    theme:
+      "The pursuit of understanding for its own sake — hidden sight, occult lore, mechanism and memory; the conviction that to know a thing fully is to hold power over it, whatever the price of the knowing.",
+  },
+  {
+    groupId: "wheel-of-fortune",
+    pathwayIds: [20],
+    theme:
+      "Luck, omen, and destiny; the prickling sense of what is coming before it comes; the turning of fortune that lifts the low and casts down the high.",
+  },
+  {
+    groupId: "abyss",
+    pathwayIds: [21, 22],
+    theme:
+      "Corruption and restraint held in tension; appetite, sin, and the cold strength drawn from the deep; the chain laid on one's own heart — and the will to bind it, or to break free.",
   },
 ] as const;
 

@@ -1,6 +1,7 @@
 import type { Ability, Pathway, Sequence } from "@/lib/types/rules";
 
 import { ADVANCEMENT_RITUALS, RITUAL_FROM_SEQUENCE } from "./advancement-canon";
+import { applyCanonDemigodAbilities } from "./demigod-abilities";
 
 const whiteTowerSequences: Sequence[] = [
   {
@@ -296,9 +297,12 @@ const whiteTowerSequences: Sequence[] = [
     level: 4,
     name: "Prophet",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Prophecy",
@@ -358,9 +362,12 @@ const whiteTowerSequences: Sequence[] = [
     level: 3,
     name: "Cognizer",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Cognition of Truth",
@@ -420,9 +427,12 @@ const whiteTowerSequences: Sequence[] = [
     level: 2,
     name: "Wisdom Angel",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Angelic Omniscience",
@@ -476,9 +486,12 @@ const whiteTowerSequences: Sequence[] = [
     level: 1,
     name: "Omniscient Eye",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "All-Seeing Gaze",
@@ -825,9 +838,12 @@ const twilightGiantSequences: Sequence[] = [
     level: 4,
     name: "Demon Hunter",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Demon-Hunting Might",
@@ -887,9 +903,12 @@ const twilightGiantSequences: Sequence[] = [
     level: 3,
     name: "Silver Knight",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Silver Aegis",
@@ -949,9 +968,12 @@ const twilightGiantSequences: Sequence[] = [
     level: 2,
     name: "Glory",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Embodied Glory",
@@ -1005,9 +1027,12 @@ const twilightGiantSequences: Sequence[] = [
     level: 1,
     name: "Hand of God",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Hand of God",
@@ -1361,9 +1386,12 @@ const justiciarSequences: Sequence[] = [
     level: 4,
     name: "Imperative Mage",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Imperative Decree",
@@ -1423,9 +1451,12 @@ const justiciarSequences: Sequence[] = [
     level: 3,
     name: "Chaos Hunter",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Chaos Hunt",
@@ -1485,9 +1516,12 @@ const justiciarSequences: Sequence[] = [
     level: 2,
     name: "Balancer",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "The Balance",
@@ -1541,9 +1575,12 @@ const justiciarSequences: Sequence[] = [
     level: 1,
     name: "Hand of Order",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Hand of Order",
@@ -1880,9 +1917,12 @@ const blackEmperorSequences: Sequence[] = [
     level: 4,
     name: "Earl of the Fallen",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Corruption's Gift",
@@ -1942,9 +1982,12 @@ const blackEmperorSequences: Sequence[] = [
     level: 3,
     name: "Frenzied Mage",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Frenzied Casting",
@@ -2004,9 +2047,12 @@ const blackEmperorSequences: Sequence[] = [
     level: 2,
     name: "Duke of Entropy",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Duke of Entropy",
@@ -2060,9 +2106,12 @@ const blackEmperorSequences: Sequence[] = [
     level: 1,
     name: "Prince of Abolition",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Abolition",
@@ -2430,9 +2479,12 @@ const redPriestSequences: Sequence[] = [
     level: 4,
     name: "Iron-blooded Knight",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Iron Blood",
@@ -2492,9 +2544,12 @@ const redPriestSequences: Sequence[] = [
     level: 3,
     name: "War Bishop",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Rite of War",
@@ -2553,9 +2608,12 @@ const redPriestSequences: Sequence[] = [
     level: 2,
     name: "Weather Warlock",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Weather of War",
@@ -2609,9 +2667,12 @@ const redPriestSequences: Sequence[] = [
     level: 1,
     name: "Conqueror",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Conquest",
@@ -2967,9 +3028,12 @@ const demonessSequences: Sequence[] = [
     level: 4,
     name: "Despair",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Wave of Despair",
@@ -3029,9 +3093,12 @@ const demonessSequences: Sequence[] = [
     level: 3,
     name: "Unaging",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Unaging Flesh",
@@ -3090,9 +3157,12 @@ const demonessSequences: Sequence[] = [
     level: 2,
     name: "Catastrophe",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Catastrophe",
@@ -3146,9 +3216,12 @@ const demonessSequences: Sequence[] = [
     level: 1,
     name: "Apocalypse",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Apocalypse",
@@ -3499,9 +3572,12 @@ const motherSequences: Sequence[] = [
     level: 4,
     name: "Classical Alchemist",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Classical Transmutation",
@@ -3561,9 +3637,12 @@ const motherSequences: Sequence[] = [
     level: 3,
     name: "Pallbearer",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Pallbearer's Passage",
@@ -3623,9 +3702,12 @@ const motherSequences: Sequence[] = [
     level: 2,
     name: "Desolate Matriarch",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Desolate Matriarch",
@@ -3679,9 +3761,12 @@ const motherSequences: Sequence[] = [
     level: 1,
     name: "Naturewalker",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Naturewalker",
@@ -4049,9 +4134,12 @@ const moonSequences: Sequence[] = [
     level: 4,
     name: "Shaman King",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Shaman's Summons",
@@ -4111,9 +4199,12 @@ const moonSequences: Sequence[] = [
     level: 3,
     name: "High Summoner",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "High Summoning",
@@ -4173,9 +4264,12 @@ const moonSequences: Sequence[] = [
     level: 2,
     name: "Life-Giver",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Life-Giver",
@@ -4229,9 +4323,12 @@ const moonSequences: Sequence[] = [
     level: 1,
     name: "Beauty Goddess",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Beauty Goddess",
@@ -4590,9 +4687,12 @@ const hermitSequences: Sequence[] = [
     level: 4,
     name: "Mysticologist",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Mysticological Lore",
@@ -4652,9 +4752,12 @@ const hermitSequences: Sequence[] = [
     level: 3,
     name: "Clairvoyant",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Clairvoyance",
@@ -4714,9 +4817,12 @@ const hermitSequences: Sequence[] = [
     level: 2,
     name: "Sage",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Sage's Knowing",
@@ -4769,9 +4875,12 @@ const hermitSequences: Sequence[] = [
     level: 1,
     name: "Knowledge Emperor",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Knowledge Emperor",
@@ -5081,9 +5190,12 @@ const paragonSequences: Sequence[] = [
     level: 4,
     name: "Alchemist",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Grand Alchemy",
@@ -5143,9 +5255,12 @@ const paragonSequences: Sequence[] = [
     level: 3,
     name: "Arcane Scholar",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Arcane Engineering",
@@ -5205,9 +5320,12 @@ const paragonSequences: Sequence[] = [
     level: 2,
     name: "Knowledge Magister",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Knowledge Magister",
@@ -5261,9 +5379,12 @@ const paragonSequences: Sequence[] = [
     level: 1,
     name: "Illuminator",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Illuminator",
@@ -5594,9 +5715,12 @@ const wheelOfFortuneSequences: Sequence[] = [
     level: 4,
     name: "Misfortune Mage",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Misfortune Curse",
@@ -5656,9 +5780,12 @@ const wheelOfFortuneSequences: Sequence[] = [
     level: 3,
     name: "Chaoswalker",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Chaoswalking",
@@ -5716,9 +5843,12 @@ const wheelOfFortuneSequences: Sequence[] = [
     level: 2,
     name: "Soothsayer",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Soothsaying",
@@ -5772,9 +5902,12 @@ const wheelOfFortuneSequences: Sequence[] = [
     level: 1,
     name: "Snake of Mercury",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Snake of Mercury",
@@ -6095,9 +6228,12 @@ const abyssSequences: Sequence[] = [
     level: 4,
     name: "Demon",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Demonic Might",
@@ -6156,9 +6292,12 @@ const abyssSequences: Sequence[] = [
     level: 3,
     name: "Blatherer",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Maddening Word",
@@ -6218,9 +6357,12 @@ const abyssSequences: Sequence[] = [
     level: 2,
     name: "Bloody Archduke",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Bloody Archduke",
@@ -6274,9 +6416,12 @@ const abyssSequences: Sequence[] = [
     level: 1,
     name: "Filthy Monarch",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Filthy Monarch",
@@ -6635,9 +6780,12 @@ const chainedSequences: Sequence[] = [
     level: 4,
     name: "Puppet",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Puppet Strings",
@@ -6696,9 +6844,12 @@ const chainedSequences: Sequence[] = [
     level: 3,
     name: "Disciple of Silence",
     classification: "High",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Silent Discipline",
@@ -6758,9 +6909,12 @@ const chainedSequences: Sequence[] = [
     level: 2,
     name: "Ancient Bane",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Ancient Bane",
@@ -6814,9 +6968,12 @@ const chainedSequences: Sequence[] = [
     level: 1,
     name: "Abomination",
     classification: "Demigod",
-    // Provisional (issue #99 Part A): the sequence NAME is canon (wiki
-    // Module:Sequence/standard); abilities and acting are themed but invented,
-    // as the corpus gives no ability text for these later-pathway demigod rungs.
+    // Corpus-grounded (issue #120): the sequence NAME is canon (wiki
+    // Module:Sequence/standard) and the Seq 4-1 `abilities` below are OVERLAID at
+    // module load from the corpus-derived DEMIGOD_ABILITIES (demigod-abilities.ts,
+    // sourced from the wiki `<Pathway>/Abilities` pages). The hand-authored
+    // arrays here are the pre-overlay fallback; acting requirements stay a
+    // generic per-rung template where the corpus gives no acting text.
     abilities: [
       {
         name: "Abomination",
@@ -12438,7 +12595,12 @@ function applyCanonAdvancement(pathway: Pathway): Pathway {
   };
 }
 
-export const ALL_PATHWAYS: Pathway[] = RAW_PATHWAYS.map(applyCanonAdvancement);
+// Overlay the canon Advancement Rituals (Seq 5–1), then the corpus-derived
+// demigod abilities (Seq 4–1 of pathways 10–22, issue #120) — both replace
+// hand-authored placeholders with corpus-sourced data at module load.
+export const ALL_PATHWAYS: Pathway[] = applyCanonDemigodAbilities(
+  RAW_PATHWAYS.map(applyCanonAdvancement),
+);
 
 // Indexed by id at module load — getPathway/getSequence are called several
 // times per render and per turn, so resolve in O(1) rather than scanning the
