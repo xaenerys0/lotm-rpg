@@ -88,4 +88,46 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tags: ["aurora-order", "true-creator", "antagonist", "secret-organization"],
     tokenCount: 225,
   },
+  // ── Numinous Episcopate (world build-out 3, issue #132) ──
+  // Corrected against the dump: a Death-revival secret society ORIGINATING on
+  // the Southern Continent (Eggers Family / Church of Death remnants), spread
+  // into the Northern Continent. Surface existence is ungated rumour
+  // (narratorOnly false); the true goal is deep spoiler — narratorOnly + gated.
+  // Org lore is not injected by selectCuratedLore (corpus/RAG + integrity only),
+  // so these never leak into a mainland character's curated prompt.
+  {
+    slug: "numinous-episcopate-overview",
+    title: "Numinous Episcopate — Overview",
+    category: "organization",
+    content: `The Numinous Episcopate is a secret society of the Death pathway that originated on the Southern Continent, grown from remnants of the old Church of Death and the legacy of the Eggers family, and has since spread its quiet influence into the Northern Continent where the orthodox churches hold sway. To the wider Beyonder world it is little more than a rumour: a scattered brotherhood preoccupied with death, mourning, and the boundary the living are not meant to cross, surfacing in tales of grave-robbings, hushed funerary rites, and members who treat the dead as unfinished business. Where it is known at all it is treated as a heresy to be watched rather than an open enemy, for it keeps to shadows and speaks of its true purposes to no one outside its inner ranks. Its members recognise one another by signs the churches have never fully catalogued.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [],
+    tags: [
+      "numinous-episcopate",
+      "death-pathway",
+      "secret-organization",
+      "southern-continent",
+    ],
+    tokenCount: 190,
+    narratorOnly: false,
+  },
+  {
+    slug: "numinous-episcopate-true-goal",
+    title: "Numinous Episcopate — The True Goal",
+    category: "organization",
+    content: `Behind its funerary face the Numinous Episcopate pursues a single forbidden end: the revival of the dead at a scale the world has not seen since the elder ages, and with it the usurpation of authority over death itself. Its inner doctrine holds that the present custodianship of death — embodied above all in the Church of the Evernight Goddess and her dominion over night, secrets, and the dead — is a throne wrongfully held, and that the Episcopate's hidden masters mean to take it. To that purpose they gather Death-pathway Beyonders, sealed artifacts, and the bodies and Beyonder characteristics that a true resurrection would demand, working toward a rite the orthodox churches would burn the continent to stop. It is this goal — not its grave-side rituals — that makes the Episcopate one of the most dangerous heresies alive, and the reason it never shows the world its real face.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "numinous-episcopate",
+      "death-pathway",
+      "secret-organization",
+      "evernight-goddess",
+      "spoiler",
+    ],
+    tokenCount: 200,
+    narratorOnly: true,
+  },
 ];

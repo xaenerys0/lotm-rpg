@@ -38,6 +38,7 @@ export {
   selectStartScenario,
   selectStartScenarioForLocation,
   startScenariosForEpoch,
+  forsakenLandStartsForEpoch,
   startLocationsForEpoch,
   getStartScenario,
   START_SCENARIOS,
@@ -46,6 +47,7 @@ export {
 } from "./start-scenarios";
 export {
   startArchetypesForEpoch,
+  forsakenLandArchetypesForEpoch,
   getStartArchetype,
   archetypeGrounding,
   buildCustomArchetype,
@@ -73,6 +75,7 @@ export { BACKLUND_LORE } from "./backlund";
 export { TRIER_LORE } from "./trier";
 export { BAYAM_LORE } from "./bayam";
 export { REGIONS_LORE } from "./regions";
+export { FORSAKEN_LAND_LORE } from "./forsaken-land";
 export { FIRST_EPOCH_LORE } from "./epoch-first";
 export { SECOND_EPOCH_LORE } from "./epoch-second";
 export { THIRD_EPOCH_LORE } from "./epoch-third";
@@ -110,6 +113,7 @@ import { BACKLUND_LORE } from "./backlund";
 import { TRIER_LORE } from "./trier";
 import { BAYAM_LORE } from "./bayam";
 import { REGIONS_LORE } from "./regions";
+import { FORSAKEN_LAND_LORE } from "./forsaken-land";
 import { FIRST_EPOCH_LORE } from "./epoch-first";
 import { SECOND_EPOCH_LORE } from "./epoch-second";
 import { THIRD_EPOCH_LORE } from "./epoch-third";
@@ -146,6 +150,7 @@ export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...TRIER_LORE,
   ...BAYAM_LORE,
   ...REGIONS_LORE,
+  ...FORSAKEN_LAND_LORE,
   ...FIRST_EPOCH_LORE,
   ...SECOND_EPOCH_LORE,
   ...THIRD_EPOCH_LORE,

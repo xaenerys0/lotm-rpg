@@ -13,6 +13,7 @@ import {
   THIRD_EPOCH_LORE,
   FOURTH_EPOCH_LORE,
   FIFTH_EPOCH_LORE,
+  FORSAKEN_LAND_LORE,
   FOOL_PATHWAY_LORE,
   getLoreByCategory,
   getLoreByCity,
@@ -137,6 +138,61 @@ describe("Lore content coverage", () => {
 
   it("has Fifth Epoch baseline entries", () => {
     expect(FIFTH_EPOCH_LORE.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("has Forsaken Land content, epoch-split and city-keyed (issue #132)", () => {
+    expect(FORSAKEN_LAND_LORE.length).toBeGreaterThanOrEqual(5);
+    // Every entry is tagged for exactly one epoch — the playable present (5) or
+    // the Third-Epoch fall (3) — never mixed (passesEpochGate is exact-match).
+    expect(FORSAKEN_LAND_LORE.every((e) => e.epoch === 5 || e.epoch === 3)).toBe(true);
+    // The present-day entries are city-keyed (silver / giant) so curated
+    // selection only injects them for a character actually there — never the
+    // mainland. None is `metaphysics` (which would inject into every Fifth prompt).
+    for (const e of FORSAKEN_LAND_LORE.filter((x) => x.epoch === 5)) {
+      expect(e.category).not.toBe("metaphysics");
+      expect(e.city === "silver" || e.city === "giant").toBe(true);
+    }
+    // The Third-Epoch fall is kept as separate history.
+    expect(
+      FORSAKEN_LAND_LORE.some(
+        (e) => e.epoch === 3 && e.slug === "forsaken-land-sundering",
+      ),
+    ).toBe(true);
+    // The City of Silver and Giant King's Court overviews exist.
+    expect(getLoreBySlug("city-of-silver-overview")).toBeDefined();
+    expect(getLoreBySlug("giant-kings-court-overview")).toBeDefined();
+  });
+
+  it("never injects Forsaken present-day lore into a mainland character's curated lore", () => {
+    // selectCuratedLore pulls city lore by the location's leading word and epoch
+    // setting (metaphysics) — never an organization/npc, and never a city the
+    // character isn't in. A central Fifth character is never at "silver"/"giant",
+    // so getLoreByCity for those keys is the ONLY way the present lore surfaces.
+    for (const city of ["silver", "giant"]) {
+      const entries = getLoreByCity(city);
+      expect(entries.length).toBeGreaterThan(0);
+      expect(entries.every((e) => e.epoch === 5)).toBe(true);
+    }
+    // No epoch-5 Forsaken metaphysics entry exists to leak via getLoreByEpochSetting.
+    const fifthSetting = getLoreByEpoch(5).filter((e) => e.category === "metaphysics");
+    expect(fifthSetting.every((e) => !e.tags.includes("forsaken-land"))).toBe(true);
+  });
+
+  it("has the Numinous Episcopate organization (issue #132)", () => {
+    const episcopate = ORGANIZATION_LORE.filter((e) =>
+      e.tags.includes("numinous-episcopate"),
+    );
+    expect(episcopate.length).toBeGreaterThanOrEqual(2);
+    // Its true goal is a deep spoiler: narrator-only and sequence-gated.
+    const deep = episcopate.find((e) => e.slug === "numinous-episcopate-true-goal");
+    expect(deep?.narratorOnly).toBe(true);
+    expect(deep!.sequences.length).toBeGreaterThan(0);
+  });
+
+  it("has the City-of-Silver NPCs with relationship data (issue #132)", () => {
+    const names = NPC_LORE.flatMap((e) => e.npcs);
+    expect(names).toContain("Derrick Berg");
+    expect(names).toContain("Giant King Aurmir");
   });
 
   it("has rich, correctly-tagged lore for each pre-Iron-Age epoch", () => {
@@ -300,6 +356,11 @@ describe("cityNarrationDirective", () => {
     expect(cityNarrationDirective("Feysac")).toContain("God of Combat");
   });
 
+  it("gives the Forsaken Land cities their own tone (issue #132)", () => {
+    expect(cityNarrationDirective("Silver City")).toContain("Forsaken Land");
+    expect(cityNarrationDirective("Giant King's Court")).toContain("Forsaken Land");
+  });
+
   it("returns null for unknown or unmapped locations", () => {
     expect(cityNarrationDirective("Tingen City")).toBeNull();
     expect(cityNarrationDirective("Backwater Village")).toBeNull();
@@ -320,6 +381,7 @@ describe("Total lore corpus", () => {
       TRIER_LORE.length +
       BAYAM_LORE.length +
       REGIONS_LORE.length +
+      FORSAKEN_LAND_LORE.length +
       FIRST_EPOCH_LORE.length +
       SECOND_EPOCH_LORE.length +
       THIRD_EPOCH_LORE.length +

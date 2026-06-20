@@ -245,6 +245,29 @@ export function hasAccessFlag(
 }
 
 /**
+ * Grant a capability flag to the character (world build-out, issue #132).
+ * Idempotent — returns the same state when the flag is already held, else a NEW
+ * state with the flag appended. Pure. The engine grants flags; the AI never can.
+ */
+export function grantAccessFlag(state: GameState, flag: AccessFlag): GameState {
+  if (hasAccessFlag(state, flag)) return state;
+  return { ...state, accessFlags: [...(state.accessFlags ?? []), flag] };
+}
+
+/**
+ * Whether a location is the Dream-World shadow of Giant King's Court — the
+ * entrance that grants the dream-world passage (issue #132). Requires BOTH
+ * "dream" and "giant king" in the string, so the PHYSICAL Giant King's Court (a
+ * forsaken city, itself access-gated) never triggers the grant — only the
+ * dream-world threshold a non-origin character can reach through the story does.
+ * Case-insensitive; pure.
+ */
+export function reachedDreamWorldGate(location: string): boolean {
+  const l = location.toLowerCase();
+  return l.includes("dream") && l.includes("giant king");
+}
+
+/**
  * Whether the character meets a destination city's access gate (issue #130).
  * Freely reachable when the city has no gate. The Sequence gate counts DOWN, so
  * "high enough" means `sequenceLevel <= minSequence`; the flag gate demands the

@@ -3,6 +3,7 @@ import { EPOCHS } from "./epochs";
 import {
   START_SCENARIOS,
   startScenariosForEpoch,
+  forsakenLandStartsForEpoch,
   startLocationsForEpoch,
   selectStartScenario,
   selectStartScenarioForLocation,
@@ -176,5 +177,42 @@ describe("getStartScenario", () => {
 
   it("returns undefined for an unknown id", () => {
     expect(getStartScenario("no-such-start")).toBeUndefined();
+  });
+});
+
+describe("origin starts (issue #132)", () => {
+  it("excludes origin starts from the default pool and picker", () => {
+    // No origin scenario leaks into the default epoch pool...
+    expect(startScenariosForEpoch(5).every((s) => s.origin === undefined)).toBe(true);
+    // ...nor the location picker (so "Silver City" is never an ordinary place).
+    expect(startLocationsForEpoch(5).some((o) => o.location === "Silver City")).toBe(
+      false,
+    );
+  });
+
+  it("never lands an origin start via the random draw or location pick", () => {
+    // Random draw over the (origin-free) pool can never return an origin start.
+    for (let i = 0; i < 50; i++) {
+      expect(selectStartScenario(5, () => i / 50).origin).toBeUndefined();
+    }
+    // Asking for the origin location by name falls back to a central start
+    // (the origin pool is excluded from selectStartScenarioForLocation).
+    expect(
+      selectStartScenarioForLocation(5, "Silver City", () => 0).origin,
+    ).toBeUndefined();
+  });
+
+  it("surfaces the Forsaken origin start only behind the explicit affordance", () => {
+    const origins = forsakenLandStartsForEpoch(5);
+    expect(origins.length).toBeGreaterThan(0);
+    expect(origins.every((s) => s.origin === "forsaken-land")).toBe(true);
+    const silver = origins.find((s) => s.id === "forsaken-city-of-silver");
+    expect(silver?.location).toBe("Silver City");
+    // Resolvable by id (the picker passes the id through to play-dashboard).
+    expect(getStartScenario("forsaken-city-of-silver")?.origin).toBe("forsaken-land");
+  });
+
+  it("has no origin starts for epochs without them", () => {
+    expect(forsakenLandStartsForEpoch(1)).toEqual([]);
   });
 });

@@ -110,4 +110,37 @@ export const NPC_LORE: LoreEntry[] = [
     tags: ["antagonist", "nighthawks", "0-08-card", "darkness-pathway", "betrayal"],
     tokenCount: 245,
   },
+  // ── Forsaken Land of the Gods — City of Silver characters (issue #132) ──
+  // City-keyed so they ride the same location-gating as the continent's lore;
+  // each carries family/friends/affiliation relationship data for grounding.
+  {
+    slug: "npc-derrick-berg",
+    title: "Derrick Berg — The Sun of the Tarot Club",
+    category: "npc",
+    content: `Derrick Berg is a young man born and raised in the City of Silver, the last living city of the Forsaken Land of the Gods, and one of the rare souls to leave it by the Dream-World passage. A devout, earnest, and physically powerful Beyonder of the Sun pathway, he was a defender of the City before the wider world opened to him. He becomes a member of the Tarot Club under the code name "The Sun," where his sincerity and raw strength make him both a reliable ally and, at times, an unwitting source of comedy among subtler members. His defining ties are to his home: his family and the brotherhood of the City of Silver's defenders, the faith of the abandoned that he carries with unshaken conviction, and — through the Tarot Club — a growing bond with The Fool (Klein Moretti) and the other members "above the gray fog." Derrick's arc is one of a sheltered believer discovering how vast and dangerous the real world is, without ever losing the openhearted decency the City raised in him.`,
+    epoch: 5,
+    city: "silver",
+    // Deliberately NOT pathway-keyed (issue #132 leak control): selectCuratedLore
+    // indexes pathway lore location-independently, so a `pathway` field here would
+    // inject this City-of-Silver entry into any mainland Sun character's prompt.
+    // The prose still names his Sun pathway; the entry stays city-gated to "silver".
+    npcs: ["Derrick Berg"],
+    sequences: [],
+    tags: ["forsaken-land", "city-of-silver", "tarot-club", "the-sun", "sun-pathway"],
+    tokenCount: 220,
+    narratorOnly: false,
+  },
+  {
+    slug: "npc-giant-king-aurmir",
+    title: "Giant King Aurmir — The Lord of the Ruined Court",
+    category: "npc",
+    content: `Giant King Aurmir is the legendary figure for whom Giant King's Court — the titan-scaled ruin east of the City of Silver — is named, remembered in the City's lore as a lord of the elder Giants from the ages before the continent fell. To the abandoned faithful he is half history and half myth: a being of the old inhuman powers whose seat outlived him, its broken thrones and colossal halls now the holiest and most feared site on the Forsaken Land. The City keeps his name and his rites because his Court is no mere ruin — its shadow in the Dream World is the single doorway in and out of the sealed continent — so the keepers who guard that secret guard his memory with it. Whether anything of Aurmir himself yet lingers about the Court is a question the City's deepest order does not answer for outsiders.`,
+    epoch: 5,
+    city: "giant",
+    npcs: ["Giant King Aurmir"],
+    sequences: [4],
+    tags: ["forsaken-land", "giant-kings-court", "giant", "legend"],
+    tokenCount: 195,
+    narratorOnly: true,
+  },
 ];

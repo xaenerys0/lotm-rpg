@@ -373,6 +373,66 @@ function gazetteerContinentOf(city: GazetteerFartherCity): "central" | "forsaken
   return city.continent ?? "central";
 }
 
+// ── Forsaken Land of the Gods — district lists (issue #132). Only ever shown
+// to a character actually in the City of Silver / Giant King's Court (the
+// continent filter + access gate hide them from the mainland). Public,
+// street-level knowledge a resident would hold; the spoilery lore stays in the
+// narrator-only curated entries. ──
+const SILVER_CITY_DISTRICTS: GazetteerDistrict[] = [
+  {
+    slug: "silver-high-quarter",
+    name: "The High Quarter",
+    blurb:
+      "The old grey-white heart of the City of Silver, where the great shielded houses and the keepers of the faith stand behind grounded copper lattices. Lived-in by lightning-light, busiest in the safer dark of night.",
+    keywords: ["high quarter", "silver", "city of silver"],
+  },
+  {
+    slug: "silver-rod-works",
+    name: "The Rod-Works & Foundries",
+    blurb:
+      "The lightning-craft district: forges of iron rods and grounding lattices, glassworks for the shielded fields, and the engineers who keep the City survivable beneath the perpetual storm.",
+    keywords: ["rod-works", "foundry", "foundries", "lightning"],
+  },
+  {
+    slug: "silver-knights-bastion",
+    name: "The Knights' Bastion",
+    blurb:
+      "The walled seat of the Silver Knights — barracks, watch-halls, and muster-yards for the martial order that holds the night streets and the City's walls against the dead country beyond.",
+    keywords: ["bastion", "knight", "knights", "watch"],
+  },
+  {
+    slug: "silver-shielded-fields",
+    name: "The Shielded Fields",
+    blurb:
+      "Terraced, glass-roofed fields and cisterns under copper netting where the City grows what little it can out of the lightning's reach — the rationed lifeline of an isolated people.",
+    keywords: ["fields", "shielded", "cistern"],
+  },
+];
+
+const GIANT_KINGS_COURT_DISTRICTS: GazetteerDistrict[] = [
+  {
+    slug: "giant-court-colonnades",
+    name: "The Broken Colonnades",
+    blurb:
+      "The titan-scaled approach to Giant King's Court — fallen pillars and a hall built for beings far larger than people, half-swallowed by the dead grey country east of the City of Silver.",
+    keywords: ["colonnade", "court", "giant king", "giant"],
+  },
+  {
+    slug: "giant-court-thrones",
+    name: "The Hall of Thrones",
+    blurb:
+      "The ruined seat itself: colossal thrones under the walking lightning, reckoned the holiest and most dangerous site of the Forsaken Land, approached only by the City's wary expeditions.",
+    keywords: ["throne", "hall", "seat"],
+  },
+  {
+    slug: "giant-court-dream-threshold",
+    name: "The Dream Threshold",
+    blurb:
+      "The quiet place within the Court where the devout cross into dream — the one threshold whose Dream-World shadow opens the way in and out of the sealed continent.",
+    keywords: ["dream", "threshold", "gate", "passage"],
+  },
+];
+
 // District lists keyed by city id — the intra-city "site" layer per place.
 const FIFTH_CITY_DISTRICTS: Record<string, GazetteerDistrict[]> = {
   tingen: FIFTH_DISTRICTS,
@@ -382,6 +442,8 @@ const FIFTH_CITY_DISTRICTS: Record<string, GazetteerDistrict[]> = {
   pritz: PRITZ_DISTRICTS,
   enmat: ENMAT_DISTRICTS,
   feysac: FEYSAC_DISTRICTS,
+  "silver-city": SILVER_CITY_DISTRICTS,
+  "giant-kings-court": GIANT_KINGS_COURT_DISTRICTS,
 };
 
 const FIFTH_CITY_BY_ID: Record<string, GazetteerFartherCity> = Object.fromEntries(

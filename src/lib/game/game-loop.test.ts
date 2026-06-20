@@ -1072,6 +1072,63 @@ describe("applyWorldStateChanges — movement gate", () => {
     expect(next.location).toBe("Tingen City");
   });
 
+  it("grants the dream-world passage on reaching the Dream-World gate (issue #132)", () => {
+    // A non-origin character has no flag; reaching the Dream-World shadow of
+    // Giant King's Court (a non-city location, not itself gated) earns it.
+    const state = makeGameState({ location: "Tingen City", currentCity: "tingen" });
+    expect(state.accessFlags).toBeUndefined();
+    const { state: next, facts } = applyWorldStateChanges(
+      state,
+      [locationChange("The Dream World — the shadow of Giant King's Court")],
+      { ...opts, epoch: 5 },
+    );
+    expect(next.accessFlags).toEqual(["dream-world-passage"]);
+    expect(facts.some((f) => f.description.includes("Dream-World"))).toBe(true);
+  });
+
+  it("does not re-grant the passage once already held (idempotent)", () => {
+    const state = makeGameState({
+      location: "Tingen City",
+      accessFlags: ["dream-world-passage"],
+    });
+    const { state: next, facts } = applyWorldStateChanges(
+      state,
+      [locationChange("A dream of Giant King's Court")],
+      { ...opts, epoch: 5 },
+    );
+    expect(next.accessFlags).toEqual(["dream-world-passage"]);
+    // No duplicate grant fact.
+    expect(facts.some((f) => f.description.includes("you grasp the passage"))).toBe(
+      false,
+    );
+  });
+
+  it("earns the passage at the gate, then can be moved into the Forsaken Land (issue #132)", () => {
+    // Full earn-then-enter path: a Seq-9 central character can't enter the City
+    // of Silver until they earn the passage at the dream gate.
+    const start = makeGameState({ location: "Tingen City", currentCity: "tingen" });
+    const refused = applyWorldStateChanges(
+      start,
+      [locationChange("Silver City", "capability-gated-teleport")],
+      { ...opts, epoch: 5 },
+    );
+    expect(refused.state.location).toBe("Tingen City"); // gated out
+
+    const earned = applyWorldStateChanges(
+      start,
+      [locationChange("The Dream World — Giant King's Court's shadow")],
+      { ...opts, epoch: 5 },
+    );
+    expect(earned.state.accessFlags).toEqual(["dream-world-passage"]);
+
+    const entered = applyWorldStateChanges(
+      earned.state,
+      [locationChange("Silver City", "capability-gated-teleport")],
+      { ...opts, epoch: 5 },
+    );
+    expect(entered.state.location).toBe("Silver City");
+  });
+
   it("leaves the origin scene behind on a cross-city move, keeping only followers", () => {
     const state = makeGameState({
       location: "Tingen City",

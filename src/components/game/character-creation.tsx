@@ -21,6 +21,8 @@ import {
   EPOCHS,
   startLocationsForEpoch,
   startArchetypesForEpoch,
+  forsakenLandStartsForEpoch,
+  forsakenLandArchetypesForEpoch,
   circleNpcSuggestions,
   MAX_TIE_LENGTH,
   MAX_COMPANIONS,
@@ -151,6 +153,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const [customCompanions, setCustomCompanions] = useState<string[]>([]);
   const [customCompanionDraft, setCustomCompanionDraft] = useState("");
   const [customLocation, setCustomLocation] = useState("");
+  // Origin starts (issue #132) are hidden behind an explicit opt-in: a character
+  // beginning inside a sealed, access-gated continent (the Forsaken Land) is an
+  // advanced choice the default picker must not surface.
+  const [showOrigins, setShowOrigins] = useState(false);
 
   // Character identity — restored from draft when available
   const [characterName, setCharacterName] = useState(savedDraft?.characterName ?? "");
@@ -373,6 +379,11 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     let start: StartSelection;
     if (archetypeId !== null) {
       start = { kind: "archetype", archetypeId };
+    } else if (startChoice.startsWith("origin-scenario:")) {
+      start = {
+        kind: "origin-scenario",
+        scenarioId: startChoice.slice("origin-scenario:".length),
+      };
     } else if (startChoice === "custom") {
       start = {
         kind: "custom",
@@ -1100,29 +1111,44 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             const options = startLocationsForEpoch(epoch);
             const archetypes = startArchetypesForEpoch(epoch);
             const npcSuggestions = circleNpcSuggestions(epoch);
+            // Origin starts (issue #132) — gated behind the explicit affordance.
+            const originScenarios = forsakenLandStartsForEpoch(epoch);
+            const originArchetypes = forsakenLandArchetypesForEpoch(epoch);
+            const hasOrigins = originScenarios.length + originArchetypes.length > 0;
             const pathwayName = ALL_PATHWAYS.find(
               (p) => p.id === selectedPathwayId,
             )?.name;
             const isCustom = startChoice === "custom";
             const selectedLoc = options.find((o) => o.location === startChoice);
-            const selectedArchetype = archetypes.find((a) => a.id === archetypeId);
+            // Origin archetypes live outside the default `archetypes` list, so
+            // resolve the selected archetype across both for the blurb.
+            const selectedArchetype = [...archetypes, ...originArchetypes].find(
+              (a) => a.id === archetypeId,
+            );
+            const selectedOriginScenario = startChoice.startsWith("origin-scenario:")
+              ? originScenarios.find(
+                  (s) => s.id === startChoice.slice("origin-scenario:".length),
+                )
+              : undefined;
             const suitsSelectedLoc =
               selectedLoc?.pathwayAffinity.includes(selectedPathwayId) ?? false;
             // One control: a plain location's value is the bare location string,
-            // an archetype's is `archetype:<id>`, `"custom"` opens the author-
-            // your-own form, and "" is the random start (the single `startChoice`
-            // state holds exactly this value).
+            // an archetype's is `archetype:<id>`, an origin scenario's is
+            // `origin-scenario:<id>`, `"custom"` opens the author-your-own form,
+            // and "" is the random start (the single `startChoice` state holds it).
             const describe = selectedArchetype
               ? selectedArchetype.blurb
-              : isCustom
-                ? "Describe your own place in the world — your tie, and who stands with you. They can be characters from the world or your own invention."
-                : selectedLoc
-                  ? `${selectedLoc.blurb}${
-                      suitsSelectedLoc && pathwayName
-                        ? ` A fitting start for the ${pathwayName} pathway.`
-                        : ""
-                    }`
-                  : "The fog will decide where you wake — a different place, and a different opening, each time.";
+              : selectedOriginScenario
+                ? selectedOriginScenario.blurb
+                : isCustom
+                  ? "Describe your own place in the world — your tie, and who stands with you. They can be characters from the world or your own invention."
+                  : selectedLoc
+                    ? `${selectedLoc.blurb}${
+                        suitsSelectedLoc && pathwayName
+                          ? ` A fitting start for the ${pathwayName} pathway.`
+                          : ""
+                      }`
+                    : "The fog will decide where you wake — a different place, and a different opening, each time.";
             return (
               <div className="mb-8">
                 <label
@@ -1171,10 +1197,50 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                       })}
                     </optgroup>
                   )}
+                  {showOrigins && hasOrigins && (
+                    <optgroup label="Begin as an origin (sealed continent)">
+                      {originScenarios.map((s) => (
+                        <option key={s.id} value={`origin-scenario:${s.id}`}>
+                          {s.blurb}
+                        </option>
+                      ))}
+                      {originArchetypes.map((a) => (
+                        <option key={a.id} value={`archetype:${a.id}`}>
+                          {a.label}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )}
                 </select>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted" role="status">
                   {describe}
                 </p>
+
+                {hasOrigins && (
+                  <label className="mt-2 flex items-center gap-2 text-xs text-muted">
+                    <input
+                      type="checkbox"
+                      checked={showOrigins}
+                      onChange={(e) => {
+                        const on = e.target.checked;
+                        setShowOrigins(on);
+                        // Turning origins off clears a now-hidden origin pick so
+                        // the control can't hold a value its options no longer show.
+                        if (
+                          !on &&
+                          (startChoice.startsWith("origin-scenario:") ||
+                            (archetypeId !== null &&
+                              originArchetypes.some((a) => a.id === archetypeId)))
+                        ) {
+                          setStartChoice("");
+                          clearCustomCircle();
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-border/60 bg-surface/50 text-amber focus:ring-1 focus:ring-amber/20"
+                    />
+                    Begin as a native of a sealed, far-off land (an advanced origin start)
+                  </label>
+                )}
 
                 {isCustom && (
                   <div className="mt-4 space-y-4 rounded-md border border-border/60 bg-surface/30 p-4">

@@ -7,7 +7,7 @@ import {
   serializeSession,
   deserializeSession,
 } from "./session";
-import { getStartArchetype, type StartArchetype } from "@/lib/lore";
+import { getStartArchetype, getStartScenario, type StartArchetype } from "@/lib/lore";
 
 // ─── createDefaultGameState — start archetypes (issue #131) ─────────────
 
@@ -68,6 +68,44 @@ describe("createDefaultGameState — start archetypes", () => {
     expect(gs.characterBackground).toBe(
       "You begin your chronicle as a classmate of Klein Moretti at Khoy University.",
     );
+  });
+
+  it("seeds the dream-world passage + currentCity for a Forsaken origin scenario (issue #132)", () => {
+    const scenario = getStartScenario("forsaken-city-of-silver")!;
+    const gs = createDefaultGameState(
+      3,
+      "c1",
+      "Knight",
+      undefined,
+      5,
+      undefined,
+      scenario,
+    );
+    expect(gs.location).toBe("Silver City");
+    expect(gs.currentCity).toBe("silver-city");
+    expect(gs.accessFlags).toEqual(["dream-world-passage"]);
+  });
+
+  it("seeds the dream-world passage for a Forsaken origin archetype (issue #132)", () => {
+    const archetype = getStartArchetype("forsaken-silver-knight")!;
+    const gs = createDefaultGameState(
+      3,
+      "c1",
+      "Knight",
+      undefined,
+      5,
+      undefined,
+      undefined,
+      archetype,
+    );
+    expect(gs.location).toBe("Silver City");
+    expect(gs.currentCity).toBe("silver-city");
+    expect(gs.accessFlags).toEqual(["dream-world-passage"]);
+  });
+
+  it("grants no access flags for an ordinary central start", () => {
+    const gs = createDefaultGameState(1, "c1", "Hero", undefined, 5);
+    expect(gs.accessFlags).toBeUndefined();
   });
 });
 

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   START_ARCHETYPES,
   startArchetypesForEpoch,
+  forsakenLandArchetypesForEpoch,
   getStartArchetype,
   archetypeGrounding,
   buildCustomArchetype,
@@ -244,5 +245,28 @@ describe("circleNpcSuggestions", () => {
 
   it("does not leak Fifth-Epoch NPCs into an earlier epoch", () => {
     expect(circleNpcSuggestions(1)).not.toContain("Klein Moretti");
+  });
+});
+
+describe("origin archetypes (issue #132)", () => {
+  it("excludes origin archetypes from the default picker", () => {
+    expect(startArchetypesForEpoch(5).every((a) => a.origin === undefined)).toBe(true);
+    expect(
+      startArchetypesForEpoch(5).some((a) => a.id === "forsaken-silver-knight"),
+    ).toBe(false);
+  });
+
+  it("surfaces the Forsaken origin archetype only behind the affordance", () => {
+    const origins = forsakenLandArchetypesForEpoch(5);
+    expect(origins.length).toBeGreaterThan(0);
+    expect(origins.every((a) => a.origin === "forsaken-land")).toBe(true);
+    const knight = origins.find((a) => a.id === "forsaken-silver-knight");
+    expect(knight?.location).toBe("Silver City");
+    // Resolvable by id (the picker passes the id through the archetype path).
+    expect(getStartArchetype("forsaken-silver-knight")?.origin).toBe("forsaken-land");
+  });
+
+  it("has no origin archetypes for epochs without them", () => {
+    expect(forsakenLandArchetypesForEpoch(1)).toEqual([]);
   });
 });

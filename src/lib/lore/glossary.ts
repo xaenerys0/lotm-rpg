@@ -9,6 +9,7 @@
 // world-building, not a manual, and contain ONLY knowledge a Beyonder of that
 // standing could plausibly hold — nothing here is narrator-only lore.
 
+import type { AccessFlag } from "@/lib/ai";
 import { passesEpochGate } from "./epochs";
 
 export const GLOSSARY_CATEGORIES = [
@@ -41,6 +42,14 @@ export interface GlossaryTerm {
    * by the sealed-term count.
    */
   epoch?: number;
+  /**
+   * Capability gate (world build-out, issue #132). A term tagged with a flag is
+   * shown ONLY to a character who holds it (e.g. the access-gated Forsaken Land's
+   * terms require `dream-world-passage`) — so a mainland character never sees the
+   * sealed continent's vocabulary, and the sealed-term count never leaks its
+   * existence. Absent = no capability required.
+   */
+  requiresFlag?: AccessFlag;
 }
 
 export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
@@ -343,22 +352,96 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     revealAtSequence: 9,
     epoch: 4,
   },
+  // ── Forsaken Land of the Gods (world build-out 3, issue #132) ──
+  // The PLAYABLE PRESENT, tagged epoch 5 AND gated behind the dream-world
+  // passage: only a character who holds that capability (a Forsaken origin, or
+  // one who earned it) ever sees these — a mainland Fifth-Epoch character does
+  // not, and the sealed-term count never reveals they exist. (The Third-Epoch
+  // fall remains the separate epoch:3 `forsaken-land` history term above.)
+  {
+    slug: "city-of-silver",
+    term: "The City of Silver",
+    category: "Geography",
+    definition:
+      "The last living city of the Forsaken Land, the former seat of the Kingdom of Silver — grey-white stone under a sky of perpetual lightning, home to the abandoned faithful who keep the old rites alone.",
+    revealAtSequence: 9,
+    epoch: 5,
+    requiresFlag: "dream-world-passage",
+  },
+  {
+    slug: "giant-kings-court-term",
+    term: "Giant King's Court",
+    category: "Geography",
+    definition:
+      "The titan-scaled ruin east of the City of Silver, holiest and most feared site of the Forsaken Land — for its shadow in the Dream World is the only doorway in or out of the sealed continent.",
+    revealAtSequence: 9,
+    epoch: 5,
+    requiresFlag: "dream-world-passage",
+  },
+  {
+    slug: "sea-of-ruins",
+    term: "The Sea of Ruins",
+    category: "Geography",
+    definition:
+      "The drowned, wreck-choked ocean that seals the Forsaken Land from the world. It cannot be sailed and turns back even the strong; only the Dream-World passage crosses it.",
+    revealAtSequence: 9,
+    epoch: 5,
+    requiresFlag: "dream-world-passage",
+  },
+  {
+    slug: "silver-knights",
+    term: "The Silver Knights",
+    category: "Organizations",
+    definition:
+      "The martial order of the City of Silver — part guard, part priesthood — who hold the night streets and the walls against the dead country, and keep the strict observances of the abandoned faith.",
+    revealAtSequence: 9,
+    epoch: 5,
+    requiresFlag: "dream-world-passage",
+  },
+  {
+    slug: "dream-world-passage",
+    term: "The Dream-World Passage",
+    category: "Mechanics",
+    definition:
+      "The rare capability to cross between the world and the sealed Forsaken Land through the shadow of Giant King's Court in the Dream World — the gate that reopened in 1351. No ship can make the crossing; this can.",
+    revealAtSequence: 9,
+    epoch: 5,
+    requiresFlag: "dream-world-passage",
+  },
 ];
+
+/**
+ * Whether a term's capability gate is satisfied (issue #132). A term with no
+ * `requiresFlag` is ungated; one with a flag shows only when the character holds
+ * it. Mirrors `passesEpochGate`'s shape so the two gates compose.
+ */
+function passesFlagGate(
+  required: AccessFlag | undefined,
+  held: readonly string[] | undefined,
+): boolean {
+  if (required === undefined) return true;
+  return held?.includes(required) ?? false;
+}
 
 /**
  * Terms visible to a character at `sequenceLevel` (progressive disclosure):
  * a term unlocks once the player's sequence is at or below its threshold. Terms
  * are also epoch-gated (issue: character epoch isolation) — a character only
- * ever sees universal mechanics plus terms tagged for its own epoch. An absent
- * `epoch` defaults to the Fifth.
+ * ever sees universal mechanics plus terms tagged for its own epoch — AND
+ * capability-gated (issue #132): a flag-gated term (the Forsaken Land's) shows
+ * only to a character holding that `accessFlag`. An absent `epoch` defaults to
+ * the Fifth; absent `accessFlags` means none held.
  */
 export function glossaryForSequence(
   sequenceLevel: number,
   epoch?: number,
+  accessFlags?: readonly string[],
 ): GlossaryTerm[] {
   return GLOSSARY_TERMS.filter(
     (term) =>
-      term.revealAtSequence >= sequenceLevel && passesEpochGate(term.epoch, epoch),
+      term.revealAtSequence >= sequenceLevel &&
+      passesEpochGate(term.epoch, epoch) &&
+      passesFlagGate(term.requiresFlag, accessFlags),
   );
 }
 
@@ -372,11 +455,19 @@ export function getGlossaryTerm(slug: string): GlossaryTerm | undefined {
  * Counted against the epoch-applicable universe only, so an other-epoch term's
  * very existence is never leaked to a character who can never reach it.
  */
-export function sealedTermCount(sequenceLevel: number, epoch?: number): number {
-  // A single pass over the epoch-applicable universe: a term is sealed when its
-  // reveal threshold is still below the player's sequence. Counting only
-  // epoch-applicable terms keeps other-epoch entries' existence hidden.
+export function sealedTermCount(
+  sequenceLevel: number,
+  epoch?: number,
+  accessFlags?: readonly string[],
+): number {
+  // A single pass over the epoch- AND capability-applicable universe: a term is
+  // sealed when its reveal threshold is still below the player's sequence.
+  // Counting only terms the character could ever reach keeps other-epoch and
+  // flag-gated (Forsaken) entries' existence hidden (issue #132).
   return GLOSSARY_TERMS.filter(
-    (term) => passesEpochGate(term.epoch, epoch) && term.revealAtSequence < sequenceLevel,
+    (term) =>
+      passesEpochGate(term.epoch, epoch) &&
+      passesFlagGate(term.requiresFlag, accessFlags) &&
+      term.revealAtSequence < sequenceLevel,
   ).length;
 }

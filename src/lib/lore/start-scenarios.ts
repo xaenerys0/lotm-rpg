@@ -44,6 +44,16 @@ export interface StartScenario {
    * the start picker only. It never biases the random draw. Empty/absent = a
    * neutral start that suits no pathway in particular. */
   pathwayAffinity?: readonly number[];
+  /**
+   * Marks an ORIGIN start in an access-gated continent (world build-out 3,
+   * issue #132) — e.g. `"forsaken-land"`. Origin scenarios are EXCLUDED from the
+   * default picker and the random "Surprise me" draw (`startScenariosForEpoch`
+   * filters them out); they surface only behind the explicit "choose an origin"
+   * affordance (`forsakenLandStartsForEpoch`). Choosing one seeds the matching
+   * `accessFlags` + `currentCity` in `createDefaultGameState`. Absent = an
+   * ordinary central-continent start.
+   */
+  origin?: "forsaken-land";
 }
 
 /** A distinct starting place for the picker, aggregated over its scenarios. */
@@ -150,6 +160,22 @@ const FIFTH_EPOCH_STARTS: readonly StartScenario[] = [
   },
 ] as const;
 
+// ── Origin starts in access-gated continents (issue #132). EXCLUDED from the
+// default pool/picker; surfaced only behind the explicit "choose an origin"
+// affordance. Choosing one seeds the continent's access flag + currentCity. ──
+const ORIGIN_STARTS: readonly StartScenario[] = [
+  {
+    id: "forsaken-city-of-silver",
+    epoch: 5,
+    location: "Silver City",
+    origin: "forsaken-land",
+    blurb:
+      "Born in the City of Silver — the last living city of the sealed Forsaken Land of the Gods, under its perpetual lightning.",
+    openingBeat: `The strange potion still burns on my tongue as the City of Silver's perpetual lightning walks the sky overhead; I have never known any world but this sealed continent, and now I am something new beneath its grey-white stone. ${SCENE_CUE}`,
+    pathwayAffinity: [3],
+  },
+] as const;
+
 // ── Earlier epochs (1-4) — one canonical start each, derived from EPOCHS. ──
 //
 // Kept in lockstep with the epoch definitions (no duplicated prose to drift).
@@ -166,20 +192,36 @@ const EARLIER_EPOCH_STARTS: readonly StartScenario[] = EPOCHS.filter(
   pathwayAffinity: [],
 }));
 
-/** Every start scenario, all epochs. */
+/** Every start scenario, all epochs — including the gated ORIGIN starts (so
+ * `getStartScenario` can resolve one by id). Default selection filters origins
+ * out; `forsakenLandStartsForEpoch` filters them in. */
 export const START_SCENARIOS: readonly StartScenario[] = [
   ...FIFTH_EPOCH_STARTS,
+  ...ORIGIN_STARTS,
   ...EARLIER_EPOCH_STARTS,
 ];
 
 /**
- * The start scenarios for a character's epoch. Resolves the epoch the same way
- * the rest of the codebase does (`getEpoch` → unknown/undefined falls back to
- * the Fifth), so the pool is always non-empty.
+ * The DEFAULT start scenarios for a character's epoch — ordinary central-
+ * continent starts only. Resolves the epoch the same way the rest of the
+ * codebase does (`getEpoch` → unknown/undefined falls back to the Fifth), so the
+ * pool is always non-empty. ORIGIN starts (issue #132) are excluded here so the
+ * random "Surprise me" draw and the default location picker never land a player
+ * in an access-gated continent; `forsakenLandStartsForEpoch` exposes those.
  */
 export function startScenariosForEpoch(epoch: number | undefined): StartScenario[] {
   const id = getEpoch(epoch).id;
-  return START_SCENARIOS.filter((s) => s.epoch === id);
+  return START_SCENARIOS.filter((s) => s.epoch === id && s.origin === undefined);
+}
+
+/**
+ * The Forsaken-Land ORIGIN start scenarios for an epoch (issue #132) — surfaced
+ * only behind the explicit "choose an origin" affordance in the picker, never in
+ * the default pool. Empty for epochs with no origin starts authored.
+ */
+export function forsakenLandStartsForEpoch(epoch: number | undefined): StartScenario[] {
+  const id = getEpoch(epoch).id;
+  return START_SCENARIOS.filter((s) => s.epoch === id && s.origin === "forsaken-land");
 }
 
 /**
