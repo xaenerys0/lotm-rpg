@@ -31,6 +31,7 @@
 // pure prose/lookup/build helpers over it.
 
 import { getEpoch } from "./epochs";
+import { HISTORICAL_LORE } from "./history";
 import { NPC_LORE } from "./npcs";
 
 export type ArchetypeRelationship =
@@ -340,6 +341,50 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Earlier-epoch archetypes (world build-out 12, issue #141) ──
+// Starts embedded in the named historical eras, each `epoch`-tagged (3-4) so
+// they surface only for a character of that epoch and never leak into the Fifth.
+// Their circle/grounding ties to a historical figure authored in `history.ts`
+// (HISTORICAL_LORE) — a distant sovereign served, not a travelling companion, so
+// no `trackedAllies` are seeded. Canon has no named First/Second-Epoch mortals to
+// build a personal circle on, so the earliest of these is the Third Epoch.
+const EARLIER_EPOCH_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "sun-god-crusader",
+    label: "A crusader of the Ancient Sun God",
+    epoch: 3,
+    location: "a war-camp of the uprising",
+    relationship: "subordinate",
+    circleNpcs: ["Grisha"],
+    blurb:
+      "A soldier of the one faith in the Glorious Era, sworn to the Ancient Sun God.",
+    openingBeat: `The strange draught still burns in me as I take my place among the host's prayer-fires, the banners of the one faith snapping overhead and the field-temple of the Ancient Sun God bright at the camp's heart — I march as the least of the faithful, and whatever I have just become, it must look like nothing more than the god's blessing. ${SCENE_CUE}`,
+    pathwayAffinity: [3],
+    seeds: {
+      facts: [
+        "You march with the crusading host of the Ancient Sun God in the Third Epoch's Glorious Era, one of countless faithful sworn to the one god.",
+      ],
+    },
+  },
+  {
+    id: "solomon-empire-legionary",
+    label: "A legionary of the Solomon Empire",
+    epoch: 4,
+    location: "the outskirts of the Solomon Empire's capital",
+    relationship: "subordinate",
+    circleNpcs: ["Solomon"],
+    blurb:
+      "A soldier under the Black Emperor's banner in the god-empire of the Fourth Epoch.",
+    openingBeat: `The strange draught still burns in me as I stand among the ranks at the gates of Saint Millom, the Solomon Empire's black capital, where the Black Emperor's word is law and his war upon the gods never ends — I am one spear among thousands, and whatever I have just become, none of my officers must ever see it. ${SCENE_CUE}`,
+    pathwayAffinity: [13],
+    seeds: {
+      facts: [
+        "You serve in the legions of the Solomon Empire under the distant sovereignty of the Black Emperor; you are a face in his vast god-empire, not a confidant.",
+      ],
+    },
+  },
+] as const;
+
 /** Every start archetype, all regions/epochs (append-only) — including gated
  * ORIGIN archetypes (so `getStartArchetype` resolves them by id). Default
  * selection filters origins out; `forsakenLandArchetypesForEpoch` filters in. */
@@ -349,6 +394,7 @@ export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...LOEN_ARCHETYPES,
   ...INTIS_ARCHETYPES,
   ...FORSAKEN_ARCHETYPES,
+  ...EARLIER_EPOCH_ARCHETYPES,
 ];
 
 /**
@@ -513,7 +559,10 @@ export function buildCustomArchetype(
 export function circleNpcSuggestions(epoch: number | undefined): string[] {
   const id = getEpoch(epoch).id;
   const names = new Set<string>();
-  for (const entry of NPC_LORE) {
+  // Both the Fifth-Epoch NPC roster and the named historical figures
+  // (`history.ts`, issue #141) are eligible, each epoch-gated, so an earlier-
+  // epoch custom circle is offered its era's faces, not Fifth-Epoch ones.
+  for (const entry of [...NPC_LORE, ...HISTORICAL_LORE]) {
     if (entry.epoch === undefined || entry.epoch === id) {
       for (const name of entry.npcs) names.add(name);
     }

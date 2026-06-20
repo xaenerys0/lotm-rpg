@@ -11,12 +11,17 @@ import {
   type ArchetypeRelationship,
 } from "./start-archetypes";
 import { NPC_LORE } from "./npcs";
+import { HISTORICAL_LORE } from "./history";
 import { ORGANIZATION_LORE } from "./organizations";
 import { getEpoch } from "./epochs";
 import { ALL_PATHWAYS } from "@/lib/rules";
 
-// Every NPC name the lore knows (flattened from each entry's `npcs` list).
-const KNOWN_NPC_NAMES = new Set(NPC_LORE.flatMap((entry) => entry.npcs));
+// Every NPC name the lore knows (flattened from each entry's `npcs` list) —
+// including the named historical figures (history.ts, issue #141) that earlier-
+// epoch archetypes tie to.
+const KNOWN_NPC_NAMES = new Set(
+  [...NPC_LORE, ...HISTORICAL_LORE].flatMap((entry) => entry.npcs),
+);
 // Every organization slug the lore knows.
 const KNOWN_ORG_SLUGS = new Set(ORGANIZATION_LORE.map((entry) => entry.slug));
 const PLAYABLE_PATHWAY_IDS = new Set(ALL_PATHWAYS.map((p) => p.id));
@@ -175,6 +180,32 @@ describe("START_ARCHETYPES data integrity", () => {
     expect(startArchetypesForEpoch(5).map((a) => a.id)).toEqual(
       expect.arrayContaining(["trier-blazing-sun-acolyte", "trier-inquisition-initiate"]),
     );
+  });
+
+  it("ships the earlier-epoch archetypes, era-tagged and never Fifth (issue #141)", () => {
+    // Epoch 3 (Glorious Era) and Epoch 4 (Solomon Empire) starts, each tied to a
+    // named historical figure from history.ts and surfaced by the SAME picker.
+    const crusader = getStartArchetype("sun-god-crusader");
+    expect(crusader?.epoch).toBe(3);
+    expect(crusader?.origin).toBeUndefined();
+    expect(crusader?.circleNpcs).toContain("Grisha");
+    // A distant sovereign served, not a travelling companion — no tracked allies.
+    expect(crusader?.seeds.trackedAllies).toBeUndefined();
+
+    const legionary = getStartArchetype("solomon-empire-legionary");
+    expect(legionary?.epoch).toBe(4);
+    expect(legionary?.origin).toBeUndefined();
+    expect(legionary?.circleNpcs).toContain("Solomon");
+    expect(legionary?.seeds.trackedAllies).toBeUndefined();
+
+    // They surface for their own epoch's picker and never for the Fifth.
+    expect(startArchetypesForEpoch(3).map((a) => a.id)).toContain("sun-god-crusader");
+    expect(startArchetypesForEpoch(4).map((a) => a.id)).toContain(
+      "solomon-empire-legionary",
+    );
+    const fifthIds = startArchetypesForEpoch(5).map((a) => a.id);
+    expect(fifthIds).not.toContain("sun-god-crusader");
+    expect(fifthIds).not.toContain("solomon-empire-legionary");
   });
 });
 
