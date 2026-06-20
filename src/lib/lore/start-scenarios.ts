@@ -164,7 +164,9 @@ const FIFTH_EPOCH_STARTS: readonly StartScenario[] = [
     location: "Constant City",
     blurb: "The Wind City — Loen's coal-and-steel second city on the Midseashire coast.",
     openingBeat: `The blast furnaces of Constant throw their red light across the night as the potion finishes its work in me, the hard sea wind off Midseashire scattering the coal-smoke and the Wind City roaring on around me, unaware that one of its own has just stopped being ordinary. ${SCENE_CUE}`,
-    pathwayAffinity: [8],
+    // Paragon (id 19) — the Savant pathway of the God of Steam & Machinery, whose
+    // great seat outside the capital is industrial Constant.
+    pathwayAffinity: [19],
   },
 ] as const;
 

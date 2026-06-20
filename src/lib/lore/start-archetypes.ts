@@ -218,7 +218,9 @@ const LOEN_ARCHETYPES: readonly StartArchetype[] = [
     blurb:
       "You move in the coal-and-steel money of the Wind City, close to the McGoverns and their easy-going son Welch.",
     openingBeat: `The strange potion still burns in me as the blast furnaces of Constant glow against the night, the hard sea wind tugging at my coat outside the McGovern townhouse where I am counted a friend of the family — and I understand that whatever I have just become, none of this comfortable world must learn it. ${SCENE_CUE}`,
-    pathwayAffinity: [8],
+    // Paragon (id 19) — the Savant pathway of the God of Steam & Machinery, the
+    // industrial Wind City's defining pathway.
+    pathwayAffinity: [19],
     seeds: {
       trackedAllies: ["Welch McGovern"],
       facts: [
