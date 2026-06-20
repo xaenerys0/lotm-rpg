@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState, useSyncExternalStore } from "react";
+import { useCallback, useRef, useState, useSyncExternalStore } from "react";
 
 import {
   buildSceneArtPrompt,
@@ -78,7 +78,20 @@ function loadImageConfig(): ImageProviderConfig | null {
 }
 
 export function DevSceneArtHarness() {
-  const config = useSyncExternalStore(noopSubscribe, loadImageConfig, () => null);
+  // getSnapshot must return a STABLE reference — loadImageConfig JSON-parses a
+  // fresh object each call, which would trip React's "getSnapshot should be
+  // cached" infinite loop once a config exists. Cache the first read (the same
+  // useRef pattern image-provider-config.tsx uses). `undefined` = not-yet-read,
+  // since `null` (no config) is a valid resolved value.
+  const cacheRef = useRef<ImageProviderConfig | null | undefined>(undefined);
+  const config = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (cacheRef.current === undefined) cacheRef.current = loadImageConfig();
+      return cacheRef.current;
+    },
+    () => null,
+  );
   const supported = imageArtSupported(config);
   const [results, setResults] = useState<Record<string, Result>>({});
 
@@ -152,6 +165,7 @@ export function DevSceneArtHarness() {
                   type="button"
                   onClick={() => void run(sample)}
                   disabled={!supported || result.status === "loading"}
+                  aria-label={`Generate ${sample.eventType} illustration`}
                   className="min-h-[24px] rounded-md border border-amber/40 bg-amber/[0.08] px-3 py-1.5 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/60 hover:bg-amber/[0.14] disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   {result.status === "loading" ? "Generating…" : "Generate"}

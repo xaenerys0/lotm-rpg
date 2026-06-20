@@ -62,9 +62,8 @@ export function createTestCharacter(
   const target = getSequence(pathwayId, 8);
   const gameState: GameState = {
     ...base,
+    // sanity/maxSanity already 100 from createDefaultGameState.
     sequenceLevel: 9,
-    sanity: 100,
-    maxSanity: 100,
     funds: 100_000,
     // A fully-digested current potion unlocks the AdvancementPanel.
     digestion: { ...createDigestionState(pathwayId, 9), progress: 100, complete: true },
