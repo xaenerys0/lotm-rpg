@@ -192,8 +192,21 @@ import {
 // engine-decided turn (advancement / apotheosis) carries through
 // ENGINE_RESOLUTION. The engine already committed the mechanical effects, so the
 // response only narrates — no validation work to do.
-function engineResolution(response: AIResponse): ValidatedAIResponse {
-  return { response, validation: { valid: true, violations: [] } };
+//
+// `journalFlag` deterministically marks the turn as a scene-art trigger moment
+// (issue #20): advancement / apotheosis / pillar ascension are guaranteed
+// illustrate-worthy, but the consequences-phase SceneArt gate reads
+// `response.journalEntry`, which on an engine-decided turn would otherwise be
+// absent (or the narrator's optional, unreliable self-report). Attaching the
+// engine's own flag — the same summary already written to the durable journal —
+// makes the illustration fire regardless of provider/narrator, the
+// engine-truth-over-AI-flag pattern used elsewhere.
+function engineResolution(
+  response: AIResponse,
+  journalFlag?: { summary: string; eventType: string },
+): ValidatedAIResponse {
+  const merged = journalFlag ? { ...response, journalEntry: journalFlag } : response;
+  return { response: merged, validation: { valid: true, violations: [] } };
 }
 
 function loadProviderConfig(): ProviderConfig | null {
@@ -642,10 +655,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     endingInFlight.current = true;
     const result = attemptApotheosis(session);
     if (result.outcome === "ascended") {
+      const apotheosisSummary = `Became ${result.honorific} — the Sequence 0 True God of the pathway.`;
       appendJournalEntries(session.id, [
         buildJournalEntry(session.gameState, session.turnCount, {
           eventType: "advancement",
-          summary: `Became ${result.honorific} — the Sequence 0 True God of the pathway.`,
+          summary: apotheosisSummary,
           narrative: result.tease,
           arc: "Sequence 0",
         }),
@@ -656,7 +670,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       updateSession(
         transition(result.session, {
           type: "ENGINE_RESOLUTION",
-          result: engineResolution({ narrative: result.tease }),
+          result: engineResolution(
+            { narrative: result.tease },
+            { eventType: "advancement", summary: apotheosisSummary },
+          ),
           playerAction: `I seize the throne and ascend to Sequence 0, becoming ${result.honorific}, a True God of the pathway.`,
         }),
       );
@@ -684,10 +701,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     endingInFlight.current = true;
     const result = attemptPillarAscension(session);
     if (result.outcome === "enthroned") {
+      const pillarSummary = `Ascended above Sequence 0 to become ${result.pillarName}, one of the four Pillars of the universe.`;
       appendJournalEntries(session.id, [
         buildJournalEntry(session.gameState, session.turnCount, {
           eventType: "advancement",
-          summary: `Ascended above Sequence 0 to become ${result.pillarName}, one of the four Pillars of the universe.`,
+          summary: pillarSummary,
           narrative: result.tease,
           arc: "Above the Sequence",
         }),
@@ -695,7 +713,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       updateSession(
         transition(result.session, {
           type: "ENGINE_RESOLUTION",
-          result: engineResolution({ narrative: result.tease }),
+          result: engineResolution(
+            { narrative: result.tease },
+            { eventType: "advancement", summary: pillarSummary },
+          ),
           playerAction: `I integrate my family's godhoods and ascend above the sequences, becoming ${result.pillarName}, a Pillar of the universe.`,
         }),
       );
@@ -780,10 +801,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             // Deterministic scene already set.
           }
         }
+        const advancementSummary = `Advanced to Sequence ${result.newSequenceLevel}, ${result.roleName}.`;
         appendJournalEntries(session.id, [
           buildJournalEntry(advanced.gameState, advanced.turnCount, {
             eventType: "advancement",
-            summary: `Advanced to Sequence ${result.newSequenceLevel}, ${result.roleName}.`,
+            summary: advancementSummary,
             narrative: scene,
             arc: `Sequence ${result.newSequenceLevel}`,
           }),
@@ -797,6 +819,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           aiResponse
             ? { ...narrationOnly(aiResponse), narrative: scene }
             : { narrative: scene },
+          { eventType: "advancement", summary: advancementSummary },
         );
         const playerAction = `I drink the Sequence ${result.newSequenceLevel} potion and undergo the advancement to ${result.roleName}${
           result.ritual ? `, performing the rite: ${result.ritual.description}` : ""
@@ -1239,6 +1262,16 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // reveal shown the turn the player earns the secret.
   const [methodNotice, setMethodNotice] = useState<string | null>(null);
 
+  // Identity exposure (issue #22) is an engine-decided "major-event" computed at
+  // Continue-time — after the consequences panel has rendered — so it gets its
+  // own scene-art moment (issue #20) in the following scene, the way the death
+  // screen mounts its own illustration. Carries the turn it fired on so the
+  // cache key is stable; cleared when the next turn resolves.
+  const [exposureMoment, setExposureMoment] = useState<{
+    turn: number;
+    summary: string;
+  } | null>(null);
+
   // In-turn true-self change (character-info storage): the AI may flag a
   // declaration the player made; it is NEVER applied without this confirm.
   const [selfChangeHandledTurn, setSelfChangeHandledTurn] = useState<number | null>(null);
@@ -1324,6 +1357,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
   const handleContinue = useCallback(() => {
     if (!session) return;
+    // A prior turn's exposure illustration only lingers for the one scene.
+    setExposureMoment(null);
     const selectedChoice = session.currentChoices?.find(
       (c) => c.id === session.selectedChoiceId,
     );
@@ -1371,6 +1406,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           identityState = applyExposure(identityState, exposure);
           exposureNarrative = `${exposure.npc} looks at you a heartbeat too long — and you see the recognition land. Two of your faces are now one person to them.`;
           setFreeTextNotice(exposureNarrative);
+          // A "major-event" worth illustrating (issue #20) — shown in the next scene.
+          setExposureMoment({
+            turn: session.turnCount,
+            summary: `An identity unravels — ${exposure.npc} sees two faces become one`,
+          });
         }
       }
 
@@ -1623,13 +1663,22 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
         {/* Permadeath: the story is over; the record remains (issue #12). */}
         {session.ended ? (
-          <DeathScreen ended={session.ended} onFullRestart={handleFullRestart} />
+          <DeathScreen
+            ended={session.ended}
+            session={session}
+            imageConfig={imageConfig}
+            sceneArtEnabled={preferences.sceneArtEnabled}
+            onFullRestart={handleFullRestart}
+          />
         ) : combat ? (
           <CombatEncounterView
             encounter={combat}
             gameState={session.gameState}
             abilities={combatAbilities}
             config={providerConfig}
+            sessionId={session.id}
+            imageConfig={imageConfig}
+            sceneArtEnabled={preferences.sceneArtEnabled}
             // Persona / true-self / recognition contexts (shared with the normal
             // turn) so the fight is narrated as the face the player wears.
             {...personaPromptContexts(session)}
@@ -1652,6 +1701,20 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   onFreeText={handleFreeText}
                   freeTextNotice={freeTextNotice}
                 />
+                {/* Identity-exposure illustration (issues #22/#20): an engine
+                    major-event computed at Continue, illustrated in the scene
+                    that follows it. */}
+                {exposureMoment && (
+                  <SceneArt
+                    artKey={`${session.id}:exposure:${exposureMoment.turn}`}
+                    context={{
+                      summary: exposureMoment.summary,
+                      location: session.gameState.location,
+                    }}
+                    imageConfig={imageConfig}
+                    enabled={preferences.sceneArtEnabled}
+                  />
+                )}
                 <QuestLogPanel
                   session={session}
                   busy={facingFate}
@@ -1880,11 +1943,18 @@ function FailurePanel({
 
 function DeathScreen({
   ended,
+  session,
+  imageConfig,
+  sceneArtEnabled,
   onFullRestart,
 }: {
   ended: NonNullable<GameSession["ended"]>;
+  session: GameSession;
+  imageConfig: ImageProviderConfig | null;
+  sceneArtEnabled: boolean;
   onFullRestart: () => void;
 }) {
+  const seq = getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel);
   return (
     <div className="rounded-lg border border-crimson/40 bg-crimson/[0.05] p-8 text-center animate-fade-in">
       <h2 className="font-serif text-2xl font-bold text-sanity-low">
@@ -1893,6 +1963,22 @@ function DeathScreen({
       <p className="mx-auto mt-4 max-w-xl font-serif text-base leading-relaxed whitespace-pre-wrap text-foreground/85">
         {ended.scene}
       </p>
+      {/* Death is a scene-art trigger (issue #20). The end screen replaces the
+          consequences phase, so it mounts SceneArt itself — keyed `:death` so it
+          never collides with the per-turn or combat cache. */}
+      <SceneArt
+        artKey={`${session.id}:death`}
+        context={{
+          summary:
+            ended.fate === "dead"
+              ? "A Beyonder's final descent into the dark — the story ends here"
+              : "A Beyonder loses control and becomes something else entirely",
+          location: session.gameState.location,
+          ...(seq ? { pathwayName: seq.name } : {}),
+        }}
+        imageConfig={imageConfig}
+        enabled={sceneArtEnabled}
+      />
       <p className="mt-6 text-xs leading-relaxed text-muted">
         This chronicle is closed, but it is not erased — its journal remains readable as a
         historical record, and the world remembers what happened here.

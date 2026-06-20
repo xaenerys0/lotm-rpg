@@ -18,10 +18,11 @@ import { noopSubscribe } from "@/lib/react";
 // images, or point at a local Stable Diffusion / Ollama image model, or leave
 // it unset. BYOK, browser-direct, key stored only in this browser.
 
+// Ollama Cloud is intentionally absent: ollama.com hosts no image-generation
+// endpoint (its image models run locally only), so it can never produce art.
 const PROVIDERS: { id: ImageProviderId; label: string }[] = [
   { id: "openai", label: "OpenAI" },
   { id: "ollama", label: "Ollama (local)" },
-  { id: "ollama-cloud", label: "Ollama Cloud" },
   { id: "local-sd", label: "Stable Diffusion (local)" },
 ];
 
@@ -217,7 +218,7 @@ export function ImageProviderConfig() {
               type={showKey ? "text" : "password"}
               value={form.apiKey}
               onChange={(e) => updateField("apiKey", e.target.value)}
-              placeholder={form.providerId === "openai" ? "sk-..." : "ollama.com API key"}
+              placeholder="sk-..."
               autoComplete="off"
               className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
             />
@@ -236,11 +237,9 @@ export function ImageProviderConfig() {
         <p className="mt-2 text-xs leading-relaxed text-muted">
           {form.providerId === "openai"
             ? "Your OpenAI key, used only for images — independent of your narrator provider. Stored only in this browser, sent only to OpenAI. Roughly $0.04 per image."
-            : form.providerId === "ollama-cloud"
-              ? "Your ollama.com key, used only for images. Image generation is newer on Ollama Cloud — if your plan doesn't serve an image model, illustrations simply stay hidden."
-              : form.providerId === "ollama"
-                ? "Local Ollama (experimental image generation) — no key required. Ensure Ollama is running with an image model pulled (e.g. z-image-turbo)."
-                : "A local Stable Diffusion WebUI (Automatic1111/Forge) with its API enabled — no key required. Set the base URL below."}
+            : form.providerId === "ollama"
+              ? "Local Ollama (experimental image generation) — no key required. Ensure Ollama is running with an image model pulled (e.g. z-image-turbo). Image generation is on-device only — an ollama.com cloud key has no image endpoint to call."
+              : "A local Stable Diffusion WebUI (Automatic1111/Forge) with its API enabled — no key required. Set the base URL below."}
         </p>
       </fieldset>
 

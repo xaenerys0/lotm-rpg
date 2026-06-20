@@ -17,9 +17,17 @@ import {
   type TerrainAdvantage,
 } from "@/lib/game";
 import { generate } from "@/lib/ai";
-import type { GameState, LoreContext, ProviderConfig } from "@/lib/ai";
+import type {
+  GameState,
+  ImageProviderConfig,
+  LoreContext,
+  ProviderConfig,
+  SceneArtContext,
+} from "@/lib/ai";
 import { getPathway, getSequence } from "@/lib/rules";
 import type { Item } from "@/lib/types/rules";
+
+import { SceneArt } from "./scene-art";
 
 const INTELLIGENCE_OPTIONS: { value: IntelligenceLevel; label: string }[] = [
   { value: "none", label: "None — you know nothing of this foe" },
@@ -42,6 +50,23 @@ const OUTCOME_COPY: Record<CombatOutcome, { title: string; tone: string }> = {
 
 const EMPTY_LORE: LoreContext = { entries: [], totalTokens: 0 };
 
+// The illustrated-moment description for a resolved fight (issue #20). Combat is
+// one of the scene-art trigger moments, but the encounter runs on its own
+// surface (outside the normal consequences phase where SceneArt is otherwise
+// mounted), so the resolution screen builds its own context.
+function combatArtContext(
+  encounter: CombatEncounter,
+  gameState: GameState,
+): SceneArtContext {
+  const seq = getSequence(gameState.pathwayId, gameState.sequenceLevel);
+  const title = encounter.outcome ? OUTCOME_COPY[encounter.outcome].title : "Aftermath";
+  return {
+    summary: `${title} — the clash with ${encounter.enemy.name}`,
+    location: gameState.location,
+    ...(seq ? { pathwayName: seq.name } : {}),
+  };
+}
+
 /**
  * The combat encounter UI (issue #10): a mechanical preparation phase, an
  * exchange of inline tactical decision points, and a resolution screen. The
@@ -54,6 +79,9 @@ export function CombatEncounterView({
   gameState,
   abilities,
   config,
+  sessionId,
+  imageConfig,
+  sceneArtEnabled,
   identityContext,
   profileContext,
   recognitionContext,
@@ -65,6 +93,12 @@ export function CombatEncounterView({
   gameState: GameState;
   abilities: string[];
   config: ProviderConfig | null;
+  /** The active save id — namespaces the combat illustration's cache key. */
+  sessionId: string;
+  /** Independently-configured image provider for scene art (issue #20). */
+  imageConfig: ImageProviderConfig | null;
+  /** Whether the player has opted into AI scene illustrations. */
+  sceneArtEnabled: boolean;
   /** The worn persona's narrator presentation (issue #22), so the fight is
    * narrated as the face the player is actually wearing. Null when none worn. */
   identityContext?: string | null;
@@ -185,6 +219,10 @@ export function CombatEncounterView({
           result={encounter.result}
           aiNarrative={resolutionNarrative}
           narrating={narrating}
+          artKey={`${sessionId}:combat:${encounter.id}`}
+          artContext={combatArtContext(encounter, gameState)}
+          imageConfig={imageConfig}
+          sceneArtEnabled={sceneArtEnabled}
           onContinue={() => onApplyResult(encounter.result!)}
         />
       )}
@@ -529,11 +567,19 @@ function ResolutionPhase({
   result,
   aiNarrative,
   narrating,
+  artKey,
+  artContext,
+  imageConfig,
+  sceneArtEnabled,
   onContinue,
 }: {
   result: CombatResult;
   aiNarrative: string | undefined;
   narrating: boolean;
+  artKey: string;
+  artContext: SceneArtContext;
+  imageConfig: ImageProviderConfig | null;
+  sceneArtEnabled: boolean;
   onContinue: () => void;
 }) {
   const copy = OUTCOME_COPY[result.outcome];
@@ -555,6 +601,16 @@ function ResolutionPhase({
           )}
         </p>
       </div>
+
+      {/* Scene art (issue #20): combat is a trigger moment. Renders from cache
+          instantly, generates once when the player opted in + configured an
+          image provider, and stays silent on failure. */}
+      <SceneArt
+        artKey={artKey}
+        context={artContext}
+        imageConfig={imageConfig}
+        enabled={sceneArtEnabled}
+      />
 
       <div className="mb-6 space-y-3 rounded-md border border-border/30 bg-background/50 p-4">
         <p className="text-[10px] tracking-[0.2em] text-muted uppercase">Consequences</p>

@@ -15,6 +15,7 @@ import { getCumulativeAbilityGroups, getPathway, getSequence } from "@/lib/rules
 import { classifySanityTier } from "@/lib/ai";
 import { getEpoch } from "@/lib/lore";
 import {
+  isUndeletableCharacter,
   activeIdentity,
   addProfileNote,
   applyProfileChange,
@@ -398,12 +399,15 @@ export function CharacterSheet() {
       </section>
 
       {/* Delete character — two-step confirm so it is never a single misclick.
-          Keyed by session id so switching Beyonders resets any pending state. */}
-      <DeleteCharacter
-        key={session.id}
-        name={state.characterName ?? "Unnamed Beyonder"}
-        onDelete={() => handleDelete(session.id)}
-      />
+          Keyed by session id so switching Beyonders resets any pending state.
+          The premade dev test character is protected from deletion. */}
+      {!isUndeletableCharacter(session.id) && (
+        <DeleteCharacter
+          key={session.id}
+          name={state.characterName ?? "Unnamed Beyonder"}
+          onDelete={() => handleDelete(session.id)}
+        />
+      )}
     </div>
   );
 }

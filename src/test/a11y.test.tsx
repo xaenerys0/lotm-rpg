@@ -8,6 +8,7 @@ import { SignupForm } from "@/components/auth/signup-form";
 import { ProviderConfig } from "@/components/game/provider-config";
 import { ImageProviderConfig } from "@/components/game/image-provider-config";
 import { SanityPreferences } from "@/components/game/sanity-preferences";
+import { DevSceneArtHarness } from "@/components/game/dev-scene-art-harness";
 import { CharacterCreation } from "@/components/game/character-creation";
 import { PlayDashboard } from "@/components/game/play-dashboard";
 import { GameSidebar } from "@/components/game/game-sidebar";
@@ -105,6 +106,10 @@ describe("accessibility — game shell", () => {
 
   it("sanity preferences toggle has no violations", async () => {
     await expectNoAxeViolations(<SanityPreferences />);
+  });
+
+  it("dev scene-art harness has no violations", async () => {
+    await expectNoAxeViolations(<DevSceneArtHarness />);
   });
 });
 
@@ -300,6 +305,9 @@ describe("accessibility — combat", () => {
         gameState={gameState}
         abilities={abilities}
         config={null}
+        sessionId="a11y-session"
+        imageConfig={null}
+        sceneArtEnabled={false}
         onUpdate={noop}
         onApplyResult={noop}
         onExit={noop}

@@ -8,19 +8,26 @@ import { fetchWithErrorHandling } from "./providers";
 // the player configures images separately, with their own key/base URL/model.
 //
 // Browser-direct, BYOK — exactly like the text providers (`providers.ts`). The
-// key never touches our servers; only Ollama Cloud is proxied (for CORS), the
-// same workaround the text adapter uses.
+// key never touches our servers, and no image request is proxied: every backend
+// here (OpenAI, local Ollama, local Stable Diffusion) is reachable directly from
+// the browser. (Ollama *Cloud* is not an image backend — see the NOTE below.)
 //
 // Supported backends and their transports:
-//   - openai        → OpenAI Images `/images/generations` (dall-e-3 / gpt-image-1)
+//   - openai        → OpenAI Images `/images/generations` (gpt-image-1 — dall-e
+//                     was removed from the API on 2026-05-12)
 //   - ollama        → local Ollama's OpenAI-compatible `/v1/images/generations`
 //                     (experimental image generation, e.g. z-image / flux2-klein)
-//   - ollama-cloud  → same OpenAI-compatible shape, via the CORS proxy
 //   - local-sd      → a local Stable Diffusion WebUI (Automatic1111/Forge)
 //                     `/sdapi/v1/txt2img`, returning base64 PNGs
+//
+// NOTE: Ollama *Cloud* is intentionally NOT an image backend. ollama.com hosts
+// only chat/vision models — its image-generation models (z-image / flux2-klein)
+// ship as LOCAL, on-device generation only (per Ollama's docs), so a cloud key
+// has no image endpoint to call. Image generation runs via local Ollama, OpenAI,
+// or a local Stable Diffusion WebUI instead.
 // ---------------------------------------------------------------------------
 
-export type ImageProviderId = "openai" | "ollama" | "ollama-cloud" | "local-sd";
+export type ImageProviderId = "openai" | "ollama" | "local-sd";
 
 export interface ImageProviderConfig {
   providerId: ImageProviderId;
@@ -65,14 +72,6 @@ const IMAGE_PROVIDERS: Record<ImageProviderId, ImageProviderMeta> = {
     defaultBaseUrl: "http://localhost:11434/v1",
     transport: "openai-images",
   },
-  "ollama-cloud": {
-    requiresKey: true,
-    needsBaseUrl: false,
-    // Same-origin proxy — ollama.com sends no CORS headers (see the text
-    // adapter's `/api/proxy/ollama-cloud` workaround).
-    defaultBaseUrl: "/api/proxy/ollama-cloud",
-    transport: "openai-images",
-  },
   "local-sd": {
     requiresKey: false,
     needsBaseUrl: true,
@@ -85,17 +84,14 @@ const IMAGE_PROVIDERS: Record<ImageProviderId, ImageProviderMeta> = {
  * for the local/cloud diffusion backends, whose catalogs vary per install. */
 export const IMAGE_PROVIDER_MODELS: Record<ImageProviderId, ImageModelOption[]> = {
   openai: [
-    { id: "dall-e-3", name: "DALL·E 3" },
+    { id: "gpt-image-2", name: "GPT Image 2" },
+    { id: "gpt-image-1.5", name: "GPT Image 1.5" },
     { id: "gpt-image-1", name: "GPT Image 1" },
-    { id: "dall-e-2", name: "DALL·E 2" },
+    { id: "gpt-image-1-mini", name: "GPT Image 1 Mini" },
   ],
   ollama: [
     { id: "z-image-turbo", name: "Z-Image Turbo" },
     { id: "x/flux2-klein:4b", name: "FLUX.2 Klein 4B" },
-    { id: "x/flux2-klein:9b", name: "FLUX.2 Klein 9B" },
-  ],
-  "ollama-cloud": [
-    { id: "z-image-turbo", name: "Z-Image Turbo" },
     { id: "x/flux2-klein:9b", name: "FLUX.2 Klein 9B" },
   ],
   // The WebUI uses its loaded checkpoint; the model field is an optional override.
@@ -174,13 +170,14 @@ async function generateViaOpenAIImages(
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`;
 
-  // A minimal, widely-accepted body. OpenAI honours `size`/`response_format`
-  // (and gpt-image-1 rejects `response_format`, so it is scoped to dall-e);
-  // Ollama's diffusion endpoint takes the prompt and ignores the extras.
+  // A minimal, widely-accepted body. OpenAI's gpt-image models honour `size` and
+  // always return base64 (`b64_json`) — they REJECT `response_format` with HTTP
+  // 400 "Unknown parameter: 'response_format'", and the old dall-e-2/3 models
+  // (which did take it) were removed from the API on 2026-05-12, so we never send
+  // it. Ollama's diffusion endpoint takes the prompt and ignores the extras.
   const body: Record<string, unknown> = { model: config.model, prompt, n: 1 };
   if (config.providerId === "openai") {
     body.size = "1024x1024";
-    if (config.model.startsWith("dall-e")) body.response_format = "b64_json";
   }
 
   const payload = await postJson(
