@@ -249,6 +249,52 @@ const LOEN_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Intis Republic archetypes (world build-out 6, issue #135) — begin embedded
+// in a circle of the sun-faith capital, referencing the Trier NPCs/orgs added in
+// `npcs.ts`/`organizations.ts`. (The "assistant to the Halls" circle the issue
+// notes is sited in Backlund, where Lady Audrey Hall lives — it ships as
+// `backlund-hall-attendant`, so it is not duplicated here.) ──
+const INTIS_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "trier-blazing-sun-acolyte",
+    label: "An acolyte of the Church of the Eternal Blazing Sun in Trier",
+    epoch: 5,
+    location: "Trier",
+    relationship: "subordinate",
+    circleNpcs: ["Plessy Descartes"],
+    affiliationOrg: "blazing-sun-church-members",
+    blurb:
+      "You serve at Saint Viève Cathedral in Trier's Island District, under the eye of Cardinal Plessy Descartes.",
+    openingBeat: `The strange potion still burns in me as dawn gilds the dome of Saint Viève Cathedral and the white-robed clergy raise their arms to greet the sun, and I — the most junior of the Cardinal's acolytes — must keep my head bowed and let no one in this house of light see what I have become. ${SCENE_CUE}`,
+    pathwayAffinity: [3],
+    seeds: {
+      trackedAllies: ["Plessy Descartes"],
+      facts: [
+        "You serve as an acolyte of the Church of the Eternal Blazing Sun at Saint Viève Cathedral in Trier, under Cardinal Plessy Descartes, who knows your face among the clergy.",
+      ],
+    },
+  },
+  {
+    id: "trier-inquisition-initiate",
+    label: "An initiate of the Blazing Sun's Inquisition in Trier",
+    epoch: 5,
+    location: "Trier",
+    relationship: "subordinate",
+    circleNpcs: ["Angoulême de François"],
+    affiliationOrg: "blazing-sun-church-members",
+    blurb:
+      "You serve under Deacon Angoulême de François, who hunts heresy in Trier with a censer in one hand and a police badge in the other.",
+    openingBeat: `The change is still settling into my blood as I report to Deacon Angoulême de François in the lamplit back-office of Quartier 13, where the Inquisition and the city police are one and the same — and I understand that the newest of his hunters of heresy must now hide a heresy of his own. ${SCENE_CUE}`,
+    pathwayAffinity: [3],
+    seeds: {
+      trackedAllies: ["Angoulême de François"],
+      facts: [
+        "You serve under Deacon Angoulême de François, a Purifier of the Church of the Eternal Blazing Sun's Inquisition and a Deputy Assistant Commissioner of Trier's police; he counts you among his junior hunters.",
+      ],
+    },
+  },
+] as const;
+
 // ── Forsaken Land of the Gods — ORIGIN archetypes (issue #132). Begin a native
 // of the sealed Eastern Continent. EXCLUDED from the default picker; surfaced
 // only behind the explicit "choose an origin" affordance, and seed the
@@ -301,6 +347,7 @@ export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...TINGEN_ARCHETYPES,
   ...BACKLUND_ARCHETYPES,
   ...LOEN_ARCHETYPES,
+  ...INTIS_ARCHETYPES,
   ...FORSAKEN_ARCHETYPES,
 ];
 

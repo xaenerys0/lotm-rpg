@@ -297,4 +297,50 @@ export const NPC_LORE: LoreEntry[] = [
     tokenCount: 230,
     narratorOnly: false,
   },
+  // ── Intis Republic — Trier (world build-out 6, issue #135) ──
+  // City-keyed "trier" so the narrator carries them for a character in the
+  // Intis capital. Deliberately NOT pathway-keyed (the #132 leak rule): a
+  // `pathway` field would inject a Trier NPC into any same-pathway character's
+  // prompt; the Sun pathway is named only in prose. narratorOnly for the
+  // Angel/Saint/Beyonder truths beneath their public church roles. All canon
+  // verified against corpus/wiki (see CLAUDE.md) — NOT memory.
+  {
+    slug: "npc-saint-vieve",
+    title: "Saint Viève — Guardian Angel of Trier",
+    category: "npc",
+    content: `Saint Viève is the only female angel named in the Bible of the Church of the Eternal Blazing Sun, venerated as one of the three guardian angels of Trier and the namesake of the great cathedral that crowns the Island District. To the faithful of the sunlit capital she is the radiant protector of their city; in truth she is an Angel-tier Beyonder of the Sun pathway, a figure draped in white robes shot with gold who seems crafted from pure light — emerald-eyed, blond, translucent, and divine. Her ties are to the Church she serves and to the city she guards: she answers the cathedral's gravest needs, descends against the servants of the Outer Deities when they threaten Trier, and stands among the powers that have held the capital safe across the ages. Most Trierans will never see her with their own eyes; that they believe in her at all is the measure of how deeply the Blazing Sun is woven into the life of the City of Fashion.`,
+    epoch: 5,
+    city: "trier",
+    npcs: ["Viève"],
+    sequences: [1],
+    tags: ["trier", "eternal-blazing-sun", "angel", "sun-pathway", "guardian"],
+    tokenCount: 215,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-plessy-descartes",
+    title: "Cardinal Plessy Descartes — Head of the Trier Diocese",
+    category: "npc",
+    content: `Cardinal Plessy Descartes oversees the Trier diocese of the Church of the Eternal Blazing Sun from Saint Viève Cathedral in the Island District. An elderly man with high cheekbones and grizzled blond hair, his manner is mild rather than stern, yet a faint radiance clings to him that makes direct eye contact difficult and seems to leave a room without shadows — the mark of a Saint-tier Beyonder of the Sun pathway. He is the Church's senior authority in the capital: he commands its clergy, blesses its rites, and directs its sterner work, summoning Purifiers of the Inquisition to Saint Viève Cathedral and raising the deserving among them to the rank of deacon. Patient, watchful, and utterly devoted to the radiant order of the sun-faith, the Cardinal is the human face of the Church's power in Trier — the man through whom its will reaches both the pulpit and the shadows the Inquisition is set to burn.`,
+    epoch: 5,
+    city: "trier",
+    npcs: ["Plessy Descartes"],
+    sequences: [4],
+    tags: ["trier", "eternal-blazing-sun", "cardinal", "sun-pathway", "inquisition"],
+    tokenCount: 215,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-angouleme-de-francois",
+    title: "Angoulême de François — Deacon-Purifier of the Inquisition",
+    category: "npc",
+    content: `Angoulême de François is a deacon of the Church of the Eternal Blazing Sun's Inquisition in Trier and, in the same breath, a Deputy Assistant Commissioner of the city's police — a man who holds both the sacred and the civic authority over Quartier 13. A blond Sun-pathway Beyonder of the Saint tier (a Sequence 4 "Unshadowed"), he hunts heresy, corruption, and the servants of the Outer Deities with the same cold competence he brings to ordinary crime, teaching his subordinates that even beneath the sun there are shadows one must learn to use, to eliminate, or to coexist with. He answers to Cardinal Plessy Descartes and leads a small team of his own — among them Imre, Valentine de Lacourt, and Antoine. Bridging cathedral and constabulary, the Inquisition and the law, Angoulême is exactly the sort of figure the Republic's capital runs on: a believer with a badge, equally at home blessing a congregation and interrogating a suspect, and a dangerous man to deceive on either count.`,
+    epoch: 5,
+    city: "trier",
+    npcs: ["Angoulême de François", "Plessy Descartes", "Valentine de Lacourt"],
+    sequences: [4],
+    tags: ["trier", "eternal-blazing-sun", "inquisition", "sun-pathway", "police"],
+    tokenCount: 225,
+    narratorOnly: true,
+  },
 ];
