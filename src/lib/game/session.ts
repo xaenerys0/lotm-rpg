@@ -9,7 +9,7 @@ import { isValidActingMethodStateShape } from "./acting-method";
 import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
 import { isValidCustomLocationsShape, registerCustomLocation } from "./location";
-import { cityIdFromLocation } from "./travel";
+import { cityIdFromLocation, isValidAccessFlagsShape } from "./travel";
 import { isValidHuntsShape } from "./hunt";
 import { isValidRitualStateShape } from "./ritual";
 import { isValidIdentityStateShape } from "./identity";
@@ -268,6 +268,12 @@ export function isValidSessionShape(obj: unknown): boolean {
     gs.customLocations !== undefined &&
     !isValidCustomLocationsShape(gs.customLocations)
   ) {
+    return false;
+  }
+  // Capability flags (issue #130) are optional but strict when present; absent
+  // means the character holds none. They ride the deserialize `...gs` spread (no
+  // seeding), exactly like customLocations.
+  if (gs.accessFlags !== undefined && !isValidAccessFlagsShape(gs.accessFlags)) {
     return false;
   }
 

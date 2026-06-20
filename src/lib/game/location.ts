@@ -272,7 +272,10 @@ export function mapAtlasFor(state: GameState, epoch: number | undefined): MapAtl
   // Compute the merged district list ONCE and reuse it for both the rendered
   // atlas and the "you are here" match — no second districtsForCity per render.
   const districts = districtsForCity(state, epoch, cityId);
-  const base = gazetteerForEpoch(epoch, cityId);
+  // Thread the character's capability flags so the "farther afield" travel list
+  // is continent-filtered (issue #130): a central character never sees Forsaken
+  // cities, a Forsaken character never sees central ones, until the flag is held.
+  const base = gazetteerForEpoch(epoch, cityId, state.accessFlags ?? []);
   return {
     atlas: { ...base, districts },
     resolved: fifthResolved(state, cityId, districts),

@@ -506,9 +506,15 @@ export {
 
 export {
   CITIES,
+  CONTINENT_CROSSING_DAYS,
   canTravelTo,
   cityIdFromLocation,
+  continentOf,
+  crossesContinent,
   getCity,
+  hasAccessFlag,
+  isValidAccessFlagsShape,
+  meetsAccessGate,
   travelDays,
   travelTo,
   type City,

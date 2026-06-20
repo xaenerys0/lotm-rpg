@@ -1,15 +1,21 @@
 import { describe, expect, it } from "vitest";
-import type { GameState } from "@/lib/ai";
+import type { AccessFlag, GameState } from "@/lib/ai";
 import {
   CITIES,
+  CONTINENT_CROSSING_DAYS,
   canTravelTo,
   cityIdFromLocation,
+  continentOf,
+  crossesContinent,
   getCity,
+  hasAccessFlag,
+  isValidAccessFlagsShape,
+  meetsAccessGate,
   travelDays,
   travelTo,
 } from "./travel";
 
-function stateAt(location: string): GameState {
+function stateAt(location: string, overrides: Partial<GameState> = {}): GameState {
   return {
     characterId: "char-1",
     pathwayId: 1,
@@ -20,8 +26,11 @@ function stateAt(location: string): GameState {
     location,
     activeQuests: [],
     npcsPresent: ["Old Neil"],
+    ...overrides,
   };
 }
+
+const PASSAGE: AccessFlag = "dream-world-passage";
 
 describe("CITIES table", () => {
   it("includes Tingen and the three new cities with unique ids", () => {
@@ -38,10 +47,35 @@ describe("CITIES table", () => {
     }
   });
 
-  it("ids match the lowercase first word of the display name", () => {
+  it("each city's display name slugs back to its id (cityIdFromLocation round-trip)", () => {
+    // The leading-word(s) convention: a city name resolves to its own id —
+    // single-word for central cities, hyphenated for the Forsaken-Land ones.
     for (const city of CITIES) {
-      expect(city.name.toLowerCase().split(/\s+/)[0]).toBe(city.id);
+      expect(cityIdFromLocation(city.name)).toBe(city.id);
     }
+  });
+
+  it("adds the access-gated Forsaken-Land cities (issue #130)", () => {
+    const forsaken = CITIES.filter((c) => c.continent === "forsaken-land");
+    expect(forsaken.map((c) => c.id).sort()).toEqual([
+      "giant-kings-court",
+      "silver-city",
+    ]);
+    for (const city of forsaken) {
+      // Each is gated behind the dream-world passage — no content but unreachable.
+      expect(city.accessGate?.requiresFlag).toBe(PASSAGE);
+    }
+    // The seven existing cities are untouched: central (continent absent).
+    const central = CITIES.filter((c) => c.continent === undefined);
+    expect(central).toHaveLength(7);
+    expect(central.every((c) => c.accessGate === undefined)).toBe(true);
+  });
+});
+
+describe("continentOf", () => {
+  it("defaults an absent continent to central, reads forsaken-land otherwise", () => {
+    expect(continentOf(getCity("tingen")!)).toBe("central");
+    expect(continentOf(getCity("silver-city")!)).toBe("forsaken-land");
   });
 });
 
@@ -73,6 +107,39 @@ describe("travelDays", () => {
     expect(travelDays("tingen", "nowhere")).toBeNull();
     expect(travelDays("nowhere", "tingen")).toBeNull();
   });
+
+  it("returns null for a cross-continent pair (issue #130)", () => {
+    expect(travelDays("tingen", "silver-city")).toBeNull();
+    expect(travelDays("silver-city", "tingen")).toBeNull();
+  });
+
+  it("keeps an intra-continent route inside the Forsaken Land", () => {
+    expect(travelDays("silver-city", "giant-kings-court")).toBeGreaterThan(0);
+    expect(travelDays("silver-city", "giant-kings-court")).toBe(
+      travelDays("giant-kings-court", "silver-city"),
+    );
+  });
+
+  it("is symmetric across every same-continent pair (TRAVEL_DAYS matrix)", () => {
+    for (const a of CITIES) {
+      for (const b of CITIES) {
+        expect(travelDays(a.id, b.id)).toBe(travelDays(b.id, a.id));
+      }
+    }
+  });
+});
+
+describe("crossesContinent", () => {
+  it("is true only between different continents", () => {
+    expect(crossesContinent("tingen", "backlund")).toBe(false);
+    expect(crossesContinent("silver-city", "giant-kings-court")).toBe(false);
+    expect(crossesContinent("tingen", "silver-city")).toBe(true);
+    expect(crossesContinent("silver-city", "tingen")).toBe(true);
+  });
+
+  it("is false when either city is unknown", () => {
+    expect(crossesContinent("tingen", "nowhere")).toBe(false);
+  });
 });
 
 describe("cityIdFromLocation", () => {
@@ -86,6 +153,80 @@ describe("cityIdFromLocation", () => {
     expect(cityIdFromLocation("Some Village")).toBeUndefined();
     expect(cityIdFromLocation("")).toBeUndefined();
     expect(cityIdFromLocation("   ")).toBeUndefined();
+  });
+
+  it("resolves the multi-word Forsaken-Land ids (issue #130)", () => {
+    expect(cityIdFromLocation("Silver City")).toBe("silver-city");
+    expect(cityIdFromLocation("Silver City — the lower wards")).toBe("silver-city");
+    expect(cityIdFromLocation("Giant King's Court")).toBe("giant-kings-court");
+    // A single "Silver …" that is not the city does not false-match.
+    expect(cityIdFromLocation("Silver Street")).toBeUndefined();
+  });
+});
+
+describe("hasAccessFlag / meetsAccessGate (issue #130)", () => {
+  it("hasAccessFlag reads the character's flags, defaulting to none", () => {
+    expect(hasAccessFlag(stateAt("Tingen City"), PASSAGE)).toBe(false);
+    expect(
+      hasAccessFlag(stateAt("Tingen City", { accessFlags: [PASSAGE] }), PASSAGE),
+    ).toBe(true);
+  });
+
+  it("an ungated (central) city is always reachable", () => {
+    expect(meetsAccessGate(stateAt("Tingen City"), getCity("backlund")!)).toBe(true);
+  });
+
+  it("a flag-gated city is refused without the flag and allowed with it", () => {
+    const silver = getCity("silver-city")!;
+    expect(meetsAccessGate(stateAt("Tingen City"), silver)).toBe(false);
+    expect(
+      meetsAccessGate(stateAt("Tingen City", { accessFlags: [PASSAGE] }), silver),
+    ).toBe(true);
+  });
+
+  it("honours a minSequence gate (sequences count down)", () => {
+    const gated = {
+      id: "x",
+      name: "X",
+      kingdom: "K",
+      blurb: "b",
+      accessGate: { minSequence: 5 },
+    };
+    // Seq 9 is not "high enough" (9 > 5); Seq 4 is (4 <= 5).
+    expect(meetsAccessGate(stateAt("X", { sequenceLevel: 9 }), gated)).toBe(false);
+    expect(meetsAccessGate(stateAt("X", { sequenceLevel: 5 }), gated)).toBe(true);
+    expect(meetsAccessGate(stateAt("X", { sequenceLevel: 4 }), gated)).toBe(true);
+  });
+
+  it("requires BOTH a sequence and a flag when the gate has both", () => {
+    const gated = {
+      id: "x",
+      name: "X",
+      kingdom: "K",
+      blurb: "b",
+      accessGate: { minSequence: 5, requiresFlag: PASSAGE },
+    };
+    expect(meetsAccessGate(stateAt("X", { sequenceLevel: 4 }), gated)).toBe(false);
+    expect(
+      meetsAccessGate(stateAt("X", { sequenceLevel: 9, accessFlags: [PASSAGE] }), gated),
+    ).toBe(false);
+    expect(
+      meetsAccessGate(stateAt("X", { sequenceLevel: 4, accessFlags: [PASSAGE] }), gated),
+    ).toBe(true);
+  });
+});
+
+describe("isValidAccessFlagsShape (issue #130)", () => {
+  it("accepts an array of known flags (incl. empty)", () => {
+    expect(isValidAccessFlagsShape([])).toBe(true);
+    expect(isValidAccessFlagsShape([PASSAGE])).toBe(true);
+  });
+
+  it("rejects a non-array or an unknown flag", () => {
+    expect(isValidAccessFlagsShape("dream-world-passage")).toBe(false);
+    expect(isValidAccessFlagsShape([PASSAGE, "teleport"])).toBe(false);
+    expect(isValidAccessFlagsShape([42])).toBe(false);
+    expect(isValidAccessFlagsShape(null)).toBe(false);
   });
 });
 
@@ -104,6 +245,19 @@ describe("canTravelTo", () => {
 
   it("permits travel from an unknown current location to any known city", () => {
     expect(canTravelTo(stateAt("A Lonely Moor"), "trier")).toBe(true);
+  });
+
+  it("refuses an access-gated Forsaken city without the flag (issue #130)", () => {
+    // No character can reach silver-city / giant-kings-court without the passage.
+    expect(canTravelTo(stateAt("Tingen City"), "silver-city")).toBe(false);
+    expect(canTravelTo(stateAt("Tingen City"), "giant-kings-court")).toBe(false);
+    // Even from an unknown current location the gate still bites.
+    expect(canTravelTo(stateAt("A Lonely Moor"), "silver-city")).toBe(false);
+  });
+
+  it("permits a Forsaken city once the passage flag is held", () => {
+    const passenger = stateAt("Tingen City", { accessFlags: [PASSAGE] });
+    expect(canTravelTo(passenger, "silver-city")).toBe(true);
   });
 });
 
@@ -164,5 +318,18 @@ describe("travelTo", () => {
   it("clears NPCs with the default empty roster (legacy behaviour)", () => {
     const result = travelTo(stateAt("Tingen City"), "backlund", 1);
     expect(result!.state.npcsPresent).toEqual([]);
+  });
+
+  it("uses the fixed crossing duration for a cross-continent journey (issue #130)", () => {
+    const passenger = stateAt("Tingen City", { accessFlags: [PASSAGE] });
+    const result = travelTo(passenger, "silver-city", 2);
+    expect(result).not.toBeNull();
+    expect(result!.state.location).toBe("Silver City");
+    expect(result!.state.currentCity).toBe("silver-city");
+    expect(result!.fact.description).toContain(`${CONTINENT_CROSSING_DAYS} day`);
+  });
+
+  it("returns null for a Forsaken destination without the passage flag", () => {
+    expect(travelTo(stateAt("Tingen City"), "silver-city", 1)).toBeNull();
   });
 });

@@ -47,6 +47,7 @@ export {
 export {
   gazetteerForEpoch,
   uncertainFifthGazetteer,
+  CONTINENT_CROSSING_FLAG,
   type EpochGazetteer,
   type GazetteerDistrict,
   type GazetteerFartherCity,

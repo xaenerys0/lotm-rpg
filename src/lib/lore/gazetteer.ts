@@ -24,6 +24,38 @@ export interface GazetteerFartherCity {
   name: string;
   realm: string;
   blurb: string;
+  /**
+   * The continent the city sits on (world build-out, issue #130). Absent means
+   * `central` — the seven mainland cities. A `forsaken-land` city is on the
+   * sealed Eastern Continent and only appears in the travel list of a character
+   * who holds the crossing capability flag.
+   */
+  continent?: "central" | "forsaken-land";
+}
+
+/**
+ * The capability flag that opens cross-continent travel (issue #130). Kept as a
+ * lore-local literal (the gazetteer must not import the game/AI layers — see the
+ * note above `FIFTH_CITIES`); a reconciliation test holds it against the
+ * canonical `ACCESS_FLAGS` / the Forsaken cities' `accessGate.requiresFlag` so
+ * the two can never drift, mirroring the `PROLOGUE_AFFINITY_REGIONS` pattern.
+ */
+export const CONTINENT_CROSSING_FLAG = "dream-world-passage";
+
+/**
+ * Whether a farther city's continent is reachable from the character's current
+ * continent given the flags they hold (issue #130). Same continent is always
+ * shown; a different continent appears only when the crossing flag is held — so
+ * a central character never sees the Forsaken cities, and a Forsaken character
+ * never sees the central ones, until the passage capability is granted.
+ */
+function continentReachable(
+  target: "central" | "forsaken-land",
+  current: "central" | "forsaken-land",
+  accessFlags: readonly string[],
+): boolean {
+  if (target === current) return true;
+  return accessFlags.includes(CONTINENT_CROSSING_FLAG);
 }
 
 export interface EpochGazetteer {
@@ -314,7 +346,32 @@ const FIFTH_CITIES: GazetteerFartherCity[] = [
     blurb:
       "The cold northern empire of the God of Combat, beyond the Hornacis range: walled towns, drilled militias, and martial faith. The winters are long and the frontier dangerous, where monsters press at the walls and strength commands open respect.",
   },
+  // ── Forsaken Land of the Gods — the sealed Eastern Continent (issue #130). ──
+  // Travel-list roster only (no districts yet, by design): a central character
+  // never sees these — the continent filter hides them until the crossing flag
+  // is held (issue #3). They mirror the game-layer travel cities of the same ids.
+  {
+    id: "silver-city",
+    name: "Silver City",
+    realm: "Forsaken Land of the Gods — the silver capital",
+    blurb:
+      "The lightless silver capital of the abandoned faithful, beneath the Forsaken Land's eternal lightning.",
+    continent: "forsaken-land",
+  },
+  {
+    id: "giant-kings-court",
+    name: "Giant King's Court",
+    realm: "Forsaken Land of the Gods — the Giant King's seat",
+    blurb:
+      "The seat of the Giant King in the Forsaken Land, whose Dream-World shadow is the only passage to the sealed continent.",
+    continent: "forsaken-land",
+  },
 ];
+
+/** A farther city's continent, defaulting an absent value to `central`. */
+function gazetteerContinentOf(city: GazetteerFartherCity): "central" | "forsaken-land" {
+  return city.continent ?? "central";
+}
 
 // District lists keyed by city id — the intra-city "site" layer per place.
 const FIFTH_CITY_DISTRICTS: Record<string, GazetteerDistrict[]> = {
@@ -442,7 +499,9 @@ export function uncertainFifthGazetteer(): EpochGazetteer {
     intro:
       "Your whereabouts are uncertain — no district here answers to where you stand. Set out for a city below to find your bearings.",
     districts: [],
-    fartherCities: FIFTH_CITIES,
+    // A character whose city can't be resolved is treated as on the central
+    // continent (issue #130): the Forsaken cities never surface here.
+    fartherCities: FIFTH_CITIES.filter((c) => gazetteerContinentOf(c) === "central"),
     travelEnabled: true,
   };
 }
@@ -457,23 +516,36 @@ export function uncertainFifthGazetteer(): EpochGazetteer {
  *
  * `cityId` is supplied by the caller (e.g. `cityIdFromLocation(location)` in the
  * map component) — the gazetteer lives in the lore layer and must not import the
- * game-layer city resolver.
+ * game-layer city resolver. `accessFlags` (the character's `GameState.accessFlags`,
+ * issue #130) filters the "farther afield" list to same-continent cities, plus
+ * cross-continent ones only when the crossing capability is held — so a central
+ * character never sees the Forsaken cities in their travel panel, and vice-versa.
  */
 export function gazetteerForEpoch(
   epoch: number | undefined,
   cityId?: string,
+  accessFlags: readonly string[] = [],
 ): EpochGazetteer {
   const id = epoch ?? DEFAULT_EPOCH_ID;
   if (id === DEFAULT_EPOCH_ID) {
-    // `current` is always a known city id (a recognised `cityId`, else Tingen),
-    // so both lookups below resolve — no fallback branch.
-    const current = cityId && FIFTH_CITY_DISTRICTS[cityId] ? cityId : FIFTH_DEFAULT_CITY;
+    // `current` is any city in the Fifth roster (a recognised `cityId`, else
+    // Tingen). The content-less Forsaken cities (issue #130) carry no districts,
+    // so the district lookup falls back to `[]` rather than mis-defaulting to
+    // Tingen — that would have shown a Forsaken character the wrong city.
+    const current = cityId && FIFTH_CITY_BY_ID[cityId] ? cityId : FIFTH_DEFAULT_CITY;
     const city = FIFTH_CITY_BY_ID[current];
+    const currentContinent = gazetteerContinentOf(city);
     return {
       intro: `A walker’s gazetteer of ${city.name} — ${city.realm}.`,
-      districts: FIFTH_CITY_DISTRICTS[current],
-      // Every Fifth-Epoch city EXCEPT the one you are in is "farther afield".
-      fartherCities: FIFTH_CITIES.filter((c) => c.id !== current),
+      districts: FIFTH_CITY_DISTRICTS[current] ?? [],
+      // Every Fifth-Epoch city EXCEPT the one you are in is "farther afield",
+      // continent-filtered: a different continent shows only with the crossing
+      // flag (issue #130), so Forsaken cities stay hidden from a central walker.
+      fartherCities: FIFTH_CITIES.filter(
+        (c) =>
+          c.id !== current &&
+          continentReachable(gazetteerContinentOf(c), currentContinent, accessFlags),
+      ),
       travelEnabled: true,
     };
   }
