@@ -57,6 +57,16 @@ describe("START_SCENARIOS data integrity", () => {
     expect(fifthLocations).toContain("Feysac");
   });
 
+  it("includes the city of Constant as a Fifth-Epoch start (issue #134)", () => {
+    const constant = getStartScenario("constant-furnaces");
+    expect(constant).toBeDefined();
+    expect(constant!.epoch).toBe(5);
+    expect(constant!.location).toBe("Constant City");
+    expect(constant!.origin).toBeUndefined();
+    // It joins the default picker as a distinct starting place.
+    expect(startLocationsForEpoch(5).map((o) => o.location)).toContain("Constant City");
+  });
+
   it("earlier epochs derive their start from the epoch definition (no drift)", () => {
     for (const e of EPOCHS) {
       if (e.id === 5) continue;

@@ -158,6 +158,14 @@ const FIFTH_EPOCH_STARTS: readonly StartScenario[] = [
     openingBeat: `My breath steams in the bitter cold of a Feysac frontier town as the potion burns through me, soldiers of the God of Combat drilling in the frozen square and the northern wilds — and whatever stalks them — pressing at the walls. ${SCENE_CUE}`,
     pathwayAffinity: [6],
   },
+  {
+    id: "constant-furnaces",
+    epoch: 5,
+    location: "Constant City",
+    blurb: "The Wind City — Loen's coal-and-steel second city on the Midseashire coast.",
+    openingBeat: `The blast furnaces of Constant throw their red light across the night as the potion finishes its work in me, the hard sea wind off Midseashire scattering the coal-smoke and the Wind City roaring on around me, unaware that one of its own has just stopped being ordinary. ${SCENE_CUE}`,
+    pathwayAffinity: [8],
+  },
 ] as const;
 
 // ── Origin starts in access-gated continents (issue #132). EXCLUDED from the

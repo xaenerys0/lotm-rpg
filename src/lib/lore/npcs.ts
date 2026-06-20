@@ -228,4 +228,73 @@ export const NPC_LORE: LoreEntry[] = [
     tokenCount: 205,
     narratorOnly: true,
   },
+  // ── Wider Loen Kingdom (world build-out 5, issue #134) ──
+  // City-keyed where the figure belongs to one of our curated cities (Gawain →
+  // Tingen/Awwa County; Welch McGovern → Constant). The Foundation figures
+  // (Pacheco Dwayne, Barton) sit in Stoen City, East Chester County, which is
+  // NOT a curated travel city, so they carry NO `city` key — corpus/RAG +
+  // integrity + archetype-tie only, never curated-injected. NONE is pathway-
+  // keyed (the issue #132 leak rule): a `pathway` field would inject a regional
+  // NPC into any same-pathway character's prompt; pathways are named in prose.
+  // All canon verified against corpus/wiki (see CLAUDE.md) — NOT memory.
+  {
+    slug: "npc-gawain",
+    title: "Gawain — The Last Awwa Knight",
+    category: "npc",
+    content: `Gawain is one of the last living representatives of the Awwa Knights' Order of Chivalry, the knighthood that once guarded Tingen's county and faded into history when the high-pressure steam gun and the six-barrel machine gun made armoured swordsmen obsolete. Far from mourning the change, Gawain has embraced it: a hard, weathered old combatant, he holds that there is no sense studying the sword in this age and that a fighting man should learn instead to draw his gun and shoot, mastering the most advanced weaponry the foundries can make. He earns his living now as a combat instructor in Tingen, drilling those who need to survive violence in strength, endurance, footwork, and marksmanship — among his pupils, for a season, the young Nighthawk-to-be Klein Moretti, whom he ran ragged through afternoons of basic conditioning and pistol work. Gruff, practical, and entirely without romance about his vanished order, Gawain is a useful man to know for anyone in Awwa County who expects to have to fight and would rather not die learning how.`,
+    epoch: 5,
+    city: "tingen",
+    npcs: ["Gawain", "Klein Moretti"],
+    sequences: [],
+    tags: ["tingen", "awwa-county", "awwa-knights", "combat-instructor", "mentor"],
+    tokenCount: 215,
+    narratorOnly: false,
+  },
+  {
+    slug: "npc-welch-mcgovern",
+    title: "Welch McGovern — The Banker's Son of Constant",
+    category: "npc",
+    content: `Welch McGovern is a young man of the Wind City of Constant, the son of a wealthy banking family with a stake in the Constant Coal and Steel Consortium, who came south to read history at Khoy University in Tingen. There he studied under Senior Associate Professor Cohen alongside Naya and the original Klein Moretti, and — easy-going, well-funded, and not much troubled by ambition — fell into the habit of leaning on his cleverer group-mates to carry the work he could not be bothered to do himself. Generous with his father's money and careless with most else, he is the very picture of the comfortable provincial money that Constant's furnaces have made: a Khoy man with a soft accent of the industrial north, a name that opens doors among the coal-and-steel set, and family connections that reach from the counting-houses of Constant to the lecture halls of Tingen. To anyone tied to the McGovern household he is a friend worth having and a responsibility worth watching — for trouble has a way of finding the heedless rich.`,
+    epoch: 5,
+    city: "constant",
+    npcs: ["Welch McGovern", "Klein Moretti"],
+    sequences: [],
+    tags: ["constant", "khoy-university", "banking-family", "civilian"],
+    tokenCount: 215,
+    narratorOnly: false,
+  },
+  {
+    slug: "npc-pacheco-dwayne",
+    title: "Pacheco Dwayne — Deputy Director of Compliance",
+    category: "npc",
+    content: `Pacheco Dwayne is a deputy director of the Compliance Department of the Loen Relic Search and Preservation Foundation — and, unknown to the Foundation's ordinary staff, a Beyonder of the Black Emperor pathway. Common-featured, black-haired, and unremarkable to look at, he was once a private lawyer in Backlund, partner to the late Framis Cage and afterward legal adviser to the Backlund Bike Company. When Cage died, Pacheco secured Cage's family a considerable share by means his rivals called inappropriate, and the enmity that earned him made Backlund too warm to stay; at Audrey Hall's invitation he left the capital for East Chester County and the Foundation's discreet Beyonder division. He is a man defined by a single conviction — that the world needs order and rules — and he applies it with a lawyer's cold precision to the abnormal things the Foundation's diggers unearth. Loyal to Audrey, allied with the men he trusts, and ruthless with those who break the order he believes in, Pacheco is the kind of subordinate a hidden power most wants: competent, principled in his fashion, and entirely discreet.`,
+    epoch: 5,
+    npcs: ["Pacheco Dwayne", "Framis Cage", "Audrey Hall"],
+    sequences: [5],
+    tags: [
+      "loen-relic-foundation",
+      "compliance-department",
+      "black-emperor-pathway",
+      "audrey-hall",
+    ],
+    tokenCount: 230,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-barton",
+    title: "Barton — An Ordinary Man of the Foundation",
+    category: "npc",
+    content: `Barton is an upper-middle-class clerk in the employ of the Loen Relic Search and Preservation Foundation, living a settled life in Stoen City of East Chester County with his wife and children, a devotee of the Church of the Lord of Storms and a reader of cheap murder-and-romance novels in his spare hours. He is, by every measure, an ordinary man — save for one thing. Ten years ago, on an archaeological excavation that went badly, Barton came away with a faint thread of spiritual perception no ordinary person carries: he senses, now and then, movements and presences that others cannot, a prickle at the back of the neck when something is wrong. It is not power, only awareness — but in a foundation whose diggers turn up the relics of older epochs, an ordinary man who can feel when a thing is wrong is more useful than he knows. His old friend the archaeologist Vernal Fnarr brings him trouble; his colleague the deputy director Pacheco Dwayne brings him answers; and Barton, who wants only a quiet life, keeps being drawn to the edge of a hidden world he was never meant to see.`,
+    epoch: 5,
+    npcs: ["Barton", "Vernal Fnarr", "Pacheco Dwayne"],
+    sequences: [],
+    tags: [
+      "loen-relic-foundation",
+      "east-chester-county",
+      "civilian",
+      "spiritual-perception",
+    ],
+    tokenCount: 230,
+    narratorOnly: false,
+  },
 ];

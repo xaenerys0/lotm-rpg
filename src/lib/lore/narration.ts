@@ -20,6 +20,8 @@ const CITY_TONE: Record<string, string> = {
     "Enmat Harbor is a small, fog-drowned Loen coastal town: render it through narrow lamplit lanes and creaking fishing boats, close-mouthed locals and old sea-superstition, and a sense that the mist rolling off the water hides more than weather.",
   feysac:
     "Feysac is the frozen militarist empire of the God of Combat: render it through bitter cold and iron discipline, devout soldiers and martial faith, frontier towns walled against the northern wilds, and the ever-present threat of evil spirits and monsters beyond the firelight.",
+  constant:
+    "Constant is the Wind City, Loen's second city on the Midseashire coast: render it through blast furnaces and rolling-mills, concrete and rolled iron, a hard sea wind that scours the coal-smoke cleaner than Backlund's, the loud pride of foundrymen and shipping clerks, the strong working faith of the Church of Steam, and deep coal-and-steel money beneath it all.",
   silver:
     "The City of Silver is a surviving city of the sealed Forsaken Land of the Gods: render it through the perpetual lightning overhead — fierce by day, slowing at night — grey-white stone and grounding rods, a proud, closed, giant-descended people (the strongest walking the Twilight Giant path, their elite titled Silver Knights), and the certainty that beyond the walls there is only dead country and the sealing sea.",
   giant:

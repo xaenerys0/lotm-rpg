@@ -75,6 +75,7 @@ export { BACKLUND_LORE } from "./backlund";
 export { TRIER_LORE } from "./trier";
 export { BAYAM_LORE } from "./bayam";
 export { REGIONS_LORE } from "./regions";
+export { LOEN_LORE } from "./loen";
 export { FORSAKEN_LAND_LORE } from "./forsaken-land";
 export { FIRST_EPOCH_LORE } from "./epoch-first";
 export { SECOND_EPOCH_LORE } from "./epoch-second";
@@ -113,6 +114,7 @@ import { BACKLUND_LORE } from "./backlund";
 import { TRIER_LORE } from "./trier";
 import { BAYAM_LORE } from "./bayam";
 import { REGIONS_LORE } from "./regions";
+import { LOEN_LORE } from "./loen";
 import { FORSAKEN_LAND_LORE } from "./forsaken-land";
 import { FIRST_EPOCH_LORE } from "./epoch-first";
 import { SECOND_EPOCH_LORE } from "./epoch-second";
@@ -150,6 +152,7 @@ export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...TRIER_LORE,
   ...BAYAM_LORE,
   ...REGIONS_LORE,
+  ...LOEN_LORE,
   ...FORSAKEN_LAND_LORE,
   ...FIRST_EPOCH_LORE,
   ...SECOND_EPOCH_LORE,

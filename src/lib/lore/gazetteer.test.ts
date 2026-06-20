@@ -23,6 +23,7 @@ describe("gazetteerForEpoch", () => {
       "pritz",
       "enmat",
       "feysac",
+      "constant",
     ]);
   });
 
@@ -51,6 +52,7 @@ describe("gazetteerForEpoch", () => {
       "pritz",
       "enmat",
       "feysac",
+      "constant",
     ]) {
       const g = gazetteerForEpoch(5, id);
       expect(g.districts.length).toBeGreaterThan(0);
@@ -94,6 +96,7 @@ describe("gazetteerForEpoch", () => {
       "pritz",
       "enmat",
       "feysac",
+      "constant",
     ]);
   });
 
