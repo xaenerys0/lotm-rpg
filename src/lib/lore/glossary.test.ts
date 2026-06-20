@@ -73,22 +73,52 @@ describe("capability gate (issue #132)", () => {
     "sea-of-ruins",
     "silver-knights",
     "dream-world-passage",
+    "moon-city",
+    "the-gray-fog",
   ];
+  const ALL_FORSAKEN_FLAGS = [
+    "dream-world-passage",
+    "silver-city-passage",
+    "moon-city-passage",
+  ] as const;
 
-  it("hides the Forsaken Land's terms from a character without the passage", () => {
+  it("hides the Forsaken Land's terms from a character without any passage", () => {
     const central = glossaryForSequence(9, 5).map((t) => t.slug);
     for (const slug of FORSAKEN_SLUGS) {
       expect(central).not.toContain(slug);
     }
   });
 
-  it("reveals them once the dream-world passage is held", () => {
-    const forsaken = glossaryForSequence(9, 5, ["dream-world-passage"]).map(
+  it("reveals all Forsaken terms only to a holder of every Forsaken flag", () => {
+    // At Sequence 5 every Forsaken term has been reached (the gray fog reveals at 5).
+    const forsaken = glossaryForSequence(5, 5, [...ALL_FORSAKEN_FLAGS]).map(
       (t) => t.slug,
     );
     for (const slug of FORSAKEN_SLUGS) {
       expect(forsaken).toContain(slug);
     }
+  });
+
+  it("gates the per-city terms by their own flag (Silver vs Moon unaware, issue #133)", () => {
+    // A Silver native (dream + silver flags, no moon) sees Silver's terms and the
+    // shared Court/Sea terms — but NEVER Moon City's.
+    const silver = glossaryForSequence(9, 5, [
+      "dream-world-passage",
+      "silver-city-passage",
+    ]).map((t) => t.slug);
+    expect(silver).toContain("city-of-silver");
+    expect(silver).toContain("silver-knights");
+    expect(silver).toContain("giant-kings-court-term");
+    expect(silver).not.toContain("moon-city");
+    expect(silver).not.toContain("the-gray-fog");
+    // A Moon native (dream + moon) sees Moon's terms but never the City of Silver's.
+    const moon = glossaryForSequence(9, 5, [
+      "dream-world-passage",
+      "moon-city-passage",
+    ]).map((t) => t.slug);
+    expect(moon).toContain("moon-city");
+    expect(moon).not.toContain("city-of-silver");
+    expect(moon).not.toContain("silver-knights");
   });
 
   it("never leaks the Forsaken terms' existence through the sealed count", () => {

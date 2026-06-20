@@ -159,6 +159,47 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Backlund archetypes (world build-out 4, issue #133) — begin embedded in a
+// circle of the Loen capital, referencing the Backlund NPCs added in `npcs.ts`. ──
+const BACKLUND_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "backlund-hall-attendant",
+    label: "An attendant to Lady Audrey Hall in Empress Borough",
+    epoch: 5,
+    location: "Backlund",
+    relationship: "assistant",
+    circleNpcs: ["Audrey Hall"],
+    blurb:
+      "You serve in the Hall household of Empress Borough, close to the charming young noblewoman Audrey Hall.",
+    openingBeat: `The strange potion still burns in me as I cross the marble entrance hall of the Hall family's Empress Borough townhouse to attend Lady Audrey, the soot-yellow fog of Backlund pressing at the tall windows — whatever I have become this night, none of this gilded household must ever learn it. ${SCENE_CUE}`,
+    pathwayAffinity: [2],
+    seeds: {
+      trackedAllies: ["Audrey Hall"],
+      facts: [
+        "You attend Lady Audrey Hall in her family's Empress Borough townhouse in Backlund; she knows you as a trusted member of the household.",
+      ],
+    },
+  },
+  {
+    id: "backlund-detective-assistant",
+    label: "An assistant to the Backlund detective Sherlock Moriarty",
+    epoch: 5,
+    location: "Backlund",
+    relationship: "assistant",
+    circleNpcs: ["Sherlock Moriarty"],
+    blurb:
+      "You keep the case files for the enigmatic private detective Sherlock Moriarty in Cherwood Borough.",
+    openingBeat: `The strange potion still burns in me as I climb the stairs to the Minsk Street office of Sherlock Moriarty, the famous private detective I assist through Backlund's soot-yellow fog — and I realise the strangest case in this city of secrets may now be myself. ${SCENE_CUE}`,
+    pathwayAffinity: [2],
+    seeds: {
+      trackedAllies: ["Sherlock Moriarty"],
+      facts: [
+        "You assist the private detective Sherlock Moriarty from his office on Minsk Street in Backlund's Cherwood Borough; he knows your face and trusts you with his case files.",
+      ],
+    },
+  },
+] as const;
+
 // ── Forsaken Land of the Gods — ORIGIN archetypes (issue #132). Begin a native
 // of the sealed Eastern Continent. EXCLUDED from the default picker; surfaced
 // only behind the explicit "choose an origin" affordance, and seed the
@@ -166,20 +207,39 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
 const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
   {
     id: "forsaken-silver-knight",
-    label: "A Silver Knight of the City of Silver",
+    label: "A giant-blooded warden of the City of Silver",
     epoch: 5,
     location: "Silver City",
     relationship: "circle-member",
     circleNpcs: ["Derrick Berg"],
     origin: "forsaken-land",
     blurb:
-      "A sworn defender of the City of Silver's night-watch, raised in the sealed Forsaken Land and its old faith.",
-    openingBeat: `The strange potion still burns in me as I stand my watch on the grey-white walls of the City of Silver, the perpetual lightning walking the sky above the dead country beyond — I have guarded this last city all my life, and now I am something it has no rite for. ${SCENE_CUE}`,
-    pathwayAffinity: [3],
+      "A giant-descended defender of the City of Silver, raised to the watch in the sealed Forsaken Land.",
+    openingBeat: `The strange potion still burns in me as I stand the watch on the grey-white walls of the City of Silver, the perpetual lightning walking the sky above the dead country beyond — my line has guarded this sealed city since the world forgot us, and now I am something even our oldest customs have no name for. ${SCENE_CUE}`,
+    pathwayAffinity: [11],
     seeds: {
       trackedAllies: ["Derrick Berg"],
       facts: [
-        "You are a Silver Knight of the City of Silver in the Forsaken Land, sworn to its night-watch and its old faith, and you know Derrick Berg among the City's defenders.",
+        "You are a giant-blooded warden of the City of Silver in the Forsaken Land, sworn to its watch, and you know Derrick Berg among the City's defenders.",
+      ],
+    },
+  },
+  {
+    id: "forsaken-moon-watcher",
+    label: "A fog-watcher of Moon City",
+    epoch: 5,
+    location: "Moon City",
+    relationship: "subordinate",
+    circleNpcs: ["Nim"],
+    origin: "forsaken-land",
+    blurb:
+      "A keeper of Moon City's ancient watch on the gray fog, serving under the High Priest Nim in the sealed Forsaken Land.",
+    openingBeat: `The strange potion still burns in me as I stand my watch on Moon City's eastern walls, the wall of gray fog unmoving beyond and the perpetual lightning flickering above — I was raised to this vigil under the High Priest Nim, and now I am something our old rites have no name for. ${SCENE_CUE}`,
+    pathwayAffinity: [5],
+    seeds: {
+      trackedAllies: ["Nim"],
+      facts: [
+        "You keep Moon City's watch on the gray fog in the Forsaken Land, serving under the High Priest Nim; he knows your face among the fog-watch.",
       ],
     },
   },
@@ -190,6 +250,7 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
  * selection filters origins out; `forsakenLandArchetypesForEpoch` filters in. */
 export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...TINGEN_ARCHETYPES,
+  ...BACKLUND_ARCHETYPES,
   ...FORSAKEN_ARCHETYPES,
 ];
 

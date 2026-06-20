@@ -21,9 +21,10 @@ const CITY_TONE: Record<string, string> = {
   feysac:
     "Feysac is the frozen militarist empire of the God of Combat: render it through bitter cold and iron discipline, devout soldiers and martial faith, frontier towns walled against the northern wilds, and the ever-present threat of evil spirits and monsters beyond the firelight.",
   silver:
-    "The City of Silver is the last living city of the sealed Forsaken Land of the Gods: render it through the perpetual lightning overhead — fierce by day, slowing at night — grey-white stone and grounding rods, the proud closed order of the abandoned faithful and their Silver Knights, and the certainty that beyond the walls there is only dead country and the sealing sea.",
+    "The City of Silver is a surviving city of the sealed Forsaken Land of the Gods: render it through the perpetual lightning overhead — fierce by day, slowing at night — grey-white stone and grounding rods, a proud, closed, giant-descended people (the strongest walking the Twilight Giant path, their elite titled Silver Knights), and the certainty that beyond the walls there is only dead country and the sealing sea.",
   giant:
     "Giant King's Court is the titan-scaled ruin and holy threshold of the Forsaken Land: render it through colossal fallen halls built for beings no human raised, the walking lightning over broken thrones, the devout treading warily, and the buried sense that this place is where the sealed continent presses closest to the wider world.",
+  moon: "Moon City is the isolated eastern fog-watch of the Forsaken Land: render it through the perpetual lightning and the unmoving wall of gray fog at the world's edge, a hard-pressed, inward people descended from an older time who keep an ancient duty under their three High Priests, bearing the slow toll of survival in a dead land — and wholly unaware, at first, that any other city of the Forsaken Land still stands.",
 };
 
 /**

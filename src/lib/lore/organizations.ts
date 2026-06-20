@@ -130,4 +130,99 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tokenCount: 200,
     narratorOnly: true,
   },
+  // ── Backlund deep-dive (world build-out 4, issue #133) ──
+  // The capital's Nighthawks division is Backlund-LOCAL and city-keyed
+  // ("backlund"). The Rose School of Thought is NOT Backlund-based — it is a
+  // cross-cutting Chained-pathway secret society of the wider world (its
+  // Temperance refugees are the Backlund hook, carried by the Sharron/Maric NPC
+  // entry) — and the Tarot Club convenes "above the gray fog", a profound
+  // Fool-pathway secret. So both the Rose School and the Tarot Club carry NEITHER
+  // a city NOR a pathway key: selectCuratedLore would otherwise inject them into
+  // every Backlund or every same-pathway character and leak them. They live here
+  // for corpus/RAG + integrity only (the Numinous Episcopate pattern).
+  //
+  // CANON NOTE (verified against corpus/wiki — see CLAUDE.md): the Rose School
+  // worships the Mother Tree of Desire (Indulgence) / the Primordial Moon, on the
+  // Chained and Moon pathways, riven by an Indulgence-vs-Temperance schism. It has
+  // NOTHING to do with the Evernight Goddess (an earlier draft and the issue's
+  // hint were both wrong); the corpus is authoritative.
+  {
+    slug: "rose-school-of-thought-overview",
+    title: "Rose School of Thought — Overview",
+    category: "organization",
+    content: `The Rose School of Thought is a secret society of the Beyonder world, infamous in hushed rumour as a cult of unbound desire. It began long ago as an order devoted to TEMPERANCE — the disciplined restraint of want — but its god was corrupted by the Mother Tree of Desire, and the dominant Indulgence faction that grew from the ruin now preaches the opposite: the release and gratification of every appetite, sealed in blood and depravity. Drawn largely from the Chained pathway, with a faction of moon-worshippers sheltering uneasily among them, the School keeps to the shadows of the wider world and is reckoned by the orthodox Churches a heresy to be hunted rather than an open enemy. Where it surfaces it leaves ruin and willing converts behind it in equal measure, and it has no love for the secrecy-keeping Churches that would see it burned.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [],
+    tags: [
+      "rose-school-of-thought",
+      "secret-organization",
+      "chained-pathway",
+      "mother-tree-of-desire",
+    ],
+    tokenCount: 200,
+    narratorOnly: false,
+  },
+  {
+    slug: "rose-school-of-thought-factions",
+    title: "Rose School of Thought — The Schism of Desire",
+    category: "organization",
+    content: `Behind the rumour the Rose School is split by a long and bloody schism. The INDULGENCE faction, corrupted by and devoted to the Mother Tree of Desire, holds the School and hunts all who resist it; a separate band, the Primordial Moon faction of the Moon pathway, shelters uneasily within it. Against them once stood the TEMPERANCE faction — keepers of the order's original creed of restraint — who were shattered in a surprise attack and driven into exile. Its survivors, among them Reinette Tinekerr and her students Sharron and Maric, fled across the world and took protection under the mysterious founder of the Tarot Club, "The Fool," joining the Church of the Fool rather than be consumed by the Mother Tree. The School's war over desire and restraint is one of the quiet fronts of the Beyonder world's larger struggle, and the Indulgence faction's reach now touches the Devil families and other servants of desire.`,
+    epoch: 5,
+    npcs: ["Reinette Tinekerr", "Sharron", "Maric"],
+    sequences: [4],
+    tags: [
+      "rose-school-of-thought",
+      "secret-organization",
+      "chained-pathway",
+      "temperance",
+      "mother-tree-of-desire",
+      "spoiler",
+    ],
+    tokenCount: 205,
+    narratorOnly: true,
+  },
+  {
+    slug: "backlund-nighthawks-team",
+    title: "Nighthawks — Backlund Division",
+    category: "organization",
+    content: `The Backlund Nighthawks are the Church of the Evernight Goddess's Beyonder arm in the capital, and they dwarf a provincial posting like Tingen's. Where Tingen fields a single dozen-strong team, Backlund supports multiple teams under the capital's bishops, coordinating across a metropolis of five million through cover identities, safehouses, and the diocese's central vault of sealed artifacts. Their casework is heavier and far more dangerous: organised cults, rogue high-Sequence Beyonders, smuggling rings moving curios through the docklands, and incidents that reach up into Parliament and the noble houses themselves. The capital's Nighthawks work alongside — and sometimes against the jurisdiction of — the Mandated Punishers of the Lord of Storms and the Machinery Hivemind of the God of Steam, with whom they share the city by uneasy treaty. For an ambitious or unlucky Beyonder, Backlund is where the Nighthawks' reach is longest and the cost of being noticed is highest.`,
+    epoch: 5,
+    city: "backlund",
+    npcs: [],
+    sequences: [9, 8, 7],
+    tags: ["nighthawks", "evernight-goddess", "backlund", "team-composition"],
+    tokenCount: 215,
+  },
+  {
+    slug: "tarot-club-origins",
+    title: "The Tarot Club — Origins & the Meeting Above the Gray Fog",
+    category: "organization",
+    content: `The Tarot Club is a tiny, intensely secret gathering convened "above the gray fog" — in a space beyond the ordinary world, reached only through the ritual of its founder, the masked figure known as The Fool. Its members attend not in the flesh but as summoned presences seated around a long bronze table, and each is known only by the name of a tarot card — The Fool, The Sun, The Star, The Hanged Man, Justice, and others as the circle slowly grows. They never learn one another's true faces, names, or homes unless they choose to share them. What binds them is mutual benefit and a fragile, deepening trust: they trade intelligence, Beyonder ingredients, formulas, and warnings none could gather alone, each profiting from the others' distant corners of the world. The Club's very existence is among the best-kept secrets of the Beyonder world, and its members guard it as though their lives depend on it — because, very often, they do.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [7],
+    tags: ["tarot-club", "the-fool", "secret-organization", "fool-pathway"],
+    tokenCount: 210,
+    narratorOnly: true,
+  },
+  {
+    slug: "tarot-club-fate",
+    title: "The Tarot Club — The Fool and Fate",
+    category: "organization",
+    content: `To its members the Tarot Club is more than a meeting; it rests on the mystery of its founder. The Fool presents as an ancient, all-knowing deity "who does not truly exist," a being wrapped in the imagery of fate, fortune, and the turning card — and the members, unable to verify the claim and unwilling to test it, treat him with genuine awe. The Club's power feels like the power of fate itself: its summoning ritual reaches across the world without regard for distance, its divinations seem to bend probability, and to sit at its bronze table is to feel oneself caught in a design larger than any single Beyonder. Whether The Fool is the god he appears, a mortal of extraordinary craft, or something stranger between, none of the members can say — and the not-knowing is part of what holds the circle in its careful, fate-bound trust.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "tarot-club",
+      "the-fool",
+      "fate",
+      "divination",
+      "secret-organization",
+      "spoiler",
+    ],
+    tokenCount: 200,
+    narratorOnly: true,
+  },
 ];

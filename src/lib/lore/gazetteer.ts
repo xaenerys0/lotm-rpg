@@ -28,9 +28,18 @@ export interface GazetteerFartherCity {
    * The continent the city sits on (world build-out, issue #130). Absent means
    * `central` — the seven mainland cities. A `forsaken-land` city is on the
    * sealed Eastern Continent and only appears in the travel list of a character
-   * who holds the crossing capability flag.
+   * who holds its required capability flag.
    */
   continent?: "central" | "forsaken-land";
+  /**
+   * The capability flag a character must hold for this city to appear in their
+   * travel list (issues #130/#133). Only the Forsaken-Land cities carry one — and
+   * each native city carries its OWN (`silver-city-passage` / `moon-city-passage`)
+   * so a native of one never sees the other; the Court carries the shared
+   * `dream-world-passage`. Mirrors the game-layer `City.accessGate.requiresFlag`
+   * (a reconciliation test holds them together). Absent = freely shown.
+   */
+  requiresFlag?: string;
 }
 
 /**
@@ -52,15 +61,17 @@ export const CONTINENT_CROSSING_FLAG = "dream-world-passage";
 export const GAZETTEER_CROSSING_CITY = "giant-kings-court";
 
 /**
- * Whether a farther city is reachable from the character's current city given the
- * flags they hold (issues #130, #132). Same continent is always shown. A
- * different continent appears only when the crossing flag is held AND the route
- * passes through the crossing chokepoint — either the character is AT the crossing
- * city, or the farther city IS the crossing city (the dream threshold you cross
- * through). So a mainland walker holding the passage sees Giant King's Court as
- * the way in, but never the City of Silver directly; a walker in the City of
- * Silver sees only Giant King's Court, never the mainland — they must reach the
- * Court first. "Finding the correct path" made visible.
+ * Whether a farther city appears in the character's travel list (issues #130,
+ * #132, #133). A FORSAKEN-LAND city is shown only when the character holds ITS
+ * own required flag — so Giant King's Court (the `dream-world-passage` gate) shows
+ * to any passage-holder, while the City of Silver and Moon City each show only to
+ * a holder of their per-city flag; a native of one therefore never sees the other,
+ * and an outsider at the Court sees neither native city until admitted. A CENTRAL
+ * city is shown to a central-continent character (the mainland is fully connected)
+ * and, from the Forsaken side, only when the character is AT the crossing chokepoint
+ * (Giant King's Court) holding the passage — so leaving routes through the Court,
+ * and a Silver/Moon native at home never sees the mainland directly. "Finding the
+ * correct path" made visible.
  */
 function continentReachable(
   targetCity: GazetteerFartherCity,
@@ -69,10 +80,27 @@ function continentReachable(
   accessFlags: readonly string[],
 ): boolean {
   const target = gazetteerContinentOf(targetCity);
-  if (target === currentContinent) return true;
-  if (!accessFlags.includes(CONTINENT_CROSSING_FLAG)) return false;
+  if (target === "forsaken-land") {
+    // Each Forsaken city is gated by its own awareness flag (per-city, #133),
+    // AND — for a city other than the Court itself — by the shared dream-world
+    // passage that any approach to the sealed continent requires (issue #132).
+    // Without the second clause the display would diverge from the travel gate:
+    // a mainlander holding only `silver-city-passage` (but no dream passage)
+    // would SEE the City of Silver here while `canTravelTo` refused it at the
+    // chokepoint. The Court carries the dream passage as its own flag, so it
+    // stays reachable for any passage-holder.
+    if (targetCity.requiresFlag === undefined) return true;
+    return (
+      accessFlags.includes(targetCity.requiresFlag) &&
+      accessFlags.includes(CONTINENT_CROSSING_FLAG)
+    );
+  }
+  // Central target: shown to a mainlander; from the Forsaken side only at the
+  // crossing city with the dream passage (the way out routes through the Court).
+  if (currentContinent === "central") return true;
   return (
-    currentCityId === GAZETTEER_CROSSING_CITY || targetCity.id === GAZETTEER_CROSSING_CITY
+    currentCityId === GAZETTEER_CROSSING_CITY &&
+    accessFlags.includes(CONTINENT_CROSSING_FLAG)
   );
 }
 
@@ -364,17 +392,19 @@ const FIFTH_CITIES: GazetteerFartherCity[] = [
     blurb:
       "The cold northern empire of the God of Combat, beyond the Hornacis range: walled towns, drilled militias, and martial faith. The winters are long and the frontier dangerous, where monsters press at the walls and strength commands open respect.",
   },
-  // ── Forsaken Land of the Gods — the sealed Eastern Continent (issue #130). ──
-  // Travel-list roster only (no districts yet, by design): a central character
-  // never sees these — the continent filter hides them until the crossing flag
-  // is held (issue #3). They mirror the game-layer travel cities of the same ids.
+  // ── Forsaken Land of the Gods — the sealed Eastern Continent (issues #130/#133). ──
+  // A central character never sees these (the continent filter). Each Forsaken
+  // city is gated by its OWN flag: the City of Silver and Moon City were isolated,
+  // mutually-unaware settlements, so a native of one never sees the other; the
+  // Court carries the shared dream-world passage. Mirrors the game-layer access gates.
   {
     id: "silver-city",
     name: "Silver City",
     realm: "Forsaken Land of the Gods — the silver capital",
     blurb:
-      "The lightless silver capital of the abandoned faithful, beneath the Forsaken Land's eternal lightning.",
+      "The lightless silver capital of the giant-descended, beneath the Forsaken Land's eternal lightning.",
     continent: "forsaken-land",
+    requiresFlag: "silver-city-passage",
   },
   {
     id: "giant-kings-court",
@@ -383,6 +413,16 @@ const FIFTH_CITIES: GazetteerFartherCity[] = [
     blurb:
       "The seat of the Giant King in the Forsaken Land, whose Dream-World shadow is the only passage to the sealed continent.",
     continent: "forsaken-land",
+    requiresFlag: "dream-world-passage",
+  },
+  {
+    id: "moon-city",
+    name: "Moon City",
+    realm: "Forsaken Land of the Gods — the eastern fog-watch",
+    blurb:
+      "An isolated city of the Forsaken Land's eastern reaches, whose people have kept an ancient watch on the world-ending gray fog.",
+    continent: "forsaken-land",
+    requiresFlag: "moon-city-passage",
   },
 ];
 
@@ -415,7 +455,7 @@ const SILVER_CITY_DISTRICTS: GazetteerDistrict[] = [
     slug: "silver-knights-bastion",
     name: "The Knights' Bastion",
     blurb:
-      "The walled seat of the Silver Knights — barracks, watch-halls, and muster-yards for the martial order that holds the night streets and the City's walls against the dead country beyond.",
+      "The walled seat of the Silver Knights — barracks, watch-halls, and muster-yards for the giant-blooded warriors (Beyonders of the Twilight Giant path) who hold the City's walls against the dead country beyond.",
     keywords: ["bastion", "knight", "knights", "watch"],
   },
   {
@@ -451,6 +491,32 @@ const GIANT_KINGS_COURT_DISTRICTS: GazetteerDistrict[] = [
   },
 ];
 
+// Moon City — the eastern fog-watch (issue #133). Public, street-level knowledge a
+// resident holds; the spoilery guardian-duty lore stays in narrator-only entries.
+const MOON_CITY_DISTRICTS: GazetteerDistrict[] = [
+  {
+    slug: "moon-watch-walls",
+    name: "The Fog-Watch Walls",
+    blurb:
+      "The eastward ramparts from which Moon City has kept its endless vigil on the wall of gray fog — watch-posts, signal-beacons, and the muster of those who guard the edge of the world.",
+    keywords: ["fog", "watch", "wall", "rampart", "moon city"],
+  },
+  {
+    slug: "moon-priests-hold",
+    name: "The Priests' Hold",
+    blurb:
+      "The seat of Moon City's three High Priests, who keep the old rites and the survival of the city — part temple, part council-hall, part refuge beneath the perpetual lightning.",
+    keywords: ["priest", "hold", "temple", "council"],
+  },
+  {
+    slug: "moon-lower-warrens",
+    name: "The Lower Warrens",
+    blurb:
+      "The crowded, lamplit warrens where the hard-pressed people of Moon City live, eat what the dead land yields, and bear the slow toll of generations spent under the fog.",
+    keywords: ["warren", "warrens", "lower", "quarter"],
+  },
+];
+
 // District lists keyed by city id — the intra-city "site" layer per place.
 const FIFTH_CITY_DISTRICTS: Record<string, GazetteerDistrict[]> = {
   tingen: FIFTH_DISTRICTS,
@@ -462,6 +528,7 @@ const FIFTH_CITY_DISTRICTS: Record<string, GazetteerDistrict[]> = {
   feysac: FEYSAC_DISTRICTS,
   "silver-city": SILVER_CITY_DISTRICTS,
   "giant-kings-court": GIANT_KINGS_COURT_DISTRICTS,
+  "moon-city": MOON_CITY_DISTRICTS,
 };
 
 const FIFTH_CITY_BY_ID: Record<string, GazetteerFartherCity> = Object.fromEntries(

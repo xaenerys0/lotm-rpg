@@ -983,6 +983,9 @@ describe("gateLocationChange", () => {
 
   // ── crossing chokepoint (issue #132) ──
   it("refuses a flagged jump STRAIGHT from the mainland to the City of Silver — must route through the Court", () => {
+    // The character holds BOTH the dream passage and the Silver flag (so the
+    // access gate passes); the CHOKEPOINT still refuses a direct mainland→Silver
+    // jump — the crossing must route through Giant King's Court (issues #132/#133).
     const r = gateLocationChange({
       ...base,
       epoch: 5,
@@ -991,7 +994,7 @@ describe("gateLocationChange", () => {
       cause: "capability-gated-teleport",
       gateEnabled: true,
       sequenceLevel: 1,
-      accessFlags: ["dream-world-passage"],
+      accessFlags: ["dream-world-passage", "silver-city-passage"],
     });
     expect(r.blocked).toBe(true);
     expect(r.location).toBe("Tingen City");
@@ -1178,7 +1181,7 @@ describe("applyWorldStateChanges — movement gate", () => {
     );
     expect(skipped.state.location).not.toBe("Silver City");
 
-    // Crossing to Giant King's Court (the chokepoint) is permitted...
+    // ...but crossing to Giant King's Court (the shared dream gate) IS permitted.
     const atCourt = applyWorldStateChanges(
       earned.state,
       [locationChange("Giant King's Court", "capability-gated-teleport")],
@@ -1186,9 +1189,24 @@ describe("applyWorldStateChanges — movement gate", () => {
     );
     expect(atCourt.state.location).toBe("Giant King's Court");
 
-    // ...and from the Court, inward travel to Silver City is allowed.
-    const inward = applyWorldStateChanges(
+    // The insular native cities stay sealed to an outsider who holds only the
+    // dream passage — entering the City of Silver needs its OWN flag (issue #133),
+    // which a mainland visitor has not earned. So from the Court they are refused.
+    const stillSealed = applyWorldStateChanges(
       atCourt.state,
+      [locationChange("Silver City", "capability-gated-teleport")],
+      { ...opts, epoch: 5 },
+    );
+    expect(stillSealed.state.location).toBe("Giant King's Court");
+
+    // A Silver NATIVE (who holds the Silver flag) makes that inward leg freely.
+    const native = makeGameState({
+      location: "Giant King's Court",
+      currentCity: "giant-kings-court",
+      accessFlags: ["dream-world-passage", "silver-city-passage"],
+    });
+    const inward = applyWorldStateChanges(
+      native,
       [locationChange("Silver City", "capability-gated-teleport")],
       { ...opts, epoch: 5 },
     );

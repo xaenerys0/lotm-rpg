@@ -8,7 +8,7 @@ import {
 } from "./gazetteer";
 import { DEFAULT_EPOCH_ID, getEpoch } from "./epochs";
 import { ACCESS_FLAGS } from "@/lib/ai";
-import { CITIES, CROSSING_CITY, getCity } from "@/lib/game";
+import { CROSSING_CITY, getCity } from "@/lib/game";
 
 describe("gazetteerForEpoch", () => {
   it("gives the Fifth Epoch the Tingen gazetteer with inter-city travel", () => {
@@ -126,14 +126,17 @@ describe("gazetteerForEpoch", () => {
     expect(ids).toContain("backlund");
   });
 
-  it("from the crossing city itself, the whole mainland AND Silver City are reachable (issue #132)", () => {
+  it("from the crossing city, a Silver native sees Silver + the mainland, never Moon (issues #132/#133)", () => {
     const ids = gazetteerForEpoch(5, "giant-kings-court", [
       CONTINENT_CROSSING_FLAG,
+      "silver-city-passage",
     ]).fartherCities.map((c) => c.id);
-    // At the Court (the chokepoint) the crossing is open both ways.
+    // At the Court the crossing is open both ways for what they're aware of...
     expect(ids).toContain("silver-city");
     expect(ids).toContain("tingen");
     expect(ids).toContain("backlund");
+    // ...but never Moon City — they hold no Moon flag (mutual unawareness, #133).
+    expect(ids).not.toContain("moon-city");
   });
 
   it("a new character in the City of Silver sees only Giant King's Court, never the mainland (issue #132)", () => {
@@ -145,10 +148,37 @@ describe("gazetteerForEpoch", () => {
     expect(ids).toEqual(["giant-kings-court"]);
   });
 
-  it("a Forsaken character sees only Forsaken cities without the flag (vice-versa)", () => {
-    const ids = gazetteerForEpoch(5, "silver-city").fartherCities.map((c) => c.id);
-    // Same-continent only: giant-kings-court yes, no central city leaks in.
+  it("a Silver native sees only the Court — never Moon City or the mainland (issue #133)", () => {
+    const ids = gazetteerForEpoch(5, "silver-city", [
+      "silver-city-passage",
+      CONTINENT_CROSSING_FLAG,
+    ]).fartherCities.map((c) => c.id);
+    // The Court (dream passage) shows as the way out; Moon City (no Moon flag)
+    // and the mainland (not at the Court) do not.
     expect(ids).toEqual(["giant-kings-court"]);
+  });
+
+  it("a Moon native sees only the Court — never the City of Silver (issue #133)", () => {
+    const ids = gazetteerForEpoch(5, "moon-city", [
+      "moon-city-passage",
+      CONTINENT_CROSSING_FLAG,
+    ]).fartherCities.map((c) => c.id);
+    expect(ids).toEqual(["giant-kings-court"]);
+  });
+
+  it("hides a Forsaken city from a holder who lacks the dream passage (display matches travel, #132)", () => {
+    // A mainlander who somehow holds only the per-city flag (no dream passage)
+    // must NOT see the City of Silver: the crossing is chokepointed, so
+    // `canTravelTo` would refuse it. Showing it would be a display/permission
+    // mismatch. The display gate requires BOTH the per-city flag and the
+    // shared dream passage, exactly as travel does.
+    const ids = gazetteerForEpoch(5, "tingen", ["silver-city-passage"]).fartherCities.map(
+      (c) => c.id,
+    );
+    expect(ids).not.toContain("silver-city");
+    // With no dream passage at all, no Forsaken city surfaces (not even the Court).
+    expect(ids).not.toContain("giant-kings-court");
+    expect(ids).not.toContain("moon-city");
   });
 
   it("the uncertain atlas never surfaces the Forsaken cities", () => {
@@ -157,18 +187,26 @@ describe("gazetteerForEpoch", () => {
     expect(ids).not.toContain("giant-kings-court");
   });
 
-  it("the crossing flag reconciles with the canonical ACCESS_FLAGS and city gate", () => {
-    // The lore-local literal must match the AI/game source of truth so they can
+  it("the per-city flags reconcile with the canonical ACCESS_FLAGS and city gates (issues #132/#133)", () => {
+    // The lore-local literals must match the AI/game source of truth so they can
     // never drift (mirrors the PROLOGUE_AFFINITY_REGIONS reconciliation pattern).
     expect(ACCESS_FLAGS).toContain(CONTINENT_CROSSING_FLAG);
-    for (const city of CITIES.filter((c) => c.continent === "forsaken-land")) {
-      expect(city.accessGate?.requiresFlag).toBe(CONTINENT_CROSSING_FLAG);
+    // Every Forsaken gazetteer city's requiresFlag matches the game-layer
+    // City.accessGate.requiresFlag for the same id (silver/moon/court each its own).
+    // Hold all three flags so every Forsaken city surfaces in the roster.
+    const forsakenGaz = gazetteerForEpoch(5, "tingen", [
+      "dream-world-passage",
+      "silver-city-passage",
+      "moon-city-passage",
+    ]).fartherCities.filter((c) => c.continent === "forsaken-land");
+    expect(forsakenGaz.length).toBe(3);
+    for (const gaz of forsakenGaz) {
+      const game = getCity(gaz.id);
+      expect(game).toBeDefined();
+      expect(gaz.requiresFlag).toBe(game!.accessGate?.requiresFlag);
+      expect(ACCESS_FLAGS).toContain(gaz.requiresFlag);
     }
-    // The two layers describe the same Forsaken cities.
-    expect(getCity("silver-city")).toBeDefined();
-    expect(getCity("giant-kings-court")).toBeDefined();
-    // The lore-local crossing-city literal must match the game-layer source of
-    // truth so the display filter and the travel gate can never disagree (#132).
+    // The lore-local crossing-city literal must match the game-layer source.
     expect(GAZETTEER_CROSSING_CITY).toBe(CROSSING_CITY);
     expect(getCity(GAZETTEER_CROSSING_CITY)).toBeDefined();
   });

@@ -83,7 +83,7 @@ describe("createDefaultGameState — start archetypes", () => {
     );
     expect(gs.location).toBe("Silver City");
     expect(gs.currentCity).toBe("silver-city");
-    expect(gs.accessFlags).toEqual(["dream-world-passage"]);
+    expect(gs.accessFlags).toEqual(["dream-world-passage", "silver-city-passage"]);
   });
 
   it("seeds the dream-world passage for a Forsaken origin archetype (issue #132)", () => {
@@ -100,7 +100,24 @@ describe("createDefaultGameState — start archetypes", () => {
     );
     expect(gs.location).toBe("Silver City");
     expect(gs.currentCity).toBe("silver-city");
-    expect(gs.accessFlags).toEqual(["dream-world-passage"]);
+    expect(gs.accessFlags).toEqual(["dream-world-passage", "silver-city-passage"]);
+  });
+
+  it("seeds the moon-city passage (not silver) for a Moon City origin (issue #133)", () => {
+    const scenario = getStartScenario("forsaken-moon-city")!;
+    const gs = createDefaultGameState(
+      5,
+      "c1",
+      "Watcher",
+      undefined,
+      5,
+      undefined,
+      scenario,
+    );
+    expect(gs.location).toBe("Moon City");
+    expect(gs.currentCity).toBe("moon-city");
+    // A Moon native knows only Moon — never the City of Silver (mutual unawareness).
+    expect(gs.accessFlags).toEqual(["dream-world-passage", "moon-city-passage"]);
   });
 
   it("grants no access flags for an ordinary central start", () => {

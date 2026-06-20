@@ -112,6 +112,24 @@ describe("START_ARCHETYPES data integrity", () => {
     expect(ids).toContain("tingen-klein-classmate");
     expect(ids).toContain("tingen-junior-nighthawk");
   });
+
+  it("ships the Backlund circle archetypes (issue #133)", () => {
+    const backlund = START_ARCHETYPES.filter((a) => a.location === "Backlund");
+    expect(backlund.length).toBeGreaterThanOrEqual(2);
+    const ids = backlund.map((a) => a.id);
+    expect(ids).toContain("backlund-hall-attendant");
+    expect(ids).toContain("backlund-detective-assistant");
+    // Each is a default (non-origin) Fifth-Epoch archetype tied to a Backlund NPC.
+    for (const a of backlund) {
+      expect(a.epoch).toBe(5);
+      expect(a.origin).toBeUndefined();
+      expect(a.circleNpcs.length).toBeGreaterThan(0);
+    }
+    // They appear in the default picker alongside Tingen's.
+    expect(startArchetypesForEpoch(5).map((a) => a.id)).toEqual(
+      expect.arrayContaining(["backlund-hall-attendant", "backlund-detective-assistant"]),
+    );
+  });
 });
 
 describe("startArchetypesForEpoch", () => {

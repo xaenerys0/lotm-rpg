@@ -78,6 +78,18 @@ export function createSession(
   };
 }
 
+/**
+ * The per-city awareness flag(s) a Forsaken-Land origin earns for the city they
+ * start in (issue #133): a City-of-Silver native knows only Silver, a Moon City
+ * native only Moon, so each is gated from the other. Returns `[]` for any other
+ * (or unresolved) start city — the dream-world passage is granted separately.
+ */
+function originCityFlags(startCity: string | undefined): AccessFlag[] {
+  if (startCity === "silver-city") return ["silver-city-passage"];
+  if (startCity === "moon-city") return ["moon-city-passage"];
+  return [];
+}
+
 export function createDefaultGameState(
   pathwayId: number,
   characterId: string = crypto.randomUUID(),
@@ -108,11 +120,17 @@ export function createDefaultGameState(
   // archetype) holds the dream-world passage from the start, so they can move
   // within their home continent. A central start grants nothing.
   const origin = archetype?.origin ?? startScenario?.origin;
-  const accessFlags =
-    origin === "forsaken-land" ? (["dream-world-passage"] as AccessFlag[]) : undefined;
   // Seed the tracked current city when the start location names a known one
   // (issue #101), so the map opens on the right city's atlas.
   const startCity = cityIdFromLocation(location);
+  // A Forsaken-Land origin holds the dream-world passage PLUS their own city's
+  // awareness flag (issue #133) — Silver natives know only Silver, Moon natives
+  // only Moon (the two were mutually unaware), so each is gated from the other.
+  // A central start grants nothing.
+  const accessFlags =
+    origin === "forsaken-land"
+      ? (["dream-world-passage", ...originCityFlags(startCity)] as AccessFlag[])
+      : undefined;
   return {
     characterId,
     pathwayId,
