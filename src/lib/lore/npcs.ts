@@ -143,4 +143,47 @@ export const NPC_LORE: LoreEntry[] = [
     tokenCount: 195,
     narratorOnly: true,
   },
+  // ── Backlund deep-dive (world build-out 4, issue #133) ──
+  // City-keyed to "backlund" so the narrator carries them for a character in the
+  // capital. Deliberately NOT pathway-keyed (the issue #132 leak rule): a
+  // `pathway` field would inject a Backlund NPC into any same-pathway character's
+  // prompt regardless of where they are. Audrey's pathway is named only in prose.
+  // Alger Wilson roams the sea and belongs to no one city, so he carries no city
+  // key (corpus/integrity only), mirroring the cross-cutting secret-society lore.
+  {
+    slug: "npc-audrey-hall",
+    title: "Audrey Hall — Lady of Empress Borough, the Tarot Club's Justice",
+    category: "npc",
+    content: `Audrey Hall is the youngest daughter of the aristocratic Hall family of Backlund's Empress Borough, a poised and famously charming young noblewoman who moves easily through the salons and balls of the capital's high society. Behind that public face she is a Beyonder of the Spectator (Visionary) pathway, gifted in reading and gently swaying the minds and emotions of others, and — known to no one in her ordinary world — a member of the secret Tarot Club, where she takes the name "Justice." Audrey is idealistic, quick-witted, and far braver than her sheltered upbringing would suggest, determined to use her gifts to do genuine good. Her ties define her: her stern father the Earl, her sociable elder brother Hibbert Hall, and her devoted dog Susie at home; and, above the gray fog, the mysterious The Fool and her fellow Tarot members, whom she comes to trust more than almost anyone in her daylight life. She is a living bridge between Backlund's gilded surface and its hidden Beyonder depths.`,
+    epoch: 5,
+    city: "backlund",
+    npcs: ["Audrey Hall", "Hibbert Hall"],
+    sequences: [],
+    tags: ["backlund", "hall-family", "tarot-club", "the-justice", "visionary-pathway"],
+    tokenCount: 245,
+  },
+  {
+    slug: "npc-hall-family",
+    title: "The Hall Family — A Noble House of Empress Borough",
+    category: "npc",
+    content: `The Hall family is one of the established aristocratic houses of Backlund, seated in a fine townhouse in Empress Borough on the refined bank of the Tussock. Headed by the Earl — a proud, conventional patriarch concerned above all with the family's standing — the household includes his elder son and heir Hibbert Hall, who is sociable, a touch idle, and fond of the capital's pleasures, and his youngest daughter Audrey, the family's brightest light in society. Like the great families around them, the Halls live by the rituals of their class: the season's balls, advantageous marriages, parliamentary connections, and the careful management of reputation. On the surface they are exactly what they appear to be — old money in a city built on it. What the Earl does not know is that his daughter walks in a hidden world far stranger and more dangerous than any drawing-room intrigue, and that the Hall name has quietly become a thread in the Beyonder affairs of the capital.`,
+    epoch: 5,
+    city: "backlund",
+    npcs: ["Hibbert Hall", "Audrey Hall"],
+    sequences: [],
+    tags: ["backlund", "hall-family", "nobility", "empress-borough"],
+    tokenCount: 225,
+  },
+  {
+    slug: "npc-alger-wilson",
+    title: "Alger Wilson — The Hanged Man",
+    category: "npc",
+    content: `Alger Wilson is a sea-faring Beyonder, a hard and watchful man shaped by years aboard ship and in the harbour underworlds of the Northern Continent. Within the Beyonder world he belongs to the Rose School of Thought, the secret Loen mystic society, and — above the gray fog — to the Tarot Club, where he is known as "The Hanged Man." Cautious to the point of paranoia and slow to trust, Alger has clawed his survival and his advancement out of dangerous waters by being careful, and he brings that wariness to the Club's table, trading intelligence and Beyonder goods like a man who expects every bargain to be a trap. His ties run to the sea and its sailor-Beyonders, to the Rose School's hidden network, and to his fellow Tarot members — above all the enigmatic The Fool, whose power he respects and fears in equal measure. He is the kind of ally who keeps a promise precisely because he assumes everyone else will break theirs.`,
+    epoch: 5,
+    npcs: ["Alger Wilson"],
+    sequences: [7],
+    tags: ["tarot-club", "the-hanged-man", "rose-school-of-thought", "sailor"],
+    tokenCount: 220,
+    narratorOnly: true,
+  },
 ];

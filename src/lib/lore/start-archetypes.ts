@@ -159,6 +159,47 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Backlund archetypes (world build-out 4, issue #133) — begin embedded in a
+// circle of the Loen capital, referencing the Backlund NPCs added in `npcs.ts`. ──
+const BACKLUND_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "backlund-hall-attendant",
+    label: "An attendant to Lady Audrey Hall in Empress Borough",
+    epoch: 5,
+    location: "Backlund",
+    relationship: "assistant",
+    circleNpcs: ["Audrey Hall"],
+    blurb:
+      "You serve in the Hall household of Empress Borough, close to the charming young noblewoman Audrey Hall.",
+    openingBeat: `The strange potion still burns in me as I cross the marble entrance hall of the Hall family's Empress Borough townhouse to attend Lady Audrey, the soot-yellow fog of Backlund pressing at the tall windows — whatever I have become this night, none of this gilded household must ever learn it. ${SCENE_CUE}`,
+    pathwayAffinity: [2],
+    seeds: {
+      trackedAllies: ["Audrey Hall"],
+      facts: [
+        "You attend Lady Audrey Hall in her family's Empress Borough townhouse in Backlund; she knows you as a trusted member of the household.",
+      ],
+    },
+  },
+  {
+    id: "backlund-harbor-deckhand",
+    label: "A deckhand on the Backlund docks, known to Alger Wilson",
+    epoch: 5,
+    location: "Backlund",
+    relationship: "circle-member",
+    circleNpcs: ["Alger Wilson"],
+    blurb:
+      "You work the Backlund docklands aboard a ship known to the wary sailor-Beyonder Alger Wilson.",
+    openingBeat: `The change still churns in my gut as I haul lines on the fog-wet Backlund docks, the Tussock thick with masts and the reek of the sea, and I keep my head down — the hard-eyed sailor Alger Wilson misses nothing, and what I drank tonight is mine alone to hide. ${SCENE_CUE}`,
+    pathwayAffinity: [6],
+    seeds: {
+      trackedAllies: ["Alger Wilson"],
+      facts: [
+        "You crew a vessel on the Backlund docklands and are known to Alger Wilson, a wary sailor with dangerous hidden connections; he keeps a watchful eye on you.",
+      ],
+    },
+  },
+] as const;
+
 // ── Forsaken Land of the Gods — ORIGIN archetypes (issue #132). Begin a native
 // of the sealed Eastern Continent. EXCLUDED from the default picker; surfaced
 // only behind the explicit "choose an origin" affordance, and seed the
@@ -190,6 +231,7 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
  * selection filters origins out; `forsakenLandArchetypesForEpoch` filters in. */
 export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...TINGEN_ARCHETYPES,
+  ...BACKLUND_ARCHETYPES,
   ...FORSAKEN_ARCHETYPES,
 ];
 

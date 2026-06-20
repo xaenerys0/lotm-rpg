@@ -195,6 +195,67 @@ describe("Lore content coverage", () => {
     expect(names).toContain("Giant King Aurmir");
   });
 
+  it("has deepened Backlund to capital depth (issue #133)", () => {
+    // The stub gains notable boroughs/landmarks, bringing Backlund toward
+    // Tingen-level depth. Every location entry stays epoch 5, city backlund.
+    const locations = BACKLUND_LORE.filter((e) => e.category === "location");
+    expect(locations.length).toBeGreaterThanOrEqual(8);
+    for (const slug of [
+      "backlund-boroughs-structure",
+      "backlund-harbor-docklands",
+      "backlund-underground-ruins",
+      "backlund-financial-district",
+    ]) {
+      const entry = getLoreBySlug(slug);
+      expect(entry).toBeDefined();
+      expect(entry!.epoch).toBe(5);
+      expect(entry!.city).toBe("backlund");
+      // Surface, street-level geography is ungated player-safe knowledge.
+      expect(entry!.narratorOnly).toBe(false);
+    }
+  });
+
+  it("has the Backlund organizations with gated spoilers (issue #133)", () => {
+    // Rose School of Thought — Backlund-local, city-keyed; surface ungated,
+    // heterodox doctrine sequence-gated + narrator-only.
+    const roseSurface = getLoreBySlug("rose-school-of-thought-overview");
+    const roseDeep = getLoreBySlug("rose-school-of-thought-doctrine");
+    expect(roseSurface?.city).toBe("backlund");
+    expect(roseSurface?.narratorOnly).toBe(false);
+    expect(roseSurface!.sequences).toEqual([]);
+    expect(roseDeep?.narratorOnly).toBe(true);
+    expect(roseDeep!.sequences.length).toBeGreaterThan(0);
+    // The capital's own Nighthawks division (city-keyed).
+    expect(getLoreBySlug("backlund-nighthawks-team")?.city).toBe("backlund");
+  });
+
+  it("keeps the Tarot Club leak-safe: no city and no pathway key (issue #133)", () => {
+    // The Tarot Club convenes "above the gray fog", not in Backlund, and is a
+    // profound Fool-pathway secret. selectCuratedLore injects by city AND by
+    // pathway, so a city/pathway key would leak it into every Backlund or every
+    // Fool character's prompt. It must carry neither (corpus/integrity only).
+    const tarot = ORGANIZATION_LORE.filter((e) => e.tags.includes("tarot-club"));
+    expect(tarot.length).toBeGreaterThanOrEqual(2);
+    for (const e of tarot) {
+      expect(e.city).toBeUndefined();
+      expect(e.pathway).toBeUndefined();
+      expect(e.narratorOnly).toBe(true);
+      expect(e.sequences.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("has the Backlund NPCs with relationship data, not pathway-keyed (issue #133)", () => {
+    const names = NPC_LORE.flatMap((e) => e.npcs);
+    expect(names).toContain("Audrey Hall");
+    expect(names).toContain("Hibbert Hall");
+    expect(names).toContain("Alger Wilson");
+    // City-keyed Backlund NPCs are NOT pathway-keyed (the issue #132 leak rule),
+    // so a Backlund face never leaks into another region's same-pathway prompt.
+    const audrey = getLoreBySlug("npc-audrey-hall");
+    expect(audrey?.city).toBe("backlund");
+    expect(audrey?.pathway).toBeUndefined();
+  });
+
   it("has rich, correctly-tagged lore for each pre-Iron-Age epoch", () => {
     for (const [lore, epoch, overview] of [
       [FIRST_EPOCH_LORE, 1, "first-epoch-overview"],

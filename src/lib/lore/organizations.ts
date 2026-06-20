@@ -130,4 +130,95 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tokenCount: 200,
     narratorOnly: true,
   },
+  // ── Backlund deep-dive (world build-out 4, issue #133) ──
+  // The Rose School of Thought and the capital's Nighthawks division are
+  // Backlund-LOCAL and city-keyed ("backlund"), so the narrator carries them for
+  // a character actually in the capital (surface ungated, the heterodox doctrine
+  // sequence-gated + narratorOnly). The Tarot Club, by contrast, is NOT a
+  // physical Backlund body — it convenes "above the gray fog" — and is a profound
+  // secret of the Fool pathway, so (mirroring the Numinous Episcopate) it carries
+  // NEITHER a city NOR a pathway key: selectCuratedLore would otherwise inject it
+  // into every Backlund character (city) or every Fool character (pathway) and
+  // leak it. It lives here for corpus/RAG + integrity only, narratorOnly + gated.
+  {
+    slug: "rose-school-of-thought-overview",
+    title: "Rose School of Thought — Overview",
+    category: "organization",
+    content: `The Rose School of Thought is a secret society rooted in Backlund and the wider Loen Kingdom, drawn chiefly from the nobility, the wealthy, and the educated. Standing outside the authority of the orthodox Church of the Evernight Goddess, its members privately revere the Goddess in their own heterodox fashion — as patrons of mysticism, collectors of the rare and the forbidden, and seekers after the truths the orthodox clergy keep locked away. To the little of the world that knows it exists at all, the Rose School is a rumour of a refined salon where titled men and women trade in curios and secrets behind respectable doors; its true membership, reach, and purposes it keeps well hidden. It recruits quietly from those with standing to lose and curiosity enough to risk it, and it takes a particular interest in Beyonders who can be made useful to its discreet designs.`,
+    epoch: 5,
+    city: "backlund",
+    npcs: [],
+    sequences: [],
+    tags: [
+      "rose-school-of-thought",
+      "secret-organization",
+      "evernight-goddess",
+      "backlund",
+      "nobility",
+    ],
+    tokenCount: 200,
+    narratorOnly: false,
+  },
+  {
+    slug: "rose-school-of-thought-doctrine",
+    title: "Rose School of Thought — Heterodox Doctrine",
+    category: "organization",
+    content: `Behind its salon face the Rose School of Thought is a genuine mystic order with its own theology and its own ambitions. Its inner teaching holds that the orthodox Church has tamed and diminished the Evernight Goddess's mysteries, and that the night, the soul, the moon, and the boundary of death conceal deeper truths the Church will not pursue — so the School pursues them itself. It keeps its own rites, its own collection of sealed artifacts and forbidden texts, and quiet ties to Beyonders of the moonlit and night-bound pathways who would find no welcome among the orthodox. Its highest circles guard knowledge the Church would call heresy and the Mandated Punishers would call a crime, advancing it patiently, under cover of respectability, across generations of Loen's great families. To rise within the Rose School is to learn how much of the capital's quiet power already answers to it.`,
+    epoch: 5,
+    city: "backlund",
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "rose-school-of-thought",
+      "secret-organization",
+      "evernight-goddess",
+      "moon-pathway",
+      "spoiler",
+    ],
+    tokenCount: 200,
+    narratorOnly: true,
+  },
+  {
+    slug: "backlund-nighthawks-team",
+    title: "Nighthawks — Backlund Division",
+    category: "organization",
+    content: `The Backlund Nighthawks are the Church of the Evernight Goddess's Beyonder arm in the capital, and they dwarf a provincial posting like Tingen's. Where Tingen fields a single dozen-strong team, Backlund supports multiple teams under the capital's bishops, coordinating across a metropolis of five million through cover identities, safehouses, and the diocese's central vault of sealed artifacts. Their casework is heavier and far more dangerous: organised cults, rogue high-Sequence Beyonders, smuggling rings moving curios through the docklands, and incidents that reach up into Parliament and the noble houses themselves. The capital's Nighthawks work alongside — and sometimes against the jurisdiction of — the Mandated Punishers of the Lord of Storms and the Machinery Hivemind of the God of Steam, with whom they share the city by uneasy treaty. For an ambitious or unlucky Beyonder, Backlund is where the Nighthawks' reach is longest and the cost of being noticed is highest.`,
+    epoch: 5,
+    city: "backlund",
+    npcs: [],
+    sequences: [9, 8, 7],
+    tags: ["nighthawks", "evernight-goddess", "backlund", "team-composition"],
+    tokenCount: 215,
+  },
+  {
+    slug: "tarot-club-origins",
+    title: "The Tarot Club — Origins & the Meeting Above the Gray Fog",
+    category: "organization",
+    content: `The Tarot Club is a tiny, intensely secret gathering convened "above the gray fog" — in a space beyond the ordinary world, reached only through the ritual of its founder, the masked figure known as The Fool. Its members attend not in the flesh but as summoned presences seated around a long bronze table, and each is known only by the name of a tarot card — The Fool, The Sun, The Star, The Hanged Man, Justice, and others as the circle slowly grows. They never learn one another's true faces, names, or homes unless they choose to share them. What binds them is mutual benefit and a fragile, deepening trust: they trade intelligence, Beyonder ingredients, formulas, and warnings none could gather alone, each profiting from the others' distant corners of the world. The Club's very existence is among the best-kept secrets of the Beyonder world, and its members guard it as though their lives depend on it — because, very often, they do.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [7],
+    tags: ["tarot-club", "the-fool", "secret-organization", "fool-pathway"],
+    tokenCount: 210,
+    narratorOnly: true,
+  },
+  {
+    slug: "tarot-club-fate",
+    title: "The Tarot Club — The Fool and Fate",
+    category: "organization",
+    content: `To its members the Tarot Club is more than a meeting; it rests on the mystery of its founder. The Fool presents as an ancient, all-knowing deity "who does not truly exist," a being wrapped in the imagery of fate, fortune, and the turning card — and the members, unable to verify the claim and unwilling to test it, treat him with genuine awe. The Club's power feels like the power of fate itself: its summoning ritual reaches across the world without regard for distance, its divinations seem to bend probability, and to sit at its bronze table is to feel oneself caught in a design larger than any single Beyonder. Whether The Fool is the god he appears, a mortal of extraordinary craft, or something stranger between, none of the members can say — and the not-knowing is part of what holds the circle in its careful, fate-bound trust.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "tarot-club",
+      "the-fool",
+      "fate",
+      "divination",
+      "secret-organization",
+      "spoiler",
+    ],
+    tokenCount: 200,
+    narratorOnly: true,
+  },
 ];
