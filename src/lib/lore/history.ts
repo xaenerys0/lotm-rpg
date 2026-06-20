@@ -1,0 +1,283 @@
+import type { LoreEntry } from "./types";
+
+// Historical / earlier-epoch regions (world build-out 12, issue #141). The named
+// historical polities, figures, and secret organizations of the pre-Iron-Age
+// epochs, each tagged to EXACTLY ONE epoch (1-4) so a Fifth-Epoch character sees
+// none of it and vice-versa (`passesEpochGate` is exact-match; never mix epochs
+// on one entry). The four epoch-setting files (`epoch-{first..fourth}.ts`) carry
+// the era OVERVIEWS; this file adds the canon NAMED content.
+//
+// Corpus-verified against corpus/wiki (corpus outranks the issue's list):
+//   • All five empires the issue lists are FOURTH EPOCH. The "Specter Empire" is
+//     NOT an independent polity — it is the Trunsoest Empire's legendary lost
+//     treasure-ship (Fourth-Epoch origin), authored as such and flagged.
+//   • Added the Balam Empire (Salinger/Death, Southern Continent) — the fourth of
+//     the canon Four Emperors' empires, which the issue's list omitted.
+//   • No named First-Epoch polities/figures/orgs exist in canon (the Age of Chaos
+//     names only cosmological beings, already in epoch-first.ts) — so the earliest
+//     named org here is the Second-Epoch Great White Brotherhood.
+//
+// Leak-safety: empire `location`/`event` entries are public era-history (ungated);
+// the god-emperors as Sequence-0 Beyonders and the SECRET organizations are
+// `narratorOnly` + `sequences`-gated. Nothing here is `metaphysics` (so it is not
+// auto-injected as epoch-setting) and nothing carries a Fifth-Epoch `city`/
+// `pathway` key — historical content surfaces via RAG/discovery, never leaking
+// across the epoch gate.
+
+export const HISTORICAL_LORE: LoreEntry[] = [
+  // ── Fourth-Epoch empires (the Warring Era → War of the Four Emperors) ──
+  {
+    slug: "solomon-empire",
+    title: "The Solomon Empire",
+    category: "location",
+    content: `The Solomon Empire was the founding hegemon of the Fourth-Epoch Northern Continent, raised by the Black Emperor Solomon in the Warring Era and ruling for centuries from its capital at Saint Millom, below the Hornacis range. It was a god-emperor's dominion built on the principle of "disharmony," backed by the True Creator and a court of angel families — the Abraham, Zaratul, and Zoroast dukes among them. For a thousand years it warred against the orthodox gods, until two of the Black Emperor's own most loyal angels, Tudor and Trunsoest, rebelled with the backing of six gods, slew their emperor, and broke the empire apart. Yet Solomon rose from death and rebuilt a second empire — its lands close to what the Fifth Epoch will call the Feysac Empire, its capital again Saint Millom — only for it to fall for good in the War of the Four Emperors. To a subject of the age, it is simply the great black empire of the south: vast, ancient, and ruled by an emperor who does not stay dead.`,
+    epoch: 4,
+    npcs: ["Solomon"],
+    sequences: [],
+    tags: ["solomon-empire", "fourth-epoch", "black-emperor", "history", "geography"],
+    tokenCount: 235,
+    narratorOnly: false,
+  },
+  {
+    slug: "trunsoest-empire",
+    title: "The Trunsoest Empire",
+    category: "location",
+    content: `The Trunsoest Empire was the strongest of the Fourth Epoch's later powers, raised by the Night Emperor Trunsoest with the backing of the orthodox gods after the Tudor-Trunsoest United Empire split. From its capital at Backlund it ruled the lands that will one day be the Loen Kingdom and the Feynapotter Kingdom, north of the Hornacis range. Its court rested on the great angel families — Augustus, Castiya, Einhorn, and Sauron — and, after the Night Emperor wed Auernia, the Blood Moon Queen, on the Sanguines as well. When Trunsoest fell in the War of the Four Emperors the gods abandoned his family and the alliance dissolved, each god taking up a single house; from those houses the Fifth-Epoch nations were born — Augustus to Loen, Einhorn to Feysac, Castiya to Feynapotter, Sauron to Intis. To an imperial subject the Trunsoest is the empire of the north: the strongest throne in the world, seated where Backlund will stand for ages after.`,
+    epoch: 4,
+    npcs: ["Trunsoest"],
+    sequences: [],
+    tags: ["trunsoest-empire", "fourth-epoch", "night-emperor", "history", "geography"],
+    tokenCount: 235,
+    narratorOnly: false,
+  },
+  {
+    slug: "tudor-empire",
+    title: "The Tudor Empire",
+    category: "location",
+    content: `The Tudor Empire was the western power of the late Fourth Epoch, raised by the Blood Emperor Alista Tudor when the United Empire split, and ruling the lands that will become the Intis Republic from its capital at Trier — the magnificent, ominous city of black stone and blood-red halls. Its throne rested on five angel families (Abraham, Antigonus, Amon, Jacob, and Tamara) and on the shadowed support of Adam and the Twilight Hermit Order. It was an empire of strange exactness, even striking its coins in irregular denominations of two, seven, and thirteen. When the Blood Emperor fell in the War of the Four Emperors the empire collapsed, part of Trier sank into the earth to become the buried Underground Trier, and its angel families were hunted thereafter by the orthodox gods. Centuries on, the Intis capital will be raised upon this same haunted ground — but in the Fourth Epoch it is a living seat of imperial dread, divided from the Trunsoest east by the Hornacis range.`,
+    epoch: 4,
+    npcs: ["Alista Tudor"],
+    sequences: [],
+    tags: ["tudor-empire", "fourth-epoch", "blood-emperor", "trier", "history"],
+    tokenCount: 245,
+    narratorOnly: false,
+  },
+  {
+    slug: "tudor-trunsoest-united-empire",
+    title: "The Tudor-Trunsoest United Empire",
+    category: "location",
+    content: `The Tudor-Trunsoest United Empire was the dual-throne empire that bridged the Solomon Empire's first fall and the four-empire age. When Tudor and Trunsoest rebelled against the Black Emperor and killed him, the two ruled together as a double consul, with the backing of six orthodox gods, over the whole of the Northern Continent from the capital at Backlund — the only time in the Fourth Epoch a single power held the entire continent. It did not last. As the slain Black Emperor stirred toward resurrection, the six gods raised Trunsoest to a Sequence-0 sovereign of one path, while Alista Tudor, to survive what was coming, slew three angels to force his own way to Sequence 0 on another — and went half-mad for it. The partnership broke, and the united empire split at the Hornacis range into the rival Tudor and Trunsoest empires. To those who lived it, the United Empire is the brief golden interregnum: the one age the whole continent answered to a single seat.`,
+    epoch: 4,
+    npcs: ["Alista Tudor", "Trunsoest"],
+    sequences: [],
+    tags: [
+      "tudor-trunsoest-united-empire",
+      "fourth-epoch",
+      "backlund",
+      "history",
+      "geography",
+    ],
+    tokenCount: 235,
+    narratorOnly: false,
+  },
+  {
+    slug: "balam-empire",
+    title: "The Balam Empire",
+    category: "location",
+    content: `The Balam Empire was the great power of the Southern Continent in the Fourth Epoch, raised by the one the histories call the Underworld Emperor — Salinger, who had been the God of the Dead and rose to a Sequence-0 sovereign of death. While the Black, Blood, and Night Emperors warred across the Northern Continent, the Underworld Emperor built his own dominion in the south, the fourth of the age's great thrones and the fourth of the Four Emperors. His was an empire under the shadow of death itself, and his fall was the most ruinous of all: when the orthodox gods at last united and slew him, the cataclysm of his death tore open the Berserk Sea that severs the Northern and Southern Continents to this day. The Balam name endures into later ages as East and West Balam, colonial grounds of the Fifth-Epoch churches — but in the Fourth Epoch, Balam is the Underworld Emperor's southern empire, ruled in the cold authority of the grave.`,
+    epoch: 4,
+    npcs: ["Salinger"],
+    sequences: [],
+    tags: ["balam-empire", "fourth-epoch", "underworld-emperor", "history", "geography"],
+    tokenCount: 230,
+    narratorOnly: false,
+  },
+  {
+    slug: "specter-empire",
+    title: "The Specter Empire — The Trunsoest Treasure-Ship",
+    category: "location",
+    content: `The "Specter Empire" is not an empire at all but a legend of the Trunsoest Empire's lost wealth. In the Fourth Epoch the Trunsoest is said to have built a vessel as vast as a city, loaded it with the whole of the empire's treasure, and sent it to sea — whereupon the ship vanished without trace and was never found. From that loss grew the tale: on fog-bound nights upon the Sonia Sea, sailors swear, a colossal ship glides silent through the mist, crewless and gleaming, the empire's drowned treasure still in its holds. They call it the Specter Empire, a spectral apparition that haunts the water and lures the greedy to their deaths. It is a Fourth-Epoch relic surviving as a mariner's ghost story — the Trunsoest Empire's vanished fortune, reduced to a shape in the fog that no one who chases it ever brings home.`,
+    epoch: 4,
+    npcs: [],
+    sequences: [],
+    tags: ["specter-empire", "trunsoest-empire", "fourth-epoch", "legend", "sonia-sea"],
+    tokenCount: 215,
+    narratorOnly: false,
+  },
+  {
+    slug: "war-of-the-four-emperors",
+    title: "The War of the Four Emperors",
+    category: "event",
+    content: `The War of the Four Emperors is the cataclysm that ends the Fourth Epoch and clears the ground for the modern world. The age had run through its eras in order — the Warring Era, the first Solomon Empire, the Tudor-Trunsoest United Empire, and the second Solomon Empire — until four Sequence-0 sovereigns stood astride the world at once: the Black Emperor Solomon, the Blood Emperor Alista Tudor, the Night Emperor Trunsoest, and the Underworld Emperor Salinger. Their final war consumed them all. In the wreckage came the Pale Disaster, when the Primordial Demoness and Death ravaged the Northern Continent until the orthodox gods united, slew Death, and gravely wounded the Demoness — at so great a cost that the gods withdrew their Divine Kingdoms into the Astral World and thereafter sent only avatars into reality. That retreat hands the world to the orthodox Churches and the angel-family nations of the Fifth Epoch. For those who live through it, it is simply the end of days: emperors and gods alike falling from a sky that will never again hold them so close.`,
+    epoch: 4,
+    npcs: ["Solomon", "Alista Tudor", "Trunsoest", "Salinger"],
+    sequences: [],
+    tags: [
+      "war-of-the-four-emperors",
+      "fourth-epoch",
+      "pale-disaster",
+      "history",
+      "event",
+    ],
+    tokenCount: 250,
+    narratorOnly: false,
+  },
+  // ── Historical figures (the god-emperors are Sequence-0 Beyonders: gated) ──
+  {
+    slug: "npc-solomon-black-emperor",
+    title: "Solomon — The Black Emperor",
+    category: "npc",
+    content: `Solomon, the Black Emperor, is the founder and twice-over sovereign of the Solomon Empire, the first great throne of the Fourth Epoch. He rose in the Warring Era and climbed to Sequence 0 of the Black Emperor Pathway, ruling on the principle of "disharmony" with the backing of the True Creator and a court of angel-family dukes. His most loyal angels betrayed him: Tudor and Trunsoest, with six gods behind them, killed him and tore his empire down — and yet the Black Emperor does not stay dead. He resurrected, rebuilt a second empire across the lands that will become Feysac, and fought on until the War of the Four Emperors finally felled him for good, his last killer unrecorded. His blood runs on into the Fifth Epoch through the Solomon Family — among them Nast Solomon, rumoured "King of the Five Seas." To those who served him he is the undying emperor of the black banner; to his enemies, the proof that even death is only a delay.`,
+    epoch: 4,
+    npcs: ["Solomon"],
+    sequences: [4],
+    tags: ["solomon", "black-emperor", "fourth-epoch", "emperor", "spoiler"],
+    tokenCount: 235,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-alista-tudor",
+    title: "Alista Tudor — The Blood Emperor",
+    category: "npc",
+    content: `Alista Tudor, the Blood Emperor, is the founder of the Tudor Empire and a former consul of the Tudor-Trunsoest United Empire. Born in the Fourth Epoch after the Third had ended, he first climbed the Black Emperor Pathway all the way to Sequence 1, the Prince of Abolition — then, to survive the Black Emperor's resurrection, he slew three Sequence-1 Red Priest angels (Medici, Sauron, and Einhorn) and forced his own way to Sequence 0 of the Red Priest Pathway, paying for it with half his sanity. His partner was the Primordial Demoness, by whom he had the daughters Krismona and Judith — the latter the ancestress of the Demoness line. Once Trunsoest's ally against the Black Emperor, he became his rival when the United Empire split, ruling the west from black-and-crimson Trier. In the War of the Four Emperors he was killed by the Primordial Demoness and by Death. A half-mad god-emperor of blood, he is remembered as the sovereign who murdered angels to make himself a king.`,
+    epoch: 4,
+    npcs: ["Alista Tudor", "Trunsoest"],
+    sequences: [4],
+    tags: ["alista-tudor", "blood-emperor", "fourth-epoch", "red-priest", "spoiler"],
+    tokenCount: 245,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-trunsoest-night-emperor",
+    title: "Trunsoest — The Night Emperor",
+    category: "npc",
+    content: `Trunsoest, the Night Emperor, is the founder of the Trunsoest Empire and a former consul of the Tudor-Trunsoest United Empire, ancestor of the Trunsoest Family. Born in the Fourth Epoch, he too began on the Black Emperor Pathway, reaching Sequence 1, the Prince of Abolition — but when the slain Black Emperor stirred toward resurrection, the six orthodox gods raised him instead to Sequence 0 of the Justiciar Pathway. With Tudor he overthrew the Black Emperor; against Tudor he ruled the north from Backlund, the strongest throne of the age. His marriage to Auernia, the Blood Moon Queen, began as politics and became genuine love, and won him the loyalty of the Sanguines. He fell in the War of the Four Emperors — yet the empire he built outlived him, its angel families surviving to seed the Fifth-Epoch nations of Loen, Feysac, Feynapotter, and Intis. He is remembered as the emperor of the night whose house outlasted his death.`,
+    epoch: 4,
+    npcs: ["Trunsoest", "Auernia"],
+    sequences: [4],
+    tags: ["trunsoest", "night-emperor", "fourth-epoch", "justiciar", "spoiler"],
+    tokenCount: 240,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-salinger-underworld-emperor",
+    title: "Salinger — The Underworld Emperor",
+    category: "npc",
+    content: `Salinger, the Underworld Emperor, is the fourth of the Four Emperors and the founder of the Balam Empire on the Southern Continent. Older than the other three, he began as the God of the Dead in the Second Epoch, became a King of Angels in the Third when he joined the conspiracy of Rose Redemption, and rose at last to Sequence 0 of the Death Pathway, styling himself simply "Death." From the south he built his empire of the grave while the northern emperors warred. His son is Azik Eggers, and through him the Eggers line endures into the Fifth Epoch. When the orthodox gods finally united against him they slew him — but his death was a catastrophe in itself, tearing open the Berserk Sea that splits the Northern and Southern Continents to this day. Late in his existence he fused the Red Priest Uniqueness through the River of Eternal Darkness and slid toward becoming half a Great Old One. He is the death-king of the south, the emperor whose dying unmade the map.`,
+    epoch: 4,
+    npcs: ["Salinger", "Azik Eggers"],
+    sequences: [4],
+    tags: ["salinger", "underworld-emperor", "death-pathway", "fourth-epoch", "spoiler"],
+    tokenCount: 245,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-ancient-sun-god-grisha",
+    title: "Grisha — The Ancient Sun God",
+    category: "npc",
+    content: `Grisha is the human survivor who became the Ancient Sun God, the sole Orthodox God of the Third Epoch and the figure the faithful name "The Omniscient and Omnipotent." Woken from the Chaos Sea at the dawn of the Second Epoch, he rose impossibly to kill the Ancient Gods one by one and lead humanity — for the first time — to mastery of the world. His reign is the Glorious Era: a theocratic golden age of sun-worship under one god and one church, lasting over a thousand years. He kept eight Kings of Angels at his side and fathered the sons Adam and Amon. His fall is the Cataclysm: six of his own angels, five former subsidiary gods, and the Evernight Goddess formed the conspiracy of Rose Redemption and besieged him at the Battlefield of the Gods — partly because a Primordial will was waking inside him — and there they killed him, shattering the continent into the Forsaken Land and birthing the first modern gods from his remains. To a Third-Epoch worshipper he is simply God: the savior who lifted humanity out of the dark.`,
+    epoch: 3,
+    npcs: ["Grisha", "Adam", "Amon"],
+    sequences: [4],
+    tags: ["ancient-sun-god", "grisha", "third-epoch", "glorious-era", "spoiler"],
+    tokenCount: 250,
+    narratorOnly: true,
+  },
+  // ── Historical secret organizations (gated; never injected) ──
+  {
+    slug: "rose-redemption",
+    title: "Rose Redemption — The Conspiracy Against the Sun",
+    category: "organization",
+    content: `Rose Redemption is the secret conspiracy of the Third Epoch that killed the Ancient Sun God. It was formed by the Dark Angel Sasrir and the Evernight Goddess and joined by six of the god's own Kings of Angels, five former subsidiary gods, and the God of Combat — not out of simple treachery, but to forestall a horror: the will of the Primordial God Almighty was waking inside the Ancient Sun God's body, and his death was meant to stop its resurrection. They besieged and slew him at the Battlefield of the Gods, and from his remains the first modern deities — the Lord of Storms, the Eternal Blazing Sun, the God of Knowledge and Wisdom — were born. After the killing the conspiracy fractured; its remnant turned to worship the True Creator, the negative self born of the dead god, and passed under the leadership of the Angels of Fate and Red. Every later cult that worships the True Creator — the Aurora Order and the Iron and Blood Cross Order among them — traces its blood back to this one organization. It is the deepest of the age's secrets: the murder of god, dressed as redemption.`,
+    epoch: 3,
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "rose-redemption",
+      "third-epoch",
+      "true-creator",
+      "secret-organization",
+      "spoiler",
+    ],
+    tokenCount: 255,
+    narratorOnly: true,
+  },
+  {
+    slug: "great-white-brotherhood",
+    title: "The Great White Brotherhood",
+    category: "organization",
+    content: `The Great White Brotherhood is one of the oldest secret organizations in the world, founded in the Second Epoch by the Seven Lights — beings who emerged from the Spirit World to teach knowledge to humankind in their long night under the Ancient Gods. Most of its members are denizens of the Spirit World rather than the living, and its purpose is the patient transmission of learning: formulas, principles, and the half-understood machinery of power, passed to mortals who could not otherwise reach it. Across the epochs the Seven Lights have at times taken flesh through incarnated members, walking the world to guide it from within. In an age when humans were the underclass of giants, elves, and sanguines, and knowledge itself was contraband, the Brotherhood was a rumor of help from beyond — a hand reaching out of the Spirit World to those with nothing. It is a faction of teachers and ghosts, ancient beyond the memory of any nation, and its true reach is known to almost no one.`,
+    epoch: 2,
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "great-white-brotherhood",
+      "second-epoch",
+      "seven-lights",
+      "secret-organization",
+      "spoiler",
+    ],
+    tokenCount: 230,
+    narratorOnly: true,
+  },
+  {
+    slug: "moses-ascetic-order",
+    title: "The Moses Ascetic Order",
+    category: "organization",
+    content: `The Moses Ascetic Order is a secret organization founded in the Fourth Epoch by Stiano — the human who would become the God of Steam and Machinery — together with a few others who had read the Second Blasphemy Slate. In its origins it was a respectable thing: morally upright pursuers of knowledge on the Hermit Pathway, on good terms even with the Church of the Evernight Goddess, bound by the maxim "Do as you wish, but do no harm." It venerates the Hidden Sage, and therein lies its doom — for when the Hidden Sage at last stirred to life as an evil god, the Order curdled around him into a cult. From its hold at Avalon in the North Sea it endured under its Chairman Torriope and his deputy Retia Austin, until in the Fifth Epoch it was hunted down and destroyed. It is the cautionary tale of the knowledge-seekers: an order that began in virtue and ended as the thing it had always quietly served.`,
+    epoch: 4,
+    npcs: [],
+    sequences: [3],
+    tags: [
+      "moses-ascetic-order",
+      "fourth-epoch",
+      "hidden-sage",
+      "secret-organization",
+      "spoiler",
+    ],
+    tokenCount: 230,
+    narratorOnly: true,
+  },
+  {
+    slug: "secret-order",
+    title: "The Secret Order",
+    category: "organization",
+    content: `The Secret Order is a highly secretive organization founded by the Zaratul Family at the close of the War of the Four Emperors, as the Fourth Epoch gave way to the Fifth. Where its angel-family kin scattered or fell, the Zaratul endured and built this order around the wreckage of the old empires, its true goals and philosophy known to almost no one. What is known is its hunger: it searches relentlessly for the relics of the Antigonus Family, the destroyed Fool-Pathway house, and once held the most dangerous of them — the Antigonus Family's Notebook. Bound to the Fool Pathway and led by Zaratul himself, who botched his own advancement into a Sequence-1 monster, the Order threads deep into the politics of what becomes the Intis Republic, where it forms the hidden Bureau 8 of the intelligence service. It is the long shadow of the fallen empires reaching into the modern age — a conspiracy that survived the end of the world of gods and kept its secrets through the one that followed.`,
+    epoch: 4,
+    npcs: [],
+    sequences: [3],
+    tags: ["secret-order", "fourth-epoch", "zaratul", "fool-pathway", "spoiler"],
+    tokenCount: 235,
+    narratorOnly: true,
+  },
+  {
+    slug: "blood-sanctify-sect",
+    title: "The Blood Sanctify Sect",
+    category: "organization",
+    content: `The Blood Sanctify Sect is the loose, blood-soaked alliance of devil-worshippers that took shape in the Fourth Epoch, when the human families that served the powers of the Abyss bound themselves into a scattered confederation. At its heart stand three great Devil families — Beria, Andariel, and Nois — whose ancestors received the bestowment of the Abyss and who hold one another in a wary tripartite balance. They worship Farbauti, the Devil Monarch, the ruler of the Abyss and the dark side of the universe who would devastate all the world, and they spread his faith by murder and forced conversion, walking the Abyss Pathway toward ruin. Most of the truly active devils of later ages descend from this sect. It is the underside of the imperial epoch: while emperors and angels warred in the light, the Blood Sanctify families kept the older, hungrier worship alive in the dark, and they have never entirely died out.`,
+    epoch: 4,
+    npcs: [],
+    sequences: [3],
+    tags: ["blood-sanctify-sect", "fourth-epoch", "abyss-pathway", "farbauti", "spoiler"],
+    tokenCount: 225,
+    narratorOnly: true,
+  },
+  {
+    slug: "demoness-family",
+    title: "The Demoness Family",
+    category: "organization",
+    content: `The Demoness Family is the bloodline cult that began in the Fourth Epoch as the descendants of the Primordial Demoness — the half-mad consort of the Blood Emperor Alista Tudor — gathered around their terrible ancestress. They hold that the Primordial Demoness is the true inheritor of the Creator and the ultimate Ender of all things, and they walk the Demoness Pathway in her name. Their matriarch is Judith, the Demoness of Gray, child of Alista Tudor and the Primordial Demoness herself, which ties the family to the fallen Tudor Empire and to the wider web of demoness-blooded houses. In the Fifth Epoch the family will open its ranks to Beyonders of no shared blood and remake itself as the Demoness Sect, but its origin is here, in the imperial age: a family of the Ender's children, nursing across the centuries a faith in the end of everything. Its enemies are the Mirror People and, in time, the Tarot Club.`,
+    epoch: 4,
+    npcs: ["Judith"],
+    sequences: [3],
+    tags: [
+      "demoness-family",
+      "fourth-epoch",
+      "demoness-pathway",
+      "primordial-demoness",
+      "spoiler",
+    ],
+    tokenCount: 230,
+    narratorOnly: true,
+  },
+];

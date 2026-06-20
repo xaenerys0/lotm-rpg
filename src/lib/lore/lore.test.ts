@@ -14,6 +14,7 @@ import {
   FOURTH_EPOCH_LORE,
   FIFTH_EPOCH_LORE,
   FORSAKEN_LAND_LORE,
+  HISTORICAL_LORE,
   FOOL_PATHWAY_LORE,
   selectCuratedLore,
   getLoreByCategory,
@@ -587,6 +588,86 @@ describe("Lore content coverage", () => {
     }
   });
 
+  describe("Historical / earlier-epoch regions (issue #141)", () => {
+    it("tags every historical entry to a single pre-Iron-Age epoch (1-4), never 5", () => {
+      expect(HISTORICAL_LORE.length).toBeGreaterThanOrEqual(10);
+      for (const e of HISTORICAL_LORE) {
+        expect(e.epoch, e.slug).toBeGreaterThanOrEqual(1);
+        expect(e.epoch, e.slug).toBeLessThanOrEqual(4);
+      }
+      // The defining DoD: a Fifth-Epoch character must see NONE of it.
+      expect(HISTORICAL_LORE.some((e) => e.epoch === 5)).toBe(false);
+    });
+
+    it("authors the Fourth-Epoch empires + the War of the Four Emperors", () => {
+      for (const slug of [
+        "solomon-empire",
+        "trunsoest-empire",
+        "tudor-empire",
+        "tudor-trunsoest-united-empire",
+        "balam-empire",
+        "specter-empire",
+        "war-of-the-four-emperors",
+      ]) {
+        const e = getLoreBySlug(slug);
+        expect(e, slug).toBeDefined();
+        expect(e!.epoch).toBe(4);
+        // Empire/era history is public knowledge within the epoch (ungated).
+        expect(e!.narratorOnly).toBe(false);
+        expect(e!.sequences).toEqual([]);
+      }
+      // The empires are location entries; the war is an event.
+      expect(getLoreBySlug("solomon-empire")!.category).toBe("location");
+      expect(getLoreBySlug("war-of-the-four-emperors")!.category).toBe("event");
+    });
+
+    it("spans epochs 2-4 (canon has no named First-Epoch polities/figures/orgs)", () => {
+      const epochs = new Set(HISTORICAL_LORE.map((e) => e.epoch));
+      expect(epochs.has(2)).toBe(true); // Great White Brotherhood
+      expect(epochs.has(3)).toBe(true); // Ancient Sun God, Rose Redemption
+      expect(epochs.has(4)).toBe(true); // the empires + Fourth-Epoch orgs
+    });
+
+    it("gates the god-emperors and secret organizations within their era", () => {
+      const gated = [
+        "npc-solomon-black-emperor",
+        "npc-alista-tudor",
+        "npc-trunsoest-night-emperor",
+        "npc-salinger-underworld-emperor",
+        "npc-ancient-sun-god-grisha",
+        "rose-redemption",
+        "great-white-brotherhood",
+        "moses-ascetic-order",
+        "secret-order",
+        "blood-sanctify-sect",
+        "demoness-family",
+      ];
+      for (const slug of gated) {
+        const e = getLoreBySlug(slug);
+        expect(e, slug).toBeDefined();
+        expect(e!.narratorOnly).toBe(true);
+        expect(e!.sequences.length).toBeGreaterThan(0);
+        // Historical content carries no Fifth-Epoch city/pathway key, so it is
+        // never curated-injected and cannot leak across the epoch gate.
+        expect(e!.city).toBeUndefined();
+        expect(e!.pathway).toBeUndefined();
+      }
+      // The Ancient Sun God is the Third-Epoch anchor; the emperors are Fourth.
+      expect(getLoreBySlug("npc-ancient-sun-god-grisha")!.epoch).toBe(3);
+      expect(getLoreBySlug("npc-solomon-black-emperor")!.epoch).toBe(4);
+    });
+
+    it("never leaks historical lore into a Fifth-Epoch curated selection", () => {
+      // A Fifth-Epoch character at the imperial capitals' modern sites, even with
+      // a huge budget, must never receive any epoch 1-4 historical entry.
+      const historicalSlugs = new Set(HISTORICAL_LORE.map((e) => e.slug));
+      for (const location of ["Backlund", "Trier"]) {
+        const injected = selectCuratedLore("fool", location, 100_000, 5, 1).entries;
+        for (const e of injected) expect(historicalSlugs.has(e.slug)).toBe(false);
+      }
+    });
+  });
+
   it("treats the curated pathway lore prose as Fifth-Epoch-framed", () => {
     // Pathways exist in every era, but the curated lore PROSE is written with
     // Fifth-Epoch framing (churches, Nighthawks, gaslight), so it is tagged
@@ -754,6 +835,7 @@ describe("Total lore corpus", () => {
       REGIONS_LORE.length +
       LOEN_LORE.length +
       FORSAKEN_LAND_LORE.length +
+      HISTORICAL_LORE.length +
       FIRST_EPOCH_LORE.length +
       SECOND_EPOCH_LORE.length +
       THIRD_EPOCH_LORE.length +
