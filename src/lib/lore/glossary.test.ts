@@ -47,6 +47,21 @@ describe("GLOSSARY_TERMS", () => {
       expect(getGlossaryTerm(slug)?.epoch).toBe(5);
     }
   });
+
+  it("adds the Intis Republic terms (issue #135)", () => {
+    // Intis Republic geography + the Eternal Blazing Sun / Aurora Order orgs are
+    // ungated Fifth-Epoch knowledge; the Aurora Order's public face (a terror
+    // cult) unlocks for a practitioner (Seq 7), its deep truth staying in the
+    // narrator-only org lore.
+    const fifth = glossaryForSequence(7, 5).map((t) => t.slug);
+    expect(fifth).toContain("intis-republic");
+    expect(fifth).toContain("eternal-blazing-sun");
+    expect(fifth).toContain("aurora-order");
+    for (const slug of ["intis-republic", "eternal-blazing-sun", "aurora-order"]) {
+      expect(getGlossaryTerm(slug)?.requiresFlag).toBeUndefined();
+      expect(getGlossaryTerm(slug)?.epoch).toBe(5);
+    }
+  });
 });
 
 describe("glossaryForSequence (progressive disclosure)", () => {

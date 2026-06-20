@@ -15,6 +15,7 @@ import {
   FIFTH_EPOCH_LORE,
   FORSAKEN_LAND_LORE,
   FOOL_PATHWAY_LORE,
+  selectCuratedLore,
   getLoreByCategory,
   getLoreByCity,
   getLoreByEpoch,
@@ -199,6 +200,87 @@ describe("Lore content coverage", () => {
 
   it("has Fifth Epoch baseline entries", () => {
     expect(FIFTH_EPOCH_LORE.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("deepens Trier and the Intis Republic (issue #135)", () => {
+    // The stub gains the nation overview, the City-of-Fashion politics, and the
+    // wider Republic — all epoch 5, city trier, ungated surface geography.
+    const trierLocations = TRIER_LORE.filter((e) => e.category === "location");
+    expect(trierLocations.length).toBeGreaterThanOrEqual(7);
+    for (const slug of [
+      "intis-republic-overview",
+      "trier-arts-and-revolution",
+      "intis-wider-republic",
+    ]) {
+      const entry = getLoreBySlug(slug);
+      expect(entry).toBeDefined();
+      expect(entry!.epoch).toBe(5);
+      expect(entry!.city).toBe("trier");
+      expect(entry!.narratorOnly).toBe(false);
+    }
+  });
+
+  it("has the Church of the Eternal Blazing Sun with members (issue #135)", () => {
+    const members = getLoreBySlug("blazing-sun-church-members");
+    expect(members?.category).toBe("organization");
+    expect(members?.city).toBe("trier");
+    expect(members?.narratorOnly).toBe(false);
+    // Named, corpus-verified members of the Trier church.
+    for (const name of ["Plessy Descartes", "Viève", "Angoulême de François"]) {
+      expect(members!.npcs).toContain(name);
+    }
+  });
+
+  it("has the Aurora Order true-nature depth, gated and leak-safe (issue #135)", () => {
+    // The deep cult lore is a cross-cutting high-concealment secret: narrator-
+    // only + sequence-gated, and carrying NO city/pathway key so selectCuratedLore
+    // never injects it (the Numinous Episcopate pattern). The ungated public
+    // `aurora-order-overview` stays as the surface entry.
+    const deep = getLoreBySlug("aurora-order-true-nature");
+    expect(deep?.narratorOnly).toBe(true);
+    expect(deep!.sequences.length).toBeGreaterThan(0);
+    expect(deep?.city).toBeUndefined();
+    expect(deep?.pathway).toBeUndefined();
+    // Corpus canon: the Aurora Order's pathway is the Hanged Man, not the Sun.
+    expect(deep!.tags).toContain("hanged-man-pathway");
+    expect(getLoreBySlug("aurora-order-overview")).toBeDefined();
+    // End-to-end leak guard: even at the most permissive injection point — the
+    // Order's own Hanged Man pathway, an Intis location, a deep sequence, a huge
+    // budget — selectCuratedLore never injects the gated true-nature entry.
+    const injected = selectCuratedLore("hanged man", "Trier", 100_000, 5, 1).entries.map(
+      (e) => e.slug,
+    );
+    expect(injected).not.toContain("aurora-order-true-nature");
+  });
+
+  it("has the Intis NPCs with relationship data, not pathway-keyed (issue #135)", () => {
+    const names = NPC_LORE.flatMap((e) => e.npcs);
+    for (const name of ["Viève", "Plessy Descartes", "Angoulême de François"]) {
+      expect(names).toContain(name);
+    }
+    for (const slug of [
+      "npc-saint-vieve",
+      "npc-plessy-descartes",
+      "npc-angouleme-de-francois",
+    ]) {
+      const entry = getLoreBySlug(slug);
+      expect(entry?.city).toBe("trier");
+      // City-keyed but NOT pathway-keyed (the #132 leak rule); narrator-only for
+      // the Angel/Saint/Beyonder truths beneath their public church roles.
+      expect(entry?.pathway).toBeUndefined();
+      expect(entry?.narratorOnly).toBe(true);
+    }
+    // Leak guard: because they are not pathway-keyed, none of the Trier NPCs is
+    // reachable via the pathway index — a Sun character anywhere never has a
+    // Trier NPC injected by the pathway selector (the #132 leak rule).
+    const sunPathwaySlugs = getLoreByPathway("sun").map((e) => e.slug);
+    for (const slug of [
+      "npc-saint-vieve",
+      "npc-plessy-descartes",
+      "npc-angouleme-de-francois",
+    ]) {
+      expect(sunPathwaySlugs).not.toContain(slug);
+    }
   });
 
   it("has Forsaken Land content, epoch-split and city-keyed (issue #132)", () => {

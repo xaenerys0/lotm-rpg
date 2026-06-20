@@ -325,4 +325,53 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tokenCount: 215,
     narratorOnly: false,
   },
+  // ── Intis Republic (world build-out 6, issue #135) ──
+  // The Church of the Eternal Blazing Sun's Trier structure + named members
+  // (city-keyed "trier" so it reaches a character in the capital; surface
+  // public knowledge of a great orthodox Church). The Aurora Order's TRUE
+  // NATURE is the gated depth: a cross-cutting high-concealment secret (domain
+  // Loen AND Intis), so — like the Numinous Episcopate's true goal — it carries
+  // NO city and NO pathway key (never curated-injected) and is narratorOnly +
+  // sequence-gated. CANON NOTE (corpus-verified, see CLAUDE.md): the Aurora
+  // Order's primary pathway is the HANGED MAN (not the Sun); it worships the
+  // True Creator, a Sequence 0 Hanged Man born from the corpse of the Ancient
+  // Sun God — the existing `aurora-order-overview` stays the ungated surface.
+  {
+    slug: "blazing-sun-church-members",
+    title: "Church of the Eternal Blazing Sun — Trier Structure & Members",
+    category: "organization",
+    content: `Beyond its golden cathedral, the Church of the Eternal Blazing Sun in Trier is a hierarchy that gives the capital's sun-faith a human face. The Trier diocese is overseen by Cardinal Plessy Descartes, an elderly, radiant churchman about whom the very shadows seem to thin; beneath the cardinals stand the deacons, the parish priests, and the lay clergy who fill the cathedral's daily services. The Church reveres Saint Viève — the one female angel named in its Bible — as a guardian angel of Trier, and pilgrims come to her cathedral from across the Republic. Its sterner hand is the Inquisition: its Purifiers hunt heresy, corruption, and the servants of the Outer Deities, and a senior Purifier may carry civic authority too — the Deacon Angoulême de François doubles as a Deputy Assistant Commissioner of Trier's police, so that in some quartiers the censer and the constable's badge are held in the same hand. Cardinals direct, deacons lead, and Purifiers enforce: a disciplined order of light that watches the City of Fashion as closely as it blesses it.`,
+    epoch: 5,
+    city: "trier",
+    npcs: ["Plessy Descartes", "Viève", "Angoulême de François"],
+    sequences: [],
+    tags: [
+      "eternal-blazing-sun",
+      "sun-pathway",
+      "trier",
+      "inquisition",
+      "clergy",
+      "religion",
+    ],
+    tokenCount: 215,
+    narratorOnly: false,
+  },
+  {
+    slug: "aurora-order-true-nature",
+    title: "The Aurora Order — The True Creator's Cult",
+    category: "organization",
+    content: `Behind the newspapers' picture of a mere terrorist cult, the Aurora Order is a secret organisation perhaps two or three centuries old that worships the True Creator — and its true nature is far stranger than arson and assassination. The Order's primary pathway is the Hanged Man, with reach into the Wheel of Fortune and (through traitors of the Abraham Family) the Door; its god, the True Creator, is a Sequence 0 Hanged Man born as a negative personality from the very corpse and spirit of the Ancient Sun God, which is why the Order preaches that "He" is the rightful heir to the Ancient Sun God's legacy, the father of all living things in whom divinity dwells. Its symbol is no orthodox emblem but an idol: a naked male god hung upside-down on a cross, pierced with rusted nails, his face blurred but for tight-shut eyes. The Order is structured into seven Saints and twenty-two Oracles — Beyonders from Sequence 7 down to 5 who take single letters of the alphabet for code names and convene the Beyonder gatherings — and it operates across both the Loen Kingdom and the Intis Republic. It is the sworn enemy of the orthodox Churches, the Tarot Club, and the Rose School of Thought, and it has an uncanny gift for sniffing out the servants of the Outer Deities. Its members are lunatics or lunatics-in-waiting, and its true aim is nothing less than to bring its god down into the world.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "aurora-order",
+      "true-creator",
+      "hanged-man-pathway",
+      "secret-organization",
+      "spoiler",
+    ],
+    tokenCount: 270,
+    narratorOnly: true,
+  },
 ];

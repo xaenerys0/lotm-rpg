@@ -193,6 +193,33 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     epoch: 5,
   },
   {
+    slug: "intis-republic",
+    term: "The Intis Republic",
+    category: "Geography",
+    definition:
+      "The second-strongest nation of the Northern Continent, west of Loen beyond the Hornacis range. A parliamentary republic of sun-worship, steam, and revolutionary politics, founded by the Sauron Family and reshaped by the transmigrator-emperor Roselle. Its sunlit capital is Trier.",
+    revealAtSequence: 9,
+    epoch: 5,
+  },
+  {
+    slug: "eternal-blazing-sun",
+    term: "Church of the Eternal Blazing Sun",
+    category: "Organizations",
+    definition:
+      "The great orthodox faith of the Intis Republic, controlling the Sun pathway and worshipping the Eternal Blazing Sun as the Father of All Life. Golden-domed cathedrals, white-and-gold clergy, and a stern Inquisition that hunts what offends the light.",
+    revealAtSequence: 8,
+    epoch: 5,
+  },
+  {
+    slug: "aurora-order",
+    term: "The Aurora Order",
+    category: "Organizations",
+    definition:
+      "A secret cult known to the public as a lunatic terrorist organisation, active in both Loen and Intis. To the Beyonder world it is the worshippers of the True Creator — a heresy the orthodox Churches hunt without mercy.",
+    revealAtSequence: 7,
+    epoch: 5,
+  },
+  {
     slug: "fifth-epoch",
     term: "The Fifth Epoch",
     category: "History",

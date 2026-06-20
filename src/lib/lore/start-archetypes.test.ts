@@ -151,6 +151,31 @@ describe("START_ARCHETYPES data integrity", () => {
       expect.arrayContaining(["constant-mcgovern-friend", "loen-foundation-clerk"]),
     );
   });
+
+  it("ships the Intis Republic circle archetypes (issue #135)", () => {
+    const intis = START_ARCHETYPES.filter((a) => a.location === "Trier");
+    expect(intis.length).toBeGreaterThanOrEqual(2);
+    const ids = intis.map((a) => a.id);
+    expect(ids).toContain("trier-blazing-sun-acolyte");
+    expect(ids).toContain("trier-inquisition-initiate");
+    // Each is a default (non-origin) Fifth-Epoch start tied to a Trier NPC and
+    // affiliated with the Blazing Sun church org.
+    for (const a of intis) {
+      expect(a.epoch).toBe(5);
+      expect(a.origin).toBeUndefined();
+      expect(a.circleNpcs.length).toBeGreaterThan(0);
+      expect(a.affiliationOrg).toBe("blazing-sun-church-members");
+    }
+    expect(getStartArchetype("trier-blazing-sun-acolyte")!.circleNpcs).toContain(
+      "Plessy Descartes",
+    );
+    expect(getStartArchetype("trier-inquisition-initiate")!.circleNpcs).toContain(
+      "Angoulême de François",
+    );
+    expect(startArchetypesForEpoch(5).map((a) => a.id)).toEqual(
+      expect.arrayContaining(["trier-blazing-sun-acolyte", "trier-inquisition-initiate"]),
+    );
+  });
 });
 
 describe("startArchetypesForEpoch", () => {
