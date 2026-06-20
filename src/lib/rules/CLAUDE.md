@@ -18,7 +18,7 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 - `rules.test.ts` — Comprehensive test suite (8 describe blocks, ~55 test cases).
 - `sequence-names-canon.test.ts` — Permanent **canon reconciliation** guard (issue #99 Part A): holds `pathways.ts` (Seq 9-1) and `apotheosis.ts`'s `TRUE_GOD_NAMES`/pathway names (Seq 0) against the generated `SEQUENCE_NAMES`, so curated names can never silently drift from the wiki corpus.
 - `pillars.test.ts` — Pillar canon-data tests (issue #99 Part B): the four Pillars, the family→pathway mapping (cross-checked against each pathway's `sefirah`), `pillarForPathway`/`getPillar`, and `siblingPathwayIds`/`siblingPathwayNames`.
-- `demigod-abilities.test.ts` — Data-integrity tests for the corpus-derived demigod overlay (issue #120): every later pathway (10-22) has non-empty Seq 4-1 abilities, each well-formed; the original nine are untouched; the overlay is actually applied to `ALL_PATHWAYS` at load; and `applyCanonDemigodAbilities` overlays in place while ignoring unknown pathways.
+- `demigod-abilities.test.ts` — Data-integrity tests for the corpus-derived demigod overlay (issue #120): every later pathway (10-22) has non-empty Seq 4-1 abilities, each well-formed; the original nine are untouched; the overlay is actually applied to `ALL_PATHWAYS` at load; and `applyCanonDemigodAbilities` overlays without mutating its input (purely functional, like `applyCanonAdvancement`) while passing unknown pathways through.
 
 ## Key Types (from `@/lib/types/rules`)
 

@@ -61,8 +61,8 @@ describe("DEMIGOD_ABILITIES (corpus-derived overlay, issue #120)", () => {
     }
   });
 
-  it("applyCanonDemigodAbilities overlays in place and ignores unknown pathways", () => {
-    const fake = [
+  it("overlays without mutating its input and passes unknown pathways through", () => {
+    const original = [
       {
         id: 10,
         sequences: [
@@ -82,11 +82,18 @@ describe("DEMIGOD_ABILITIES (corpus-derived overlay, issue #120)", () => {
         ],
       },
     ];
-    const result = applyCanonDemigodAbilities(fake);
-    expect(result).toBe(fake); // same array, mutated in place
-    expect(fake[0]!.sequences[0]!.abilities.map((a) => a.name)).toEqual(
+    const result = applyCanonDemigodAbilities(original);
+
+    // Pure: a new array and new objects for overlaid rungs; the input is unchanged.
+    expect(result).not.toBe(original);
+    expect(original[0]!.sequences[0]!.abilities.map((a) => a.name)).toEqual(["x"]);
+
+    // The overlaid pathway picks up the corpus abilities.
+    expect(result[0]!.sequences[0]!.abilities.map((a) => a.name)).toEqual(
       DEMIGOD_ABILITIES[10]![1]!.map((a) => a.name),
     );
-    expect(fake[1]!.sequences[0]!.abilities[0]!.name).toBe("keep");
+    // The unknown pathway is passed through by reference (nothing to overlay).
+    expect(result[1]).toBe(original[1]);
+    expect(result[1]!.sequences[0]!.abilities[0]!.name).toBe("keep");
   });
 });

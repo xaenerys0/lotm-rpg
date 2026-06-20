@@ -897,22 +897,26 @@ export const DEMIGOD_ABILITIES: Readonly<Record<number, LevelAbilities>> = {
 };
 
 /**
- * Overlay the corpus-derived demigod abilities onto a pathway list IN PLACE,
- * replacing the placeholder Seq 4–1 `abilities` of pathways 10–22. Mirrors
- * `applyCanonAdvancement`: called once at module load in `pathways.ts` after the
- * ritual overlay. Pathways/levels absent from {@link DEMIGOD_ABILITIES} are left
- * untouched (the original nine, and all rungs Seq 9–5). Returns the same array.
+ * Overlay the corpus-derived demigod abilities onto a pathway list, replacing
+ * the placeholder Seq 4–1 `abilities` of pathways 10–22. Mirrors
+ * `applyCanonAdvancement`: purely functional (the inputs are never mutated —
+ * only pathways/sequences that take an overlay are copied), called once at
+ * module load in `pathways.ts` after the ritual overlay. Pathways/levels absent
+ * from {@link DEMIGOD_ABILITIES} are passed through untouched (the original
+ * nine, and all rungs Seq 9–5).
  */
 export function applyCanonDemigodAbilities<
   T extends { id: number; sequences: { level: number; abilities: Ability[] }[] },
 >(pathways: T[]): T[] {
-  for (const pathway of pathways) {
+  return pathways.map((pathway) => {
     const byLevel = DEMIGOD_ABILITIES[pathway.id];
-    if (!byLevel) continue;
-    for (const sequence of pathway.sequences) {
-      const overlay = byLevel[sequence.level];
-      if (overlay) sequence.abilities = [...overlay];
-    }
-  }
-  return pathways;
+    if (!byLevel) return pathway;
+    return {
+      ...pathway,
+      sequences: pathway.sequences.map((sequence) => {
+        const overlay = byLevel[sequence.level];
+        return overlay ? { ...sequence, abilities: [...overlay] } : sequence;
+      }),
+    };
+  });
 }

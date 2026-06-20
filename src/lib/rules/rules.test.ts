@@ -250,16 +250,17 @@ describe("pathway definitions", () => {
     expect(getSequence(9, 1)?.name).toBe("Dark Angel");
   });
 
-  it("each sequence has 1-6 well-formed abilities", () => {
+  it("each sequence has 1-5 well-formed abilities", () => {
     // The original nine pathways were hand-authored at 2-4 abilities per rung;
     // the corpus-derived demigod overlay for pathways 10-22 (issue #120) follows
     // canon counts instead, which legitimately range from a single defining
     // King-of-Angels authority (e.g. White Tower Seq 1 "Omniscience") up to the
-    // five-or-so abilities a busy Saint rung carries — so the bound is widened.
+    // five a busy Saint rung carries (Black Emperor Seq 4) — so the bound is
+    // widened to the real corpus span and kept tight so a stray sixth trips it.
     for (const pathway of ALL_PATHWAYS) {
       for (const seq of pathway.sequences) {
         expect(seq.abilities.length).toBeGreaterThanOrEqual(1);
-        expect(seq.abilities.length).toBeLessThanOrEqual(6);
+        expect(seq.abilities.length).toBeLessThanOrEqual(5);
         for (const ability of seq.abilities) {
           expect(ability.name.length).toBeGreaterThan(0);
           expect(ability.description.length).toBeGreaterThan(0);
