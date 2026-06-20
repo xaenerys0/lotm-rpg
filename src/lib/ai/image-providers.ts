@@ -13,7 +13,8 @@ import { fetchWithErrorHandling } from "./providers";
 // the browser. (Ollama *Cloud* is not an image backend — see the NOTE below.)
 //
 // Supported backends and their transports:
-//   - openai        → OpenAI Images `/images/generations` (dall-e-3 / gpt-image-1)
+//   - openai        → OpenAI Images `/images/generations` (gpt-image-1 — dall-e
+//                     was removed from the API on 2026-05-12)
 //   - ollama        → local Ollama's OpenAI-compatible `/v1/images/generations`
 //                     (experimental image generation, e.g. z-image / flux2-klein)
 //   - local-sd      → a local Stable Diffusion WebUI (Automatic1111/Forge)
@@ -83,9 +84,8 @@ const IMAGE_PROVIDERS: Record<ImageProviderId, ImageProviderMeta> = {
  * for the local/cloud diffusion backends, whose catalogs vary per install. */
 export const IMAGE_PROVIDER_MODELS: Record<ImageProviderId, ImageModelOption[]> = {
   openai: [
-    { id: "dall-e-3", name: "DALL·E 3" },
     { id: "gpt-image-1", name: "GPT Image 1" },
-    { id: "dall-e-2", name: "DALL·E 2" },
+    { id: "gpt-image-1-mini", name: "GPT Image 1 Mini" },
   ],
   ollama: [
     { id: "z-image-turbo", name: "Z-Image Turbo" },
@@ -168,13 +168,14 @@ async function generateViaOpenAIImages(
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (config.apiKey) headers["Authorization"] = `Bearer ${config.apiKey}`;
 
-  // A minimal, widely-accepted body. OpenAI honours `size`/`response_format`
-  // (and gpt-image-1 rejects `response_format`, so it is scoped to dall-e);
-  // Ollama's diffusion endpoint takes the prompt and ignores the extras.
+  // A minimal, widely-accepted body. OpenAI's gpt-image models honour `size` and
+  // always return base64 (`b64_json`) — they REJECT `response_format` with HTTP
+  // 400 "Unknown parameter: 'response_format'", and the old dall-e-2/3 models
+  // (which did take it) were removed from the API on 2026-05-12, so we never send
+  // it. Ollama's diffusion endpoint takes the prompt and ignores the extras.
   const body: Record<string, unknown> = { model: config.model, prompt, n: 1 };
   if (config.providerId === "openai") {
     body.size = "1024x1024";
-    if (config.model.startsWith("dall-e")) body.response_format = "b64_json";
   }
 
   const payload = await postJson(

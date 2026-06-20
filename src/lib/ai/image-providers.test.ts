@@ -16,7 +16,7 @@ import {
 const config = (overrides: Partial<ImageProviderConfig> = {}): ImageProviderConfig => ({
   providerId: "openai",
   apiKey: "sk-test",
-  model: "dall-e-3",
+  model: "gpt-image-1",
   ...overrides,
 });
 
@@ -45,7 +45,7 @@ describe("image provider metadata", () => {
   });
 
   it("ships a starting model catalog for the OpenAI-compatible backends", () => {
-    expect(IMAGE_PROVIDER_MODELS.openai.map((m) => m.id)).toContain("dall-e-3");
+    expect(IMAGE_PROVIDER_MODELS.openai.map((m) => m.id)).toContain("gpt-image-1");
     expect(IMAGE_PROVIDER_MODELS.ollama.length).toBeGreaterThan(0);
     expect(IMAGE_PROVIDER_MODELS["local-sd"]).toEqual([]);
   });
@@ -81,7 +81,7 @@ describe("imageArtSupported", () => {
 });
 
 describe("generateImage — OpenAI", () => {
-  it("returns a data URL from the b64 payload and sends dall-e flags", async () => {
+  it("returns a data URL from the b64 payload and sends size (not response_format)", async () => {
     const fetchFn = ok({ data: [{ b64_json: "QUJD" }] });
     await expect(generateImage(config(), "a foggy street", fetchFn)).resolves.toBe(
       "data:image/png;base64,QUJD",
@@ -89,19 +89,15 @@ describe("generateImage — OpenAI", () => {
     const [url, init] = fetchFn.mock.calls[0];
     expect(url).toBe("https://api.openai.com/v1/images/generations");
     const sent = JSON.parse((init as RequestInit).body as string);
-    expect(sent).toMatchObject({
-      model: "dall-e-3",
-      size: "1024x1024",
-      response_format: "b64_json",
-    });
+    expect(sent).toMatchObject({ model: "gpt-image-1", size: "1024x1024", n: 1 });
     expect((init as RequestInit).headers).toMatchObject({
       Authorization: "Bearer sk-test",
     });
   });
 
-  it("omits response_format for gpt-image-1 (which rejects it)", async () => {
+  it("never sends response_format — gpt-image rejects it (and dall-e is gone)", async () => {
     const fetchFn = ok({ data: [{ b64_json: "QUJD" }] });
-    await generateImage(config({ model: "gpt-image-1" }), "p", fetchFn);
+    await generateImage(config({ model: "gpt-image-1-mini" }), "p", fetchFn);
     const sent = JSON.parse((fetchFn.mock.calls[0][1] as RequestInit).body as string);
     expect(sent.response_format).toBeUndefined();
     expect(sent.size).toBe("1024x1024");
