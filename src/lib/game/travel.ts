@@ -92,18 +92,20 @@ export const CITIES: City[] = [
     blurb:
       "The cold militarist empire of the God of Combat, north beyond the Hornacis range.",
   },
-  // ── Forsaken Land of the Gods — the sealed Eastern Continent (issue #130). ──
-  // Access-gated and content-less for now: no lore, no start scenario, no
-  // narration directive. The `dream-world-passage` gate means no central
-  // character can see or reach them until the capability is granted (issue #3).
+  // ── Forsaken Land of the Gods — the sealed Eastern Continent (issues #130/#133). ──
+  // Hub-and-spoke through Giant King's Court (the Dream-World gate). Each native
+  // city sits behind its OWN awareness flag — City of Silver and Moon City were
+  // isolated, independent settlements unaware of one another until late in canon —
+  // so a native of one is gated from the other (per-city flags, issue #133). The
+  // shared `dream-world-passage` only opens the Court gate (the way in/out).
   {
     id: "silver-city",
     name: "Silver City",
     kingdom: "Forsaken Land of the Gods",
     blurb:
-      "The lightless silver capital of the abandoned faithful, beneath the Forsaken Land's eternal lightning.",
+      "The lightless silver capital of the giant-descended, beneath the Forsaken Land's eternal lightning.",
     continent: "forsaken-land",
-    accessGate: { requiresFlag: "dream-world-passage" },
+    accessGate: { requiresFlag: "silver-city-passage" },
   },
   {
     id: "giant-kings-court",
@@ -113,6 +115,15 @@ export const CITIES: City[] = [
       "The seat of the Giant King in the Forsaken Land, whose Dream-World shadow is the only passage to the sealed continent.",
     continent: "forsaken-land",
     accessGate: { requiresFlag: "dream-world-passage" },
+  },
+  {
+    id: "moon-city",
+    name: "Moon City",
+    kingdom: "Forsaken Land of the Gods",
+    blurb:
+      "An isolated city of the Forsaken Land's eastern reaches, keeping its ancient watch on the gray fog.",
+    continent: "forsaken-land",
+    accessGate: { requiresFlag: "moon-city-passage" },
   },
 ];
 
@@ -157,8 +168,11 @@ const TRAVEL_LEGS: TravelLeg[] = [
   { a: "pritz", b: "enmat", days: 2 },
   { a: "pritz", b: "feysac", days: 13 },
   { a: "enmat", b: "feysac", days: 14 },
-  // Forsaken Land — the intra-continent route between its two cities.
+  // Forsaken Land — hub-and-spoke through Giant King's Court. Silver City and
+  // Moon City each connect ONLY to the Court, never directly to each other
+  // (they were mutually unaware until late canon, issue #133).
   { a: "silver-city", b: "giant-kings-court", days: 3 },
+  { a: "giant-kings-court", b: "moon-city", days: 3 },
 ];
 
 /**

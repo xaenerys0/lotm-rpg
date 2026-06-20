@@ -57,16 +57,18 @@ describe("CITIES table", () => {
     }
   });
 
-  it("adds the access-gated Forsaken-Land cities (issue #130)", () => {
+  it("adds the access-gated Forsaken-Land cities (issues #130/#133)", () => {
     const forsaken = CITIES.filter((c) => c.continent === "forsaken-land");
     expect(forsaken.map((c) => c.id).sort()).toEqual([
       "giant-kings-court",
+      "moon-city",
       "silver-city",
     ]);
-    for (const city of forsaken) {
-      // Each is gated behind the dream-world passage — no content but unreachable.
-      expect(city.accessGate?.requiresFlag).toBe(PASSAGE);
-    }
+    // Each native city is gated behind its OWN awareness flag (per-city, #133);
+    // the Court behind the shared dream-world passage.
+    expect(getCity("silver-city")!.accessGate?.requiresFlag).toBe("silver-city-passage");
+    expect(getCity("moon-city")!.accessGate?.requiresFlag).toBe("moon-city-passage");
+    expect(getCity("giant-kings-court")!.accessGate?.requiresFlag).toBe(PASSAGE);
     // The seven existing cities are untouched: central (continent absent).
     const central = CITIES.filter((c) => c.continent === undefined);
     expect(central).toHaveLength(7);
@@ -180,9 +182,17 @@ describe("hasAccessFlag / meetsAccessGate (issue #130)", () => {
 
   it("a flag-gated city is refused without the flag and allowed with it", () => {
     const silver = getCity("silver-city")!;
+    // The City of Silver needs its OWN flag (issue #133) — the dream-world
+    // passage alone (the Court gate) is not enough.
     expect(meetsAccessGate(stateAt("Tingen City"), silver)).toBe(false);
     expect(
       meetsAccessGate(stateAt("Tingen City", { accessFlags: [PASSAGE] }), silver),
+    ).toBe(false);
+    expect(
+      meetsAccessGate(
+        stateAt("Tingen City", { accessFlags: ["silver-city-passage"] }),
+        silver,
+      ),
     ).toBe(true);
   });
 
@@ -265,11 +275,16 @@ describe("canTravelTo", () => {
     expect(canTravelTo(passenger, "silver-city")).toBe(false);
   });
 
-  it("lets a character at the crossing city reach the City of Silver and the mainland (issue #132)", () => {
-    const atCourt = stateAt("Giant King's Court", { accessFlags: [PASSAGE] });
-    // Inward to Silver City (same continent) and back out to the mainland.
+  it("lets a character at the crossing city reach a known city and the mainland (issues #132/#133)", () => {
+    // A Silver native at the Court holds the dream passage AND the Silver flag.
+    const atCourt = stateAt("Giant King's Court", {
+      accessFlags: [PASSAGE, "silver-city-passage"],
+    });
+    // Inward to Silver City (their flag) and back out to the mainland (via Court).
     expect(canTravelTo(atCourt, "silver-city")).toBe(true);
     expect(canTravelTo(atCourt, "tingen")).toBe(true);
+    // But NOT to Moon City — they hold no Moon flag (mutual unawareness, #133).
+    expect(canTravelTo(atCourt, "moon-city")).toBe(false);
   });
 
   it("blocks a Silver City character from going straight to the mainland (issue #132)", () => {
@@ -293,7 +308,7 @@ describe("canTravelTo", () => {
     // City — not as an unknown (central) origin. Otherwise the chokepoint both
     // leaks a straight mainland jump and falsely blocks same-continent travel.
     const inSilver = stateAt("The High Quarter", {
-      accessFlags: [PASSAGE],
+      accessFlags: [PASSAGE, "silver-city-passage"],
       currentCity: "silver-city",
     });
     // Same-continent travel to the Court is allowed; a straight jump out to the
@@ -305,7 +320,7 @@ describe("canTravelTo", () => {
     // leg to Silver City is reachable — it was wrongly blocked before the
     // currentCity fallback, because the display showed it but travel refused it.
     const atCourt = stateAt("The Broken Colonnades", {
-      accessFlags: [PASSAGE],
+      accessFlags: [PASSAGE, "silver-city-passage"],
       currentCity: "giant-kings-court",
     });
     expect(canTravelTo(atCourt, "silver-city")).toBe(true);
@@ -383,12 +398,16 @@ describe("travelTo", () => {
     expect(result!.fact.description).toContain(`${CONTINENT_CROSSING_DAYS} day`);
   });
 
-  it("reaches the City of Silver only by way of the Court (issue #132)", () => {
+  it("reaches the City of Silver only by way of the Court, with the Silver flag (issues #132/#133)", () => {
     // Direct from the mainland is refused; the within-continent leg from the Court
-    // succeeds.
-    const passenger = stateAt("Tingen City", { accessFlags: [PASSAGE] });
+    // succeeds for a Silver native (who holds the Silver flag).
+    const passenger = stateAt("Tingen City", {
+      accessFlags: [PASSAGE, "silver-city-passage"],
+    });
     expect(travelTo(passenger, "silver-city", 2)).toBeNull();
-    const atCourt = stateAt("Giant King's Court", { accessFlags: [PASSAGE] });
+    const atCourt = stateAt("Giant King's Court", {
+      accessFlags: [PASSAGE, "silver-city-passage"],
+    });
     const inward = travelTo(atCourt, "silver-city", 3);
     expect(inward).not.toBeNull();
     expect(inward!.state.location).toBe("Silver City");

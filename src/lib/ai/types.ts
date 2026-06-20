@@ -84,10 +84,17 @@ export type Continent = "central" | "forsaken-land";
  * the Forsaken Land). Persisted on the save's `GameState.accessFlags`, validated
  * strictly like `customLocations`, granted only by the engine (issue #3).
  */
-export type AccessFlag = "dream-world-passage";
+export type AccessFlag =
+  | "dream-world-passage"
+  | "silver-city-passage"
+  | "moon-city-passage";
 
-/** The known capability flags, for strict validation (issue #130). */
-export const ACCESS_FLAGS: readonly AccessFlag[] = ["dream-world-passage"];
+/** The known capability flags, for strict validation (issues #130, #133). */
+export const ACCESS_FLAGS: readonly AccessFlag[] = [
+  "dream-world-passage",
+  "silver-city-passage",
+  "moon-city-passage",
+];
 
 /** Type guard: is `value` a recognised capability flag? */
 export function isAccessFlag(value: unknown): value is AccessFlag {

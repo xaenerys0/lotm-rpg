@@ -150,7 +150,7 @@ describe("Lore content coverage", () => {
     // mainland. None is `metaphysics` (which would inject into every Fifth prompt).
     for (const e of FORSAKEN_LAND_LORE.filter((x) => x.epoch === 5)) {
       expect(e.category).not.toBe("metaphysics");
-      expect(e.city === "silver" || e.city === "giant").toBe(true);
+      expect(e.city === "silver" || e.city === "giant" || e.city === "moon").toBe(true);
     }
     // The Third-Epoch fall is kept as separate history.
     expect(
@@ -161,6 +161,26 @@ describe("Lore content coverage", () => {
     // The City of Silver and Giant King's Court overviews exist.
     expect(getLoreBySlug("city-of-silver-overview")).toBeDefined();
     expect(getLoreBySlug("giant-kings-court-overview")).toBeDefined();
+  });
+
+  it("adds Moon City, gated apart from the City of Silver (issue #133)", () => {
+    // Moon City is city-keyed "moon" — curated selection only injects it for a
+    // character actually there, so a Silver native never receives Moon lore and
+    // vice versa (the two were mutually unaware until late canon).
+    const moon = getLoreByCity("moon");
+    expect(moon.length).toBeGreaterThanOrEqual(3);
+    expect(moon.every((e) => e.epoch === 5 && e.city === "moon")).toBe(true);
+    expect(getLoreBySlug("moon-city-overview")).toBeDefined();
+    // The gray-fog edge is Moon City's watch (re-keyed from silver), so a City-
+    // of-Silver native no longer receives it.
+    expect(getLoreBySlug("forsaken-land-eastern-grayfog")?.city).toBe("moon");
+    const silver = getLoreByCity("silver").map((e) => e.slug);
+    expect(silver).not.toContain("forsaken-land-eastern-grayfog");
+    expect(silver).not.toContain("moon-city-overview");
+    // Moon City's High Priest Nim: city-keyed, NOT pathway-keyed (leak rule).
+    const nim = getLoreBySlug("npc-nim");
+    expect(nim?.city).toBe("moon");
+    expect(nim?.pathway).toBeUndefined();
   });
 
   it("never injects Forsaken present-day lore into a mainland character's curated lore", () => {

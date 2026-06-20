@@ -224,6 +224,25 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
       ],
     },
   },
+  {
+    id: "forsaken-moon-watcher",
+    label: "A fog-watcher of Moon City",
+    epoch: 5,
+    location: "Moon City",
+    relationship: "subordinate",
+    circleNpcs: ["Nim"],
+    origin: "forsaken-land",
+    blurb:
+      "A keeper of Moon City's ancient watch on the gray fog, serving under the High Priest Nim in the sealed Forsaken Land.",
+    openingBeat: `The strange potion still burns in me as I stand my watch on Moon City's eastern walls, the wall of gray fog unmoving beyond and the perpetual lightning flickering above — I was raised to this vigil under the High Priest Nim, and now I am something our old rites have no name for. ${SCENE_CUE}`,
+    pathwayAffinity: [5],
+    seeds: {
+      trackedAllies: ["Nim"],
+      facts: [
+        "You keep Moon City's watch on the gray fog in the Forsaken Land, serving under the High Priest Nim; he knows your face among the fog-watch.",
+      ],
+    },
+  },
 ] as const;
 
 /** Every start archetype, all regions/epochs (append-only) — including gated
