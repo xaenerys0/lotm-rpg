@@ -15,6 +15,7 @@ import {
   FIFTH_EPOCH_LORE,
   FORSAKEN_LAND_LORE,
   FOOL_PATHWAY_LORE,
+  selectCuratedLore,
   getLoreByCategory,
   getLoreByCity,
   getLoreByEpoch,
@@ -243,6 +244,13 @@ describe("Lore content coverage", () => {
     // Corpus canon: the Aurora Order's pathway is the Hanged Man, not the Sun.
     expect(deep!.tags).toContain("hanged-man-pathway");
     expect(getLoreBySlug("aurora-order-overview")).toBeDefined();
+    // End-to-end leak guard: even at the most permissive injection point — the
+    // Order's own Hanged Man pathway, an Intis location, a deep sequence, a huge
+    // budget — selectCuratedLore never injects the gated true-nature entry.
+    const injected = selectCuratedLore("hanged man", "Trier", 100_000, 5, 1).entries.map(
+      (e) => e.slug,
+    );
+    expect(injected).not.toContain("aurora-order-true-nature");
   });
 
   it("has the Intis NPCs with relationship data, not pathway-keyed (issue #135)", () => {
@@ -261,6 +269,17 @@ describe("Lore content coverage", () => {
       // the Angel/Saint/Beyonder truths beneath their public church roles.
       expect(entry?.pathway).toBeUndefined();
       expect(entry?.narratorOnly).toBe(true);
+    }
+    // Leak guard: because they are not pathway-keyed, none of the Trier NPCs is
+    // reachable via the pathway index — a Sun character anywhere never has a
+    // Trier NPC injected by the pathway selector (the #132 leak rule).
+    const sunPathwaySlugs = getLoreByPathway("sun").map((e) => e.slug);
+    for (const slug of [
+      "npc-saint-vieve",
+      "npc-plessy-descartes",
+      "npc-angouleme-de-francois",
+    ]) {
+      expect(sunPathwaySlugs).not.toContain(slug);
     }
   });
 

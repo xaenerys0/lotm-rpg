@@ -59,14 +59,14 @@ values (
   'blazing-sun-church-members',
   'Church of the Eternal Blazing Sun — Trier Structure & Members',
   'organization',
-  'In Trier the Church of the Eternal Blazing Sun is no distant authority but the visible spiritual power of the capital, ruled from Saint Viève Cathedral in the Island District. The Trier diocese is overseen by Cardinal Plessy Descartes, an elderly, radiant churchman about whom the very shadows seem to thin; beneath the cardinals stand the deacons, priests, and the white-and-gold-robed clergy who greet the dawn with raised heads and outspread arms. The Church reveres Saint Viève — the one female angel named in its Bible — as a guardian angel of Trier, and her cathedral is the heart of the city''s sun-worship. Its stern hand is the Inquisition: its Purifiers hunt heresy, corruption, and the servants of the Outer Deities, and a senior Purifier like the Deacon Angoulême de François may hold civic power too, doubling as a Deputy Assistant Commissioner of Trier''s police. The Church controls the Sun pathway and keeps poor relations with the Churches of the Lord of Storms and of the God of Knowledge and Wisdom; in the Republic it shares the faith of the people with the Church of the God of Steam and Machinery.',
+  'Beyond its golden cathedral, the Church of the Eternal Blazing Sun in Trier is a hierarchy that gives the capital''s sun-faith a human face. The Trier diocese is overseen by Cardinal Plessy Descartes, an elderly, radiant churchman about whom the very shadows seem to thin; beneath the cardinals stand the deacons, the parish priests, and the lay clergy who fill the cathedral''s daily services. The Church reveres Saint Viève — the one female angel named in its Bible — as a guardian angel of Trier, and pilgrims come to her cathedral from across the Republic. Its sterner hand is the Inquisition: its Purifiers hunt heresy, corruption, and the servants of the Outer Deities, and a senior Purifier may carry civic authority too — the Deacon Angoulême de François doubles as a Deputy Assistant Commissioner of Trier''s police, so that in some quartiers the censer and the constable''s badge are held in the same hand. Cardinals direct, deacons lead, and Purifiers enforce: a disciplined order of light that watches the City of Fashion as closely as it blesses it.',
   null,
   5,
   'trier',
   '{"Plessy Descartes","Viève","Angoulême de François"}',
   '{}',
-  ARRAY['organization', 'eternal-blazing-sun', 'sun-pathway', 'trier', 'inquisition', 'religion'],
-  245
+  ARRAY['eternal-blazing-sun', 'sun-pathway', 'trier', 'inquisition', 'clergy', 'religion'],
+  215
 );
 
 insert into public.lore_entries (slug, title, category, content, pathway, epoch, city, npcs, sequences, tags, token_count)
@@ -94,7 +94,7 @@ values (
   5,
   'trier',
   '{"Viève"}',
-  '{1}',
+  '{4}',
   ARRAY['trier', 'eternal-blazing-sun', 'angel', 'sun-pathway', 'guardian'],
   215
 );
@@ -123,7 +123,7 @@ values (
   null,
   5,
   'trier',
-  '{"Angoulême de François","Plessy Descartes","Valentine de Lacourt"}',
+  '{"Angoulême de François","Plessy Descartes","Imre","Valentine de Lacourt","Antoine"}',
   '{4}',
   ARRAY['trier', 'eternal-blazing-sun', 'inquisition', 'sun-pathway', 'police'],
   225
