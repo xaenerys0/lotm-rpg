@@ -4,6 +4,8 @@
 
 Structured lore data for RAG retrieval by the AI integration layer. Each entry is a semantic chunk (300-800 tokens) representing one logical entity.
 
+> **Canon is verified against `corpus/`, never memory.** Before authoring or editing any lore entry, fact-check names, pathways, affiliations, relationships, and events against the LOTM wiki dump (`corpus/wiki/lordofthemystery_pages_current.xml`) and novel (`corpus/novel/…EPUB`). The corpus is Git LFS — if a file is a ~130-byte pointer, run `git lfs install && git lfs pull` first (`apt-get install -y git-lfs` if needed). The corpus outranks an issue's parenthetical hint. See the repo-root `CLAUDE.md` "Canon & Source Material" section.
+
 ## Structure
 
 - `types.ts` — `LoreEntry` and `LoreCategory` type definitions.

@@ -72,6 +72,20 @@ e2e/                       # Playwright UI tests (real-browser responsiveness) �
 corpus/                     # Canon source material, committed via Git LFS (novel EPUB + wiki XML dump). The grounding for RAG ingestion and the canon advancement data — see docs/rag-ingestion.md
 ```
 
+## Canon & Source Material (READ BEFORE AUTHORING LORE)
+
+The game's canon is **Lord of the Mysteries**, and the authoritative source lives in `corpus/`:
+
+- `corpus/wiki/lordofthemystery_pages_current.xml` — the full LOTM wiki dump (MediaWiki XML; `<page><title>…</title>…<text>…</text></page>`). The primary fact-check reference.
+- `corpus/novel/LordofMysteriesCuttlefishTha1.EPUB` — the novel text.
+
+**Rules:**
+
+1. **Never assume or invent canon from memory.** When authoring or reviewing lore (NPCs, organizations, locations, pathways, relationships, affiliations, events), VERIFY every factual claim against `corpus/` first. Memory of LOTM is unreliable and has produced wrong affiliations/relationships before.
+2. **The corpus is Git LFS.** If a `corpus/` file is a ~130-byte LFS pointer (`version https://git-lfs.github.com/spec/v1`), install and pull it before reading: `git lfs install && git lfs pull`. (`git-lfs` installs via `apt-get install -y git-lfs`.) Do this proactively — do not skip a canon check because the file "looks" empty.
+3. **The corpus outranks an issue's parenthetical.** If a task description's canon hint conflicts with the corpus, the corpus wins — fix the content to the corpus and flag the discrepancy to the user.
+4. `docs/lotm-lore-summary.md` and `docs/lotm-research-outline.txt` are convenience summaries, not authoritative — they can be incomplete or wrong; confirm against `corpus/`.
+
 ## Key Conventions
 
 - **TypeScript strict mode** with path alias `@/*` -> `src/*`.
