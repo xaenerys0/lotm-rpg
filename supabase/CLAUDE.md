@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Eighteen migrations in order:
+Migrations live in `migrations/`. Twenty migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -76,6 +76,8 @@ Migrations live in `migrations/`. Eighteen migrations in order:
 18. `20260618102520_harden_set_active_session_grants.sql` — Locks the `set_active_session` RPC's EXECUTE to `authenticated` only (`revoke … from public, anon; grant … to authenticated`), matching the `purchase_listing`/`rate_world_message` convention and clearing the security advisor warning. Kept as its own versioned file so `migrations/` mirrors the remote history exactly (the grant was applied out-of-band alongside migration 15, so migration 15 creates the RPC but does NOT grant it — this file does).
 
 19. `20260619103613_create_rate_limits.sql` — Per-user rate limiting for the operator-funded embed proxy (`/api/proxy/ollama-cloud/api/embed`, issue #60 follow-up), so one signed-in account can't run up the operator's ollama.com bill. `rate_limits` — PK `(user_id, bucket)`, `window_start`, `counter`; the `bucket` column keeps it reusable for future operator-funded limits. RLS enabled with **no policies** — written only via the RPC (bypasses RLS), so players can neither read nor tamper with their own counter (the `world_message_votes` posture). `check_rate_limit(p_bucket text, p_max_requests int, p_window_seconds int)` — SECURITY DEFINER, `search_path = ''`, keyed by `auth.uid()`: one atomic `INSERT … ON CONFLICT DO UPDATE` fixed-window check-and-increment (the single statement's row lock serializes concurrent calls), returns `(allowed, remaining, reset_at)`; EXECUTE granted to `authenticated` only. Limits are env-tunable in the route (`EMBED_RATE_LIMIT_MAX` / `EMBED_RATE_LIMIT_WINDOW_SECONDS`; `0` disables). Keep `database.ts` in sync.
+
+20. `20260620125028_seed_forsaken_land_lore.sql` — Seed the Forsaken Land of the Gods (world build-out 3, issue #132): the City of Silver / Giant King's Court locations + the Third-Epoch fall, the Numinous Episcopate organization, and the City-of-Silver NPCs (12 entries). Generated from the TS source (`src/lib/lore/{forsaken-land,organizations,npcs}.ts` — canonical); same `lore_entries` INSERT format as migration 3. `narratorOnly` is a TS-only prompt flag (no column), intentionally not persisted, matching the prior lore seeds. Parity (TS ↔ rows) verified via the Supabase MCP after apply.
 
 ## Auth Session Persistence
 

@@ -21,16 +21,23 @@ export function GlossaryPanel() {
   const session = useActiveSession();
   const sequenceLevel = session?.gameState.sequenceLevel ?? 9;
   const epoch = session?.gameState.epoch;
+  // Capability gate (issue #132): the access-gated Forsaken Land's terms show
+  // only to a character holding the dream-world passage. A stable key keeps the
+  // memo honest without depending on array identity.
+  const accessFlags = session?.gameState.accessFlags;
+  const accessFlagsKey = (accessFlags ?? []).join(",");
 
   const [query, setQuery] = useState("");
 
   const visible = useMemo(
-    () => glossaryForSequence(sequenceLevel, epoch),
-    [sequenceLevel, epoch],
+    () => glossaryForSequence(sequenceLevel, epoch, accessFlags),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- accessFlagsKey stands in for the accessFlags array identity
+    [sequenceLevel, epoch, accessFlagsKey],
   );
   const sealed = useMemo(
-    () => sealedTermCount(sequenceLevel, epoch),
-    [sequenceLevel, epoch],
+    () => sealedTermCount(sequenceLevel, epoch, accessFlags),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- accessFlagsKey stands in for the accessFlags array identity
+    [sequenceLevel, epoch, accessFlagsKey],
   );
 
   const filtered = useMemo(() => {

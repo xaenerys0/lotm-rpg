@@ -31,6 +31,7 @@ import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
 import {
   selectStartScenario,
   selectStartScenarioForLocation,
+  getStartScenario,
   getStartArchetype,
   buildCustomArchetype,
   type StartArchetype,
@@ -199,9 +200,13 @@ export function PlayDashboard() {
       // (preset or custom) is chosen — it supplies the opening itself.
       const startScenario = archetype
         ? undefined
-        : start.kind === "location"
-          ? selectStartScenarioForLocation(epoch, start.location)
-          : selectStartScenario(epoch);
+        : start.kind === "origin-scenario"
+          ? // An access-gated origin start (issue #132): resolve by id so
+            // createDefaultGameState seeds its accessFlags + currentCity.
+            getStartScenario(start.scenarioId)
+          : start.kind === "location"
+            ? selectStartScenarioForLocation(epoch, start.location)
+            : selectStartScenario(epoch);
       const gameState = createDefaultGameState(
         pathwayId,
         undefined,

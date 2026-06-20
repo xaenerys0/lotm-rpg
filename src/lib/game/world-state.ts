@@ -15,10 +15,21 @@ import {
   type ActingMethodState,
 } from "./acting-method";
 import { cityForLocation, isReachable } from "./place-graph";
-import { cityIdFromLocation, continentOf, getCity, meetsAccessGate } from "./travel";
+import {
+  cityIdFromLocation,
+  continentOf,
+  getCity,
+  grantAccessFlag,
+  hasAccessFlag,
+  meetsAccessGate,
+  reachedDreamWorldGate,
+} from "./travel";
 import { registerCustomLocation } from "./location";
-import type { AccessFlag } from "@/lib/ai";
 import { reassertFollowersAt, type TrackedNpcState } from "./tracked-npcs";
+import type { AccessFlag } from "@/lib/ai";
+
+/** The capability that opens the Forsaken Land (issue #132). */
+const DREAM_WORLD_PASSAGE: AccessFlag = "dream-world-passage";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
 
@@ -347,6 +358,21 @@ export function applyWorldStateChanges(
         }
         break;
     }
+  }
+
+  // In-play capability grant (world build-out 3, issue #132): reaching the
+  // Dream-World shadow of Giant King's Court earns the `dream-world-passage` —
+  // the capability to cross to the sealed Forsaken Land. This is how a NON-origin
+  // character earns entry through the story (the physical Giant King's Court is a
+  // forsaken city and stays access-gated; only the dream-world threshold grants).
+  if (reachedDreamWorldGate(next.location) && !hasAccessFlag(next, DREAM_WORLD_PASSAGE)) {
+    next = grantAccessFlag(next, DREAM_WORLD_PASSAGE);
+    facts.push({
+      type: "event",
+      description:
+        "Crossing the Dream-World shadow of Giant King's Court, you grasp the passage between the world and the sealed Forsaken Land — a way no ship can take.",
+      turnNumber: opts.turnNumber,
+    });
   }
 
   return { state: next, facts };

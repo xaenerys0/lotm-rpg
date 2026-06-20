@@ -56,12 +56,57 @@ describe("glossaryForSequence (progressive disclosure)", () => {
       expect(count).toBeGreaterThanOrEqual(previous);
       previous = count;
     }
-    // At Sequence 1 every epoch-applicable term is unlocked. With no epoch given,
-    // the lexicon defaults to the Fifth, so other-epoch terms never appear.
-    const fifthApplicable = GLOSSARY_TERMS.filter(
-      (t) => t.epoch === undefined || t.epoch === 5,
+    // At Sequence 1 every epoch-applicable, ungated term is unlocked. With no
+    // epoch given the lexicon defaults to the Fifth (other-epoch terms never
+    // appear), and with no flags held the capability-gated Forsaken terms don't.
+    const fifthUngated = GLOSSARY_TERMS.filter(
+      (t) => (t.epoch === undefined || t.epoch === 5) && t.requiresFlag === undefined,
     );
-    expect(glossaryForSequence(1)).toHaveLength(fifthApplicable.length);
+    expect(glossaryForSequence(1)).toHaveLength(fifthUngated.length);
+  });
+});
+
+describe("capability gate (issue #132)", () => {
+  const FORSAKEN_SLUGS = [
+    "city-of-silver",
+    "giant-kings-court-term",
+    "sea-of-ruins",
+    "silver-knights",
+    "dream-world-passage",
+  ];
+
+  it("hides the Forsaken Land's terms from a character without the passage", () => {
+    const central = glossaryForSequence(9, 5).map((t) => t.slug);
+    for (const slug of FORSAKEN_SLUGS) {
+      expect(central).not.toContain(slug);
+    }
+  });
+
+  it("reveals them once the dream-world passage is held", () => {
+    const forsaken = glossaryForSequence(9, 5, ["dream-world-passage"]).map(
+      (t) => t.slug,
+    );
+    for (const slug of FORSAKEN_SLUGS) {
+      expect(forsaken).toContain(slug);
+    }
+  });
+
+  it("never leaks the Forsaken terms' existence through the sealed count", () => {
+    // The sealed count for a flagless character is computed only over terms it
+    // could ever reach, so the gated Forsaken entries are invisible to it.
+    const flagless = GLOSSARY_TERMS.filter(
+      (t) => (t.epoch === undefined || t.epoch === 5) && t.requiresFlag === undefined,
+    );
+    expect(sealedTermCount(9)).toBe(flagless.length - glossaryForSequence(9).length);
+    // Holding the flag widens the applicable universe, so the count can change.
+    const withFlag = GLOSSARY_TERMS.filter(
+      (t) =>
+        (t.epoch === undefined || t.epoch === 5) &&
+        (t.requiresFlag === undefined || t.requiresFlag === "dream-world-passage"),
+    );
+    expect(sealedTermCount(9, 5, ["dream-world-passage"])).toBe(
+      withFlag.length - glossaryForSequence(9, 5, ["dream-world-passage"]).length,
+    );
   });
 });
 
@@ -106,7 +151,7 @@ describe("getGlossaryTerm / sealedTermCount", () => {
     expect(getGlossaryTerm("beyonder")?.term).toBe("Beyonder");
     expect(getGlossaryTerm("nope")).toBeUndefined();
     const fifthApplicable = GLOSSARY_TERMS.filter(
-      (t) => t.epoch === undefined || t.epoch === 5,
+      (t) => (t.epoch === undefined || t.epoch === 5) && t.requiresFlag === undefined,
     );
     expect(sealedTermCount(9)).toBe(
       fifthApplicable.length - glossaryForSequence(9).length,

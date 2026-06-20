@@ -8,9 +8,11 @@ import {
   continentOf,
   crossesContinent,
   getCity,
+  grantAccessFlag,
   hasAccessFlag,
   isValidAccessFlagsShape,
   meetsAccessGate,
+  reachedDreamWorldGate,
   travelDays,
   travelTo,
 } from "./travel";
@@ -331,5 +333,40 @@ describe("travelTo", () => {
 
   it("returns null for a Forsaken destination without the passage flag", () => {
     expect(travelTo(stateAt("Tingen City"), "silver-city", 1)).toBeNull();
+  });
+});
+
+describe("grantAccessFlag (issue #132)", () => {
+  it("adds a capability flag the character lacks", () => {
+    const granted = grantAccessFlag(stateAt("Tingen City"), PASSAGE);
+    expect(granted.accessFlags).toEqual([PASSAGE]);
+  });
+
+  it("is idempotent — returns the same state when already held", () => {
+    const held = stateAt("Tingen City", { accessFlags: [PASSAGE] });
+    expect(grantAccessFlag(held, PASSAGE)).toBe(held);
+  });
+
+  it("preserves existing flags when appending", () => {
+    const state = stateAt("Tingen City", { accessFlags: [] });
+    expect(grantAccessFlag(state, PASSAGE).accessFlags).toEqual([PASSAGE]);
+  });
+});
+
+describe("reachedDreamWorldGate (issue #132)", () => {
+  it("detects the Dream-World shadow of Giant King's Court", () => {
+    expect(
+      reachedDreamWorldGate("The Dream World — the shadow of Giant King's Court"),
+    ).toBe(true);
+    expect(reachedDreamWorldGate("giant king's court, seen in a dream")).toBe(true);
+  });
+
+  it("does NOT trigger on the physical Giant King's Court (a gated city)", () => {
+    expect(reachedDreamWorldGate("Giant King's Court")).toBe(false);
+  });
+
+  it("does not trigger on unrelated locations", () => {
+    expect(reachedDreamWorldGate("Tingen City")).toBe(false);
+    expect(reachedDreamWorldGate("a dream of home")).toBe(false);
   });
 });

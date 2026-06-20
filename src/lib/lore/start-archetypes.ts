@@ -159,17 +159,61 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
-/** Every start archetype, all regions/epochs (append-only). */
-export const START_ARCHETYPES: readonly StartArchetype[] = [...TINGEN_ARCHETYPES];
+// ── Forsaken Land of the Gods — ORIGIN archetypes (issue #132). Begin a native
+// of the sealed Eastern Continent. EXCLUDED from the default picker; surfaced
+// only behind the explicit "choose an origin" affordance, and seed the
+// continent's access flag + currentCity via `createDefaultGameState`. ──
+const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "forsaken-silver-knight",
+    label: "A Silver Knight of the City of Silver",
+    epoch: 5,
+    location: "Silver City",
+    relationship: "circle-member",
+    circleNpcs: ["Derrick Berg"],
+    origin: "forsaken-land",
+    blurb:
+      "A sworn defender of the City of Silver's night-watch, raised in the sealed Forsaken Land and its old faith.",
+    openingBeat: `The strange potion still burns in me as I stand my watch on the grey-white walls of the City of Silver, the perpetual lightning walking the sky above the dead country beyond — I have guarded this last city all my life, and now I am something it has no rite for. ${SCENE_CUE}`,
+    pathwayAffinity: [3],
+    seeds: {
+      trackedAllies: ["Derrick Berg"],
+      facts: [
+        "You are a Silver Knight of the City of Silver in the Forsaken Land, sworn to its night-watch and its old faith, and you know Derrick Berg among the City's defenders.",
+      ],
+    },
+  },
+] as const;
+
+/** Every start archetype, all regions/epochs (append-only) — including gated
+ * ORIGIN archetypes (so `getStartArchetype` resolves them by id). Default
+ * selection filters origins out; `forsakenLandArchetypesForEpoch` filters in. */
+export const START_ARCHETYPES: readonly StartArchetype[] = [
+  ...TINGEN_ARCHETYPES,
+  ...FORSAKEN_ARCHETYPES,
+];
 
 /**
- * The archetypes available for a character's epoch. Resolves the epoch loosely
- * (an unknown/undefined epoch yields the empty list rather than throwing — the
- * picker simply shows no archetypes for an epoch that has none authored yet).
+ * The DEFAULT archetypes available for a character's epoch — ORIGIN archetypes
+ * (issue #132) are excluded so the normal picker never offers a start inside an
+ * access-gated continent. Resolves the epoch loosely (an unknown/undefined epoch
+ * yields the empty list rather than throwing — the picker simply shows no
+ * archetypes for an epoch that has none authored yet).
  */
 export function startArchetypesForEpoch(epoch: number | undefined): StartArchetype[] {
   const id = epoch ?? 5;
-  return START_ARCHETYPES.filter((a) => a.epoch === id);
+  return START_ARCHETYPES.filter((a) => a.epoch === id && a.origin === undefined);
+}
+
+/**
+ * The Forsaken-Land ORIGIN archetypes for an epoch (issue #132) — surfaced only
+ * behind the explicit "choose an origin" affordance, never the default picker.
+ */
+export function forsakenLandArchetypesForEpoch(
+  epoch: number | undefined,
+): StartArchetype[] {
+  const id = epoch ?? 5;
+  return START_ARCHETYPES.filter((a) => a.epoch === id && a.origin === "forsaken-land");
 }
 
 /** Look up a start archetype by id, or `undefined` if none matches. */
@@ -216,7 +260,10 @@ export type StartSelection =
   | { kind: "random" }
   | { kind: "location"; location: string }
   | { kind: "archetype"; archetypeId: string }
-  | { kind: "custom"; circle: CustomStartCircle };
+  | { kind: "custom"; circle: CustomStartCircle }
+  // An access-gated ORIGIN start scenario chosen behind the "choose an origin"
+  // affordance (issue #132) — resolved by id, it seeds the continent's flag.
+  | { kind: "origin-scenario"; scenarioId: string };
 
 /**
  * Bounds so a free-text circle can't bloat the durable prompt budget. Exported

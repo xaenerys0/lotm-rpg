@@ -20,6 +20,10 @@ const CITY_TONE: Record<string, string> = {
     "Enmat Harbor is a small, fog-drowned Loen coastal town: render it through narrow lamplit lanes and creaking fishing boats, close-mouthed locals and old sea-superstition, and a sense that the mist rolling off the water hides more than weather.",
   feysac:
     "Feysac is the frozen militarist empire of the God of Combat: render it through bitter cold and iron discipline, devout soldiers and martial faith, frontier towns walled against the northern wilds, and the ever-present threat of evil spirits and monsters beyond the firelight.",
+  silver:
+    "The City of Silver is the last living city of the sealed Forsaken Land of the Gods: render it through the perpetual lightning overhead — fierce by day, slowing at night — grey-white stone and grounding rods, the proud closed order of the abandoned faithful and their Silver Knights, and the certainty that beyond the walls there is only dead country and the sealing sea.",
+  giant:
+    "Giant King's Court is the titan-scaled ruin and holy threshold of the Forsaken Land: render it through colossal fallen halls built for beings no human raised, the walking lightning over broken thrones, the devout treading warily, and the buried sense that this place is where the sealed continent presses closest to the wider world.",
 };
 
 /**

@@ -148,6 +148,15 @@ describe("accessibility — character creation", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Add$/ }));
     screen.getByRole("button", { name: /Remove Mara/i });
     await expectNoAxeViolationsInContainer(container);
+
+    // Reveal the gated origin starts (issue #132) and re-scan — the affordance
+    // checkbox and the origin optgroup must be accessible too.
+    const originToggle = screen.getByRole("checkbox", {
+      name: /Begin as a native of a sealed/i,
+    });
+    fireEvent.click(originToggle);
+    screen.getByRole("option", { name: /Born in the City of Silver/i });
+    await expectNoAxeViolationsInContainer(container);
   });
 });
 

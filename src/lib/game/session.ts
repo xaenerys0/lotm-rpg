@@ -1,4 +1,4 @@
-import type { GameState, MemoryState, SessionFact } from "@/lib/ai";
+import type { AccessFlag, GameState, MemoryState, SessionFact } from "@/lib/ai";
 import {
   addSessionFact,
   createMemoryState,
@@ -103,6 +103,13 @@ export function createDefaultGameState(
   const background = [characterBackground?.trim(), grounding]
     .filter((part): part is string => Boolean(part))
     .join("\n\n");
+  // Access-gated continent ORIGIN (world build-out 3, issue #132): a character
+  // who BEGINS in the Forsaken Land (chosen via an origin scenario or origin
+  // archetype) holds the dream-world passage from the start, so they can move
+  // within their home continent. A central start grants nothing.
+  const origin = archetype?.origin ?? startScenario?.origin;
+  const accessFlags =
+    origin === "forsaken-land" ? (["dream-world-passage"] as AccessFlag[]) : undefined;
   // Seed the tracked current city when the start location names a known one
   // (issue #101), so the map opens on the right city's atlas.
   const startCity = cityIdFromLocation(location);
@@ -116,6 +123,7 @@ export function createDefaultGameState(
     location,
     ...(startCity ? { currentCity: startCity } : {}),
     ...(epoch !== undefined && epoch !== DEFAULT_EPOCH_ID ? { epoch } : {}),
+    ...(accessFlags ? { accessFlags } : {}),
     activeQuests: [],
     npcsPresent: [],
     digestion: createDigestionState(pathwayId, 9),

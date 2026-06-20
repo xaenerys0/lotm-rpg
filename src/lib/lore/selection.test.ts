@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { selectCuratedLore, passesSequenceGate } from "./selection";
+import { ALL_PATHWAYS } from "@/lib/rules";
 
 describe("selectCuratedLore", () => {
   it("selects pathway lore, the epoch setting, then city lore, deduped by slug", () => {
@@ -106,5 +107,29 @@ describe("passesSequenceGate", () => {
 
   it("uses the highest-numbered (earliest) sequence of a multi-rung entry", () => {
     expect(passesSequenceGate([9, 8, 7, 6, 5], 9)).toBe(true);
+  });
+});
+
+describe("Forsaken Land leak control (issue #132)", () => {
+  it("never injects Forsaken-tagged lore for a mainland character of ANY pathway", () => {
+    // The DoD invariant: a non-qualifying (central-continent) character sees NO
+    // Forsaken content. selectCuratedLore pulls pathway lore location-INDEPENDENTLY,
+    // so a Forsaken entry carrying a `pathway` would leak into a same-pathway
+    // mainland prompt even though the character is in Tingen. Guard every pathway.
+    for (const pathway of ALL_PATHWAYS) {
+      const ctx = selectCuratedLore(pathway.name, "Tingen City", 100000, 5, 9);
+      for (const entry of ctx.entries) {
+        expect(entry.tags).not.toContain("forsaken-land");
+        expect(entry.city === "silver" || entry.city === "giant").toBe(false);
+      }
+    }
+  });
+
+  it("DOES surface Forsaken city lore for a character actually in the City of Silver", () => {
+    // Location-gating is the mechanism: being there requires the dream-world
+    // passage (#130), so this path is only reachable by a qualifying character.
+    const ctx = selectCuratedLore("sun", "Silver City", 100000, 5, 9);
+    expect(ctx.entries.some((e) => e.tags.includes("forsaken-land"))).toBe(true);
+    expect(ctx.entries.some((e) => e.city === "silver")).toBe(true);
   });
 });
