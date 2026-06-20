@@ -192,8 +192,21 @@ import {
 // engine-decided turn (advancement / apotheosis) carries through
 // ENGINE_RESOLUTION. The engine already committed the mechanical effects, so the
 // response only narrates — no validation work to do.
-function engineResolution(response: AIResponse): ValidatedAIResponse {
-  return { response, validation: { valid: true, violations: [] } };
+//
+// `journalFlag` deterministically marks the turn as a scene-art trigger moment
+// (issue #20): advancement / apotheosis / pillar ascension are guaranteed
+// illustrate-worthy, but the consequences-phase SceneArt gate reads
+// `response.journalEntry`, which on an engine-decided turn would otherwise be
+// absent (or the narrator's optional, unreliable self-report). Attaching the
+// engine's own flag — the same summary already written to the durable journal —
+// makes the illustration fire regardless of provider/narrator, the
+// engine-truth-over-AI-flag pattern used elsewhere.
+function engineResolution(
+  response: AIResponse,
+  journalFlag?: { summary: string; eventType: string },
+): ValidatedAIResponse {
+  const merged = journalFlag ? { ...response, journalEntry: journalFlag } : response;
+  return { response: merged, validation: { valid: true, violations: [] } };
 }
 
 function loadProviderConfig(): ProviderConfig | null {
@@ -656,7 +669,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       updateSession(
         transition(result.session, {
           type: "ENGINE_RESOLUTION",
-          result: engineResolution({ narrative: result.tease }),
+          result: engineResolution(
+            { narrative: result.tease },
+            {
+              eventType: "advancement",
+              summary: `Became ${result.honorific} — the Sequence 0 True God of the pathway.`,
+            },
+          ),
           playerAction: `I seize the throne and ascend to Sequence 0, becoming ${result.honorific}, a True God of the pathway.`,
         }),
       );
@@ -695,7 +714,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       updateSession(
         transition(result.session, {
           type: "ENGINE_RESOLUTION",
-          result: engineResolution({ narrative: result.tease }),
+          result: engineResolution(
+            { narrative: result.tease },
+            {
+              eventType: "advancement",
+              summary: `Ascended above Sequence 0 to become ${result.pillarName}, one of the four Pillars of the universe.`,
+            },
+          ),
           playerAction: `I integrate my family's godhoods and ascend above the sequences, becoming ${result.pillarName}, a Pillar of the universe.`,
         }),
       );
@@ -797,6 +822,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           aiResponse
             ? { ...narrationOnly(aiResponse), narrative: scene }
             : { narrative: scene },
+          {
+            eventType: "advancement",
+            summary: `Advanced to Sequence ${result.newSequenceLevel}, ${result.roleName}.`,
+          },
         );
         const playerAction = `I drink the Sequence ${result.newSequenceLevel} potion and undergo the advancement to ${result.roleName}${
           result.ritual ? `, performing the rite: ${result.ritual.description}` : ""
