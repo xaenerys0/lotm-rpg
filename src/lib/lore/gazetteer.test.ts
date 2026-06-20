@@ -8,7 +8,7 @@ import {
 } from "./gazetteer";
 import { DEFAULT_EPOCH_ID, getEpoch } from "./epochs";
 import { ACCESS_FLAGS } from "@/lib/ai";
-import { CROSSING_CITY, getCity } from "@/lib/game";
+import { CITIES, CROSSING_CITY, getCity } from "@/lib/game";
 
 describe("gazetteerForEpoch", () => {
   it("gives the Fifth Epoch the Tingen gazetteer with inter-city travel", () => {
@@ -23,6 +23,7 @@ describe("gazetteerForEpoch", () => {
       "pritz",
       "enmat",
       "feysac",
+      "constant",
     ]);
   });
 
@@ -51,6 +52,7 @@ describe("gazetteerForEpoch", () => {
       "pritz",
       "enmat",
       "feysac",
+      "constant",
     ]) {
       const g = gazetteerForEpoch(5, id);
       expect(g.districts.length).toBeGreaterThan(0);
@@ -94,6 +96,7 @@ describe("gazetteerForEpoch", () => {
       "pritz",
       "enmat",
       "feysac",
+      "constant",
     ]);
   });
 
@@ -108,11 +111,27 @@ describe("gazetteerForEpoch", () => {
       "pritz",
       "enmat",
       "feysac",
+      "constant",
     ]) {
       const ids = gazetteerForEpoch(5, id).fartherCities.map((c) => c.id);
       expect(ids).not.toContain("silver-city");
       expect(ids).not.toContain("giant-kings-court");
     }
+  });
+
+  it("reconciles the gazetteer's central cities with the travel-layer CITIES (issue #134)", () => {
+    // FIFTH_CITIES (private to the gazetteer) and the game-layer CITIES roster
+    // must agree on the set of CENTRAL cities, or a city could be travelable but
+    // have no atlas (falls back to Tingen) or appear in the gazetteer while
+    // canTravelTo rejects it. The uncertain atlas lists exactly the central
+    // gazetteer cities, so it is the reconciliation surface.
+    const gazetteerCentral = uncertainFifthGazetteer()
+      .fartherCities.map((c) => c.id)
+      .sort();
+    const travelCentral = CITIES.filter((c) => c.continent === undefined)
+      .map((c) => c.id)
+      .sort();
+    expect(gazetteerCentral).toEqual(travelCentral);
   });
 
   it("a mainland walker with the flag sees the crossing city as the way in, never Silver City direct (issue #132)", () => {

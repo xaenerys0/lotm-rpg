@@ -12,7 +12,7 @@ Start local stack: `supabase start`. Copy URL + anon key from `supabase status` 
 
 ## Migrations
 
-Migrations live in `migrations/`. Twenty-four migrations in order:
+Migrations live in `migrations/`. Twenty-five migrations in order:
 
 1. `20260527002635_init_profiles.sql` — `profiles` table
    - `id` (UUID FK to `auth.users`), `display_name`, `created_at`, `updated_at`
@@ -86,6 +86,8 @@ Migrations live in `migrations/`. Twenty-four migrations in order:
 23. `20260620161223_correct_world_buildout_lore.sql` — Resync the world-build-out lore to the canon corpus (issues #132/#133), in the `resync_pathway_lore_seq0` pattern. The Forsaken-Land (21) and Backlund (22) seeds carried memory-sourced errors caught against `corpus/wiki` (see the root `CLAUDE.md` "Canon & Source Material"): the Rose School of Thought worships the Mother Tree of Desire on the Chained pathway (NOT the Evernight Goddess); Alger Wilson is not a Rose-School/Backlund figure; the City of Silver is giant-descended (Twilight Giant), not a faith-order with a "Silver Knights" corps. Upserts (delete-then-insert) the corrected rows from the canonical TS and deletes the obsolete slugs (`npc-alger-wilson`, `rose-school-of-thought-doctrine`). Applied + parity-verified via the Supabase MCP.
 
 24. `20260620172406_canon_pass_and_moon_city.sql` — A second canon-correction resync (corpus-verified) plus Moon City (issues #132/#133). Fixes memory-sourced errors caught against `corpus/wiki`: NPC pathways (Pallez Zoroast → Error, Old Neil → Hermit, Ince Zangwill → Death/Darkness) and seven pathway-overview group attributions (abyss/chained → Fountain of Darkness; black-emperor/justiciar → Trickster Apostle; moon/mother → Goddess of Origin; wheel-of-fortune → Key of Light). Adds the second Forsaken-Land city, **Moon City** (city-keyed `moon`, gated behind its own `moon-city-passage` flag so a City-of-Silver native and a Moon native are mutually unaware — canon until late) and its High Priest Nim, and re-keys the gray-fog eastern edge from `silver` to `moon` (Moon City is the fog's canon watcher). Upsert (delete-then-insert) of the corrected/added rows from the canonical TS; applied + parity-verified via the Supabase MCP.
+
+25. `20260620181720_seed_loen_kingdom_lore.sql` — Seed the wider Loen Kingdom lore (world build-out 5, issue #134): Awwa County + the city of Constant + added Pritz/Enmat depth (locations), the Loen Relic Search & Preservation Foundation and its Compliance Department, the regional Mandated Punishers (Pritz) / Machinery Hivemind (Constant) / Red Gloves presences (organizations), and the notable NPCs Gawain, Welch McGovern, Pacheco Dwayne, and Barton — 15 entries. Generated from the TS source (`src/lib/lore/{loen,organizations,npcs}.ts` — canonical); same `lore_entries` INSERT format as migration 3. `narratorOnly` is a TS-only prompt flag (no column), intentionally not persisted. Parity (TS ↔ rows: 176 total, 15 new, new `token_count` 3285) verified via the Supabase MCP after apply. All canon corpus-verified.
 
 ## Auth Session Persistence
 

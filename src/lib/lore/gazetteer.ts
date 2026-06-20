@@ -316,6 +316,37 @@ const ENMAT_DISTRICTS: GazetteerDistrict[] = [
   },
 ];
 
+const CONSTANT_DISTRICTS: GazetteerDistrict[] = [
+  {
+    slug: "constant-furnace-quarter",
+    name: "The Furnace Quarter",
+    blurb:
+      "The roaring heart of the Wind City: blast furnaces, rolling-mills, and the works of the Constant Coal and Steel Consortium, lit red against the night and never truly still.",
+    keywords: ["furnace", "foundry", "mill", "consortium", "constant"],
+  },
+  {
+    slug: "constant-wind-quays",
+    name: "The Wind Quays",
+    blurb:
+      "The hard-blown harbour front where colliers, ore-boats, and the grey ships of the Midseashire Fleet load and unload, the North Sea wind carrying the coal-smoke out over the water.",
+    keywords: ["quay", "quays", "harbour", "harbor", "dock", "wind"],
+  },
+  {
+    slug: "constant-engine-halls",
+    name: "The Engine-Halls & Steam Cathedral",
+    blurb:
+      "The district of the Church of the God of Steam and Machinery and the Constant Industry University — engine-halls, lecture theatres, and the great steam cathedral the working faithful call their own.",
+    keywords: ["engine", "steam", "machinery", "industry"],
+  },
+  {
+    slug: "constant-union-rows",
+    name: "The Union Rows",
+    blurb:
+      "The crowded brick terraces of the foundrymen and shipping clerks, loud with union halls and public houses — the working population that keeps Loen's second city turning.",
+    keywords: ["union", "rows", "terrace", "tenement", "worker"],
+  },
+];
+
 const FEYSAC_DISTRICTS: GazetteerDistrict[] = [
   {
     slug: "feysac-walled-town",
@@ -391,6 +422,13 @@ const FIFTH_CITIES: GazetteerFartherCity[] = [
     realm: "Feysac Empire — the militarist north",
     blurb:
       "The cold northern empire of the God of Combat, beyond the Hornacis range: walled towns, drilled militias, and martial faith. The winters are long and the frontier dangerous, where monsters press at the walls and strength commands open respect.",
+  },
+  {
+    id: "constant",
+    name: "Constant City",
+    realm: "Loen Kingdom — Midseashire's capital",
+    blurb:
+      "The Wind City — Loen's second city, on the north-eastern Midseashire coast. A relentlessly industrial place of blast furnaces and rolling-mills, scoured cleaner than Backlund by a hard sea wind, where the Church of Steam holds the working faithful and the coal-and-steel money runs deep.",
   },
   // ── Forsaken Land of the Gods — the sealed Eastern Continent (issues #130/#133). ──
   // A central character never sees these (the continent filter). Each Forsaken
@@ -526,6 +564,7 @@ const FIFTH_CITY_DISTRICTS: Record<string, GazetteerDistrict[]> = {
   pritz: PRITZ_DISTRICTS,
   enmat: ENMAT_DISTRICTS,
   feysac: FEYSAC_DISTRICTS,
+  constant: CONSTANT_DISTRICTS,
   "silver-city": SILVER_CITY_DISTRICTS,
   "giant-kings-court": GIANT_KINGS_COURT_DISTRICTS,
   "moon-city": MOON_CITY_DISTRICTS,

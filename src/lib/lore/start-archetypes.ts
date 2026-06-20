@@ -200,6 +200,55 @@ const BACKLUND_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Wider Loen Kingdom archetypes (world build-out 5, issue #134) — begin
+// embedded in a circle of the kingdom beyond the capital, referencing the Loen
+// NPCs/orgs added in `npcs.ts`/`organizations.ts`. The Foundation clerk opens in
+// Stoen City (East Chester County) — not a curated travel city, so the map
+// shows the neutral "uncertain" atlas until the character first travels (a
+// designed, self-healing fallback), exactly the graceful path a custom start
+// with an off-map location takes. ──
+const LOEN_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "constant-mcgovern-friend",
+    label: "A friend of the McGovern banking family of Constant City",
+    epoch: 5,
+    location: "Constant City",
+    relationship: "family-friend",
+    circleNpcs: ["Welch McGovern"],
+    blurb:
+      "You move in the coal-and-steel money of the Wind City, close to the McGoverns and their easy-going son Welch.",
+    openingBeat: `The strange potion still burns in me as the blast furnaces of Constant glow against the night, the hard sea wind tugging at my coat outside the McGovern townhouse where I am counted a friend of the family — and I understand that whatever I have just become, none of this comfortable world must learn it. ${SCENE_CUE}`,
+    // Paragon (id 19) — the Savant pathway of the God of Steam & Machinery, the
+    // industrial Wind City's defining pathway.
+    pathwayAffinity: [19],
+    seeds: {
+      trackedAllies: ["Welch McGovern"],
+      facts: [
+        "You are a trusted friend of the wealthy McGovern banking family of Constant City, close to their son Welch, a Khoy University man.",
+      ],
+    },
+  },
+  {
+    id: "loen-foundation-clerk",
+    label: "A clerk of the Loen Relic Search & Preservation Foundation",
+    epoch: 5,
+    location: "Stoen City",
+    relationship: "subordinate",
+    circleNpcs: ["Pacheco Dwayne"],
+    affiliationOrg: "loen-relic-foundation-overview",
+    blurb:
+      "You keep the records of Audrey Hall's relic foundation in Stoen City, under the watchful Compliance Department.",
+    openingBeat: `The change is still settling into my blood as I let myself into the Loen Relic Search and Preservation Foundation's offices in Stoen City, the cabinets of dig-reports and catalogued antiquities around me and the strict Compliance Department a closed door at the end of the hall — and I know I must not let Deputy Director Pacheco Dwayne see what I have become. ${SCENE_CUE}`,
+    pathwayAffinity: [],
+    seeds: {
+      trackedAllies: ["Barton"],
+      facts: [
+        "You clerk for the Loen Relic Search and Preservation Foundation in Stoen City, under Deputy Director Pacheco Dwayne of the Compliance Department; the ordinary employee Barton is your friend there.",
+      ],
+    },
+  },
+] as const;
+
 // ── Forsaken Land of the Gods — ORIGIN archetypes (issue #132). Begin a native
 // of the sealed Eastern Continent. EXCLUDED from the default picker; surfaced
 // only behind the explicit "choose an origin" affordance, and seed the
@@ -251,6 +300,7 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
 export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...TINGEN_ARCHETYPES,
   ...BACKLUND_ARCHETYPES,
+  ...LOEN_ARCHETYPES,
   ...FORSAKEN_ARCHETYPES,
 ];
 

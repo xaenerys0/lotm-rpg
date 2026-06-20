@@ -92,6 +92,13 @@ export const CITIES: City[] = [
     blurb:
       "The cold militarist empire of the God of Combat, north beyond the Hornacis range.",
   },
+  {
+    id: "constant",
+    name: "Constant City",
+    kingdom: "Loen Kingdom",
+    blurb:
+      "The Wind City — Loen's second city, a coal-and-steel industrial port on the Midseashire coast.",
+  },
   // ── Forsaken Land of the Gods — the sealed Eastern Continent (issues #130/#133). ──
   // Hub-and-spoke through Giant King's Court (the Dream-World gate). Each native
   // city sits behind its OWN awareness flag — City of Silver and Moon City were
@@ -168,6 +175,15 @@ const TRAVEL_LEGS: TravelLeg[] = [
   { a: "pritz", b: "enmat", days: 2 },
   { a: "pritz", b: "feysac", days: 13 },
   { a: "enmat", b: "feysac", days: 14 },
+  // Constant City (Loen's second city, Midseashire NE coast) — wired to every
+  // other central city (world build-out 5, issue #134).
+  { a: "constant", b: "tingen", days: 5 },
+  { a: "constant", b: "backlund", days: 4 },
+  { a: "constant", b: "trier", days: 9 },
+  { a: "constant", b: "bayam", days: 13 },
+  { a: "constant", b: "pritz", days: 4 },
+  { a: "constant", b: "enmat", days: 5 },
+  { a: "constant", b: "feysac", days: 6 },
   // Forsaken Land — hub-and-spoke through Giant King's Court. Silver City and
   // Moon City each connect ONLY to the Court, never directly to each other
   // (they were mutually unaware until late canon, issue #133).

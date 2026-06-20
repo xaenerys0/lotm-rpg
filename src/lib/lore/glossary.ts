@@ -166,6 +166,33 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     epoch: 5,
   },
   {
+    slug: "constant-city",
+    term: "Constant City",
+    category: "Geography",
+    definition:
+      "The Wind City — Loen's second city and the capital of Midseashire, built on coal and steel. Blast furnaces and a hard sea wind, the Church of Steam's great seat outside the capital, and deep industrial money.",
+    revealAtSequence: 9,
+    epoch: 5,
+  },
+  {
+    slug: "midseashire",
+    term: "Midseashire",
+    category: "Geography",
+    definition:
+      "The crowded north-eastern coast of the Northern Continent, shared by Loen, Intis, and Feysac and ringed with mill-towns — the busiest industrial seaboard of the age. Loen's stretch is crowned by Constant City.",
+    revealAtSequence: 9,
+    epoch: 5,
+  },
+  {
+    slug: "loen-relic-foundation",
+    term: "Loen Relic Search & Preservation Foundation",
+    category: "Organizations",
+    definition:
+      "A non-profit foundation in East Chester County that funds digs and buys up antiquities, founded by the noblewoman Audrey Hall. A respectable patron of learning — whose strict Compliance Department keeps quieter business than dusty notebooks.",
+    revealAtSequence: 8,
+    epoch: 5,
+  },
+  {
     slug: "fifth-epoch",
     term: "The Fifth Epoch",
     category: "History",

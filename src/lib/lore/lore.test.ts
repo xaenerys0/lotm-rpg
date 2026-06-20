@@ -37,6 +37,7 @@ import {
   WHEEL_OF_FORTUNE_PATHWAY_LORE,
   ABYSS_PATHWAY_LORE,
   CHAINED_PATHWAY_LORE,
+  LOEN_LORE,
   NPC_LORE,
   ORGANIZATION_LORE,
   REGIONS_LORE,
@@ -134,6 +135,66 @@ describe("Lore content coverage", () => {
     for (const city of ["pritz", "enmat", "feysac"]) {
       expect(REGIONS_LORE.some((e) => e.city === city)).toBe(true);
     }
+  });
+
+  it("has the wider Loen Kingdom locations: Awwa County, Constant, Pritz/Enmat depth (issue #134)", () => {
+    expect(LOEN_LORE.length).toBeGreaterThanOrEqual(5);
+    expect(LOEN_LORE.every((e) => e.category === "location")).toBe(true);
+    expect(LOEN_LORE.every((e) => e.epoch === 5)).toBe(true);
+    // Surface geography is ungated player-safe knowledge.
+    expect(LOEN_LORE.every((e) => e.narratorOnly === false)).toBe(true);
+    // Awwa County is keyed to Tingen (its county) so a Tingen character carries
+    // it as regional context; Constant is its own first-class city key.
+    expect(getLoreBySlug("awwa-county-overview")?.city).toBe("tingen");
+    const constant = getLoreByCity("constant");
+    expect(constant.length).toBeGreaterThanOrEqual(3);
+    expect(getLoreBySlug("constant-city-overview")).toBeDefined();
+    // Added depth for the existing Pritz/Enmat start regions.
+    expect(getLoreBySlug("pritz-harbor-naval-yard")?.city).toBe("pritz");
+    expect(getLoreBySlug("enmat-harbor-fogbound-trade")?.city).toBe("enmat");
+  });
+
+  it("has the Loen regional organizations, leak-safe (issue #134)", () => {
+    // The Loen Relic Search & Preservation Foundation is cross-cutting (HQ in
+    // Stoen City, not a curated travel city) so it carries NO city key — never
+    // curated-injected, like the Numinous Episcopate. Surface ungated; the
+    // Compliance Department (a secret Beyonder division) narrator-only + gated.
+    const foundation = getLoreBySlug("loen-relic-foundation-overview");
+    expect(foundation?.category).toBe("organization");
+    expect(foundation?.city).toBeUndefined();
+    expect(foundation?.narratorOnly).toBe(false);
+    const compliance = getLoreBySlug("loen-relic-foundation-compliance");
+    expect(compliance?.narratorOnly).toBe(true);
+    expect(compliance!.sequences.length).toBeGreaterThan(0);
+    expect(compliance?.city).toBeUndefined();
+    // The Red Gloves are the kingdom-wide elite Nighthawk division — no city.
+    expect(getLoreBySlug("red-gloves-division")?.city).toBeUndefined();
+    // Regional church-Beyonder presences ARE city-keyed to reach a local char.
+    expect(getLoreBySlug("mandated-punishers-pritz")?.city).toBe("pritz");
+    expect(getLoreBySlug("machinery-hivemind-constant")?.city).toBe("constant");
+  });
+
+  it("has the wider Loen NPCs with relationship data, not pathway-keyed (issue #134)", () => {
+    const names = NPC_LORE.flatMap((e) => e.npcs);
+    for (const name of ["Gawain", "Welch McGovern", "Pacheco Dwayne", "Barton"]) {
+      expect(names).toContain(name);
+    }
+    // City-keyed where the figure belongs to a curated city; the Foundation
+    // figures (Stoen City) carry none. NONE is pathway-keyed (the leak rule).
+    expect(getLoreBySlug("npc-gawain")?.city).toBe("tingen");
+    expect(getLoreBySlug("npc-welch-mcgovern")?.city).toBe("constant");
+    expect(getLoreBySlug("npc-pacheco-dwayne")?.city).toBeUndefined();
+    expect(getLoreBySlug("npc-barton")?.city).toBeUndefined();
+    for (const slug of [
+      "npc-gawain",
+      "npc-welch-mcgovern",
+      "npc-pacheco-dwayne",
+      "npc-barton",
+    ]) {
+      expect(getLoreBySlug(slug)?.pathway).toBeUndefined();
+    }
+    // Pacheco's Black-Emperor Beyonder nature is a gated spoiler.
+    expect(getLoreBySlug("npc-pacheco-dwayne")?.narratorOnly).toBe(true);
   });
 
   it("has Fifth Epoch baseline entries", () => {
@@ -461,6 +522,10 @@ describe("cityNarrationDirective", () => {
     expect(cityNarrationDirective("Feysac")).toContain("God of Combat");
   });
 
+  it("gives Constant City its own tone (issue #134)", () => {
+    expect(cityNarrationDirective("Constant City")).toContain("Wind City");
+  });
+
   it("gives the Forsaken Land cities their own tone (issue #132)", () => {
     expect(cityNarrationDirective("Silver City")).toContain("Forsaken Land");
     expect(cityNarrationDirective("Giant King's Court")).toContain("Forsaken Land");
@@ -486,6 +551,7 @@ describe("Total lore corpus", () => {
       TRIER_LORE.length +
       BAYAM_LORE.length +
       REGIONS_LORE.length +
+      LOEN_LORE.length +
       FORSAKEN_LAND_LORE.length +
       FIRST_EPOCH_LORE.length +
       SECOND_EPOCH_LORE.length +

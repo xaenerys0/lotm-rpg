@@ -225,4 +225,104 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tokenCount: 200,
     narratorOnly: true,
   },
+  // ── Wider Loen Kingdom (world build-out 5, issue #134) ──
+  // The Loen Relic Search & Preservation Foundation is a cross-cutting body
+  // headquartered in Stoen City, East Chester County — NOT a curated travel
+  // city — so it carries NO `city` key (the Numinous Episcopate / Rose School
+  // pattern): selectCuratedLore never injects it, and it lives here for corpus/
+  // RAG + integrity + the start-archetype tie only. Its public charitable face
+  // is ungated; the Compliance Department's true nature as a Beyonder division
+  // is the gated spoiler. The Red Gloves likewise carry no city — they are the
+  // kingdom-wide elite Nighthawk division, deployed wherever they are needed.
+  // The regional Mandated Punishers / Machinery Hivemind presences ARE city-
+  // keyed (pritz / constant) so they reach a character actually in that city.
+  // CANON NOTE (verified against corpus/wiki — see CLAUDE.md): the Foundation
+  // was founded by Audrey Hall through Associate Professor Michelle Deuth on 14
+  // April 1350; its Compliance Department is secretly a Beyonder division.
+  {
+    slug: "loen-relic-foundation-overview",
+    title: "Loen Relic Search & Preservation Foundation — Overview",
+    category: "organization",
+    content: `The Loen Relic Search and Preservation Foundation is a non-profit body devoted to the discovery, study, and preservation of ancient relics, headquartered in Stoen City of East Chester County in the Loen Kingdom. It was established by the young Backlund noblewoman Audrey Hall — working through Associate Professor Michelle Deuth of Stoen University — with a founding gift of money, land, and a manor, and it funds archaeological expeditions, buys up antiquities, and shelters scholars across the kingdom. Its stated purpose is exactly what it appears: to keep the relics of older epochs out of careless hands and in the light of study, and to lend its founder the prestige of a patron of learning. The Foundation is notable, too, for employing a great many women, from its ordinary clerks up to the deputy directors of its departments — unusual for an institution of the age. To the public it is a respectable charity of digs, donations, and dusty notebooks; what passes through its hands, and why its founder cares so much what those digs turn up, is a quieter matter.`,
+    epoch: 5,
+    npcs: ["Audrey Hall", "Michelle Deuth"],
+    sequences: [],
+    tags: [
+      "loen-relic-foundation",
+      "loen-kingdom",
+      "east-chester-county",
+      "audrey-hall",
+      "relic-preservation",
+    ],
+    tokenCount: 215,
+    narratorOnly: false,
+  },
+  {
+    slug: "loen-relic-foundation-compliance",
+    title: "Loen Relic Search & Preservation Foundation — The Compliance Department",
+    category: "organization",
+    content: `Behind the Foundation's charitable face stands its Compliance Department, and it is not what its name suggests. Officially it audits the Foundation's projects for any breach of rule or provision; in truth it is a division of Beyonders, raised quietly by Audrey Hall to handle the abnormal, the dangerous, and the inexplicable that a foundation digging up the relics of older epochs is bound to unearth. The standing rule is plain: should any expedition produce a phenomenon that is terrifying or beyond explanation, the staff are to stop at once and report to Compliance — and Compliance comes. Its deputy directors include the former Backlund lawyer Pacheco Dwayne, a Beyonder of the Black Emperor pathway who prizes order and rule above all, alongside others of capability. To the Foundation's ordinary clerks the Compliance Department is simply the strict office one does not cross; to the Beyonder world it is a private, well-funded, and discreet force answering to one of the Tarot Club's own — a hidden hand reaching wherever the Foundation's diggers turn up something they should not have.`,
+    epoch: 5,
+    npcs: ["Pacheco Dwayne", "Alicia Tamara", "Audrey Hall"],
+    sequences: [5],
+    tags: [
+      "loen-relic-foundation",
+      "compliance-department",
+      "beyonder-organization",
+      "audrey-hall",
+      "spoiler",
+    ],
+    tokenCount: 215,
+    narratorOnly: true,
+  },
+  {
+    slug: "mandated-punishers-pritz",
+    title: "Mandated Punishers — Pritz Harbor Presence",
+    category: "organization",
+    content: `If the Mandated Punishers keep only a small office in inland Tingen, in the naval port of Pritz Harbor they are at their strongest. The Mandated Punishers are the Beyonder arm of the Church of the Lord of Storms, and Pritz is a storm-faith town to its bones — a city of sailors, marines, and dockworkers whose creed is the sea's own. Here the Punishers, not the Nighthawks, are the first hand on any uncanny trouble: smuggled Beyonder materials coming over the water or down through the Hornacis passes, sea-creature manifestations off the cold roadstead, drowned things that will not stay drowned, and rogue Beyonders among the fleet's crews. Their style suits the town — direct, aggressive, more inclined to force than to the Nighthawks' patient investigation — and their members run heavily to the Sailor (Tyrant) pathway, with its dominion over storm, water, and the body. The harbour's heavy garrison and real night-watch give them cover and muscle both, and a quiet understanding keeps their jurisdiction and the Nighthawks' from colliding more than the sea already does.`,
+    epoch: 5,
+    city: "pritz",
+    npcs: [],
+    sequences: [],
+    tags: [
+      "mandated-punishers",
+      "lord-of-storms",
+      "pritz",
+      "maritime",
+      "beyonder-organization",
+    ],
+    tokenCount: 220,
+    narratorOnly: false,
+  },
+  {
+    slug: "machinery-hivemind-constant",
+    title: "Machinery Hivemind — Constant City Presence",
+    category: "organization",
+    content: `In the industrial Wind City of Constant the Machinery Hivemind comes into its own. The Hivemind is the Beyonder division of the Church of the God of Steam and Machinery, and Constant — second city of the Loen Kingdom, all blast furnaces and rolling-mills and the strong popular faith of the working engineer — is the Church of Steam's great seat outside the capital. Here the Hivemind is no afterthought as it is in Tingen but a serious power: technically-minded Beyonders of the Savant pathway who pass for the metallurgists, machinists, and inventors they walk among, watching the foundries for supernatural contamination in manufactured iron, for mystical machinery run amok, and for the industrial accidents whose true causes the coroners can never name. Their signature is the shared mind — a mystical network through which members pool what they see and coordinate without a word — which suits a city the size of Constant, where a single team could never watch every workshop alone. Among the chimneys and the union halls, the line between an ingenious invention and an uncanny one runs very thin, and it is the Hivemind that decides which is which.`,
+    epoch: 5,
+    city: "constant",
+    npcs: [],
+    sequences: [],
+    tags: [
+      "machinery-hivemind",
+      "god-of-steam",
+      "constant",
+      "industrial",
+      "beyonder-organization",
+    ],
+    tokenCount: 225,
+    narratorOnly: false,
+  },
+  {
+    slug: "red-gloves-division",
+    title: "The Red Gloves — Elite Nighthawk Division",
+    category: "organization",
+    content: `The Red Gloves are the elite division of the Nighthawks, promoted from the ordinary city teams of the Church of the Evernight Goddess and seated in the great Backlund diocese, but they belong to no single city. Their mission is twofold: to reinforce any Nighthawk team across the Loen Kingdom that has called for help against a threat beyond it, and to hunt down and arrest the worst evildoers of the Beyonder world without the jurisdictional limits that bind a local team. Where a city team handles its own patch, the Red Gloves go where the danger is — into Tingen for a betrayal too large for Captain Dunn Smith's dozen, out to the industrial north of Constant for an incident the local teams could not close, anywhere a sealed report turns urgent. Their members are seasoned, higher-Sequence Beyonders, the captain among them the poet and Sleepless Leonard Mitchell, raised from the Tingen team to the Red Gloves and known in quieter circles as "The Star." To the wider Church they are the long arm reserved for what the ordinary Nighthawks cannot reach.`,
+    epoch: 5,
+    npcs: ["Leonard Mitchell"],
+    sequences: [],
+    tags: ["nighthawks", "red-gloves", "evernight-goddess", "elite", "law-enforcement"],
+    tokenCount: 215,
+    narratorOnly: false,
+  },
 ];

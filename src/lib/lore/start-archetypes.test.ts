@@ -130,6 +130,27 @@ describe("START_ARCHETYPES data integrity", () => {
       expect.arrayContaining(["backlund-hall-attendant", "backlund-detective-assistant"]),
     );
   });
+
+  it("ships the wider Loen Kingdom circle archetypes (issue #134)", () => {
+    const ids = START_ARCHETYPES.map((a) => a.id);
+    expect(ids).toContain("constant-mcgovern-friend");
+    expect(ids).toContain("loen-foundation-clerk");
+    // The Constant friend opens in the Wind City; the Foundation clerk in Stoen
+    // City. Both are default (non-origin) Fifth-Epoch starts tied to Loen NPCs.
+    const constant = getStartArchetype("constant-mcgovern-friend")!;
+    expect(constant.epoch).toBe(5);
+    expect(constant.origin).toBeUndefined();
+    expect(constant.location).toBe("Constant City");
+    expect(constant.circleNpcs).toContain("Welch McGovern");
+    const clerk = getStartArchetype("loen-foundation-clerk")!;
+    expect(clerk.location).toBe("Stoen City");
+    expect(clerk.affiliationOrg).toBe("loen-relic-foundation-overview");
+    expect(clerk.circleNpcs).toContain("Pacheco Dwayne");
+    // Both surface in the default picker (non-origin).
+    expect(startArchetypesForEpoch(5).map((a) => a.id)).toEqual(
+      expect.arrayContaining(["constant-mcgovern-friend", "loen-foundation-clerk"]),
+    );
+  });
 });
 
 describe("startArchetypesForEpoch", () => {

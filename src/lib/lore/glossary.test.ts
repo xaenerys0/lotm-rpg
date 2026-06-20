@@ -33,6 +33,20 @@ describe("GLOSSARY_TERMS", () => {
       expect(used.has(category)).toBe(true);
     }
   });
+
+  it("adds the wider Loen Kingdom terms (issue #134)", () => {
+    // Constant City + Midseashire geography and the Relic Foundation org are
+    // ungated Fifth-Epoch knowledge (no capability flag) — a mainland character
+    // sees them from the first night.
+    const fifth = glossaryForSequence(8, 5).map((t) => t.slug);
+    expect(fifth).toContain("constant-city");
+    expect(fifth).toContain("midseashire");
+    expect(fifth).toContain("loen-relic-foundation");
+    for (const slug of ["constant-city", "midseashire", "loen-relic-foundation"]) {
+      expect(getGlossaryTerm(slug)?.requiresFlag).toBeUndefined();
+      expect(getGlossaryTerm(slug)?.epoch).toBe(5);
+    }
+  });
 });
 
 describe("glossaryForSequence (progressive disclosure)", () => {

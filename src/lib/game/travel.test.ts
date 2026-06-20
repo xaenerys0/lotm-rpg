@@ -69,9 +69,11 @@ describe("CITIES table", () => {
     expect(getCity("silver-city")!.accessGate?.requiresFlag).toBe("silver-city-passage");
     expect(getCity("moon-city")!.accessGate?.requiresFlag).toBe("moon-city-passage");
     expect(getCity("giant-kings-court")!.accessGate?.requiresFlag).toBe(PASSAGE);
-    // The seven existing cities are untouched: central (continent absent).
+    // The central cities are untouched: continent absent, no access gate
+    // (the seven originals plus Constant City, world build-out 5, issue #134).
     const central = CITIES.filter((c) => c.continent === undefined);
-    expect(central).toHaveLength(7);
+    expect(central).toHaveLength(8);
+    expect(central.map((c) => c.id)).toContain("constant");
     expect(central.every((c) => c.accessGate === undefined)).toBe(true);
   });
 });
