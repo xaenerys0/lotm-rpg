@@ -980,6 +980,52 @@ describe("gateLocationChange", () => {
     expect(r.blocked).toBe(false);
     expect(r.location).toBe("Giant King's Court");
   });
+
+  // ── crossing chokepoint (issue #132) ──
+  it("refuses a flagged jump STRAIGHT from the mainland to the City of Silver — must route through the Court", () => {
+    const r = gateLocationChange({
+      ...base,
+      epoch: 5,
+      from: "Tingen City",
+      to: "Silver City",
+      cause: "capability-gated-teleport",
+      gateEnabled: true,
+      sequenceLevel: 1,
+      accessFlags: ["dream-world-passage"],
+    });
+    expect(r.blocked).toBe(true);
+    expect(r.location).toBe("Tingen City");
+    expect(r.fact?.description).toContain("Giant King's Court");
+  });
+
+  it("permits a flagged crossing to Giant King's Court itself (the chokepoint)", () => {
+    const r = gateLocationChange({
+      ...base,
+      epoch: 5,
+      from: "Tingen City",
+      to: "Giant King's Court",
+      cause: "capability-gated-teleport",
+      gateEnabled: true,
+      sequenceLevel: 1,
+      accessFlags: ["dream-world-passage"],
+    });
+    expect(r.blocked).toBe(false);
+    expect(r.location).toBe("Giant King's Court");
+  });
+
+  it("enforces the crossing chokepoint even with the movement gate OFF", () => {
+    const r = gateLocationChange({
+      ...base,
+      epoch: 5,
+      from: "Tingen City",
+      to: "Silver City",
+      gateEnabled: false,
+      sequenceLevel: 1,
+      accessFlags: ["dream-world-passage"],
+    });
+    expect(r.blocked).toBe(true);
+    expect(r.location).toBe("Tingen City");
+  });
 });
 
 describe("applyWorldStateChanges — movement gate", () => {
@@ -1103,16 +1149,18 @@ describe("applyWorldStateChanges — movement gate", () => {
     );
   });
 
-  it("earns the passage at the gate, then can be moved into the Forsaken Land (issue #132)", () => {
-    // Full earn-then-enter path: a Seq-9 central character can't enter the City
-    // of Silver until they earn the passage at the dream gate.
+  it("earns the passage at the gate, then enters the Forsaken Land via the Court (issue #132)", () => {
+    // Full earn-then-enter path. A Seq-9 central character can't enter the City
+    // of Silver until they earn the passage at the dream gate — and even then,
+    // crossing routes through Giant King's Court (the chokepoint), never straight
+    // to Silver City: "finding the correct path" is canon.
     const start = makeGameState({ location: "Tingen City", currentCity: "tingen" });
     const refused = applyWorldStateChanges(
       start,
       [locationChange("Silver City", "capability-gated-teleport")],
       { ...opts, epoch: 5 },
     );
-    expect(refused.state.location).toBe("Tingen City"); // gated out
+    expect(refused.state.location).toBe("Tingen City"); // gated out (no flag)
 
     const earned = applyWorldStateChanges(
       start,
@@ -1121,12 +1169,30 @@ describe("applyWorldStateChanges — movement gate", () => {
     );
     expect(earned.state.accessFlags).toEqual(["dream-world-passage"]);
 
-    const entered = applyWorldStateChanges(
+    // Even with the passage, a straight jump to the City of Silver is refused —
+    // the crossing must pass through the Court.
+    const skipped = applyWorldStateChanges(
       earned.state,
       [locationChange("Silver City", "capability-gated-teleport")],
       { ...opts, epoch: 5 },
     );
-    expect(entered.state.location).toBe("Silver City");
+    expect(skipped.state.location).not.toBe("Silver City");
+
+    // Crossing to Giant King's Court (the chokepoint) is permitted...
+    const atCourt = applyWorldStateChanges(
+      earned.state,
+      [locationChange("Giant King's Court", "capability-gated-teleport")],
+      { ...opts, epoch: 5 },
+    );
+    expect(atCourt.state.location).toBe("Giant King's Court");
+
+    // ...and from the Court, inward travel to Silver City is allowed.
+    const inward = applyWorldStateChanges(
+      atCourt.state,
+      [locationChange("Silver City", "capability-gated-teleport")],
+      { ...opts, epoch: 5 },
+    );
+    expect(inward.state.location).toBe("Silver City");
   });
 
   it("leaves the origin scene behind on a cross-city move, keeping only followers", () => {

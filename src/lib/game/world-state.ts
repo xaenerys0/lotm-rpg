@@ -16,8 +16,10 @@ import {
 } from "./acting-method";
 import { cityForLocation, isReachable } from "./place-graph";
 import {
+  CROSSING_CITY,
   cityIdFromLocation,
   continentOf,
+  crossesContinent,
   getCity,
   grantAccessFlag,
   hasAccessFlag,
@@ -148,6 +150,37 @@ export function gateLocationChange({
       fact: {
         type: "event",
         description: `The way to ${to} is sealed to you — it cannot be reached by any ordinary road. You remain in ${from}.`,
+        turnNumber,
+      },
+    };
+  }
+
+  // Crossing chokepoint (issue #132): even a QUALIFIED character (one who holds
+  // the passage and so cleared the access gate above) cannot be routed STRAIGHT
+  // between the mainland and the City of Silver — every continent crossing goes
+  // through the Giant King's Court dream threshold. Like the access gate, this is
+  // a hard canon boundary: it bites regardless of an involuntary cause and
+  // regardless of the realism toggle, so the narrator can never teleport a
+  // character past the Court. Only applied when both endpoints resolve to known
+  // cities (origin anchored to the tracked city for a bare district), so an
+  // ordinary within-city or unresolved move is untouched.
+  const fromCityId =
+    cityIdFromLocation(from) ?? (fromCity && getCity(fromCity) ? fromCity : undefined);
+  if (
+    destCity &&
+    destCityId &&
+    fromCityId &&
+    crossesContinent(fromCityId, destCityId) &&
+    fromCityId !== CROSSING_CITY &&
+    destCityId !== CROSSING_CITY
+  ) {
+    return {
+      location: from,
+      blocked: true,
+      crossCity,
+      fact: {
+        type: "event",
+        description: `There is no direct way from ${from} to ${to} — the only passage across lies through Giant King's Court. You remain in ${from}.`,
         turnNumber,
       },
     };

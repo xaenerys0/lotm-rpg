@@ -286,6 +286,31 @@ describe("canTravelTo", () => {
     // The crossing city itself remains reachable as the way in.
     expect(canTravelTo(passenger, "giant-kings-court")).toBe(true);
   });
+
+  it("anchors the origin to currentCity when parked at a bare Forsaken district (issue #132)", () => {
+    // A character physically in the City of Silver but standing at a district
+    // whose name resolves to no city must still be treated as being in Silver
+    // City — not as an unknown (central) origin. Otherwise the chokepoint both
+    // leaks a straight mainland jump and falsely blocks same-continent travel.
+    const inSilver = stateAt("The High Quarter", {
+      accessFlags: [PASSAGE],
+      currentCity: "silver-city",
+    });
+    // Same-continent travel to the Court is allowed; a straight jump out to the
+    // mainland is refused (must route through the Court).
+    expect(canTravelTo(inSilver, "giant-kings-court")).toBe(true);
+    expect(canTravelTo(inSilver, "tingen")).toBe(false);
+
+    // At the crossing city itself (parked at one of its districts) the inward
+    // leg to Silver City is reachable — it was wrongly blocked before the
+    // currentCity fallback, because the display showed it but travel refused it.
+    const atCourt = stateAt("The Broken Colonnades", {
+      accessFlags: [PASSAGE],
+      currentCity: "giant-kings-court",
+    });
+    expect(canTravelTo(atCourt, "silver-city")).toBe(true);
+    expect(canTravelTo(atCourt, "tingen")).toBe(true);
+  });
 });
 
 describe("travelTo", () => {
