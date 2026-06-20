@@ -283,6 +283,125 @@ describe("Lore content coverage", () => {
     }
   });
 
+  describe("Orthodox Churches sweep (issue #139)", () => {
+    const CHURCH_OVERVIEWS = [
+      "evernight-church-overview",
+      "storms-church-overview",
+      "steam-church-overview",
+      "knowledge-church-overview",
+      "earth-mother-church-overview",
+      "combat-church-overview",
+      "fool-church-overview",
+      // The Church of the Eternal Blazing Sun's roster shipped in issue #135.
+      "blazing-sun-church-members",
+    ];
+    const CHURCH_SECRETS = [
+      "evernight-church-inner-secret",
+      "storms-church-inner-secret",
+      "steam-church-inner-secret",
+      "knowledge-church-inner-secret",
+      "earth-mother-church-inner-secret",
+      "combat-church-inner-secret",
+      "fool-church-inner-secret",
+      "blazing-sun-church-inner-secret",
+    ];
+
+    it("authors all eight Churches with a public overview that carries members", () => {
+      for (const slug of CHURCH_OVERVIEWS) {
+        const e = getLoreBySlug(slug);
+        expect(e, slug).toBeDefined();
+        expect(e!.category).toBe("organization");
+        expect(e!.epoch).toBe(5);
+        // Public doctrine/structure is ungated.
+        expect(e!.narratorOnly).toBe(false);
+        expect(e!.sequences).toEqual([]);
+        // The org lists its members.
+        expect(e!.npcs.length).toBeGreaterThan(0);
+      }
+    });
+
+    it("gates each Church's true-god nature: narrator-only, sequence-gated, leak-safe", () => {
+      for (const slug of CHURCH_SECRETS) {
+        const e = getLoreBySlug(slug);
+        expect(e, slug).toBeDefined();
+        expect(e!.category).toBe("organization");
+        expect(e!.narratorOnly).toBe(true);
+        expect(e!.sequences.length).toBeGreaterThan(0);
+        // Cross-cutting high-concealment secret: NO city/pathway key, so
+        // selectCuratedLore never injects it (the aurora-order-true-nature pattern).
+        expect(e!.city).toBeUndefined();
+        expect(e!.pathway).toBeUndefined();
+      }
+      // End-to-end leak guard at a permissive injection point (Darkness char in a
+      // church seat city, deep sequence, huge budget): no inner secret leaks.
+      const injected = selectCuratedLore("darkness", "Bayam", 100_000, 5, 1).entries.map(
+        (x) => x.slug,
+      );
+      for (const slug of CHURCH_SECRETS) expect(injected).not.toContain(slug);
+    });
+
+    it("resolves each Church's headline member to an npc entry (members resolve)", () => {
+      const memberNpcs: [string, string, string][] = [
+        ["evernight-church-overview", "npc-arianna", "Arianna"],
+        ["storms-church-overview", "npc-jahn-kottman", "Jahn Kottman"],
+        ["steam-church-overview", "npc-bornova-gustav", "Bornova Gustav"],
+        ["knowledge-church-overview", "npc-isengard-stanton", "Isengard Stanton"],
+        ["earth-mother-harvest-church-backlund", "npc-utravsky", "Utravsky"],
+        ["combat-church-overview", "npc-larrion", "Larrion"],
+        // Derrick Berg, the Fool's Pope, was authored in issue #132.
+        ["fool-church-overview", "npc-derrick-berg", "Derrick Berg"],
+      ];
+      for (const [orgSlug, npcSlug, name] of memberNpcs) {
+        const org = getLoreBySlug(orgSlug);
+        const npc = getLoreBySlug(npcSlug);
+        expect(org, orgSlug).toBeDefined();
+        expect(npc, npcSlug).toBeDefined();
+        expect(npc!.category).toBe("npc");
+        expect(org!.npcs).toContain(name);
+        expect(npc!.npcs).toContain(name);
+      }
+    });
+
+    it("Church members are city-keyed but never pathway-keyed (the #132 leak rule)", () => {
+      const churchNpcSlugs = [
+        "npc-arianna",
+        "npc-gaard-ii",
+        "npc-jahn-kottman",
+        "npc-bornova-gustav",
+        "npc-horamick-haydn",
+        "npc-isengard-stanton",
+        "npc-edwina-edwards",
+        "npc-brignais",
+        "npc-emlyn-white",
+        "npc-utravsky",
+        "npc-matriarch-roland",
+        "npc-larrion",
+        "npc-valentine-de-lacourt",
+      ];
+      for (const slug of churchNpcSlugs) {
+        const e = getLoreBySlug(slug);
+        expect(e, slug).toBeDefined();
+        expect(e!.category).toBe("npc");
+        expect(e!.pathway).toBeUndefined();
+        // Narrator-only for the Angel/Saint/Beyonder truths beneath public roles.
+        expect(e!.narratorOnly).toBe(true);
+      }
+      // A Sun character anywhere never has the Blazing Sun Purifier injected via
+      // the pathway selector — he is city-keyed (trier), not pathway-keyed.
+      expect(getLoreByPathway("sun").map((e) => e.slug)).not.toContain(
+        "npc-valentine-de-lacourt",
+      );
+    });
+
+    it("Harvest Church is the Earth Mother's Backlund branch, city-keyed", () => {
+      const harvest = getLoreBySlug("earth-mother-harvest-church-backlund");
+      expect(harvest?.category).toBe("organization");
+      expect(harvest?.city).toBe("backlund");
+      expect(harvest?.narratorOnly).toBe(false);
+      expect(harvest!.npcs).toContain("Utravsky");
+    });
+  });
+
   it("has Forsaken Land content, epoch-split and city-keyed (issue #132)", () => {
     expect(FORSAKEN_LAND_LORE.length).toBeGreaterThanOrEqual(5);
     // Every entry is tagged for exactly one epoch — the playable present (5) or
