@@ -45,6 +45,14 @@ export {
   type StartLocationOption,
 } from "./start-scenarios";
 export {
+  startArchetypesForEpoch,
+  getStartArchetype,
+  archetypeGrounding,
+  START_ARCHETYPES,
+  type StartArchetype,
+  type ArchetypeRelationship,
+} from "./start-archetypes";
+export {
   gazetteerForEpoch,
   uncertainFifthGazetteer,
   CONTINENT_CROSSING_FLAG,

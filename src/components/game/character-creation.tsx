@@ -16,7 +16,12 @@ import {
   clearDraft,
   TUTORIAL_SCENES,
 } from "@/lib/game";
-import { DEFAULT_EPOCH_ID, EPOCHS, startLocationsForEpoch } from "@/lib/lore";
+import {
+  DEFAULT_EPOCH_ID,
+  EPOCHS,
+  startLocationsForEpoch,
+  startArchetypesForEpoch,
+} from "@/lib/lore";
 import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
@@ -75,6 +80,8 @@ interface CharacterCreationProps {
     prologueRecap: string,
     /** Preferred starting location, or null for a random ("Surprise me") start. */
     startLocation: string | null,
+    /** Chosen start archetype id (issue #131), or null for a plain location start. */
+    archetypeId: string | null,
   ) => void;
   onBack: () => void;
 }
@@ -126,10 +133,16 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const [tutorialIndex, setTutorialIndex] = useState(0);
   const [epoch, setEpoch] = useState(DEFAULT_EPOCH_ID);
   const [skipPrologue, setSkipPrologue] = useState(false);
-  // Preferred starting location (varied story openings). null = "Surprise me"
-  // (a random start). The picker on the final step surfaces, per place, which
-  // pathways it thematically suits — a suggestion only, never an auto-bias.
-  const [startLocation, setStartLocation] = useState<string | null>(null);
+  // The single start pick on the final step (varied story openings + start
+  // archetypes, issue #131). One field so the location/archetype choice can never
+  // be inconsistent: `""` = "Surprise me" (random), `"archetype:<id>"` = begin in
+  // an NPC's circle, anything else = a preferred location. The picker surfaces,
+  // per place/archetype, which pathways it thematically suits (a suggestion only).
+  const [startChoice, setStartChoice] = useState<string>("");
+  const archetypeId = startChoice.startsWith("archetype:")
+    ? startChoice.slice("archetype:".length)
+    : null;
+  const startLocation = archetypeId === null && startChoice !== "" ? startChoice : null;
 
   // Character identity — restored from draft when available
   const [characterName, setCharacterName] = useState(savedDraft?.characterName ?? "");
@@ -349,7 +362,16 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           )?.text,
         });
     clearDraft();
-    onComplete(selectedPathwayId, name, bg, memory, epoch, prologueRecap, startLocation);
+    onComplete(
+      selectedPathwayId,
+      name,
+      bg,
+      memory,
+      epoch,
+      prologueRecap,
+      startLocation,
+      archetypeId,
+    );
   }, [
     epoch,
     selectedPathwayId,
@@ -359,6 +381,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     prologueHistory,
     finale,
     startLocation,
+    archetypeId,
     onComplete,
   ]);
 
@@ -482,7 +505,14 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             <select
               id="epoch-select"
               value={epoch}
-              onChange={(e) => setEpoch(Number(e.target.value))}
+              onChange={(e) => {
+                setEpoch(Number(e.target.value));
+                // Reset the start pick: a location/archetype chosen for the prior
+                // epoch must not carry over (issue #131 — a stale archetype id
+                // would otherwise resolve epoch-agnostically and leak that epoch's
+                // location/NPCs into the new one, breaking epoch isolation).
+                setStartChoice("");
+              }}
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
             >
               {EPOCHS.map((era) => (
@@ -1015,18 +1045,35 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               ))}
           </div>
 
-          {/* Where the chronicle begins (varied story openings). "Surprise me"
-              keeps it random; choosing a place sets a preferred start (the scene
-              still varies). Places that thematically suit the chosen pathway are
-              flagged as a suggestion — never an automatic bias. */}
+          {/* Where the chronicle begins (varied story openings) — a plain place
+              OR an existing character's circle (start archetypes, issue #131).
+              "Surprise me" keeps the place random; choosing a place sets a
+              preferred start (the scene still varies); choosing an archetype
+              begins the character embedded in an NPC's circle. Pathway-suiting
+              places/archetypes are flagged as a suggestion — never an auto-bias. */}
           {(() => {
             const options = startLocationsForEpoch(epoch);
+            const archetypes = startArchetypesForEpoch(epoch);
             const pathwayName = ALL_PATHWAYS.find(
               (p) => p.id === selectedPathwayId,
             )?.name;
-            const selected = options.find((o) => o.location === startLocation);
-            const suitsSelected =
-              selected?.pathwayAffinity.includes(selectedPathwayId) ?? false;
+            const selectedLoc = options.find((o) => o.location === startLocation);
+            const selectedArchetype = archetypes.find((a) => a.id === archetypeId);
+            const suitsSelectedLoc =
+              selectedLoc?.pathwayAffinity.includes(selectedPathwayId) ?? false;
+            // One control: plain locations and archetypes share the picker. An
+            // archetype option's value is `archetype:<id>`; a location's is the
+            // bare location string; "" is the random start (the single
+            // `startChoice` state holds exactly this value).
+            const describe = selectedArchetype
+              ? selectedArchetype.blurb
+              : selectedLoc
+                ? `${selectedLoc.blurb}${
+                    suitsSelectedLoc && pathwayName
+                      ? ` A fitting start for the ${pathwayName} pathway.`
+                      : ""
+                  }`
+                : "The fog will decide where you wake — a different place, and a different opening, each time.";
             return (
               <div className="mb-8">
                 <label
@@ -1037,31 +1084,40 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 </label>
                 <select
                   id="start-location"
-                  value={startLocation ?? ""}
-                  onChange={(e) =>
-                    setStartLocation(e.target.value === "" ? null : e.target.value)
-                  }
+                  value={startChoice}
+                  onChange={(e) => setStartChoice(e.target.value)}
                   className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
                 >
                   <option value="">Surprise me — a random start</option>
-                  {options.map((o) => {
-                    const suits = o.pathwayAffinity.includes(selectedPathwayId);
-                    return (
-                      <option key={o.location} value={o.location}>
-                        {o.location}
-                        {suits && pathwayName ? ` · suits the ${pathwayName}` : ""}
-                      </option>
-                    );
-                  })}
+                  <optgroup label="Begin in a place">
+                    {options.map((o) => {
+                      const suits = o.pathwayAffinity.includes(selectedPathwayId);
+                      return (
+                        <option key={o.location} value={o.location}>
+                          {o.location}
+                          {suits && pathwayName ? ` · suits the ${pathwayName}` : ""}
+                        </option>
+                      );
+                    })}
+                  </optgroup>
+                  {archetypes.length > 0 && (
+                    <optgroup label="Begin in someone's circle">
+                      {archetypes.map((a) => {
+                        const suits = (a.pathwayAffinity ?? []).includes(
+                          selectedPathwayId,
+                        );
+                        return (
+                          <option key={a.id} value={`archetype:${a.id}`}>
+                            {a.label}
+                            {suits && pathwayName ? ` · suits the ${pathwayName}` : ""}
+                          </option>
+                        );
+                      })}
+                    </optgroup>
+                  )}
                 </select>
                 <p className="mt-1.5 text-xs leading-relaxed text-muted" role="status">
-                  {selected
-                    ? `${selected.blurb}${
-                        suitsSelected && pathwayName
-                          ? ` A fitting start for the ${pathwayName} pathway.`
-                          : ""
-                      }`
-                    : "The fog will decide where you wake — a different place, and a different opening, each time."}
+                  {describe}
                 </p>
               </div>
             );

@@ -11,6 +11,7 @@ import {
   migrateSocietyState,
   recruitMember,
   resolveMemberArc,
+  seedSocietyMembership,
   societyKindForPathway,
   GATHERING_COOLDOWN_TURNS,
   RESOLVED_ARC_ID,
@@ -259,5 +260,29 @@ describe("isValidSocietyShape", () => {
         members: [{ id: "m2", codeName: "x", disposition: 5 }],
       }),
     ).toBe(false);
+  });
+});
+
+describe("seedSocietyMembership (issue #131)", () => {
+  it("maps a known org slug to its society kind and display name", () => {
+    const state = seedSocietyMembership("nighthawks-tingen-team");
+    expect(state.kind).toBe("nighthawk-squad");
+    expect(state.name).toBe("The Tingen Nighthawks");
+    expect(state.members).toEqual([]);
+    expect(state.gatheringCount).toBe(0);
+    // Seeded so the first gathering is immediately allowed once members exist.
+    expect(state.lastGatheringTurn).toBe(-GATHERING_COOLDOWN_TURNS);
+  });
+
+  it("falls back to a neutral scholars' circle for an unknown org slug", () => {
+    const state = seedSocietyMembership("some-unmapped-org");
+    expect(state.kind).toBe("scholars-circle");
+    expect(state.name).toBe(SOCIETY_KIND_LABELS["scholars-circle"]);
+  });
+
+  it("produces a state that passes strict validation", () => {
+    expect(isValidSocietyShape(seedSocietyMembership("nighthawks-tingen-team"))).toBe(
+      true,
+    );
   });
 });

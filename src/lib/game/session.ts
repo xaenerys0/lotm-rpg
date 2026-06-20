@@ -1,5 +1,6 @@
-import type { GameState, MemoryState } from "@/lib/ai";
+import type { GameState, MemoryState, SessionFact } from "@/lib/ai";
 import {
+  addSessionFact,
   createMemoryState,
   getEmbeddingModel,
   APPROVED_EMBEDDING_MODELS,
@@ -14,10 +15,16 @@ import { isValidHuntsShape } from "./hunt";
 import { isValidRitualStateShape } from "./ritual";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
-import { isValidTrackedNpcStateShape } from "./tracked-npcs";
-import { isValidSocietyShape, migrateSocietyState, type SocietyState } from "./society";
+import { joinRoster, isValidTrackedNpcStateShape } from "./tracked-npcs";
+import {
+  isValidSocietyShape,
+  migrateSocietyState,
+  seedSocietyMembership,
+  type SocietyState,
+} from "./society";
 import { DEFAULT_EPOCH_ID, getEpoch } from "@/lib/lore/epochs";
 import type { StartScenario } from "@/lib/lore/start-scenarios";
+import { archetypeGrounding, type StartArchetype } from "@/lib/lore/start-archetypes";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
 
 const VALID_PHASES: GamePhase[] = [
@@ -79,11 +86,23 @@ export function createDefaultGameState(
   epoch?: number,
   prologueRecap?: string,
   startScenario?: StartScenario,
+  archetype?: StartArchetype,
 ): GameState {
   // Varied story openings: a chosen start scenario sets the (randomly varied)
-  // starting location; absent (manual fallback / legacy callers) it falls back
-  // to the epoch's default starting location.
-  const location = startScenario?.location ?? getEpoch(epoch).startingLocation;
+  // starting location; a chosen start ARCHETYPE (issue #131) takes precedence —
+  // it carries its own location + opening beat (the character begins embedded in
+  // an existing circle). Absent both, fall back to the epoch's default location.
+  const location =
+    archetype?.location ?? startScenario?.location ?? getEpoch(epoch).startingLocation;
+  const openingBeat = archetype?.openingBeat ?? startScenario?.openingBeat;
+  // Relationship grounding (issue #131) lives in the DURABLE, never-trimmed
+  // background layer (issue #92's insight), not in trimmable session facts alone:
+  // the archetype's grounding line is folded into the character background so the
+  // narrator keeps the social tie in view for the whole chronicle.
+  const grounding = archetype ? archetypeGrounding(archetype) : undefined;
+  const background = [characterBackground?.trim(), grounding]
+    .filter((part): part is string => Boolean(part))
+    .join("\n\n");
   // Seed the tracked current city when the start location names a known one
   // (issue #101), so the map opens on the right city's atlas.
   const startCity = cityIdFromLocation(location);
@@ -101,14 +120,53 @@ export function createDefaultGameState(
     npcsPresent: [],
     digestion: createDigestionState(pathwayId, 9),
     ...(characterName ? { characterName } : {}),
-    ...(characterBackground ? { characterBackground } : {}),
+    ...(background ? { characterBackground: background } : {}),
     // Durable prologue recap (the prologue → story bridge) — kept in the
     // never-trimmed game-state layer so the narrator never loses the thread.
     ...(prologueRecap ? { prologueRecap } : {}),
-    // The first-turn opening beat for the chosen start scenario, so the opening
-    // scene matches the varied starting location (consumed only at turn 0).
-    ...(startScenario ? { openingBeat: startScenario.openingBeat } : {}),
+    // The first-turn opening beat for the chosen start (consumed only at turn 0).
+    ...(openingBeat ? { openingBeat } : {}),
   };
+}
+
+/**
+ * Apply a start archetype's GameSession-level seeds (issue #131) AFTER the
+ * session exists: the tracked-NPC roster (known allies who travel at the
+ * character's side — `joinRoster`), an optional pre-membership society, and the
+ * relationship grounding facts (recorded in memory so the narrator can weave the
+ * tie in from turn 0). The durable background grounding is set separately in
+ * `createDefaultGameState`. A plain location start passes no archetype and the
+ * session is returned untouched. Pure; returns a NEW `GameSession`.
+ */
+export function seedArchetype(
+  session: GameSession,
+  archetype: StartArchetype,
+  now: number = Date.now(),
+): GameSession {
+  let next = session;
+
+  // Known associates who travel with the character (companions, not pursuers).
+  for (const name of archetype.seeds.trackedAllies ?? []) {
+    next = joinRoster(next, { name, disposition: "ally", follows: true }, now);
+  }
+
+  // Optional pre-membership in an existing organization's circle.
+  if (archetype.seeds.society) {
+    next = {
+      ...next,
+      societyState: seedSocietyMembership(archetype.seeds.society.orgSlug),
+      updatedAt: now,
+    };
+  }
+
+  // Relationship grounding facts, recorded in memory (supplementing the durable
+  // background line) so the narrator has the tie in its fact list from turn 0.
+  for (const description of archetype.seeds.facts ?? []) {
+    const fact: SessionFact = { type: "event", description, turnNumber: 0 };
+    next = { ...next, memory: addSessionFact(next.memory, fact), updatedAt: now };
+  }
+
+  return next;
 }
 
 export function sessionToSummary(session: GameSession): GameSessionSummary {

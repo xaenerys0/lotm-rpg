@@ -494,6 +494,7 @@ export {
   advanceCanonPosition,
   createSession,
   createDefaultGameState,
+  seedArchetype,
   DEFAULT_CANON_POSITION,
   type CreateSessionOptions,
   sessionToSummary,
