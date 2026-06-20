@@ -43,19 +43,37 @@ export interface GazetteerFartherCity {
 export const CONTINENT_CROSSING_FLAG = "dream-world-passage";
 
 /**
- * Whether a farther city's continent is reachable from the character's current
- * continent given the flags they hold (issue #130). Same continent is always
- * shown; a different continent appears only when the crossing flag is held — so
- * a central character never sees the Forsaken cities, and a Forsaken character
- * never sees the central ones, until the passage capability is granted.
+ * The single city through which every continent crossing is routed (issue #132):
+ * the Dream-World threshold of Giant King's Court. A lore-local literal — the
+ * gazetteer must not import the game layer — reconciled against the game-layer
+ * `CROSSING_CITY` by a test so the two can never drift, mirroring the
+ * `CONTINENT_CROSSING_FLAG` pattern above.
+ */
+export const GAZETTEER_CROSSING_CITY = "giant-kings-court";
+
+/**
+ * Whether a farther city is reachable from the character's current city given the
+ * flags they hold (issues #130, #132). Same continent is always shown. A
+ * different continent appears only when the crossing flag is held AND the route
+ * passes through the crossing chokepoint — either the character is AT the crossing
+ * city, or the farther city IS the crossing city (the dream threshold you cross
+ * through). So a mainland walker holding the passage sees Giant King's Court as
+ * the way in, but never the City of Silver directly; a walker in the City of
+ * Silver sees only Giant King's Court, never the mainland — they must reach the
+ * Court first. "Finding the correct path" made visible.
  */
 function continentReachable(
-  target: "central" | "forsaken-land",
-  current: "central" | "forsaken-land",
+  targetCity: GazetteerFartherCity,
+  currentCityId: string,
+  currentContinent: "central" | "forsaken-land",
   accessFlags: readonly string[],
 ): boolean {
-  if (target === current) return true;
-  return accessFlags.includes(CONTINENT_CROSSING_FLAG);
+  const target = gazetteerContinentOf(targetCity);
+  if (target === currentContinent) return true;
+  if (!accessFlags.includes(CONTINENT_CROSSING_FLAG)) return false;
+  return (
+    currentCityId === GAZETTEER_CROSSING_CITY || targetCity.id === GAZETTEER_CROSSING_CITY
+  );
 }
 
 export interface EpochGazetteer {
@@ -601,12 +619,15 @@ export function gazetteerForEpoch(
       intro: `A walker’s gazetteer of ${city.name} — ${city.realm}.`,
       districts: FIFTH_CITY_DISTRICTS[current] ?? [],
       // Every Fifth-Epoch city EXCEPT the one you are in is "farther afield",
-      // continent-filtered: a different continent shows only with the crossing
-      // flag (issue #130), so Forsaken cities stay hidden from a central walker.
+      // continent-filtered AND chokepointed (issues #130, #132): a different
+      // continent shows only with the crossing flag, and only through the Giant
+      // King's Court threshold — so a central walker sees the Court as the way in
+      // but never the City of Silver direct, and a Silver City walker sees only
+      // the Court, never the mainland.
       fartherCities: FIFTH_CITIES.filter(
         (c) =>
           c.id !== current &&
-          continentReachable(gazetteerContinentOf(c), currentContinent, accessFlags),
+          continentReachable(c, current, currentContinent, accessFlags),
       ),
       travelEnabled: true,
     };
