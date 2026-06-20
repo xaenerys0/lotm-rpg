@@ -15,7 +15,9 @@ import {
   type ActingMethodState,
 } from "./acting-method";
 import { cityForLocation, isReachable } from "./place-graph";
+import { cityIdFromLocation, continentOf, getCity, meetsAccessGate } from "./travel";
 import { registerCustomLocation } from "./location";
+import type { AccessFlag } from "@/lib/ai";
 import { reassertFollowersAt, type TrackedNpcState } from "./tracked-npcs";
 
 const AI_MUTABLE_FIELDS = new Set(["location", "activeQuests", "npcsPresent"]);
@@ -61,6 +63,15 @@ export interface GateLocationChangeInput {
   cause?: InvoluntaryMoveCause;
   gateEnabled: boolean;
   turnNumber: number;
+  /**
+   * The character's current Sequence — fed into the access-gate check for an
+   * access-gated destination continent (issue #130). Optional so the existing
+   * direct callers/tests need not supply it; a forsaken-land gate that demands a
+   * Sequence then treats an absent value as "not high enough".
+   */
+  sequenceLevel?: number;
+  /** The capability flags the character holds — the access-gate check (issue #130). */
+  accessFlags?: AccessFlag[];
 }
 
 export interface GateLocationChangeResult {
@@ -96,8 +107,40 @@ export function gateLocationChange({
   cause,
   gateEnabled,
   turnNumber,
+  sequenceLevel,
+  accessFlags,
 }: GateLocationChangeInput): GateLocationChangeResult {
   const crossCity = !isReachable(from, to, epoch, fromCity).reachable;
+
+  // Access-gated continent (issue #130): when the destination resolves to a city
+  // on a non-central, access-gated continent (the Forsaken Land), the move is
+  // REFUSED unless the character meets the gate — sequence AND required flag —
+  // regardless of an involuntary cause AND regardless of the movement-realism
+  // toggle. This is a hard canon boundary, not a pacing preference, so it is
+  // checked first: the narrator can never route an unqualified character in.
+  // Resolved epoch-independently (NOT via `cityForLocation`, which is Fifth-only)
+  // so the gate still bites if the narrator names a sealed city in any epoch.
+  const destCityId = cityIdFromLocation(to);
+  const destCity = destCityId ? getCity(destCityId) : undefined;
+  if (
+    destCity &&
+    continentOf(destCity) !== "central" &&
+    !meetsAccessGate(
+      { sequenceLevel: sequenceLevel ?? Number.POSITIVE_INFINITY, accessFlags },
+      destCity,
+    )
+  ) {
+    return {
+      location: from,
+      blocked: true,
+      crossCity,
+      fact: {
+        type: "event",
+        description: `The way to ${to} is sealed to you — it cannot be reached by any ordinary road. You remain in ${from}.`,
+        turnNumber,
+      },
+    };
+  }
 
   if (!gateEnabled) return { location: to, blocked: false, crossCity };
 
@@ -258,6 +301,11 @@ export function applyWorldStateChanges(
               : undefined,
             gateEnabled: opts.gateEnabled,
             turnNumber: opts.turnNumber,
+            // The access-gate slice (issue #130): a forsaken-land destination is
+            // re-checked here too, so the narrator cannot teleport an unqualified
+            // character into the sealed continent even with an involuntary cause.
+            sequenceLevel: next.sequenceLevel,
+            accessFlags: next.accessFlags,
           });
           if (gated.fact) facts.push(gated.fact);
           if (!gated.blocked && gated.location !== next.location) {

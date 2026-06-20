@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { gazetteerForEpoch, uncertainFifthGazetteer } from "./gazetteer";
+import {
+  CONTINENT_CROSSING_FLAG,
+  gazetteerForEpoch,
+  uncertainFifthGazetteer,
+} from "./gazetteer";
 import { DEFAULT_EPOCH_ID, getEpoch } from "./epochs";
+import { ACCESS_FLAGS } from "@/lib/ai";
+import { CITIES, getCity } from "@/lib/game";
 
 describe("gazetteerForEpoch", () => {
   it("gives the Fifth Epoch the Tingen gazetteer with inter-city travel", () => {
@@ -88,6 +94,57 @@ describe("gazetteerForEpoch", () => {
       "enmat",
       "feysac",
     ]);
+  });
+
+  it("hides the Forsaken cities from a central character's travel list (issue #130)", () => {
+    // No access flags: silver-city / giant-kings-court never appear from anywhere
+    // central, including the default Tingen atlas and every other central city.
+    for (const id of [
+      "tingen",
+      "backlund",
+      "trier",
+      "bayam",
+      "pritz",
+      "enmat",
+      "feysac",
+    ]) {
+      const ids = gazetteerForEpoch(5, id).fartherCities.map((c) => c.id);
+      expect(ids).not.toContain("silver-city");
+      expect(ids).not.toContain("giant-kings-court");
+    }
+  });
+
+  it("shows the Forsaken cities only when the crossing flag is held (issue #130)", () => {
+    const flagged = gazetteerForEpoch(5, "tingen", [CONTINENT_CROSSING_FLAG]);
+    const ids = flagged.fartherCities.map((c) => c.id);
+    expect(ids).toContain("silver-city");
+    expect(ids).toContain("giant-kings-court");
+    // The central cities are still listed too — the flag opens the crossing.
+    expect(ids).toContain("backlund");
+  });
+
+  it("a Forsaken character sees only Forsaken cities without the flag (vice-versa)", () => {
+    const ids = gazetteerForEpoch(5, "silver-city").fartherCities.map((c) => c.id);
+    // Same-continent only: giant-kings-court yes, no central city leaks in.
+    expect(ids).toEqual(["giant-kings-court"]);
+  });
+
+  it("the uncertain atlas never surfaces the Forsaken cities", () => {
+    const ids = uncertainFifthGazetteer().fartherCities.map((c) => c.id);
+    expect(ids).not.toContain("silver-city");
+    expect(ids).not.toContain("giant-kings-court");
+  });
+
+  it("the crossing flag reconciles with the canonical ACCESS_FLAGS and city gate", () => {
+    // The lore-local literal must match the AI/game source of truth so they can
+    // never drift (mirrors the PROLOGUE_AFFINITY_REGIONS reconciliation pattern).
+    expect(ACCESS_FLAGS).toContain(CONTINENT_CROSSING_FLAG);
+    for (const city of CITIES.filter((c) => c.continent === "forsaken-land")) {
+      expect(city.accessGate?.requiresFlag).toBe(CONTINENT_CROSSING_FLAG);
+    }
+    // The two layers describe the same Forsaken cities.
+    expect(getCity("silver-city")).toBeDefined();
+    expect(getCity("giant-kings-court")).toBeDefined();
   });
 
   it("places the new character's starting region in the atlas", () => {

@@ -13,6 +13,8 @@ export type {
   GameState,
   CustomLocation,
   DigestionState,
+  Continent,
+  AccessFlag,
   TurnRecord,
   BulletSummary,
   SessionFact,
@@ -27,7 +29,7 @@ export type {
   ProviderResponse,
 } from "./types";
 
-export { PROVIDER_MODELS } from "./types";
+export { PROVIDER_MODELS, ACCESS_FLAGS, isAccessFlag } from "./types";
 
 export { AIError, type AIErrorCode, extractProviderMessage } from "./errors";
 

@@ -204,6 +204,11 @@ export function MapPanel() {
   );
 }
 
-// Reference the full CITIES list for completeness in the gazetteer's footer so
-// the table stays the single source of truth for known destinations.
-export const KNOWN_CITY_NAMES = CITIES.map((c) => c.name);
+// Reference the central CITIES for completeness in the gazetteer's footer so the
+// table stays the single source of truth for known destinations. Forsaken-Land
+// cities (issue #130) are deliberately excluded — they must stay hidden from a
+// character without the crossing capability, like the continent-filtered
+// `fartherCities` list the panel actually renders.
+export const KNOWN_CITY_NAMES = CITIES.filter(
+  (c) => (c.continent ?? "central") === "central",
+).map((c) => c.name);

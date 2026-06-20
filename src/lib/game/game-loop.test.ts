@@ -909,6 +909,77 @@ describe("gateLocationChange", () => {
     expect(r.blocked).toBe(false);
     expect(r.location).toBe("Tingen City");
   });
+
+  // ── access-gated continent (issue #130) ──
+  it("refuses a teleport into a Forsaken city without the capability flag", () => {
+    const r = gateLocationChange({
+      ...base,
+      epoch: 5,
+      from: "Tingen City",
+      to: "Silver City",
+      gateEnabled: true,
+      sequenceLevel: 1,
+    });
+    expect(r.blocked).toBe(true);
+    expect(r.location).toBe("Tingen City");
+    expect(r.fact?.description).toContain("sealed");
+  });
+
+  it("refuses the Forsaken city EVEN with an involuntary capability-gated-teleport", () => {
+    const r = gateLocationChange({
+      ...base,
+      epoch: 5,
+      from: "Tingen City",
+      to: "Silver City",
+      cause: "capability-gated-teleport",
+      gateEnabled: true,
+      sequenceLevel: 1,
+    });
+    expect(r.blocked).toBe(true);
+    expect(r.location).toBe("Tingen City");
+  });
+
+  it("refuses the Forsaken city even when the movement gate is OFF (hard canon rule)", () => {
+    const r = gateLocationChange({
+      ...base,
+      epoch: 5,
+      from: "Tingen City",
+      to: "Silver City",
+      gateEnabled: false,
+    });
+    expect(r.blocked).toBe(true);
+    expect(r.location).toBe("Tingen City");
+  });
+
+  it("refuses the Forsaken city in ANY epoch (gate is not Fifth-only)", () => {
+    // The sealed continent must never be reachable by narration, even where the
+    // city/travel model otherwise doesn't apply (epoch absent / earlier eras).
+    const r = gateLocationChange({
+      ...base,
+      epoch: undefined,
+      from: "An ancient war-camp",
+      to: "Silver City",
+      cause: "capability-gated-teleport",
+      gateEnabled: true,
+    });
+    expect(r.blocked).toBe(true);
+    expect(r.location).toBe("An ancient war-camp");
+  });
+
+  it("permits the Forsaken city once the passage flag is held (still cross-city)", () => {
+    const r = gateLocationChange({
+      ...base,
+      epoch: 5,
+      from: "Silver City",
+      to: "Giant King's Court",
+      cause: "capability-gated-teleport",
+      gateEnabled: true,
+      sequenceLevel: 1,
+      accessFlags: ["dream-world-passage"],
+    });
+    expect(r.blocked).toBe(false);
+    expect(r.location).toBe("Giant King's Court");
+  });
 });
 
 describe("applyWorldStateChanges — movement gate", () => {
@@ -959,6 +1030,36 @@ describe("applyWorldStateChanges — movement gate", () => {
     );
     expect(next.location).toBe("Bayam");
     expect(facts[0].description).toContain("Against your will");
+  });
+
+  it("refuses an involuntary teleport into the gated Forsaken continent (issue #130)", () => {
+    const state = makeGameState({
+      location: "Tingen City",
+      currentCity: "tingen",
+      sequenceLevel: 1,
+    });
+    const { state: next, facts } = applyWorldStateChanges(
+      state,
+      [locationChange("Silver City", "capability-gated-teleport")],
+      { ...opts, epoch: 5 },
+    );
+    expect(next.location).toBe("Tingen City");
+    expect(facts[0].description).toContain("sealed");
+  });
+
+  it("lets a flag-holding character be moved into the Forsaken continent (issue #130)", () => {
+    const state = makeGameState({
+      location: "Silver City",
+      currentCity: "silver-city",
+      sequenceLevel: 1,
+      accessFlags: ["dream-world-passage"],
+    });
+    const { state: next } = applyWorldStateChanges(
+      state,
+      [locationChange("Giant King's Court", "capability-gated-teleport")],
+      { ...opts, epoch: 5 },
+    );
+    expect(next.location).toBe("Giant King's Court");
   });
 
   it("ignores an unknown involuntary cause (still blocked)", () => {
@@ -2150,6 +2251,40 @@ describe("deserializeSession", () => {
     // A malformed customLocations payload is rejected, not coerced.
     withCustom.gameState.customLocations = [{ cityId: "backlund" }];
     expect(deserializeSession(JSON.stringify(withCustom))).toBeNull();
+  });
+
+  it("preserves valid accessFlags and rejects malformed ones (issue #130)", () => {
+    const withFlags = JSON.parse(
+      serializeSession(
+        makeSession({
+          gameState: makeGameState({
+            currentCity: "tingen",
+            accessFlags: ["dream-world-passage"],
+          }),
+        }),
+      ),
+    );
+    const restored = deserializeSession(JSON.stringify(withFlags));
+    expect(restored?.gameState.accessFlags).toEqual(["dream-world-passage"]);
+
+    // An unknown flag is rejected, not coerced.
+    withFlags.gameState.accessFlags = ["teleport"];
+    expect(deserializeSession(JSON.stringify(withFlags))).toBeNull();
+    // A non-array is rejected too.
+    withFlags.gameState.accessFlags = "dream-world-passage";
+    expect(deserializeSession(JSON.stringify(withFlags))).toBeNull();
+  });
+
+  it("keeps a legacy save without accessFlags valid (issue #130)", () => {
+    const legacy = JSON.parse(
+      serializeSession(
+        makeSession({ gameState: makeGameState({ currentCity: "tingen" }) }),
+      ),
+    );
+    expect(legacy.gameState.accessFlags).toBeUndefined();
+    const restored = deserializeSession(JSON.stringify(legacy));
+    expect(restored).not.toBeNull();
+    expect(restored?.gameState.accessFlags).toBeUndefined();
   });
 
   it("registers the off-map venue a legacy save is parked at, on load", () => {

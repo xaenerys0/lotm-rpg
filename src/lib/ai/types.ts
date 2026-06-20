@@ -68,6 +68,32 @@ export interface Choice {
   type: "action" | "dialogue" | "investigation" | "ritual";
 }
 
+/**
+ * The continents the world model distinguishes (world build-out, issue #130).
+ * `central` is the ordinary mainland (the seven existing cities); `forsaken-land`
+ * is the sealed Eastern Continent — the Forsaken Land of the Gods — reachable
+ * only via the Dream-World passage, never an ordinary sea route. Absent on a
+ * `City` means `central` (the existing cities are untouched).
+ */
+export type Continent = "central" | "forsaken-land";
+
+/**
+ * Capability flags a character may hold (world build-out, issue #130). A flag is
+ * an earned, NOT-AI-mutable capability gating access to otherwise-unreachable
+ * surfaces — currently the single `dream-world-passage` (the shadow route into
+ * the Forsaken Land). Persisted on the save's `GameState.accessFlags`, validated
+ * strictly like `customLocations`, granted only by the engine (issue #3).
+ */
+export type AccessFlag = "dream-world-passage";
+
+/** The known capability flags, for strict validation (issue #130). */
+export const ACCESS_FLAGS: readonly AccessFlag[] = ["dream-world-passage"];
+
+/** Type guard: is `value` a recognised capability flag? */
+export function isAccessFlag(value: unknown): value is AccessFlag {
+  return typeof value === "string" && (ACCESS_FLAGS as readonly string[]).includes(value);
+}
+
 export interface StateChange {
   field: string;
   oldValue: unknown;
@@ -228,6 +254,16 @@ export interface GameState {
    * saves that never visited an off-map venue.
    */
   customLocations?: CustomLocation[];
+  /**
+   * Capability flags the character holds (world build-out, issue #130) — earned,
+   * NOT-AI-mutable capabilities that gate access to otherwise-unreachable
+   * surfaces (e.g. `dream-world-passage`, the shadow route into the access-gated
+   * Forsaken Land). Optional + strictly validated + preserved on deserialize,
+   * exactly like `customLocations`; granted only by the engine (issue #3). Lives
+   * in the `game_sessions.data` jsonb — no schema migration, no `database.ts`
+   * change. Absent on every existing save.
+   */
+  accessFlags?: AccessFlag[];
   activeQuests: string[];
   npcsPresent: string[];
   characterName?: string;
