@@ -84,6 +84,8 @@ const IMAGE_PROVIDERS: Record<ImageProviderId, ImageProviderMeta> = {
  * for the local/cloud diffusion backends, whose catalogs vary per install. */
 export const IMAGE_PROVIDER_MODELS: Record<ImageProviderId, ImageModelOption[]> = {
   openai: [
+    { id: "gpt-image-2", name: "GPT Image 2" },
+    { id: "gpt-image-1.5", name: "GPT Image 1.5" },
     { id: "gpt-image-1", name: "GPT Image 1" },
     { id: "gpt-image-1-mini", name: "GPT Image 1 Mini" },
   ],

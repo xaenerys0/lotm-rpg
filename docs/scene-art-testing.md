@@ -45,9 +45,10 @@ to exercise **every** point where an image can be generated.
    App runs at `http://localhost:3000` (sign in / create an account to reach the
    game — the game pages are behind auth).
 2. Have an **image provider** ready (pick one):
-   - **OpenAI** — an API key with image access (`gpt-image-1` or
-     `gpt-image-1-mini`). Easiest; works anywhere. (dall-e-2/3 were removed from
-     the OpenAI API on 2026-05-12 — use a gpt-image model.)
+   - **OpenAI** — an API key with image access. `gpt-image-2` (newest,
+     recommended), `gpt-image-1.5`, `gpt-image-1`, or `gpt-image-1-mini`. Easiest;
+     works anywhere. (dall-e-2/3 were removed from the OpenAI API on 2026-05-12;
+     gpt-image-1/-mini are slated for removal 2026-12-01 — prefer gpt-image-2.)
    - **Ollama (local)** — Ollama running locally on **macOS** with an image model
      pulled: `ollama pull x/z-image-turbo`. Base URL `http://localhost:11434/v1`.
      No key. (Windows/Linux image-gen support was not yet available at time of
@@ -81,7 +82,7 @@ In the app: **Settings → Scene art**.
 1. Pick the provider (OpenAI / Ollama (local) / Stable Diffusion (local)).
 2. Enter the API key (OpenAI only) and/or base URL (Ollama / SD).
 3. Pick the image **model**:
-   - OpenAI: `gpt-image-1` (or `gpt-image-1-mini`).
+   - OpenAI: `gpt-image-2` (or `gpt-image-1.5` / `gpt-image-1`).
    - Ollama local: `z-image-turbo` (or `x/flux2-klein:9b`).
    - Stable Diffusion: leave blank to use the WebUI's loaded checkpoint.
 4. Click **Save image settings**.
@@ -209,7 +210,7 @@ Walk this checklist in order:
    says "Image settings saved". (Testbench status line confirms it too.)
 2. **Illustrations enabled?** Settings → Preferences → "Scene illustrations" is on.
    (Not needed for the testbench, required for in-game.)
-3. **Right model?** OpenAI: `gpt-image-1` (dall-e is retired). Ollama local:
+3. **Right model?** OpenAI: a `gpt-image-*` model (dall-e is retired). Ollama local:
    `z-image-turbo`. A **chat/vision model** (e.g. a `gemini-*` or `gpt-4*` id) is
    **not** an image model and will fail.
 4. **Check the console** for `[scene-art] image generation failed` → read the
