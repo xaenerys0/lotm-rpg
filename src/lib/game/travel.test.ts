@@ -287,6 +287,32 @@ describe("canTravelTo", () => {
     expect(canTravelTo(atCourt, "moon-city")).toBe(false);
   });
 
+  it("routes even a dual-flag holder between Silver and Moon through the Court (issue #133)", () => {
+    // A character holding BOTH native flags is on the same continent for both
+    // cities, so the cross-continent chokepoint never fires — the intra-Forsaken
+    // hub-and-spoke must be enforced separately, or they could jump straight
+    // between the two mutually-isolated cities. They cannot: every leg routes
+    // through the Giant King's Court.
+    const dual = stateAt("Silver City", {
+      accessFlags: [PASSAGE, "silver-city-passage", "moon-city-passage"],
+    });
+    expect(canTravelTo(dual, "moon-city")).toBe(false);
+    expect(canTravelTo(dual, "giant-kings-court")).toBe(true);
+
+    const atMoon = stateAt("Moon City", {
+      accessFlags: [PASSAGE, "silver-city-passage", "moon-city-passage"],
+    });
+    expect(canTravelTo(atMoon, "silver-city")).toBe(false);
+    expect(canTravelTo(atMoon, "giant-kings-court")).toBe(true);
+
+    // From the Court, both native cities are reachable (it is the hub).
+    const atCourt = stateAt("Giant King's Court", {
+      accessFlags: [PASSAGE, "silver-city-passage", "moon-city-passage"],
+    });
+    expect(canTravelTo(atCourt, "silver-city")).toBe(true);
+    expect(canTravelTo(atCourt, "moon-city")).toBe(true);
+  });
+
   it("blocks a Silver City character from going straight to the mainland (issue #132)", () => {
     // The reported bug: a Silver City origin character (who HOLDS the passage)
     // could travel direct to the mainland. They must reach the Court first.

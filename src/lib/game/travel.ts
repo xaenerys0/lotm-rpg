@@ -226,7 +226,21 @@ function crossingPermitted(fromId: string | undefined, dest: City): boolean {
     // is reachable only AT the crossing city (the dream threshold), never direct.
     return continentOf(dest) === "central" || dest.id === CROSSING_CITY;
   }
-  if (!crossesContinent(fromId, dest.id)) return true;
+  if (!crossesContinent(fromId, dest.id)) {
+    // Same-continent moves are free EXCEPT within the Forsaken Land, whose
+    // cities connect ONLY through the Giant King's Court (issues #132/#133):
+    // the hub-and-spoke is enforced here too, so even a dual-flag holder can
+    // never journey straight between the City of Silver and Moon City — they
+    // route through the Court like everyone else.
+    if (
+      continentOf(dest) === "forsaken-land" &&
+      fromId !== CROSSING_CITY &&
+      dest.id !== CROSSING_CITY
+    ) {
+      return false;
+    }
+    return true;
+  }
   return fromId === CROSSING_CITY || dest.id === CROSSING_CITY;
 }
 

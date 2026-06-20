@@ -166,6 +166,21 @@ describe("gazetteerForEpoch", () => {
     expect(ids).toEqual(["giant-kings-court"]);
   });
 
+  it("hides a Forsaken city from a holder who lacks the dream passage (display matches travel, #132)", () => {
+    // A mainlander who somehow holds only the per-city flag (no dream passage)
+    // must NOT see the City of Silver: the crossing is chokepointed, so
+    // `canTravelTo` would refuse it. Showing it would be a display/permission
+    // mismatch. The display gate requires BOTH the per-city flag and the
+    // shared dream passage, exactly as travel does.
+    const ids = gazetteerForEpoch(5, "tingen", ["silver-city-passage"]).fartherCities.map(
+      (c) => c.id,
+    );
+    expect(ids).not.toContain("silver-city");
+    // With no dream passage at all, no Forsaken city surfaces (not even the Court).
+    expect(ids).not.toContain("giant-kings-court");
+    expect(ids).not.toContain("moon-city");
+  });
+
   it("the uncertain atlas never surfaces the Forsaken cities", () => {
     const ids = uncertainFifthGazetteer().fartherCities.map((c) => c.id);
     expect(ids).not.toContain("silver-city");

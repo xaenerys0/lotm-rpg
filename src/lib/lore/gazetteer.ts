@@ -81,10 +81,18 @@ function continentReachable(
 ): boolean {
   const target = gazetteerContinentOf(targetCity);
   if (target === "forsaken-land") {
-    // Each Forsaken city is gated by its own awareness flag (per-city, #133).
+    // Each Forsaken city is gated by its own awareness flag (per-city, #133),
+    // AND — for a city other than the Court itself — by the shared dream-world
+    // passage that any approach to the sealed continent requires (issue #132).
+    // Without the second clause the display would diverge from the travel gate:
+    // a mainlander holding only `silver-city-passage` (but no dream passage)
+    // would SEE the City of Silver here while `canTravelTo` refused it at the
+    // chokepoint. The Court carries the dream passage as its own flag, so it
+    // stays reachable for any passage-holder.
+    if (targetCity.requiresFlag === undefined) return true;
     return (
-      targetCity.requiresFlag === undefined ||
-      accessFlags.includes(targetCity.requiresFlag)
+      accessFlags.includes(targetCity.requiresFlag) &&
+      accessFlags.includes(CONTINENT_CROSSING_FLAG)
     );
   }
   // Central target: shown to a mainlander; from the Forsaken side only at the
