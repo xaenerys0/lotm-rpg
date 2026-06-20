@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   POTION_HEADINGS,
   FIRST_POTION_NARRATIVE,
+  PATHWAY_DESCRIPTIONS,
   dominantAffinity,
   tallyAffinities,
   rankPathways,
@@ -15,8 +16,11 @@ import {
 // ---------------------------------------------------------------------------
 // POTION_HEADINGS
 // ---------------------------------------------------------------------------
+// All 22 pathways are playable (issue #120) — each needs becoming-scene content.
+const ALL_PATHWAY_IDS = Array.from({ length: 22 }, (_, i) => i + 1);
+
 describe("POTION_HEADINGS", () => {
-  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9])("has a non-empty heading for pathway %i", (id) => {
+  it.each(ALL_PATHWAY_IDS)("has a non-empty heading for pathway %i", (id) => {
     expect(typeof POTION_HEADINGS[id]).toBe("string");
     expect((POTION_HEADINGS[id] as string).length).toBeGreaterThan(0);
   });
@@ -32,18 +36,33 @@ describe("POTION_HEADINGS", () => {
 // FIRST_POTION_NARRATIVE
 // ---------------------------------------------------------------------------
 describe("FIRST_POTION_NARRATIVE", () => {
-  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9])(
-    "has a non-empty narrative for pathway %i",
-    (id) => {
-      expect(typeof FIRST_POTION_NARRATIVE[id]).toBe("string");
-      expect((FIRST_POTION_NARRATIVE[id] as string).length).toBeGreaterThan(0);
-    },
-  );
+  it.each(ALL_PATHWAY_IDS)("has a non-empty narrative for pathway %i", (id) => {
+    expect(typeof FIRST_POTION_NARRATIVE[id]).toBe("string");
+    expect((FIRST_POTION_NARRATIVE[id] as string).length).toBeGreaterThan(0);
+  });
 
-  it("covers every playable pathway (1–9) that the guided prologue can lead to", () => {
-    for (let id = 1; id <= 9; id++) {
+  it("covers every playable pathway (1–22) that the prologue/manual path can lead to", () => {
+    for (const id of ALL_PATHWAY_IDS) {
       expect((FIRST_POTION_NARRATIVE[id] as string)?.length).toBeGreaterThan(0);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// PATHWAY_DESCRIPTIONS (issue #120) — manual-card blurb, all 22 pathways
+// ---------------------------------------------------------------------------
+describe("PATHWAY_DESCRIPTIONS", () => {
+  it.each(ALL_PATHWAY_IDS)("has a non-empty description for pathway %i", (id) => {
+    expect(typeof PATHWAY_DESCRIPTIONS[id]).toBe("string");
+    expect((PATHWAY_DESCRIPTIONS[id] as string).length).toBeGreaterThan(0);
+  });
+
+  it("has exactly the 22 playable pathway ids (no fallback needed)", () => {
+    expect(
+      Object.keys(PATHWAY_DESCRIPTIONS)
+        .map(Number)
+        .sort((a, b) => a - b),
+    ).toEqual(ALL_PATHWAY_IDS);
   });
 });
 
