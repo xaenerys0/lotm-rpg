@@ -1,6 +1,6 @@
 import type { GameState, SessionFact } from "@/lib/ai";
 import { DEFAULT_EPOCH_ID, isFifthEpoch } from "@/lib/lore";
-import { pickRandom } from "@/lib/lore/random";
+import { pickRandom, randomIndex } from "@/lib/lore/random";
 
 import { evaluateLossOfControl, type LossOfControlSeverity } from "./sanity";
 import type { GameSession } from "./types";
@@ -152,9 +152,9 @@ export function applySetback(
   const remaining = [...state.inventory];
   const lostNames: string[] = [];
   for (let i = 0; i < lostCount; i++) {
-    const lost = pickRandom(remaining, random);
-    lostNames.push(lost.name);
-    remaining.splice(remaining.indexOf(lost), 1);
+    const index = randomIndex(remaining.length, random);
+    lostNames.push(remaining[index].name);
+    remaining.splice(index, 1);
   }
   if (lostNames.length > 0) {
     notes.push(`Missing from your pockets: ${lostNames.join(", ")}.`);
