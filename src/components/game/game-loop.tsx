@@ -1564,34 +1564,33 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     >
       <div className="mx-auto max-w-3xl px-4">
         {/* Status Bar */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-4">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted">
-            <span className="font-serif text-sm text-foreground/80">
-              {seqLabel}{" "}
-              <span className="text-muted">
-                ({pathway?.name ?? "?"}{" "}
-                {session.gameState.sequenceLevel === PILLAR_SEQUENCE
-                  ? "— Above the Sequence"
-                  : `Seq. ${session.gameState.sequenceLevel}`}
-                )
-              </span>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 rounded-xl border border-border bg-surface/60 px-4 py-2.5">
+          <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs text-muted">
+            <span className="font-serif text-sm font-semibold text-foreground">
+              {seqLabel}
+            </span>
+            <span className="rounded-md border border-amber/30 bg-amber/10 px-2 py-0.5 text-[11px] font-medium text-amber">
+              {pathway?.name ?? "?"}
+              {session.gameState.sequenceLevel === PILLAR_SEQUENCE
+                ? " · Above the Sequence"
+                : ` · Seq ${session.gameState.sequenceLevel}`}
             </span>
             <span className="text-border" aria-hidden="true">
-              |
+              ·
             </span>
             <span>{session.gameState.location}</span>
             <span className="text-border" aria-hidden="true">
-              |
+              ·
             </span>
             <span title={epoch.era}>{epoch.name}</span>
             <span className="text-border" aria-hidden="true">
-              |
+              ·
             </span>
             <span>Turn {session.turnCount}</span>
             {usage !== null && usage.turns > 0 && (
               <>
                 <span className="text-border" aria-hidden="true">
-                  |
+                  ·
                 </span>
                 <span
                   className="text-muted"
@@ -2313,17 +2312,18 @@ function DigestionMeter({ digestion }: { digestion?: DigestionState }) {
 
 function IdlePhase({ onStart }: { onStart: () => void }) {
   return (
-    <div className="py-16 text-center animate-fade-in-up">
+    <div className="animate-fade-in-up py-16 text-center">
       <div className="mx-auto mb-6 h-px w-16 bg-gradient-to-r from-transparent via-amber/40 to-transparent" />
-      <p className="mx-auto max-w-md font-serif text-lg leading-relaxed text-foreground/70">
+      <p className="mx-auto max-w-md font-serif text-lg leading-relaxed text-foreground">
         The gaslight flickers. The Fifth Epoch awaits your first move.
       </p>
       <button
         type="button"
         onClick={onStart}
-        className="mt-8 rounded-md border border-amber/40 bg-amber/[0.08] px-6 py-3 font-serif text-sm font-medium text-amber transition-all duration-300 hover:border-amber/60 hover:bg-amber/[0.14] hover:shadow-[0_0_20px_rgba(217,119,6,0.1)]"
+        className="mt-8 inline-flex items-center gap-2 rounded-lg bg-amber px-6 py-3 text-sm font-semibold text-background transition-all duration-200 hover:bg-gold hover:shadow-[0_12px_28px_-12px_rgba(224,167,60,0.55)]"
       >
         Begin
+        <span aria-hidden="true">→</span>
       </button>
       <div className="mx-auto mt-6 h-px w-16 bg-gradient-to-r from-transparent via-amber/40 to-transparent" />
     </div>
@@ -2370,15 +2370,15 @@ function ChoicesPhase({
           </span>
           <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
         </div>
-        <div className="parchment rounded-lg border border-border/40 px-6 py-5 sm:px-8 sm:py-6">
-          <p className="font-serif text-base leading-[1.85] text-foreground/90 sm:text-lg">
+        <div className="parchment rounded-xl border border-border px-6 py-6 sm:px-8 sm:py-7">
+          <p className="font-serif text-base leading-[1.85] text-foreground sm:text-lg">
             {narrative}
           </p>
         </div>
       </div>
 
       {/* Choices */}
-      <div className="space-y-2.5">
+      <div className="space-y-3">
         <p className="mb-3 text-center text-xs tracking-[0.2em] text-muted uppercase">
           {INPUT_MODE_LABELS[mode]}
         </p>
@@ -2387,18 +2387,18 @@ function ChoicesPhase({
             key={choice.id}
             type="button"
             onClick={() => onSelect(choice.id)}
-            className="group relative w-full rounded-md border border-border/60 bg-surface/30 px-5 py-4 text-left transition-all duration-200 hover:border-amber/30 hover:bg-surface/60 hover:shadow-[0_0_16px_rgba(217,119,6,0.04)]"
+            className="group relative w-full rounded-xl border border-border bg-surface px-5 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40 hover:shadow-[0_12px_30px_-20px_rgba(0,0,0,0.9)]"
             style={{ animationDelay: `${i * 80}ms` }}
           >
             <div className="flex items-start gap-3">
               <span
-                className="mt-0.5 shrink-0 text-sm text-amber/50 transition-colors group-hover:text-amber"
+                className="mt-0.5 shrink-0 text-sm text-amber transition-colors"
                 aria-hidden="true"
               >
                 {getChoiceTypeIcon(choice.type)}
               </span>
               <div className="flex-1">
-                <p className="font-serif text-sm leading-relaxed text-foreground/80 transition-colors group-hover:text-foreground">
+                <p className="font-serif text-base leading-relaxed text-foreground">
                   {choice.text}
                 </p>
                 <span className="mt-1 block text-[10px] tracking-wider text-muted uppercase">
@@ -2406,7 +2406,7 @@ function ChoicesPhase({
                 </span>
               </div>
               <span
-                className="mt-1 text-xs text-muted/20 transition-colors group-hover:text-amber/40"
+                className="mt-1 text-base text-muted transition-all group-hover:translate-x-0.5 group-hover:text-amber"
                 aria-hidden="true"
               >
                 &rsaquo;
@@ -2438,21 +2438,18 @@ function ChoicesPhase({
               onChange={(e) => setFreeText(e.target.value)}
               maxLength={FREE_TEXT_MAX_LENGTH}
               placeholder="I follow the sound of the bells…"
-              className="w-full rounded-md border border-border bg-background px-4 py-3 font-serif text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+              className="w-full rounded-lg border border-border bg-surface-raised px-4 py-3 font-serif text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
             <button
               type="submit"
               disabled={freeText.trim() === ""}
-              className="shrink-0 rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-3 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30"
+              className="shrink-0 rounded-lg bg-amber px-5 py-3 text-sm font-semibold text-background transition-all duration-200 hover:bg-gold disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-amber"
             >
               Act
             </button>
           </div>
           {freeTextNotice && (
-            <p
-              role="status"
-              className="mt-3 font-serif text-sm italic text-foreground/70"
-            >
+            <p role="status" className="mt-3 font-serif text-sm italic text-foreground">
               {freeTextNotice}
             </p>
           )}

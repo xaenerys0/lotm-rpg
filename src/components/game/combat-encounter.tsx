@@ -193,14 +193,22 @@ export function CombatEncounterView({
   return (
     <section aria-labelledby="combat-heading" className="animate-fade-in-up">
       <div className="mx-auto mb-4 flex items-center gap-3">
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-crimson/40 to-transparent" />
-        <span className="text-[10px] tracking-[0.3em] text-muted uppercase">combat</span>
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-crimson/40 to-transparent" />
+        <div
+          aria-hidden="true"
+          className="h-px flex-1 bg-gradient-to-r from-transparent via-crimson/40 to-transparent"
+        />
+        <span className="text-xs font-semibold tracking-[0.18em] text-crimson uppercase">
+          combat
+        </span>
+        <div
+          aria-hidden="true"
+          className="h-px flex-1 bg-gradient-to-r from-transparent via-crimson/40 to-transparent"
+        />
       </div>
 
       <h2
         id="combat-heading"
-        className="mb-1 text-center font-serif text-lg text-foreground"
+        className="mb-5 text-center font-serif text-lg font-semibold text-foreground"
       >
         {encounter.ambush ? "Ambush!" : "Confrontation"}
       </h2>
@@ -261,16 +269,21 @@ function EnemyPanel({ encounter }: { encounter: CombatEncounter }) {
       : null;
 
   return (
-    <div className="mx-auto mb-6 max-w-md rounded-md border border-crimson/30 bg-crimson/[0.04] px-5 py-4">
-      <p className="text-center font-serif text-base text-foreground">{intel.name}</p>
+    <div className="mx-auto mb-6 max-w-md rounded-xl border border-crimson/40 bg-surface p-5">
+      <p className="text-center text-xs font-semibold tracking-[0.18em] text-crimson uppercase">
+        Adversary
+      </p>
+      <p className="mt-2 text-center font-serif text-base font-semibold text-foreground">
+        {intel.name}
+      </p>
       {intel.description && (
         <p className="mt-1 text-center text-sm text-muted">{intel.description}</p>
       )}
-      <dl className="mt-3 space-y-1 text-sm">
+      <dl className="mt-4 space-y-2 text-sm">
         {intel.strength && (
           <div className="flex justify-between gap-3">
             <dt className="text-muted">Strength</dt>
-            <dd className="text-foreground/85">
+            <dd className="text-right font-medium text-foreground">
               {roleName
                 ? `${roleName} — ${intel.strength}`
                 : intel.sequenceLevel !== null
@@ -282,14 +295,14 @@ function EnemyPanel({ encounter }: { encounter: CombatEncounter }) {
         {pathwayName && (
           <div className="flex justify-between gap-3">
             <dt className="text-muted">Pathway</dt>
-            <dd className="text-foreground/85">{pathwayName}</dd>
+            <dd className="text-right font-medium text-foreground">{pathwayName}</dd>
           </div>
         )}
         {intel.knownAbilities.length > 0 && (
           <div>
             <dt className="text-muted">Known abilities</dt>
             <dd>
-              <ul className="mt-1 list-disc space-y-0.5 pl-5 text-foreground/85">
+              <ul className="mt-1.5 list-disc space-y-1 pl-5 text-foreground">
                 {intel.knownAbilities.map((ability) => (
                   <li key={ability}>{ability}</li>
                 ))}
@@ -299,7 +312,7 @@ function EnemyPanel({ encounter }: { encounter: CombatEncounter }) {
         )}
       </dl>
       {intel.strength === null && (
-        <p className="mt-2 text-center text-xs text-muted">
+        <p className="mt-3 text-center text-xs text-muted">
           You know little of this foe — scout them first to learn their measure.
         </p>
       )}
@@ -351,7 +364,7 @@ function PreparationForm({
 
   return (
     <div className="space-y-6">
-      <p className="rounded-md border border-border/40 bg-surface/40 px-5 py-4 font-serif text-sm leading-relaxed text-foreground/80">
+      <p className="rounded-xl border border-border bg-surface p-5 font-serif text-sm leading-relaxed text-foreground">
         Preparation gives you an edge — but it never decides a fight. Gather what you can,
         then trust your wits in the moment.
       </p>
@@ -360,7 +373,7 @@ function PreparationForm({
         <div>
           <label
             htmlFor="combat-intel"
-            className="mb-1.5 block text-xs tracking-wider text-muted uppercase"
+            className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
           >
             Intelligence on the enemy
           </label>
@@ -368,7 +381,7 @@ function PreparationForm({
             id="combat-intel"
             value={intelligence}
             onChange={(e) => setIntelligence(e.target.value as IntelligenceLevel)}
-            className="w-full rounded-md border border-border/60 bg-surface/60 px-3 py-2 text-sm text-foreground"
+            className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           >
             {INTELLIGENCE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -381,7 +394,7 @@ function PreparationForm({
         <div>
           <label
             htmlFor="combat-terrain"
-            className="mb-1.5 block text-xs tracking-wider text-muted uppercase"
+            className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
           >
             Terrain &amp; positioning
           </label>
@@ -389,7 +402,7 @@ function PreparationForm({
             id="combat-terrain"
             value={terrain}
             onChange={(e) => setTerrain(e.target.value as TerrainAdvantage)}
-            className="w-full rounded-md border border-border/60 bg-surface/60 px-3 py-2 text-sm text-foreground"
+            className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           >
             {TERRAIN_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -438,21 +451,21 @@ function PreparationForm({
         <button
           type="button"
           onClick={submit}
-          className="rounded-md border border-amber/40 bg-amber/[0.08] px-6 py-3 font-serif text-sm font-medium text-amber transition-all duration-300 hover:border-amber/60 hover:bg-amber/[0.14]"
+          className="min-h-[24px] rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
         >
           Commit and engage
         </button>
         <button
           type="button"
           onClick={onAmbushSelf}
-          className="min-h-[24px] rounded-md border border-border/50 bg-surface/30 px-4 py-2.5 text-sm text-muted transition-colors hover:border-border hover:text-foreground/80"
+          className="min-h-[24px] rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
         >
           Engage without preparing
         </button>
         <button
           type="button"
           onClick={onExit}
-          className="min-h-[24px] rounded-md px-4 py-2.5 text-sm text-muted underline-offset-4 transition-colors hover:text-foreground/80 hover:underline"
+          className="min-h-[24px] rounded-lg px-3 py-1.5 text-sm font-medium text-muted underline-offset-4 transition-colors hover:text-amber hover:underline"
         >
           Avoid the fight
         </button>
@@ -475,8 +488,8 @@ function CheckGroup({
   namePrefix: string;
 }) {
   return (
-    <fieldset className="rounded-md border border-border/40 bg-surface/30 p-4">
-      <legend className="px-1 text-xs tracking-wider text-muted uppercase">
+    <fieldset className="rounded-lg border border-border bg-surface-raised p-4">
+      <legend className="px-1 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
         {legend}
       </legend>
       <div className="mt-2 space-y-2">
@@ -486,7 +499,7 @@ function CheckGroup({
             <label
               key={id}
               htmlFor={id}
-              className="flex min-h-[24px] cursor-pointer items-center gap-2.5 text-sm text-foreground/80"
+              className="flex min-h-[24px] cursor-pointer items-center gap-2.5 text-sm text-foreground"
             >
               <input
                 id={id}
@@ -527,25 +540,25 @@ function ExchangePhase({
       {(sceneNarrative || narrating) && (
         <div
           role="status"
-          className="mb-5 rounded-md border border-border/40 bg-surface/40 px-5 py-4"
+          className="mb-5 rounded-xl border border-border bg-surface p-5"
         >
-          <p className="font-serif text-sm leading-relaxed text-foreground/80">
+          <p className="font-serif text-sm leading-relaxed text-foreground">
             {sceneNarrative ?? "The narrator draws breath…"}
           </p>
         </div>
       )}
 
-      <p className="mb-2 text-center text-[10px] tracking-[0.2em] text-muted uppercase">
+      <p className="mb-2 text-center text-xs font-semibold tracking-[0.18em] text-amber uppercase">
         Exchange {current} of {total}
       </p>
-      <div className="mb-6 rounded-lg border border-border/40 bg-surface/50 px-6 py-5">
-        <p className="font-serif text-base leading-[1.85] text-foreground/90">
+      <div className="mb-6 rounded-xl border border-border bg-surface p-6">
+        <p className="font-serif text-base leading-[1.85] text-foreground">
           {point.prompt}
         </p>
       </div>
 
-      <div className="space-y-2.5">
-        <p className="mb-3 text-center text-xs tracking-[0.2em] text-muted uppercase">
+      <div className="space-y-3">
+        <p className="mb-3 text-center text-xs font-semibold tracking-[0.18em] text-amber uppercase">
           Your move
         </p>
         {point.options.map((option) => (
@@ -553,9 +566,9 @@ function ExchangePhase({
             key={option.id}
             type="button"
             onClick={() => onChoose(option.id)}
-            className="group w-full rounded-md border border-border/60 bg-surface/30 px-5 py-4 text-left transition-all duration-200 hover:border-amber/30 hover:bg-surface/60"
+            className="group w-full rounded-xl border border-border bg-surface px-5 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
           >
-            <p className="font-serif text-sm text-foreground/90 transition-colors group-hover:text-foreground">
+            <p className="font-serif text-sm font-medium text-foreground">
               {option.label}
               {option.consumesArtifact && (
                 <span className="ml-2 text-xs text-occult-bright">
@@ -602,11 +615,8 @@ function ResolutionPhase({
         {copy.title}
       </p>
 
-      <div
-        role="status"
-        className="mb-6 rounded-lg border border-border/40 bg-surface/50 px-6 py-5"
-      >
-        <p className="font-serif text-base leading-[1.85] text-foreground/90">
+      <div role="status" className="mb-6 rounded-xl border border-border bg-surface p-6">
+        <p className="font-serif text-base leading-[1.85] text-foreground">
           {aiNarrative ?? result.narrativeSummary}
           {narrating && !aiNarrative && (
             <span className="ml-2 text-sm italic text-muted">the dust settles…</span>
@@ -624,8 +634,10 @@ function ResolutionPhase({
         enabled={sceneArtEnabled}
       />
 
-      <div className="mb-6 space-y-3 rounded-md border border-border/30 bg-background/50 p-4">
-        <p className="text-[10px] tracking-[0.2em] text-muted uppercase">Consequences</p>
+      <div className="mb-6 space-y-3 rounded-lg border border-border bg-surface-raised p-4">
+        <p className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+          Consequences
+        </p>
 
         {result.sanityImpact !== 0 && (
           <div className="flex items-center gap-2 text-sm">
@@ -641,7 +653,7 @@ function ResolutionPhase({
                 <span className="mt-0.5 text-sanity-low" aria-hidden="true">
                   ✚
                 </span>
-                <span className="text-foreground/80">
+                <span className="text-foreground">
                   {injury.description}{" "}
                   <span className="text-muted">
                     ({injury.severity}, heals in {injury.recoveryTurns} turns)
@@ -668,7 +680,7 @@ function ResolutionPhase({
         {result.itemsLost.length > 0 &&
           result.itemsLost.map((item, i) => (
             <div key={`loss-${i}`} className="text-sm">
-              <span className="text-foreground/70">{item.name}</span>{" "}
+              <span className="text-foreground">{item.name}</span>{" "}
               <span className="text-muted">spent</span>
             </div>
           ))}
@@ -693,7 +705,7 @@ function ResolutionPhase({
         <button
           type="button"
           onClick={onContinue}
-          className="rounded-md border border-amber/40 bg-amber/[0.08] px-6 py-3 font-serif text-sm font-medium text-amber transition-all duration-300 hover:border-amber/60 hover:bg-amber/[0.14]"
+          className="min-h-[24px] rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
         >
           Continue
         </button>

@@ -145,8 +145,8 @@ export function JournalPanel() {
 
   if (sessionOptions.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
-        <p className="font-serif text-lg italic text-foreground/70">
+      <div className="rounded-xl border border-dashed border-border bg-surface p-12 text-center">
+        <p className="font-serif text-lg italic text-foreground">
           &ldquo;The pages are blank&rdquo;
         </p>
         <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted">
@@ -160,17 +160,20 @@ export function JournalPanel() {
   return (
     <div className="space-y-6">
       {/* Controls */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface p-5 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end">
           <div className="min-w-0">
-            <label htmlFor="journal-session" className="mb-1.5 block text-xs text-muted">
+            <label
+              htmlFor="journal-session"
+              className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
               Chronicle
             </label>
             <select
               id="journal-session"
               value={activeSessionId ?? ""}
               onChange={(e) => saveActiveSessionId(e.target.value)}
-              className="w-full max-w-full truncate rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
+              className="w-full max-w-full truncate rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30 sm:w-auto"
             >
               {sessionOptions.map((option) => (
                 <option key={option.id} value={option.id}>
@@ -180,7 +183,10 @@ export function JournalPanel() {
             </select>
           </div>
           <div className="min-w-0">
-            <label htmlFor="journal-search" className="mb-1.5 block text-xs text-muted">
+            <label
+              htmlFor="journal-search"
+              className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
               Search
             </label>
             <input
@@ -189,18 +195,21 @@ export function JournalPanel() {
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
               placeholder="Search events…"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground placeholder-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30 sm:w-auto"
             />
           </div>
           <div className="min-w-0">
-            <label htmlFor="journal-type" className="mb-1.5 block text-xs text-muted">
+            <label
+              htmlFor="journal-type"
+              className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
               Event type
             </label>
             <select
               id="journal-type"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as JournalEventType | "")}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30 sm:w-auto"
             >
               <option value="">All events</option>
               {JOURNAL_EVENT_TYPES.map((type) => (
@@ -215,7 +224,7 @@ export function JournalPanel() {
           type="button"
           onClick={handleExport}
           disabled={journal.entries.length === 0}
-          className="self-start rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30 sm:self-auto"
+          className="self-start rounded-lg bg-amber px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40 sm:self-auto"
         >
           Export Markdown
         </button>
@@ -223,19 +232,19 @@ export function JournalPanel() {
 
       {/* Timeline */}
       {entries.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border/60 p-8 text-center text-sm text-muted">
+        <p className="rounded-xl border border-dashed border-border bg-surface p-8 text-center text-sm text-muted">
           {journal.entries.length === 0
             ? "No events recorded yet — key moments are captured automatically as you play."
             : "No entries match the current filters."}
         </p>
       ) : (
-        <ol className="space-y-4">
+        <ol className="space-y-6">
           {groupByArc(entries).map(([arc, arcEntries]) => (
             <li key={arc}>
-              <h2 className="mb-3 font-serif text-lg font-semibold text-amber/90">
+              <h2 className="mb-3 font-serif text-lg font-semibold text-foreground">
                 {arc}
               </h2>
-              <ol className="space-y-3 border-l border-border/60 pl-4">
+              <ol className="space-y-3 border-l border-border pl-4">
                 {arcEntries.map((e) => (
                   <li key={e.id}>
                     <EntryCard
@@ -309,7 +318,7 @@ function EntryCard({
   };
 
   return (
-    <article className="rounded-lg border border-border/70 bg-background/60 p-4">
+    <article className="rounded-xl border border-border bg-surface p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="font-serif text-base font-semibold text-foreground">
           {entry.summary}
@@ -324,7 +333,7 @@ function EntryCard({
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
-        className="mt-2 rounded px-1 py-1 text-xs font-medium text-amber hover:underline"
+        className="mt-2 min-h-[24px] rounded px-1 py-1 text-xs font-semibold text-amber transition-colors hover:text-gold"
       >
         {expanded ? "Hide details" : "Show details"}
       </button>
@@ -338,7 +347,7 @@ function EntryCard({
             imageConfig={null}
             enabled={false}
           />
-          <p className="font-serif text-sm leading-relaxed whitespace-pre-wrap text-foreground/90">
+          <p className="font-serif text-sm leading-relaxed whitespace-pre-wrap text-foreground">
             {entry.narrative}
           </p>
           {entry.involvedNpcs.length > 0 && (
@@ -355,20 +364,20 @@ function EntryCard({
                     value={editDraft}
                     onChange={(e) => setEditDraft(e.target.value)}
                     rows={2}
-                    className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                    className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                   />
                   <div className="flex gap-2">
                     <button
                       type="button"
                       onClick={() => handleSaveEdit(annotation.id)}
-                      className="rounded-md bg-amber/90 px-3 py-1.5 text-xs font-medium text-background hover:bg-amber"
+                      className="min-h-[24px] rounded-lg bg-amber px-3 py-1.5 text-xs font-semibold text-background transition-colors hover:bg-gold"
                     >
                       Save note
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingId(null)}
-                      className="rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:text-foreground"
+                      className="min-h-[24px] rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
                     >
                       Cancel
                     </button>
@@ -377,9 +386,9 @@ function EntryCard({
               ) : (
                 <div
                   key={annotation.id}
-                  className="flex items-start justify-between gap-3 rounded-md border-l-2 border-amber/40 bg-amber/[0.04] px-3 py-2"
+                  className="flex items-start justify-between gap-3 rounded-lg border border-border border-l-2 border-l-amber bg-surface-raised px-3.5 py-2.5"
                 >
-                  <p className="text-sm whitespace-pre-wrap text-foreground/85">
+                  <p className="text-sm whitespace-pre-wrap text-foreground">
                     {annotation.text}
                   </p>
                   <span className="flex shrink-0 gap-2">
@@ -389,14 +398,14 @@ function EntryCard({
                         setEditingId(annotation.id);
                         setEditDraft(annotation.text);
                       }}
-                      className="rounded px-1 py-1 text-xs text-amber hover:underline"
+                      className="min-h-[24px] rounded px-1 py-1 text-xs font-semibold text-amber transition-colors hover:text-gold"
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       onClick={() => handleDelete(annotation.id)}
-                      className="rounded px-1 py-1 text-xs text-sanity-low hover:underline"
+                      className="min-h-[24px] rounded px-1 py-1 text-xs font-semibold text-crimson transition-colors hover:text-foreground"
                     >
                       Delete
                     </button>
@@ -409,7 +418,7 @@ function EntryCard({
               <div className="flex-1">
                 <label
                   htmlFor={`note-${entry.id}`}
-                  className="mb-1 block text-xs text-muted"
+                  className="mb-1.5 block text-xs text-muted"
                 >
                   Add a personal note (never shared with the narrator)
                 </label>
@@ -418,14 +427,14 @@ function EntryCard({
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   rows={2}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted focus:border-amber/50 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground placeholder-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 />
               </div>
               <button
                 type="button"
                 onClick={handleAddNote}
                 disabled={draft.trim() === ""}
-                className="rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-2 text-xs font-medium text-amber hover:border-amber/50 disabled:cursor-not-allowed disabled:opacity-30"
+                className="rounded-lg border border-border px-3 py-2.5 text-xs font-semibold text-amber transition-colors hover:border-amber/40 hover:text-gold disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Add note
               </button>

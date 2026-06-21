@@ -61,8 +61,8 @@ export function ShowcasePanel() {
 
   if (!session) {
     return (
-      <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
-        <p className="font-serif text-lg italic text-foreground/70">
+      <div className="rounded-xl border border-dashed border-border bg-surface p-12 text-center">
+        <p className="font-serif text-lg italic text-foreground">
           &ldquo;No record yet bears your name&rdquo;
         </p>
         <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted">
@@ -80,7 +80,7 @@ export function ShowcasePanel() {
   return (
     <div className="space-y-8">
       {/* Identity */}
-      <section className="parchment rounded-lg p-6">
+      <section className="rounded-xl border border-border bg-surface p-6">
         <h2 className="font-serif text-2xl font-bold text-foreground">
           {session.gameState.characterName ?? "Unnamed Beyonder"}
         </h2>
@@ -90,48 +90,63 @@ export function ShowcasePanel() {
             : `Sequence ${session.gameState.sequenceLevel} ${sequenceLabel(session.gameState.pathwayId, session.gameState.sequenceLevel)}`}{" "}
           · {pathway?.name ?? "Unknown"} Pathway
         </p>
-        <dl className="mt-4 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-          <div>
-            <dt className="text-xs tracking-wide text-muted uppercase">Turns</dt>
-            <dd className="mt-0.5 text-foreground/85">{stats.turns}</dd>
+        <dl className="mt-5 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+          <div className="rounded-lg border border-border bg-surface-raised p-4">
+            <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+              Turns
+            </dt>
+            <dd className="mt-1 text-lg font-semibold text-foreground">{stats.turns}</dd>
           </div>
-          <div>
-            <dt className="text-xs tracking-wide text-muted uppercase">Combats won</dt>
-            <dd className="mt-0.5 text-foreground/85">{stats.combatsWon}</dd>
+          <div className="rounded-lg border border-border bg-surface-raised p-4">
+            <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+              Combats won
+            </dt>
+            <dd className="mt-1 text-lg font-semibold text-foreground">
+              {stats.combatsWon}
+            </dd>
           </div>
-          <div>
-            <dt className="text-xs tracking-wide text-muted uppercase">Potions</dt>
-            <dd className="mt-0.5 text-foreground/85">{stats.potionsConsumed}</dd>
+          <div className="rounded-lg border border-border bg-surface-raised p-4">
+            <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+              Potions
+            </dt>
+            <dd className="mt-1 text-lg font-semibold text-foreground">
+              {stats.potionsConsumed}
+            </dd>
           </div>
-          <div>
-            <dt className="text-xs tracking-wide text-muted uppercase">Purse</dt>
-            <dd className="mt-0.5 text-foreground/85">{stats.funds}p</dd>
+          <div className="rounded-lg border border-border bg-surface-raised p-4">
+            <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+              Purse
+            </dt>
+            <dd className="mt-1 text-lg font-semibold text-foreground">{stats.funds}p</dd>
           </div>
         </dl>
       </section>
 
       {/* Divergence */}
-      <section aria-labelledby="profile-divergence">
+      <section
+        aria-labelledby="profile-divergence"
+        className="rounded-xl border border-border bg-surface p-6"
+      >
         <h2
           id="profile-divergence"
-          className="gaslit font-serif text-lg font-semibold text-amber/90"
+          className="font-serif text-lg font-semibold text-foreground"
         >
           Timeline divergence
         </h2>
-        <div className="mt-3 flex items-center gap-4">
+        <div className="mt-4 flex items-center gap-4">
           <div
             role="progressbar"
             aria-labelledby="profile-divergence"
             aria-valuenow={divergence}
             aria-valuemin={0}
             aria-valuemax={100}
-            className="h-2 flex-1 overflow-hidden rounded-full bg-border/60"
+            className="h-2 flex-1 overflow-hidden rounded-full bg-surface-raised"
           >
             <div className="h-full bg-occult" style={{ width: `${divergence}%` }} />
           </div>
-          <span className="text-sm font-medium text-occult-bright">{divergence}</span>
+          <span className="text-sm font-semibold text-occult-bright">{divergence}</span>
         </div>
-        <p className="mt-2 text-xs leading-relaxed text-muted">
+        <p className="mt-3 text-xs leading-relaxed text-muted">
           How far this world has drifted from the untouched canon — a heuristic over your
           story&rsquo;s length, the fallen it remembers, and the roads taken.
         </p>
@@ -141,25 +156,25 @@ export function ShowcasePanel() {
       <section aria-labelledby="profile-achievements">
         <h2
           id="profile-achievements"
-          className="gaslit font-serif text-lg font-semibold text-amber/90"
+          className="font-serif text-lg font-semibold text-foreground"
         >
           Achievements ({earned.length})
         </h2>
         {earned.length === 0 ? (
-          <p className="mt-2 text-sm text-muted">None yet — the fog is patient.</p>
+          <p className="mt-3 text-sm text-muted">None yet — the fog is patient.</p>
         ) : (
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {earned.map((id) => {
               const achievement = getAchievement(id)!;
               return (
-                <li key={id} className="parchment rounded-md p-4">
+                <li key={id} className="rounded-xl border border-border bg-surface p-5">
                   <p className="text-sm font-semibold text-foreground">
                     <span aria-hidden="true" className="mr-2 text-gold">
                       ✦
                     </span>
                     {achievement.name}
                   </p>
-                  <p className="mt-1 text-xs leading-relaxed text-muted">
+                  <p className="mt-1.5 text-xs leading-relaxed text-muted">
                     {achievement.description}
                   </p>
                 </li>
@@ -170,15 +185,18 @@ export function ShowcasePanel() {
       </section>
 
       {/* Publish + privacy */}
-      <section aria-labelledby="profile-publish" className="max-w-md space-y-3">
+      <section
+        aria-labelledby="profile-publish"
+        className="max-w-md space-y-4 rounded-xl border border-border bg-surface p-6"
+      >
         <h2
           id="profile-publish"
-          className="gaslit font-serif text-lg font-semibold text-amber/90"
+          className="font-serif text-lg font-semibold text-foreground"
         >
           The public board
         </h2>
         <div>
-          <label htmlFor="profile-name" className="mb-1 block text-xs text-muted">
+          <label htmlFor="profile-name" className="mb-1.5 block text-xs text-muted">
             Display name
           </label>
           <input
@@ -187,12 +205,12 @@ export function ShowcasePanel() {
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder={session.gameState.characterName ?? "A nameless Beyonder"}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted focus:border-amber/50 focus:outline-none"
+            className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground placeholder-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           />
         </div>
-        <div className="flex items-start justify-between gap-4 rounded border border-border/60 bg-background/40 p-4">
+        <div className="flex items-start justify-between gap-4 rounded-lg border border-border bg-surface-raised p-4">
           <div>
-            <p className="text-sm font-medium text-foreground/90">Public showcase</p>
+            <p className="text-sm font-semibold text-foreground">Public showcase</p>
             <p className="mt-1 text-xs leading-relaxed text-muted">
               Off by default. Private showcases are visible only to you — they never
               appear on the leaderboard.
@@ -206,8 +224,8 @@ export function ShowcasePanel() {
             onClick={() => setIsPublic((v) => !v)}
             className={`relative mt-0.5 inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 ${
               isPublic
-                ? "border-amber/60 bg-amber/30"
-                : "border-border bg-surface hover:border-amber/30"
+                ? "border-amber bg-amber/30"
+                : "border-border bg-surface hover:border-amber/40"
             }`}
           >
             <span
@@ -220,7 +238,7 @@ export function ShowcasePanel() {
         <button
           type="button"
           onClick={handlePublish}
-          className="rounded-md bg-amber/90 px-4 py-2 text-sm font-medium text-background hover:bg-amber"
+          className="rounded-lg bg-amber px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
         >
           Publish
         </button>

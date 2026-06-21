@@ -103,7 +103,7 @@ export function WorldMessages({ location }: { location: string }) {
           {messages.map((message) => (
             <li
               key={message.id}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-occult/20 bg-occult/[0.04] px-4 py-2.5"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-occult/20 bg-surface px-5 py-3.5"
             >
               <p className="font-serif text-sm italic text-occult-bright">
                 <span aria-hidden="true" className="candle-flicker mr-2">
@@ -121,14 +121,14 @@ export function WorldMessages({ location }: { location: string }) {
                   <button
                     type="button"
                     onClick={() => handleRate(message.id, true)}
-                    className="min-h-[24px] rounded px-2 py-1 text-xs text-amber hover:underline"
+                    className="min-h-[24px] rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-amber transition-colors hover:border-amber/40"
                   >
                     Helpful
                   </button>
                   <button
                     type="button"
                     onClick={() => handleRate(message.id, false)}
-                    className="min-h-[24px] rounded px-2 py-1 text-xs text-muted hover:underline"
+                    className="min-h-[24px] rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
                   >
                     Unhelpful
                   </button>
@@ -157,7 +157,7 @@ export function WorldMessages({ location }: { location: string }) {
                   setTemplateId(e.target.value);
                   setFills({});
                 }}
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               >
                 {MESSAGE_TEMPLATES.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -178,7 +178,7 @@ export function WorldMessages({ location }: { location: string }) {
                   id={`message-slot-${slot}`}
                   value={fills[slot] ?? ""}
                   onChange={(e) => setFills((f) => ({ ...f, [slot]: e.target.value }))}
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                  className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 >
                   <option value="">choose…</option>
                   {options.map((option) => (
@@ -192,14 +192,14 @@ export function WorldMessages({ location }: { location: string }) {
             <button
               type="submit"
               disabled={!complete}
-              className="rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-2 text-xs font-medium text-amber hover:border-amber/50 disabled:cursor-not-allowed disabled:opacity-30"
+              className="rounded-lg bg-amber px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40"
             >
               Inscribe
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="min-h-[24px] rounded px-2 py-1 text-xs text-muted hover:text-foreground"
+              className="min-h-[24px] rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
             >
               Cancel
             </button>
@@ -209,9 +209,9 @@ export function WorldMessages({ location }: { location: string }) {
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="mt-3 min-h-[24px] rounded px-2 py-1 text-xs text-muted transition-colors hover:text-occult-bright"
+          className="mt-3 min-h-[24px] rounded-lg px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:text-occult-bright"
         >
-          ✧ Leave a message for other timelines
+          <span aria-hidden="true">✧ </span>Leave a message for other timelines
         </button>
       )}
     </aside>

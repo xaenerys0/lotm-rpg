@@ -208,14 +208,14 @@ export function MarketPanel() {
     [];
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+    <div className="space-y-10">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-5">
         <p className="font-serif text-sm italic text-muted">
           A quiet arcade off the market square, where unusual goods change hands.
         </p>
         {session && (
-          <p className="text-sm text-foreground/85">
-            Purse: <span className="font-medium text-amber">{funds}p</span>
+          <p className="text-sm font-medium text-foreground">
+            Purse: <span className="font-semibold text-amber">{funds}p</span>
           </p>
         )}
       </div>
@@ -223,7 +223,7 @@ export function MarketPanel() {
       {notice && (
         <p
           role="status"
-          className="rounded-md border border-amber/30 bg-amber/[0.05] px-4 py-2.5 font-serif text-sm italic text-foreground/85"
+          className="rounded-lg border border-amber/40 bg-surface px-4 py-3 font-serif text-sm italic text-foreground"
         >
           {notice}
         </p>
@@ -231,15 +231,21 @@ export function MarketPanel() {
 
       {/* Browse */}
       <section aria-labelledby="market-browse">
+        <p className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+          Browse
+        </p>
         <h2
           id="market-browse"
-          className="gaslit font-serif text-lg font-semibold text-amber/90"
+          className="mt-1 font-serif text-lg font-semibold text-foreground"
         >
           Stalls
         </h2>
-        <div className="mt-3 flex flex-wrap items-end gap-3">
+        <div className="mt-4 flex flex-wrap items-end gap-4 rounded-xl border border-border bg-surface p-5">
           <div>
-            <label htmlFor="market-category" className="mb-1 block text-xs text-muted">
+            <label
+              htmlFor="market-category"
+              className="mb-1.5 block text-xs font-medium text-muted"
+            >
               Kind
             </label>
             <select
@@ -251,7 +257,7 @@ export function MarketPanel() {
                   category: (e.target.value || undefined) as ListingFilter["category"],
                 }))
               }
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+              className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             >
               <option value="">All</option>
               <option value="main-ingredient">Main ingredients</option>
@@ -260,7 +266,10 @@ export function MarketPanel() {
             </select>
           </div>
           <div>
-            <label htmlFor="market-max" className="mb-1 block text-xs text-muted">
+            <label
+              htmlFor="market-max"
+              className="mb-1.5 block text-xs font-medium text-muted"
+            >
               Max price (p)
             </label>
             <input
@@ -274,11 +283,14 @@ export function MarketPanel() {
                   maxPrice: e.target.value ? Number(e.target.value) : undefined,
                 }))
               }
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none sm:w-28"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30 sm:w-28"
             />
           </div>
           <div>
-            <label htmlFor="market-search" className="mb-1 block text-xs text-muted">
+            <label
+              htmlFor="market-search"
+              className="mb-1.5 block text-xs font-medium text-muted"
+            >
               Search
             </label>
             <input
@@ -288,32 +300,37 @@ export function MarketPanel() {
               onChange={(e) =>
                 setFilter((f) => ({ ...f, text: e.target.value || undefined }))
               }
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted focus:border-amber/50 focus:outline-none"
+              className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground placeholder-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
           </div>
         </div>
 
         {visible.length === 0 ? (
-          <p className="mt-4 rounded-lg border border-dashed border-border/60 p-8 text-center text-sm text-muted">
+          <p className="mt-4 rounded-xl border border-dashed border-border p-10 text-center text-sm text-muted">
             The stalls are bare — or the fog is keeping their wares from you.
           </p>
         ) : (
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((entry) => (
-              <li key={entry.id} className="parchment rounded-md p-4">
-                <p className="text-sm font-semibold text-foreground">{entry.item.name}</p>
+              <li
+                key={entry.id}
+                className="flex flex-col rounded-xl border border-border bg-surface p-5 transition-all duration-200 hover:border-amber/40"
+              >
+                <p className="font-serif text-base font-semibold text-foreground">
+                  {entry.item.name}
+                </p>
                 {entry.item.description && (
-                  <p className="mt-1 text-xs leading-relaxed text-muted">
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted">
                     {entry.item.description}
                   </p>
                 )}
-                <div className="mt-3 flex items-center justify-between">
-                  <span className="text-sm font-medium text-amber">{entry.price}p</span>
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+                  <span className="text-lg font-semibold text-amber">{entry.price}p</span>
                   {entry.sellerId === userId ? (
                     <button
                       type="button"
                       onClick={() => handleDelist(entry)}
-                      className="min-h-[24px] rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:text-foreground"
+                      className="min-h-[24px] rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
                     >
                       Take down
                     </button>
@@ -322,7 +339,7 @@ export function MarketPanel() {
                       type="button"
                       onClick={() => handleBuy(entry)}
                       disabled={!session || !canAfford(session.gameState, entry.price)}
-                      className="min-h-[24px] rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber hover:border-amber/50 disabled:cursor-not-allowed disabled:opacity-30"
+                      className="min-h-[24px] rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       Buy
                     </button>
@@ -337,27 +354,36 @@ export function MarketPanel() {
       {/* Sell */}
       {session && (
         <section aria-labelledby="market-sell">
+          <p className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+            Sell
+          </p>
           <h2
             id="market-sell"
-            className="gaslit font-serif text-lg font-semibold text-amber/90"
+            className="mt-1 font-serif text-lg font-semibold text-foreground"
           >
             Offer something
           </h2>
           {listableInventory.length === 0 ? (
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-3 rounded-xl border border-border bg-surface p-5 text-sm text-muted">
               You carry nothing the market would take.
             </p>
           ) : (
-            <form onSubmit={handleList} className="mt-3 flex flex-wrap items-end gap-3">
+            <form
+              onSubmit={handleList}
+              className="mt-4 flex flex-wrap items-end gap-4 rounded-xl border border-border bg-surface p-5"
+            >
               <div>
-                <label htmlFor="market-item" className="mb-1 block text-xs text-muted">
+                <label
+                  htmlFor="market-item"
+                  className="mb-1.5 block text-xs font-medium text-muted"
+                >
                   Item
                 </label>
                 <select
                   id="market-item"
                   value={itemName}
                   onChange={(e) => setItemName(e.target.value)}
-                  className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                  className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 >
                   <option value="">choose…</option>
                   {listableInventory.map((item: Item, index: number) => (
@@ -368,7 +394,10 @@ export function MarketPanel() {
                 </select>
               </div>
               <div>
-                <label htmlFor="market-price" className="mb-1 block text-xs text-muted">
+                <label
+                  htmlFor="market-price"
+                  className="mb-1.5 block text-xs font-medium text-muted"
+                >
                   Price (p)
                   {(() => {
                     const item = session.gameState.inventory.find(
@@ -385,13 +414,13 @@ export function MarketPanel() {
                   min={1}
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  className="w-28 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                  className="w-28 rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 />
               </div>
               <button
                 type="submit"
                 disabled={!itemName || !price || !userId}
-                className="rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber hover:border-amber/50 disabled:cursor-not-allowed disabled:opacity-30"
+                className="rounded-lg bg-amber px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40"
               >
                 List it
               </button>
@@ -403,30 +432,37 @@ export function MarketPanel() {
       {/* Fence — sell mundane belongings to a vendor (not to other players) */}
       {session && fenceable.length > 0 && (
         <section aria-labelledby="market-fence">
+          <p className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+            Vendor
+          </p>
           <h2
             id="market-fence"
-            className="gaslit font-serif text-lg font-semibold text-amber/90"
+            className="mt-1 font-serif text-lg font-semibold text-foreground"
           >
             The fence
           </h2>
-          <p className="mt-1 text-sm text-muted">
+          <p className="mt-1.5 text-sm text-muted">
             A back-room dealer who quietly buys ordinary oddments — no questions, modest
             coin.
           </p>
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {fenceable.map((item: Item, index: number) => (
               <li
                 key={`${item.name}-${index}`}
-                className="parchment flex items-center justify-between gap-3 rounded-md p-4"
+                className="flex items-center justify-between gap-3 rounded-xl border border-border bg-surface p-5 transition-all duration-200 hover:border-amber/40"
               >
                 <div>
-                  <p className="text-sm font-semibold text-foreground">{item.name}</p>
-                  <p className="mt-1 text-xs text-muted">{vendorSaleValue(item)}p</p>
+                  <p className="font-serif text-base font-semibold text-foreground">
+                    {item.name}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-amber">
+                    {vendorSaleValue(item)}p
+                  </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => handleFence(item)}
-                  className="min-h-[24px] rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber hover:border-amber/50"
+                  className="min-h-[24px] rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-gold"
                 >
                   Sell
                 </button>
@@ -439,17 +475,20 @@ export function MarketPanel() {
       {/* Ledger */}
       {history.length > 0 && (
         <section aria-labelledby="market-ledger">
+          <p className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+            History
+          </p>
           <h2
             id="market-ledger"
-            className="gaslit font-serif text-lg font-semibold text-amber/90"
+            className="mt-1 font-serif text-lg font-semibold text-foreground"
           >
             Your ledger
           </h2>
-          <ul className="mt-3 space-y-1.5 text-sm">
+          <ul className="mt-4 divide-y divide-border rounded-xl border border-border bg-surface px-5 py-1.5 text-sm">
             {history.map((entry) => (
               <li
                 key={entry.id}
-                className="flex justify-between gap-3 text-foreground/80"
+                className="flex justify-between gap-3 py-2.5 text-foreground"
               >
                 <span>
                   {entry.item.name}{" "}
@@ -461,7 +500,7 @@ export function MarketPanel() {
                       : "(bought)"}
                   </span>
                 </span>
-                <span className="text-amber">{entry.price}p</span>
+                <span className="font-semibold text-amber">{entry.price}p</span>
               </li>
             ))}
           </ul>

@@ -3,7 +3,7 @@
 // `ImageResponse` (Satori) icon rendering, inline SVG fills, and the web app
 // manifest. Keep in sync with `--color-background/-amber/-gaslight`.
 export const PWA_COLORS = {
-  background: "#0c0a09", // --color-background
-  amber: "#d97706", // --color-amber
-  gaslight: "#fbbf24", // --color-gaslight
+  background: "#0e1116", // --color-background
+  amber: "#e0a73c", // --color-amber
+  gaslight: "#f1c66b", // --color-gaslight
 } as const;

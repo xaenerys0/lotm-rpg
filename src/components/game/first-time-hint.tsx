@@ -53,14 +53,14 @@ export function FirstTimeHint({
   return (
     <div
       role="note"
-      className="mb-6 flex items-start justify-between gap-4 rounded-md border border-gaslight/30 bg-gaslight/[0.05] px-4 py-3 animate-fade-in"
+      className="mb-6 flex items-start justify-between gap-4 rounded-xl border border-amber/30 bg-amber/[0.06] p-5 animate-fade-in"
     >
-      <p className="text-sm leading-relaxed text-foreground/85">{children}</p>
+      <p className="text-sm leading-relaxed text-foreground">{children}</p>
       <button
         type="button"
         onClick={dismiss}
         aria-label="Dismiss hint"
-        className="min-h-[24px] shrink-0 rounded px-2 py-1 text-xs font-medium text-gaslight hover:underline"
+        className="min-h-[24px] shrink-0 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
       >
         Got it
       </button>

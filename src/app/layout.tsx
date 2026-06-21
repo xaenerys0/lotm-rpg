@@ -1,23 +1,26 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Lora } from "next/font/google";
+import { Schibsted_Grotesk, Source_Serif_4, Geist_Mono } from "next/font/google";
 import { PWA_COLORS } from "@/app/_pwa/palette";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// UI/body: Schibsted Grotesk — a clean, characterful grotesque (the app's
+// default via `font-sans`).
+const schibsted = Schibsted_Grotesk({
+  variable: "--font-schibsted",
+  subsets: ["latin"],
+});
+
+// Headings + long-form narrative: Source Serif 4, a crisp modern serif used
+// via `font-serif`.
+const sourceSerif = Source_Serif_4({
+  variable: "--font-source-serif",
   subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const lora = Lora({
-  variable: "--font-lora",
   subsets: ["latin"],
 });
 
@@ -52,7 +55,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} h-full antialiased`}
+      className={`${schibsted.variable} ${sourceSerif.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <a

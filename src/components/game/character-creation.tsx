@@ -446,7 +446,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       {/* Step dots — shown for all steps except mode-select */}
       {step !== "mode-select" && step !== "tutorial" && progress.show && (
         <div className="mb-8 flex items-center justify-between">
-          <span className="text-[10px] text-muted uppercase tracking-[0.2em]">
+          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-amber">
             Character Creation
           </span>
           <div className="flex items-center gap-2">
@@ -464,7 +464,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 />
               ))}
             </div>
-            <span className="ml-1 text-[10px] text-muted">
+            <span className="ml-1 text-xs text-muted">
               Step {progress.number}&thinsp;/&thinsp;{progress.total}
             </span>
           </div>
@@ -479,25 +479,25 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             const isLast = tutorialIndex === TUTORIAL_SCENES.length - 1;
             return (
               <div className="mx-auto max-w-2xl">
-                <p className="mb-2 text-[10px] tracking-[0.2em] text-gaslight uppercase">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
                   An Introduction — {tutorialIndex + 1} of {TUTORIAL_SCENES.length}
                 </p>
-                <h1 className="mb-6 font-serif text-3xl font-bold text-foreground">
+                <h1 className="mb-6 font-serif text-2xl font-semibold text-foreground">
                   {scene.title}
                 </h1>
-                <div className="parchment rounded-lg px-6 py-5 sm:px-8 sm:py-6">
-                  <p className="font-serif text-base leading-[1.85] text-foreground/90">
+                <div className="parchment rounded-xl px-6 py-5 sm:px-8 sm:py-6">
+                  <p className="font-serif text-base leading-[1.85] text-foreground">
                     {scene.body}
                   </p>
                 </div>
-                <p className="mt-4 border-l-2 border-gaslight/40 pl-4 text-sm leading-relaxed text-muted italic">
+                <p className="mt-4 border-l-2 border-border pl-4 text-sm leading-relaxed text-muted italic">
                   {scene.lesson}
                 </p>
                 <div className="mt-8 flex items-center justify-between">
                   <button
                     type="button"
                     onClick={() => setStep("mode-select")}
-                    className="min-h-[24px] rounded px-2 py-1 text-xs text-muted transition-colors hover:text-amber"
+                    className="min-h-[24px] rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
                   >
                     Skip the introduction
                   </button>
@@ -508,7 +508,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                         ? setStep("mode-select")
                         : setTutorialIndex((index) => index + 1)
                     }
-                    className="rounded-md bg-amber/90 px-5 py-2.5 text-sm font-medium text-background transition-all duration-200 hover:bg-amber"
+                    className="rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
                   >
                     {isLast ? "Choose your path" : "Continue"}
                   </button>
@@ -528,17 +528,17 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               clearDraft();
               onBack();
             }}
-            className="mb-6 text-xs text-muted transition-colors hover:text-amber"
+            className="mb-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
           >
             &larr; Back
           </button>
-          <p className="text-[10px] tracking-[0.2em] text-amber uppercase mb-2">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
             A New Chronicle Begins
           </p>
-          <h1 className="font-serif text-4xl font-bold text-foreground mb-4">
+          <h1 className="mb-4 font-serif text-2xl font-semibold text-foreground">
             Who Will You Become?
           </h1>
-          <p className="max-w-lg text-sm leading-relaxed text-muted mb-2">
+          <p className="mb-2 max-w-lg text-sm leading-relaxed text-muted">
             In the Fifth Epoch — an age of steam, secrets, and terrible power — a chance
             encounter has led you to the threshold of the Beyonders. What happens next
             depends on who you are.
@@ -564,7 +564,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 setStartChoice("");
                 clearCustomCircle();
               }}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             >
               {EPOCHS.map((era) => (
                 <option key={era.id} value={era.id}>
@@ -585,9 +585,9 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               setTutorialIndex(0);
               setStep("tutorial");
             }}
-            className="mb-10 block rounded-md border border-gaslight/30 bg-gaslight/[0.05] px-4 py-3 text-left text-sm text-foreground/85 transition-all duration-200 hover:border-gaslight/50 hover:bg-gaslight/[0.08]"
+            className="mb-10 block rounded-xl border border-border bg-surface px-5 py-4 text-left text-sm text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
           >
-            <span className="font-medium text-gaslight">
+            <span className="font-semibold text-amber">
               New to Lord of the Mysteries?
             </span>{" "}
             Begin with a short introduction to Beyonders, potions, and the acting method
@@ -599,12 +599,12 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               <button
                 type="button"
                 onClick={() => setStep("character-setup")}
-                className="group rounded-lg border border-amber/20 bg-amber/[0.04] p-6 text-left transition-all duration-300 hover:border-amber/40 hover:bg-amber/[0.08] hover:shadow-[0_0_32px_rgba(217,119,6,0.07)]"
+                className="group rounded-xl border border-border bg-surface p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
               >
-                <p className="text-[10px] tracking-widest text-amber uppercase mb-2">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
                   AI-Guided
                 </p>
-                <h2 className="font-serif text-xl font-semibold text-foreground mb-2 transition-colors group-hover:text-amber">
+                <h2 className="mb-2 font-serif text-lg font-semibold text-foreground transition-colors group-hover:text-amber">
                   Begin the Prologue
                 </h2>
                 <p className="text-sm leading-relaxed text-muted">
@@ -613,11 +613,11 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 </p>
               </button>
             ) : (
-              <div className="rounded-lg border border-border/40 bg-surface/30 p-6 opacity-50 cursor-not-allowed">
-                <p className="text-[10px] tracking-widest text-muted uppercase mb-2">
+              <div className="cursor-not-allowed rounded-xl border border-border bg-surface p-6 opacity-50">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted">
                   AI-Guided
                 </p>
-                <h2 className="font-serif text-xl font-semibold text-foreground/70 mb-2">
+                <h2 className="mb-2 font-serif text-lg font-semibold text-foreground">
                   Begin the Prologue
                 </h2>
                 <p className="text-sm leading-relaxed text-muted">
@@ -630,12 +630,12 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             <button
               type="button"
               onClick={handleSkipPrologue}
-              className="group rounded-lg border border-border bg-surface/50 p-6 text-left transition-all duration-300 hover:border-amber/20 hover:bg-surface"
+              className="group rounded-xl border border-border bg-surface p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
             >
-              <p className="text-[10px] tracking-widest text-muted uppercase mb-2">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
                 Direct
               </p>
-              <h2 className="font-serif text-xl font-semibold text-foreground mb-2 transition-colors group-hover:text-amber/80">
+              <h2 className="mb-2 font-serif text-lg font-semibold text-foreground transition-colors group-hover:text-amber">
                 Choose Your Path
               </h2>
               <p className="text-sm leading-relaxed text-muted">
@@ -653,11 +653,11 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           <button
             type="button"
             onClick={() => setStep("mode-select")}
-            className="mb-6 text-xs text-muted transition-colors hover:text-amber"
+            className="mb-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
           >
             &larr; Back
           </button>
-          <h2 className="font-serif text-3xl font-bold text-foreground mb-2">
+          <h2 className="mb-2 font-serif text-2xl font-semibold text-foreground">
             Before the Chronicle Begins
           </h2>
           <p className="mb-8 text-sm text-muted">
@@ -667,7 +667,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           <div className="mb-4">
             <label
               htmlFor="setup-name"
-              className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+              className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
             >
               Character Name <span className="text-amber">*</span>
             </label>
@@ -678,14 +678,14 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               onChange={(e) => setCharacterName(e.target.value)}
               maxLength={30}
               placeholder="e.g. Klein Moretti"
-              className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
           </div>
 
           <div className="mb-8">
             <label
               htmlFor="setup-bg"
-              className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+              className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
             >
               Your Background{" "}
               <span className="text-muted normal-case tracking-normal">(optional)</span>
@@ -700,7 +700,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               maxLength={280}
               placeholder="A brief backstory — your occupation, your district, what drew you to this world..."
               rows={3}
-              className="w-full resize-none rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+              className="w-full resize-none rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
             <p className="mt-1 text-right text-xs text-muted">
               {characterBackground.length}&thinsp;/&thinsp;280
@@ -711,7 +711,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             type="button"
             onClick={handleBeginAIPrologue}
             disabled={!characterName.trim()}
-            className="w-full rounded bg-amber/90 px-6 py-2.5 text-sm font-medium text-background transition-all hover:bg-amber disabled:cursor-not-allowed disabled:opacity-30"
+            className="w-full rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-30"
           >
             Begin the Prologue
           </button>
@@ -727,7 +727,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               <button
                 type="button"
                 onClick={() => setStep("character-setup")}
-                className="text-xs text-muted transition-colors hover:text-amber"
+                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
               >
                 &larr; Back
               </button>
@@ -763,11 +763,11 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           {/* Error state */}
           {!prologueLoading && prologueError !== null && (
             <div role="alert" className="py-10 text-center">
-              <p className="mb-2 text-sm text-sanity-low">{prologueError}</p>
+              <p className="mb-2 text-sm text-crimson">{prologueError}</p>
               <button
                 type="button"
                 onClick={handleRetryPrologue}
-                className="mt-4 rounded border border-amber/30 px-5 py-2 text-sm text-amber transition-colors hover:border-amber/50 hover:text-amber"
+                className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
               >
                 Retry
               </button>
@@ -780,14 +780,17 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             currentScene === null &&
             finale === null && (
               <div className="py-14 flex flex-col items-center text-center animate-fade-in-up">
-                <div className="mb-7 flex flex-col items-center gap-1.5">
+                <div
+                  className="mb-7 flex flex-col items-center gap-1.5"
+                  aria-hidden="true"
+                >
                   <div className="w-px h-8 bg-gradient-to-b from-amber/35 to-amber/5" />
                   <div className="h-1 w-1 rounded-full bg-amber/25" />
                 </div>
-                <p className="mb-2 text-[10px] uppercase tracking-[0.3em] text-amber">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
                   Scene {sceneNumber}
                 </p>
-                <h3 className="font-serif text-2xl tracking-wide text-foreground/70 mb-3">
+                <h3 className="mb-3 font-serif text-2xl font-semibold text-foreground">
                   The Fog Held
                 </h3>
                 <p className="mb-10 max-w-[20rem] text-sm leading-relaxed text-muted">
@@ -796,19 +799,20 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 </p>
                 <div className="relative inline-flex">
                   <div
-                    className="absolute -inset-[3px] rounded border border-amber/18 animate-pulse"
+                    className="absolute -inset-[3px] rounded-lg border border-amber/18 animate-pulse"
                     style={{ animationDuration: "3s" }}
+                    aria-hidden="true"
                   />
                   <button
                     type="button"
                     onClick={handleRetryPrologue}
-                    className="relative rounded border border-amber/30 bg-amber/[0.04] px-7 py-2.5 text-sm text-amber transition-all duration-300 hover:border-amber/55 hover:bg-amber/[0.08] hover:text-amber hover:shadow-[0_0_20px_rgba(217,119,6,0.1)]"
+                    className="relative rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
                   >
                     Resume the Chronicle
                   </button>
                 </div>
                 {prologueHistory.length > 0 && (
-                  <p className="mt-5 text-[11px] text-muted">
+                  <p className="mt-5 text-xs text-muted">
                     {prologueHistory.length}{" "}
                     {prologueHistory.length === 1 ? "scene" : "scenes"} complete
                   </p>
@@ -823,11 +827,11 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             currentScene !== null && (
               <div>
                 {/* Narrative */}
-                <div className="mb-8 border-l-2 border-amber/10 pl-4">
+                <div className="mb-8 rounded-xl border border-border bg-surface p-6">
                   {currentScene.narrative.split("\n\n").map((para, i) => (
                     <p
                       key={i}
-                      className="mb-3 text-sm leading-relaxed text-muted last:mb-0"
+                      className="mb-3 text-sm leading-relaxed text-foreground last:mb-0"
                     >
                       {para}
                     </p>
@@ -843,10 +847,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                       key={choice.id}
                       type="button"
                       onClick={() => handleChoiceSelect(choice)}
-                      className="group w-full cursor-pointer rounded-lg border border-border/60 bg-surface/30 p-4 text-left text-sm leading-relaxed text-muted transition-all duration-200 hover:border-amber/30 hover:bg-surface/70 hover:text-foreground hover:shadow-[0_0_16px_rgba(217,119,6,0.05)]"
+                      className="group w-full cursor-pointer rounded-xl border border-border bg-surface px-5 py-4 text-left text-sm leading-relaxed text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
                     >
                       <span
-                        className="mr-2 text-amber/40 transition-colors group-hover:text-amber/70"
+                        className="mr-2 text-amber transition-colors"
                         aria-hidden="true"
                       >
                         ›
@@ -866,17 +870,17 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           {!prologueLoading && prologueError === null && finale !== null && (
             <div className="animate-fade-in-up">
               {/* Gaslight marker — a wordless visual shift into the final beat */}
-              <div className="mb-6 flex flex-col items-center gap-1.5">
+              <div className="mb-6 flex flex-col items-center gap-1.5" aria-hidden="true">
                 <div className="h-8 w-px bg-gradient-to-b from-transparent via-gold/40 to-gold/10" />
                 <div className="h-1 w-1 rounded-full bg-gold/40" />
               </div>
 
               {/* Narrative — the AI builds up to the decision */}
-              <div className="mb-8 border-l-2 border-gold/15 pl-4">
+              <div className="mb-8 rounded-xl border border-border bg-surface p-6">
                 {finale.narrative.split("\n\n").map((para, i) => (
                   <p
                     key={i}
-                    className="mb-3 text-sm leading-relaxed text-muted last:mb-0"
+                    className="mb-3 text-sm leading-relaxed text-foreground last:mb-0"
                   >
                     {para}
                   </p>
@@ -896,7 +900,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     type="button"
                     onClick={() => handleFinaleSelect(choice)}
                     style={{ animationDelay: `${i * 90}ms` }}
-                    className="group relative flex w-full animate-fade-in-up cursor-pointer items-stretch gap-4 overflow-hidden rounded-lg border border-amber/15 bg-gradient-to-br from-surface/50 to-amber/[0.03] p-4 text-left transition-all duration-300 hover:border-gold/45 hover:from-surface/70 hover:to-amber/[0.07] hover:shadow-[0_0_28px_rgba(245,158,11,0.1)]"
+                    className="group relative flex w-full animate-fade-in-up cursor-pointer items-stretch gap-4 overflow-hidden rounded-xl border border-border bg-surface px-5 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
                   >
                     {/* The vial — a phial of luminous liquid that brightens as
                         the hand reaches for it */}
@@ -904,7 +908,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                       aria-hidden
                       className="w-1.5 shrink-0 rounded-full bg-gradient-to-b from-gaslight/70 via-gold/50 to-copper/30 opacity-70 shadow-[0_0_10px_rgba(245,158,11,0.25)] transition-all duration-300 group-hover:opacity-100 group-hover:shadow-[0_0_16px_rgba(245,158,11,0.5)]"
                     />
-                    <span className="text-sm leading-relaxed text-muted transition-colors duration-300 group-hover:text-foreground">
+                    <span className="text-sm leading-relaxed text-foreground transition-colors duration-200">
                       {choice.text}
                     </span>
                   </button>
@@ -921,11 +925,11 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           <button
             type="button"
             onClick={() => setStep("mode-select")}
-            className="mb-6 text-xs text-muted transition-colors hover:text-amber"
+            className="mb-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
           >
             &larr; Back
           </button>
-          <h2 className="font-serif text-2xl font-bold text-foreground mb-2">
+          <h2 className="mb-2 font-serif text-2xl font-semibold text-foreground">
             Choose Your Beyonder Path
           </h2>
           <p className="mb-6 text-sm text-muted">
@@ -939,13 +943,13 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   key={pathway.id}
                   type="button"
                   onClick={() => handleAcceptPathway(pathway.id)}
-                  className="group rounded-lg border border-border bg-surface/50 p-5 text-left transition-all duration-300 hover:border-amber/30 hover:bg-surface hover:shadow-[0_0_24px_rgba(217,119,6,0.05)]"
+                  className="group rounded-xl border border-border bg-surface px-5 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
                 >
                   <div className="mb-2 flex items-start justify-between">
                     <h3 className="font-serif text-lg font-semibold text-foreground transition-colors group-hover:text-amber">
                       {pathway.name}
                     </h3>
-                    <span className="rounded bg-amber/[0.07] px-2 py-0.5 text-[10px] uppercase tracking-wider text-amber">
+                    <span className="rounded-md border border-border bg-surface-raised px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.1em] text-amber">
                       {pathway.group}
                     </span>
                   </div>
@@ -953,12 +957,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     {PATHWAY_DESCRIPTIONS[pathway.id] ?? "A mysterious path."}
                   </p>
                   {seq9 && (
-                    <div className="border-t border-border/30 pt-2">
+                    <div className="border-t border-border pt-2">
                       <p className="text-xs text-muted">
                         Begins as{" "}
-                        <span className="text-foreground/60">
-                          Sequence 9 — {seq9.name}
-                        </span>
+                        <span className="text-foreground">Sequence 9 — {seq9.name}</span>
                       </p>
                     </div>
                   )}
@@ -979,17 +981,17 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               <button
                 type="button"
                 onClick={() => setStep("recommendation")}
-                className="mb-6 text-xs text-muted transition-colors hover:text-amber"
+                className="mb-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
               >
                 &larr; Back
               </button>
-              <h2 className="font-serif text-3xl font-bold text-foreground mb-6">
+              <h2 className="mb-6 font-serif text-2xl font-semibold text-foreground">
                 Your Beyonder Identity
               </h2>
               {pathway && seq9 && (
-                <div className="mb-6 rounded-lg border border-amber/15 bg-amber/[0.03] p-4">
+                <div className="mb-6 rounded-xl border border-amber bg-amber/10 p-4">
                   <div className="mb-2 flex items-center justify-between">
-                    <span className="font-serif text-lg text-amber">
+                    <span className="font-serif text-lg font-semibold text-amber">
                       {pathway.name} Pathway
                     </span>
                     <span className="text-xs text-muted">Sequence 9 — {seq9.name}</span>
@@ -998,7 +1000,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     {seq9.abilities.slice(0, 3).map((ability) => (
                       <span
                         key={ability.name}
-                        className="rounded border border-border/40 bg-surface/80 px-2 py-0.5 text-[11px] text-muted"
+                        className="rounded-md border border-border bg-surface-raised px-2 py-0.5 text-xs text-foreground"
                       >
                         {ability.name}
                       </span>
@@ -1009,7 +1011,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               <div className="mb-4">
                 <label
                   htmlFor="char-name"
-                  className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                  className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
                 >
                   Character Name <span className="text-amber">*</span>
                 </label>
@@ -1020,13 +1022,13 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   onChange={(e) => setCharacterName(e.target.value)}
                   maxLength={30}
                   placeholder="e.g. Klein Moretti"
-                  className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                  className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 />
               </div>
               <div className="mb-6">
                 <label
                   htmlFor="char-bg"
-                  className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                  className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
                 >
                   Your Story{" "}
                   <span className="text-muted normal-case tracking-normal">
@@ -1040,28 +1042,28 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   maxLength={280}
                   placeholder="A brief backstory — your occupation, your district, what drew you to this world..."
                   rows={3}
-                  className="w-full resize-none rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                  className="w-full resize-none rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 />
                 <p className="mt-1 text-right text-xs text-muted">
                   {characterBackground.length}&thinsp;/&thinsp;280
                 </p>
               </div>
-              <div className="mb-6 rounded-lg border border-border/40 bg-surface/30 p-4">
-                <p className="mb-3 text-[10px] uppercase tracking-wider text-muted">
+              <div className="mb-6 rounded-xl border border-border bg-surface p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
                   Starting State
                 </p>
                 <div className="grid grid-cols-3 gap-3 text-center">
                   <div>
-                    <p className="text-[10px] text-muted">Sequence</p>
-                    <p className="font-serif text-lg text-foreground/70">9</p>
+                    <p className="text-xs text-muted">Sequence</p>
+                    <p className="font-serif text-lg text-foreground">9</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted">Sanity</p>
-                    <p className="font-serif text-lg text-foreground/70">100</p>
+                    <p className="text-xs text-muted">Sanity</p>
+                    <p className="font-serif text-lg text-foreground">100</p>
                   </div>
                   <div>
-                    <p className="text-[10px] text-muted">Location</p>
-                    <p className="font-serif text-sm text-foreground/70">Chosen next</p>
+                    <p className="text-xs text-muted">Location</p>
+                    <p className="font-serif text-sm text-foreground">Chosen next</p>
                   </div>
                 </div>
               </div>
@@ -1069,7 +1071,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 type="button"
                 onClick={handleCharacterContinue}
                 disabled={!characterName.trim()}
-                className="w-full rounded bg-amber/90 px-6 py-2.5 text-sm font-medium text-background transition-all hover:bg-amber disabled:cursor-not-allowed disabled:opacity-30"
+                className="w-full rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-30"
               >
                 Continue
               </button>
@@ -1080,10 +1082,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       {/* ── FIRST POTION ── */}
       {step === "first-potion" && selectedPathwayId !== null && (
         <div className="mx-auto max-w-lg animate-fade-in-up">
-          <p className="text-[10px] tracking-[0.2em] text-amber uppercase mb-2">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
             The Moment of Becoming
           </p>
-          <h2 className="font-serif text-3xl font-bold text-foreground mb-8">
+          <h2 className="mb-8 font-serif text-2xl font-semibold text-foreground">
             {POTION_HEADINGS[selectedPathwayId] ?? "The First Change"}
           </h2>
           <div className="mb-10 space-y-5">
@@ -1142,7 +1144,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               <div className="mb-8">
                 <label
                   htmlFor="start-location"
-                  className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                  className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
                 >
                   Where Your Chronicle Begins
                 </label>
@@ -1156,7 +1158,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     // starts fresh (the pick is the single source of truth).
                     if (v !== "custom") clearCustomCircle();
                   }}
-                  className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                  className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 >
                   <option value="">Surprise me — a random start</option>
                   <option value="custom">Describe your own circle…</option>
@@ -1210,7 +1212,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 </p>
 
                 {hasOrigins && (
-                  <label className="mt-2 flex items-center gap-2 text-xs text-muted">
+                  <label className="mt-2 flex items-center gap-2 text-xs text-foreground">
                     <input
                       type="checkbox"
                       checked={showOrigins}
@@ -1229,18 +1231,18 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                           clearCustomCircle();
                         }
                       }}
-                      className="h-4 w-4 rounded border-border/60 bg-surface/50 text-amber focus:ring-1 focus:ring-amber/20"
+                      className="h-4 w-4 rounded border-border bg-surface-raised text-amber focus:ring-2 focus:ring-amber/30"
                     />
                     Begin as a native of a sealed, far-off land (an advanced origin start)
                   </label>
                 )}
 
                 {isCustom && (
-                  <div className="mt-4 space-y-4 rounded-md border border-border/60 bg-surface/30 p-4">
+                  <div className="mt-4 space-y-4 rounded-xl border border-border bg-surface p-4">
                     <div>
                       <label
                         htmlFor="custom-tie"
-                        className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                        className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
                       >
                         Your tie to this world
                       </label>
@@ -1253,14 +1255,14 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                         }
                         maxLength={MAX_TIE_LENGTH}
                         placeholder="e.g. a fence who owes the Tingen Nighthawks a favour"
-                        className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                        className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                       />
                     </div>
 
                     <div>
                       <label
                         htmlFor="custom-companion"
-                        className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                        className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
                       >
                         Who stands with you{" "}
                         <span className="text-muted normal-case tracking-normal">
@@ -1272,7 +1274,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                           {customCompanions.map((name) => (
                             <li
                               key={name}
-                              className="inline-flex items-center gap-1 rounded border border-amber/30 bg-amber/[0.06] px-2 py-0.5 text-xs text-foreground"
+                              className="inline-flex items-center gap-1 rounded-md border border-border bg-surface-raised px-2 py-0.5 text-xs text-foreground"
                             >
                               {name}
                               <button
@@ -1310,7 +1312,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                           }}
                           maxLength={MAX_COMPANION_LENGTH}
                           placeholder="a name — known or invented"
-                          className="min-w-0 flex-1 rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground placeholder:text-muted transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                          className="min-w-0 flex-1 rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                         />
                         <datalist id="custom-companion-suggestions">
                           {npcSuggestions.map((name) => (
@@ -1324,7 +1326,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                             customCompanionDraft.trim().length === 0 ||
                             customCompanions.length >= MAX_COMPANIONS
                           }
-                          className="rounded border border-amber/40 px-3 py-2 text-sm font-medium text-amber transition-colors hover:bg-amber/10 disabled:opacity-40"
+                          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber disabled:opacity-40"
                         >
                           Add
                         </button>
@@ -1334,7 +1336,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     <div>
                       <label
                         htmlFor="custom-location"
-                        className="mb-1.5 block text-[10px] uppercase tracking-wider text-muted"
+                        className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
                       >
                         Begins in
                       </label>
@@ -1342,7 +1344,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                         id="custom-location"
                         value={customLocation}
                         onChange={(e) => setCustomLocation(e.target.value)}
-                        className="w-full rounded-md border border-border/60 bg-surface/50 px-3 py-2 text-sm text-foreground transition-colors focus:border-amber/40 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                        className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                       >
                         <option value="">The default starting place</option>
                         {options.map((o) => (
@@ -1361,7 +1363,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           <button
             type="button"
             onClick={handleBeginChronicle}
-            className="rounded bg-amber/90 px-8 py-3 text-sm font-medium text-background transition-all hover:bg-amber hover:shadow-[0_0_24px_rgba(217,119,6,0.2)]"
+            className="rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
           >
             Begin Your Chronicle
           </button>

@@ -49,6 +49,7 @@ import {
 import { GameLoop } from "./game-loop";
 import { CharacterCreation } from "./character-creation";
 import { purgeCharacter } from "./character-actions";
+import { PageHeader } from "./page-header";
 
 type DashboardView = "home" | "character-creation" | "playing" | "manage";
 
@@ -302,9 +303,9 @@ export function PlayDashboard() {
         <button
           type="button"
           onClick={handleBackToDashboard}
-          className="mb-4 text-xs text-muted transition-colors hover:text-amber"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-amber"
         >
-          &larr; Back to Dashboard
+          <span aria-hidden="true">←</span> Back to Dashboard
         </button>
         <GameLoop sessionId={activeSessionId} />
       </div>
@@ -323,22 +324,18 @@ export function PlayDashboard() {
         <button
           type="button"
           onClick={handleBackToDashboard}
-          className="mb-4 text-xs text-muted transition-colors hover:text-amber"
+          className="mb-5 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-amber"
         >
-          &larr; Back to Dashboard
+          <span aria-hidden="true">←</span> Back to Dashboard
         </button>
-        <header className="mb-8">
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-amber md:text-4xl">
-            Manage Characters
-          </h1>
-          <p className="mt-2 max-w-xl text-muted">
-            Remove a character to permanently delete its save, journal, and all associated
-            data. This cannot be undone.
-          </p>
-        </header>
+        <PageHeader
+          eyebrow="Roster"
+          title="Manage Characters"
+          description="Remove a character to permanently delete its save, journal, and all associated data. This cannot be undone."
+        />
 
         {sessions.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-border/60 p-8 text-center">
+          <div className="rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-serif text-sm italic text-muted">
               No characters to manage. Start a new game to forge a Beyonder identity.
             </p>
@@ -354,10 +351,7 @@ export function PlayDashboard() {
                   ? `${sequenceLabel(s.pathwayId, s.sequenceLevel)} — ${pathway?.name ?? "?"} pathway, ${sequenceClassificationFor(s.sequenceLevel)}`
                   : `${seq?.name ?? "Unknown"} — ${pathway?.name ?? "?"} pathway, Sequence ${s.sequenceLevel}`;
               return (
-                <li
-                  key={s.id}
-                  className="rounded-lg border border-border/60 bg-surface/30 p-4"
-                >
+                <li key={s.id} className="rounded-xl border border-border bg-surface p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-serif text-sm font-medium text-foreground/90">
@@ -420,19 +414,16 @@ export function PlayDashboard() {
   // ─── Home Dashboard ─────────────────────────────────────────────
 
   return (
-    <div className="mx-auto max-w-[var(--container-game)] px-4 py-8 animate-fade-in-up sm:px-6 sm:py-10">
-      <header className="mb-10">
-        <h1 className="font-serif text-3xl font-bold tracking-tight text-amber md:text-4xl">
-          Welcome, Beyonder
-        </h1>
-        <p className="mt-2 max-w-xl text-muted">
-          The Fifth Epoch stirs. Your journey through the world of mysteries awaits.
-        </p>
-      </header>
+    <div className="animate-fade-in-up mx-auto max-w-[var(--container-game)] px-4 py-8 sm:px-6 sm:py-10">
+      <PageHeader
+        eyebrow="Fifth Epoch"
+        title="Welcome, Beyonder"
+        description="The Fifth Epoch stirs. Your journey through the world of mysteries awaits."
+      />
 
       {/* No Provider Configured */}
       {!hasConfig && (
-        <div className="rounded-lg border border-amber/20 bg-amber/[0.03] p-6">
+        <div className="rounded-xl border border-amber/30 bg-amber/[0.04] p-6">
           <h2 className="font-serif text-lg font-semibold text-foreground">
             Configure Your AI Provider
           </h2>
@@ -442,74 +433,81 @@ export function PlayDashboard() {
           </p>
           <Link
             href="/settings"
-            className="mt-4 inline-block rounded-md border border-amber/40 bg-amber/[0.08] px-4 py-2 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/60 hover:bg-amber/[0.14]"
+            className="mt-4 inline-flex items-center rounded-lg border border-amber/40 bg-amber/[0.08] px-4 py-2 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/60 hover:bg-amber/[0.14]"
           >
             Go to Settings
           </Link>
         </div>
       )}
 
-      {/* Provider Configured */}
+      {/* Provider Configured — primary call to action */}
       {hasConfig && (
-        <div className="group rounded-lg border border-border bg-surface p-6 transition-colors duration-200 hover:border-amber/20">
-          <h2 className="font-serif text-xl font-semibold text-foreground">
-            Start New Game
-          </h2>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            Choose your Beyonder pathway and begin your chronicle in Tingen City.
-          </p>
-          <button
-            type="button"
-            onClick={() => setView("character-creation")}
-            className="mt-5 rounded bg-amber/90 px-4 py-2 text-sm font-medium text-background transition-all duration-200 hover:bg-amber"
-          >
-            Begin Journey
-          </button>
-          {devToolsEnabled() && (
-            <div className="mt-5 border-t border-border/60 pt-4">
-              <p className="text-xs text-muted">
-                Dev tools: seed a premade Sequence&nbsp;9 character ready to advance (and
-                fight) so you can reach the scene-art moments in a click or two.
-              </p>
-              <button
-                type="button"
-                onClick={handleSeedTestCharacter}
-                className="mt-3 min-h-[24px] rounded border border-occult/50 px-3 py-1.5 text-xs font-medium text-occult-bright transition-colors hover:border-occult hover:bg-occult/10"
-              >
-                Seed test character
-              </button>
-            </div>
-          )}
+        <div className="relative overflow-hidden rounded-2xl border border-border bg-surface p-6 transition-colors duration-200 hover:border-amber/30 sm:p-8">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute -top-24 right-0 h-64 w-64 rounded-full opacity-70 blur-3xl"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(224,167,60,0.10), transparent 70%)",
+            }}
+          />
+          <div className="relative">
+            <h2 className="font-serif text-2xl font-semibold text-foreground">
+              Start a new chronicle
+            </h2>
+            <p className="mt-2 max-w-md text-sm leading-relaxed text-muted">
+              Choose your Beyonder pathway and begin your story in the Fifth Epoch.
+            </p>
+            <button
+              type="button"
+              onClick={() => setView("character-creation")}
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-all duration-200 hover:bg-gold hover:shadow-[0_12px_28px_-12px_rgba(224,167,60,0.55)]"
+            >
+              Begin journey
+              <span aria-hidden="true">→</span>
+            </button>
+            {devToolsEnabled() && (
+              <div className="mt-6 border-t border-border pt-4">
+                <p className="text-xs text-muted">
+                  Dev tools: seed a premade Sequence&nbsp;9 character ready to advance
+                  (and fight) so you can reach the scene-art moments in a click or two.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSeedTestCharacter}
+                  className="mt-3 inline-flex min-h-[24px] items-center rounded-lg border border-occult/50 px-3 py-1.5 text-xs font-medium text-occult-bright transition-colors hover:border-occult hover:bg-occult/10"
+                >
+                  Seed test character
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      <div className="my-10 flex items-center gap-4" aria-hidden="true">
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-        <span className="text-[10px] text-muted/25">&#9670;</span>
-        <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-      </div>
-
-      <section>
-        <div className="flex items-center justify-between gap-4">
-          <h2 className="font-serif text-lg font-semibold text-foreground/70">
-            Your Characters
-          </h2>
+      <section className="mt-10">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-xl font-semibold text-foreground">
+              Your Characters
+            </h2>
+            <p className="mt-1 text-sm text-muted">
+              Select a character to resume their chronicle where you left off.
+            </p>
+          </div>
           {sessions.length > 0 && (
             <button
               type="button"
               onClick={() => setView("manage")}
-              className="min-h-[24px] rounded border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
+              className="inline-flex min-h-[24px] shrink-0 items-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
             >
               Manage characters
             </button>
           )}
         </div>
-        <p className="mt-1 text-xs text-muted">
-          Select a character to resume their chronicle where you left off.
-        </p>
         {sessions.length > 0 ? (
           <>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {pageItems.map((s) => {
                 const pathway = ALL_PATHWAYS.find((p) => p.id === s.pathwayId);
                 const seq = pathway ? getSequence(pathway.id, s.sequenceLevel) : null;
@@ -524,20 +522,33 @@ export function PlayDashboard() {
                     type="button"
                     onClick={() => handleContinue(s.id)}
                     aria-label={`Resume ${title} — ${pathway?.name ?? "?"} pathway, ${rungName} (Sequence ${s.sequenceLevel}), Turn ${s.turnCount}`}
-                    className="rounded-lg border border-border/60 bg-surface/30 p-4 text-left transition-all duration-200 hover:border-amber/30 hover:bg-surface/50"
+                    className="group flex flex-col rounded-xl border border-border bg-surface p-5 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40 hover:shadow-[0_16px_40px_-24px_rgba(0,0,0,0.9)]"
                   >
-                    <p className="font-serif text-sm font-medium text-foreground">
-                      {title}
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="min-w-0 truncate font-serif text-base font-semibold text-foreground">
+                        {title}
+                      </p>
+                      <span className="shrink-0 rounded-md border border-amber/30 bg-amber/10 px-2 py-0.5 text-[11px] font-medium text-amber">
+                        Seq {s.sequenceLevel}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm text-muted">
+                      {rungName} · {pathway?.name ?? "?"} pathway
                     </p>
-                    <p className="mt-0.5 text-xs text-muted">
-                      {rungName} <span>(Seq. {s.sequenceLevel})</span>
+                    <p className="mt-3 flex items-center gap-1.5 text-xs text-muted">
+                      <span aria-hidden="true">◦</span>
+                      {s.location}
                     </p>
-                    <p className="text-xs text-muted">{pathway?.name ?? "?"} pathway</p>
-                    <p className="mt-2 text-xs text-muted">{s.location}</p>
-                    <p className="mt-2 flex items-center justify-between text-xs text-muted">
+                    <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-xs text-muted">
                       <span>Turn {s.turnCount}</span>
                       <span>{formatLastPlayed(s.updatedAt)}</span>
-                    </p>
+                    </div>
+                    <span
+                      aria-hidden="true"
+                      className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-muted transition-colors group-hover:text-amber"
+                    >
+                      Resume <span>→</span>
+                    </span>
                   </button>
                 );
               })}
@@ -569,7 +580,7 @@ export function PlayDashboard() {
             )}
           </>
         ) : (
-          <div className="mt-3 rounded-lg border border-dashed border-border/60 p-8 text-center">
+          <div className="mt-3 rounded-xl border border-dashed border-border p-8 text-center">
             <p className="font-serif text-sm italic text-muted">
               No character created yet. Start a new game to forge your Beyonder identity.
             </p>

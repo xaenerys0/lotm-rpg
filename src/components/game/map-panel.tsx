@@ -75,23 +75,20 @@ export function MapPanel() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface p-5">
         <p className="font-serif text-sm italic text-muted">{gazetteer.intro}</p>
         {whereabouts && (
-          <p className="text-xs text-muted">
+          <p className="text-xs font-medium text-muted">
             Current whereabouts:{" "}
-            <span className="font-medium text-amber">{whereabouts}</span>
+            <span className="font-semibold text-amber">{whereabouts}</span>
           </p>
         )}
       </div>
 
       {/* Compass rose — pure ornament. */}
-      <div
-        className="flex items-center justify-center gap-4 text-muted/40"
-        aria-hidden="true"
-      >
+      <div className="flex items-center justify-center gap-4" aria-hidden="true">
         <div className="h-px flex-1 bg-gradient-to-r from-transparent to-border" />
-        <span className="candle-flicker font-serif text-lg text-amber/60">✦ N ✦</span>
+        <span className="candle-flicker font-serif text-lg text-amber">✦ N ✦</span>
         <div className="h-px flex-1 bg-gradient-to-l from-transparent to-border" />
       </div>
 
@@ -101,19 +98,19 @@ export function MapPanel() {
           return (
             <li
               key={district.slug}
-              className={`parchment relative rounded-lg p-5 ${
-                here ? "ring-1 ring-amber/50" : ""
+              className={`relative rounded-xl border bg-surface p-5 transition-all duration-200 ${
+                here ? "border-amber/40 ring-1 ring-amber/40" : "border-border"
               }`}
             >
-              <h2 className="font-serif text-base font-semibold text-foreground">
+              <h2 className="font-serif text-lg font-semibold text-foreground">
                 {district.name}
                 {here && (
-                  <span className="ml-2 rounded-sm border border-amber/40 bg-amber/10 px-1.5 py-0.5 align-middle text-[10px] font-medium tracking-[0.15em] text-amber uppercase">
+                  <span className="ml-2 rounded-md border border-amber/40 bg-amber/10 px-2 py-0.5 align-middle text-[10px] font-semibold tracking-[0.18em] text-amber uppercase">
                     You are here
                   </span>
                 )}
               </h2>
-              <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+              <p className="mt-2 text-sm leading-relaxed text-foreground">
                 {district.blurb}
               </p>
             </li>
@@ -126,7 +123,7 @@ export function MapPanel() {
           <div className="flex items-center gap-3">
             <h2
               id="farther-afield-heading"
-              className="font-serif text-lg font-semibold text-amber"
+              className="font-serif text-lg font-semibold text-foreground"
             >
               Farther afield
             </h2>
@@ -141,7 +138,10 @@ export function MapPanel() {
           </p>
 
           {notice && (
-            <p className="text-sm text-amber" role="status">
+            <p
+              className="rounded-lg border border-amber/40 bg-amber/10 px-4 py-2.5 text-sm font-medium text-amber"
+              role="status"
+            >
               {notice}
             </p>
           )}
@@ -155,23 +155,28 @@ export function MapPanel() {
                   ? travelDays(currentCityId, city.id)
                   : null;
               return (
-                <li key={city.id} className="parchment relative rounded-lg p-5">
-                  <h3 className="font-serif text-base font-semibold text-foreground">
+                <li
+                  key={city.id}
+                  className={`relative flex flex-col rounded-xl border bg-surface p-5 ${
+                    here ? "border-amber/40 ring-1 ring-amber/40" : "border-border"
+                  }`}
+                >
+                  <h3 className="font-serif text-lg font-semibold text-foreground">
                     {city.name}
                     {here && (
-                      <span className="ml-2 rounded-sm border border-amber/40 bg-amber/10 px-1.5 py-0.5 align-middle text-[10px] font-medium tracking-[0.15em] text-amber uppercase">
+                      <span className="ml-2 rounded-md border border-amber/40 bg-amber/10 px-2 py-0.5 align-middle text-[10px] font-semibold tracking-[0.18em] text-amber uppercase">
                         You are here
                       </span>
                     )}
                   </h3>
-                  <p className="mt-1 text-xs tracking-wide text-muted uppercase">
+                  <p className="mt-1.5 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
                     {city.realm}
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed text-foreground/80">
+                  <p className="mt-2 text-sm leading-relaxed text-foreground">
                     {city.blurb}
                   </p>
-                  <div className="mt-4 flex items-center justify-between gap-3">
-                    <span className="text-xs text-muted">
+                  <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+                    <span className="text-xs font-medium text-muted">
                       {days !== null
                         ? `Travel: about ${days} day${days === 1 ? "" : "s"}`
                         : "Travel"}
@@ -181,7 +186,7 @@ export function MapPanel() {
                         type="button"
                         onClick={() => handleTravel(city.id)}
                         disabled={!canGo}
-                        className="inline-flex min-h-[24px] items-center rounded border border-amber/40 px-3 py-1 text-xs font-medium text-amber transition-colors hover:bg-amber/10 disabled:opacity-50"
+                        className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber disabled:opacity-50 disabled:hover:border-border disabled:hover:text-muted"
                         aria-label={`Travel to ${city.name}`}
                       >
                         Set out
