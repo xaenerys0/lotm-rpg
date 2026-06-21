@@ -4,6 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+const labelClass =
+  "block font-mono text-xs font-semibold tracking-[0.15em] text-muted uppercase";
+const inputClass =
+  "mt-2 block w-full border-2 border-border bg-surface-raised px-3.5 py-2.5 font-sans text-foreground placeholder:text-muted focus:border-amber focus:outline-none";
+
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -33,9 +38,9 @@ export function LoginForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-foreground">
+        <label htmlFor="email" className={labelClass}>
           Email
         </label>
         <input
@@ -47,12 +52,12 @@ export function LoginForm() {
           autoComplete="email"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "login-error" : undefined}
-          className="mt-1 block w-full rounded border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
+          className={inputClass}
           placeholder="beyonder@tingen.city"
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-foreground">
+        <label htmlFor="password" className={labelClass}>
           Password
         </label>
         <input
@@ -65,21 +70,21 @@ export function LoginForm() {
           autoComplete="current-password"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "login-error" : undefined}
-          className="mt-1 block w-full rounded border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
+          className={inputClass}
           placeholder="••••••••"
         />
       </div>
       {error && (
-        <p id="login-error" role="alert" className="text-sm text-red-400">
+        <p id="login-error" role="alert" className="font-mono text-sm text-crimson">
           {error}
         </p>
       )}
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded bg-amber px-4 py-2 font-medium text-background transition-colors hover:bg-gold disabled:opacity-50"
+        className="w-full border-2 border-border bg-amber px-4 py-3 font-mono text-sm font-bold tracking-[0.15em] text-surface uppercase shadow-[5px_5px_0_0_var(--color-border)] transition-transform hover:-translate-x-0.5 hover:-translate-y-0.5 hover:shadow-[7px_7px_0_0_var(--color-border)] disabled:translate-x-0 disabled:translate-y-0 disabled:opacity-50 disabled:shadow-[5px_5px_0_0_var(--color-border)]"
       >
-        {loading ? "Signing in..." : "Sign In"}
+        {loading ? "Signing in…" : "Sign In"}
       </button>
     </form>
   );

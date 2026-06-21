@@ -1,24 +1,31 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Lora } from "next/font/google";
+import { Big_Shoulders, Newsreader, IBM_Plex_Mono } from "next/font/google";
 import { PWA_COLORS } from "@/app/_pwa/palette";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Display: Big Shoulders Display — a tall, dramatic condensed grotesque used
+// for headings (via `font-serif`), the editorial backbone of the Codex look.
+const display = Big_Shoulders({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["500", "600", "700", "800", "900"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+// Body: Newsreader — an editorial serif for readable long-form prose (the
+// app's default body via `font-sans`).
+const body = Newsreader({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
-const lora = Lora({
-  variable: "--font-lora",
+// Mono: IBM Plex Mono for labels and technical chrome.
+const plexMono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
   subsets: ["latin"],
+  weight: ["400", "500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -52,7 +59,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} h-full antialiased`}
+      className={`${display.variable} ${body.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <a

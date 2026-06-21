@@ -8,10 +8,10 @@ import { usePathname } from "next/navigation";
 // collapsible sidebar. Hidden at md+ where the sidebar is persistent.
 
 const items = [
-  { href: "/play", label: "Play", glyph: "✦" },
-  { href: "/character", label: "Character", glyph: "♟" },
-  { href: "/journal", label: "Journal", glyph: "✎" },
-  { href: "/map", label: "Map", glyph: "✧" },
+  { href: "/play", label: "Play" },
+  { href: "/character", label: "Self" },
+  { href: "/journal", label: "Log" },
+  { href: "/map", label: "Map" },
 ] as const;
 
 export function MobileNav() {
@@ -20,24 +20,23 @@ export function MobileNav() {
   return (
     <nav
       aria-label="Quick navigation"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-sm md:hidden"
+      className="fixed inset-x-0 bottom-0 z-40 border-t-2 border-border bg-surface md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <ul className="flex">
-        {items.map(({ href, label, glyph }) => {
+      <ul className="flex divide-x-2 divide-border">
+        {items.map(({ href, label }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
           return (
             <li key={href} className="flex-1">
               <Link
                 href={href}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
-                  isActive ? "text-amber" : "text-muted hover:text-foreground"
+                className={`flex min-h-[48px] items-center justify-center py-2 font-mono text-xs font-bold tracking-[0.15em] uppercase transition-colors ${
+                  isActive
+                    ? "bg-amber text-surface"
+                    : "text-foreground/80 hover:bg-foreground/[0.05] hover:text-foreground"
                 }`}
               >
-                <span aria-hidden="true" className="text-base leading-none">
-                  {glyph}
-                </span>
                 {label}
               </Link>
             </li>
