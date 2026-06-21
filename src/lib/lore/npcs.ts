@@ -548,4 +548,47 @@ export const NPC_LORE: LoreEntry[] = [
     tokenCount: 185,
     narratorOnly: true,
   },
+  // ── Feysac Empire NPCs (world build-out 7, issue #136, corpus-verified) ──
+  // The imperial Einhorn naval house and a Feysac-born Combat-faithful. City-keyed
+  // to where canon places them; NOT pathway-keyed (the #132 leak rule — pathway
+  // named only in prose); narratorOnly for the Angel/Beyonder truths.
+  {
+    slug: "npc-awatoma-einhorn",
+    title: "Awatoma Einhorn — Supreme Commander of the Feysac Navy",
+    category: "npc",
+    content: `Awatoma Einhorn is the Supreme Commander of the Feysac Navy, the angel-general the empire hails as "the Great Awatoma Einhorn, Ruler of the Fog of the Battlefield." He is of the imperial Einhorn house — the Red Priest line that holds the Feysac throne and the Sonia Sea Fleet — and a Weather Warlock, a Sequence 2 Angel who turns sea and storm against the empire's enemies from the war-zone of the Sonia Sea. His kinsman Egor Einhorn serves as a commander beneath him; when Egor was once unmanned by a strange adventurer, it was Awatoma's honorific name he called upon for aid. In a realm that measures a man by his height and his battles, Awatoma stands near the summit of both — the Einhorns' war-leader and one of the deadliest servants of the militarist north.`,
+    epoch: 5,
+    city: "feysac",
+    npcs: ["Awatoma Einhorn", "Egor Einhorn"],
+    sequences: [2],
+    tags: ["feysac", "einhorn", "red-priest", "navy", "angel"],
+    tokenCount: 200,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-egor-einhorn",
+    title: "Egor Einhorn — Commander of the Feysac Imperial Navy",
+    category: "npc",
+    content: `Egor Einhorn is a commander of the Feysac Imperial Navy and a son of the imperial Einhorn house — a burly, bearded giant of a man over two metres tall who kept the flagship Nepos in the Sonia Sea war-zone. An Iron-blooded Knight, a Sequence 4 of the Red Priest Pathway, he is a hard and capable officer of the militarist north, kin and subordinate to the Supreme Commander Awatoma Einhorn. His one famous humiliation came when a lone adventurer aboard a captured ship — a man quietly digesting a potion he could not yet control — unnerved him so badly that Egor broke off and called on Awatoma's name for protection. It is the kind of story Feysac's height-proud officers never let a man forget.`,
+    epoch: 5,
+    city: "feysac",
+    npcs: ["Egor Einhorn", "Awatoma Einhorn", "Klein Moretti"],
+    sequences: [4],
+    tags: ["feysac", "einhorn", "red-priest", "navy"],
+    tokenCount: 195,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-ozil",
+    title: "Strongman Ozil — Combat-Faithful of the Underworld",
+    category: "npc",
+    content: `Ozil, called Strongman Ozil, was a Feysac-born son of the Church of the God of Combat and once a famous pirate of the seas before he sank into the Beyonder underworld of Bayam as the secret master of the Amyris Leaf Bar. A Pugilist — a Sequence 8 of the Twilight Giant Pathway — he carried the Combat faith's raw ferocity into the shadows of the Rorsted Archipelago, an ally of the smuggler Mithor King. His end came at the hands of the bounty hunter Gehrman Sparrow, who killed him in early 1350 and saw his Beyonder characteristic sold on to the alchemist Cattleya — one more violent Feysac export the wider world quietly absorbed.`,
+    epoch: 5,
+    city: "bayam",
+    npcs: ["Ozil", "Mithor King", "Klein Moretti", "Cattleya"],
+    sequences: [8],
+    tags: ["feysac", "god-of-combat", "twilight-giant-pathway", "bayam", "pirate"],
+    tokenCount: 175,
+    narratorOnly: true,
+  },
 ];

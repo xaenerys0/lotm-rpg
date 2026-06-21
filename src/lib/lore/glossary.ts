@@ -143,7 +143,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     term: "Pritz Harbor",
     category: "Geography",
     definition:
-      "Loen's chief naval port beneath the Hornacis range — dry-docks, warships, and fog. A heavy garrison watches the mountain passes, and a great deal moves through a port that busy unseen.",
+      "Loen's chief naval port beneath the Amantha range — dry-docks, warships, and fog. A heavy garrison watches the mountain passes, and a great deal moves through a port that busy unseen.",
     revealAtSequence: 9,
     epoch: 5,
   },
@@ -161,7 +161,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     term: "Feysac Empire",
     category: "Geography",
     definition:
-      "The cold militarist empire to the north, beyond the Hornacis range, devoted to the God of Combat. Discipline, martial honour, and a dangerous frontier where monsters press at the walls.",
+      "The cold militarist empire to the north, beyond the Amantha range, devoted to the God of Combat. Discipline, martial honour, and a dangerous frontier where monsters press at the walls.",
     revealAtSequence: 9,
     epoch: 5,
   },

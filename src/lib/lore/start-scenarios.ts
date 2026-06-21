@@ -138,8 +138,8 @@ const FIFTH_EPOCH_STARTS: readonly StartScenario[] = [
     id: "pritz-harbor",
     epoch: 5,
     location: "Pritz Harbor",
-    blurb: "Loen's chief naval port beneath the Hornacis range, all fog and warships.",
-    openingBeat: `Fog rolls off the grey water of Pritz Harbor and gulls cry over the anchored warships as the change finishes in me, the Hornacis peaks a dark wall to the north and a navy town waking all around. ${SCENE_CUE}`,
+    blurb: "Loen's chief naval port beneath the Amantha range, all fog and warships.",
+    openingBeat: `Fog rolls off the grey water of Pritz Harbor and gulls cry over the anchored warships as the change finishes in me, the Amantha peaks a dark wall to the north and a navy town waking all around. ${SCENE_CUE}`,
     pathwayAffinity: [6, 7],
   },
   {

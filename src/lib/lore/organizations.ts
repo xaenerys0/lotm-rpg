@@ -279,7 +279,7 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     slug: "mandated-punishers-pritz",
     title: "Mandated Punishers — Pritz Harbor Presence",
     category: "organization",
-    content: `If the Mandated Punishers keep only a small office in inland Tingen, in the naval port of Pritz Harbor they are at their strongest. The Mandated Punishers are the Beyonder arm of the Church of the Lord of Storms, and Pritz is a storm-faith town to its bones — a city of sailors, marines, and dockworkers whose creed is the sea's own. Here the Punishers, not the Nighthawks, are the first hand on any uncanny trouble: smuggled Beyonder materials coming over the water or down through the Hornacis passes, sea-creature manifestations off the cold roadstead, drowned things that will not stay drowned, and rogue Beyonders among the fleet's crews. Their style suits the town — direct, aggressive, more inclined to force than to the Nighthawks' patient investigation — and their members run heavily to the Sailor (Tyrant) pathway, with its dominion over storm, water, and the body. The harbour's heavy garrison and real night-watch give them cover and muscle both, and a quiet understanding keeps their jurisdiction and the Nighthawks' from colliding more than the sea already does.`,
+    content: `If the Mandated Punishers keep only a small office in inland Tingen, in the naval port of Pritz Harbor they are at their strongest. The Mandated Punishers are the Beyonder arm of the Church of the Lord of Storms, and Pritz is a storm-faith town to its bones — a city of sailors, marines, and dockworkers whose creed is the sea's own. Here the Punishers, not the Nighthawks, are the first hand on any uncanny trouble: smuggled Beyonder materials coming over the water or down through the Amantha passes, sea-creature manifestations off the cold roadstead, drowned things that will not stay drowned, and rogue Beyonders among the fleet's crews. Their style suits the town — direct, aggressive, more inclined to force than to the Nighthawks' patient investigation — and their members run heavily to the Sailor (Tyrant) pathway, with its dominion over storm, water, and the body. The harbour's heavy garrison and real night-watch give them cover and muscle both, and a quiet understanding keeps their jurisdiction and the Nighthawks' from colliding more than the sea already does.`,
     epoch: 5,
     city: "pritz",
     npcs: [],
@@ -609,5 +609,32 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tags: ["eternal-blazing-sun", "aucuses", "true-creator", "true-nature", "spoiler"],
     tokenCount: 250,
     narratorOnly: true,
+  },
+  // ── Church of the God of Combat — structure & members (world build-out 7,
+  // issue #136). Complements the #139 `combat-church-overview` (doctrine) and
+  // gated `combat-church-inner-secret` (Badheil) with the church's ranks,
+  // dioceses, and roster. CANON (corpus-verified): the corpus names almost no
+  // Combat clergy beyond the Chief Shepherd Larrion (the dioceses are listed by
+  // OFFICE, not name) — so no members are invented. "Warrior"/"Hunter" are
+  // Twilight Giant SEQUENCE names (Seq 9 / Seq 4), not separate pathways.
+  {
+    slug: "combat-church-structure",
+    title: "Church of the God of Combat — Structure & Ranks",
+    category: "organization",
+    content: `Beneath its Chief Shepherd, the Church of the God of Combat is a martial hierarchy seated at the Great Twilight Hall outside Saint Millom — a hall raised in the likeness of the Giant King's Court, by tradition the old residence of Giant King Aurmir himself. The Chief Shepherd Larrion commands the dioceses of the Feysac heartland and the colonies: Gargas (whose archbishop is but a Sequence 5 Guardian), Sonia Island, and West Balam, with the Holy Lake Cathedral at Raklev among its seats. Its clergy climb the Twilight Giant ladder rung by rung — Warrior, Pugilist, Weapon Master, Dawn Paladin, Guardian, Demon Hunter, Silver Knight, Glory — so that the "Warrior" and "Hunter" outsiders speak of are not separate paths but sequences of the one Twilight Giant Pathway the Church wields (the Death and Darkness paths it holds only in part). It keeps no separately named inquisition; its Beyonders themselves are its enforcers, and the policing of every Beyonder incident in the empire is the Church's own charge. A brotherhood of men, height-proud and hard-drinking, it brooks no rival faith in Feysac and has feuded with the Church of the Evernight Goddess since its founding.`,
+    epoch: 5,
+    city: "feysac",
+    npcs: ["Larrion"],
+    sequences: [],
+    tags: [
+      "god-of-combat",
+      "church",
+      "feysac",
+      "twilight-giant-pathway",
+      "structure",
+      "religion",
+    ],
+    tokenCount: 255,
+    narratorOnly: false,
   },
 ];
