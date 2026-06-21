@@ -8,20 +8,35 @@ import { expect, test, type Page } from "@playwright/test";
 
 /** Make the Supabase auth endpoint reject with a terminal 400, so the form's
  *  error path runs deterministically — independent of the dummy backend's
- *  network-failure timing, which exceeded the assertion timeout in CI. A real
- *  400 is terminal (supabase-js does not retry it), so the alert renders at
- *  once. The form's error is a `role="alert"` element scoped under `<form>`;
- *  assert it there, since Next also renders a page-level
- *  `<div role="alert" id="__next-route-announcer__">` that would otherwise make
- *  a bare `getByRole("alert")` ambiguous. */
+ *  network-failure timing, which exceeded the assertion timeout in CI.
+ *
+ *  The app origin (localhost) and the Supabase URL (127.0.0.1) differ, so the
+ *  auth POST is cross-origin. WebKit strictly enforces CORS on a fulfilled
+ *  response (Chromium does not), so without these headers WebKit blocks the 400,
+ *  supabase-js sees a *retryable* network error and backs off/retries past the
+ *  timeout. Answering the preflight (204) and setting `Access-Control-Allow-*`
+ *  on the 400 makes the rejection terminal (no retry) on every engine, so the
+ *  alert renders at once. The error is a `role="alert"` under `<form>`; assert it
+ *  there, since Next also renders a page-level
+ *  `<div role="alert" id="__next-route-announcer__">` that makes a bare
+ *  `getByRole("alert")` ambiguous. */
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "*",
+  "access-control-allow-headers": "*",
+};
+
 async function rejectAuth(page: Page, body: Record<string, unknown>): Promise<void> {
-  await page.route("**/auth/v1/**", (route) =>
-    route.fulfill({
+  await page.route("**/auth/v1/**", (route) => {
+    if (route.request().method() === "OPTIONS") {
+      return route.fulfill({ status: 204, headers: CORS_HEADERS });
+    }
+    return route.fulfill({
       status: 400,
-      contentType: "application/json",
+      headers: { ...CORS_HEADERS, "content-type": "application/json" },
       body: JSON.stringify(body),
-    }),
-  );
+    });
+  });
 }
 
 test.describe("signup form", () => {

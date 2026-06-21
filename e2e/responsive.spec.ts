@@ -51,27 +51,25 @@ test("login page survives a 320px-wide screen (smallest common phone)", async ({
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
 });
 
-// On iOS Safari the InstallPrompt renders the "Add to Home Screen" hint as a
-// fixed bottom overlay (pointer-events-auto card) that covers the footer auth
-// links, intercepting clicks. It only shows on iOS, so dismiss it there before
-// using those links. The page remounts on navigation, so call after each goto.
-async function dismissIOSInstallPrompt(page: import("@playwright/test").Page) {
-  const ua = await page.evaluate(() => navigator.userAgent);
-  if (/iphone|ipad|ipod/i.test(ua)) {
-    await page.getByRole("button", { name: "Dismiss" }).click();
-  }
-}
-
 test("can navigate between login and signup, both fitting the viewport", async ({
   page,
 }) => {
+  // On iOS Safari the InstallPrompt renders an "Add to Home Screen" hint as a
+  // fixed bottom overlay that covers the footer auth links and intercepts their
+  // clicks. Present as an already-installed standalone PWA so the prompt never
+  // renders (it self-hides when standalone) — for every navigation in this test.
+  await page.addInitScript(() => {
+    Object.defineProperty(window.navigator, "standalone", {
+      value: true,
+      configurable: true,
+    });
+  });
+
   await page.goto("/login");
-  await dismissIOSInstallPrompt(page);
   await page.getByRole("link", { name: "Create an account" }).click();
   await expect(page).toHaveURL(/\/signup$/);
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
 
-  await dismissIOSInstallPrompt(page);
   await page.getByRole("link", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/login$/);
   expect(await horizontalOverflow(page)).toBeLessThanOrEqual(1);
