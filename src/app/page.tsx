@@ -63,17 +63,17 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <div
-          aria-hidden="true"
-          className="mx-auto mt-14 grid max-w-lg grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border text-center"
-        >
+        <div className="mx-auto mt-14 grid max-w-lg grid-cols-3 gap-px overflow-hidden rounded-xl border border-border bg-border text-center">
           {[
-            ["22", "Pathways"],
-            ["5", "Epochs"],
-            ["∞", "Timelines"],
-          ].map(([n, label]) => (
+            ["22", "22", "Pathways"],
+            ["5", "5", "Epochs"],
+            ["∞", "Countless", "Timelines"],
+          ].map(([display, sr, label]) => (
             <div key={label} className="bg-surface px-4 py-5">
-              <div className="font-serif text-2xl font-semibold text-amber">{n}</div>
+              <div className="font-serif text-2xl font-semibold text-amber">
+                <span aria-hidden="true">{display}</span>
+                <span className="sr-only">{sr}</span>
+              </div>
               <div className="mt-1 text-xs tracking-wide text-muted uppercase">
                 {label}
               </div>

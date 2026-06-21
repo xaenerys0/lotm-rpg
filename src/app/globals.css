@@ -24,7 +24,9 @@
   --color-gold: #f1c66b;
   --color-copper: #c0822e;
   --color-fog: #6b7480;
-  --color-crimson: #e5574e;
+  /* Lightened from #e5574e so danger TEXT (`text-crimson`) clears WCAG AA
+     (4.5:1) on surface and surface-raised, not just on background. */
+  --color-crimson: #ee6a60;
   --color-occult: #8b78e6;
   /* Lighter violet for occult-tinted *text* (clears AA on the dark slate). */
   --color-occult-bright: #b6a8f3;
