@@ -221,9 +221,11 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const runPrologueScene = useCallback(
     (config: ProviderConfig, name: string, bg: string, history: PrologueTurn[]) =>
       runPrologueRequest(async () => {
-        setCurrentScene(await generatePrologueScene(config, name, bg, history));
+        // Thread the chosen epoch so the becoming is narrated in the right era
+        // (the prologue runs on its own system prompt, not `assemblePrompt`).
+        setCurrentScene(await generatePrologueScene(config, name, bg, history, epoch));
       }),
-    [runPrologueRequest],
+    [runPrologueRequest, epoch],
   );
 
   // The finale is engine-decided: the cumulative affinity tally narrows the
@@ -235,9 +237,11 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
         const candidates = selectTopCandidates(
           tallyAffinities(history.map((t) => t.selectedAffinities)),
         );
-        setFinale(await generatePrologueFinale(config, name, bg, history, candidates));
+        setFinale(
+          await generatePrologueFinale(config, name, bg, history, candidates, epoch),
+        );
       }),
-    [runPrologueRequest],
+    [runPrologueRequest, epoch],
   );
 
   const handleBeginAIPrologue = useCallback(() => {
