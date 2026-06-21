@@ -88,6 +88,11 @@ import {
   PROLOGUE_MAX_AFFINITIES_PER_CHOICE,
   PROLOGUE_AFFINITY_REGIONS,
   PROLOGUE_PLAYABLE_PATHWAY_IDS,
+  PROLOGUE_EPOCH_SETTINGS,
+  PROLOGUE_DEFAULT_EPOCH,
+  resolvePrologueSetting,
+  buildPrologueSystemPrompt,
+  buildPrologueFinaleSystemPrompt,
   type PrologueTurn,
 } from "./prologue-client";
 import { PATHWAY_GROUPS, getGroupForPathway } from "@/lib/rules";
@@ -4627,6 +4632,57 @@ describe("generatePrologueScene", () => {
     expect(messages[1]!.content).toContain("A resident of Tingen City");
   });
 
+  it("narrates the becoming in the chosen epoch's setting, not Fifth-Epoch Tingen", async () => {
+    const content = makePrologueApiResponse();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+          }),
+        ),
+    } as Response);
+
+    // First Epoch (Age of Chaos): no gaslamps, no churches, no Tingen.
+    await generatePrologueScene(makeProviderConfig(), "Klein", "", [], 1);
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    const messages: ChatMessage[] = body.messages as ChatMessage[];
+    expect(messages[0]!.content).toContain("Age of Chaos");
+    expect(messages[0]!.content).not.toContain("Tingen");
+    expect(messages[0]!.content).not.toContain("gaslamps");
+    // The default background tracks the era too.
+    expect(messages[1]!.content).toContain("wild lands");
+    expect(messages[1]!.content).not.toContain("Tingen City");
+  });
+
+  it("falls back to the Fifth-Epoch setting for an unknown epoch id", async () => {
+    const content = makePrologueApiResponse();
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+          }),
+        ),
+    } as Response);
+
+    await generatePrologueScene(makeProviderConfig(), "Klein", "", [], 99);
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    const messages: ChatMessage[] = body.messages as ChatMessage[];
+    expect(messages[0]!.content).toContain("Tingen City");
+    expect(messages[1]!.content).toContain("A resident of Tingen City");
+  });
+
   it("throws MALFORMED_OUTPUT when narrative is missing", async () => {
     const parsed = JSON.parse(makePrologueApiResponse()) as Record<string, unknown>;
     delete parsed["narrative"];
@@ -4929,6 +4985,57 @@ describe("PROLOGUE_AFFINITY_REGIONS", () => {
   });
 });
 
+// ── Prologue epoch-setting Tests ──
+
+describe("prologue epoch settings", () => {
+  it("covers exactly the five canon epochs", () => {
+    expect(Object.keys(PROLOGUE_EPOCH_SETTINGS).map(Number).sort()).toEqual([
+      1, 2, 3, 4, 5,
+    ]);
+  });
+
+  it("every setting supplies non-empty era-specific copy", () => {
+    for (const setting of Object.values(PROLOGUE_EPOCH_SETTINGS)) {
+      expect(setting.setting.length).toBeGreaterThan(0);
+      expect(setting.concealment.length).toBeGreaterThan(0);
+      expect(setting.dailyLife.length).toBeGreaterThan(0);
+      expect(setting.atmosphere.length).toBeGreaterThan(0);
+      expect(setting.defaultBackground.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("only the Fifth Epoch names Tingen / gaslamps; earlier epochs do not", () => {
+    for (const [id, setting] of Object.entries(PROLOGUE_EPOCH_SETTINGS)) {
+      const blob = `${setting.setting} ${setting.concealment} ${setting.dailyLife} ${setting.atmosphere} ${setting.defaultBackground}`;
+      if (Number(id) === PROLOGUE_DEFAULT_EPOCH) {
+        expect(blob).toContain("Tingen");
+      } else {
+        expect(blob).not.toContain("Tingen");
+        expect(blob).not.toContain("gaslamp");
+      }
+    }
+  });
+
+  it("resolvePrologueSetting falls back to the Fifth Epoch for absent/unknown ids", () => {
+    expect(resolvePrologueSetting(undefined)).toBe(
+      PROLOGUE_EPOCH_SETTINGS[PROLOGUE_DEFAULT_EPOCH],
+    );
+    expect(resolvePrologueSetting(99)).toBe(
+      PROLOGUE_EPOCH_SETTINGS[PROLOGUE_DEFAULT_EPOCH],
+    );
+    expect(resolvePrologueSetting(2)).toBe(PROLOGUE_EPOCH_SETTINGS[2]);
+  });
+
+  it("the system-prompt builders weave the epoch setting into both prompts", () => {
+    const scene = buildPrologueSystemPrompt(3);
+    expect(scene).toContain("Cataclysm Epoch");
+    expect(scene).toContain("war-camp");
+    const finale = buildPrologueFinaleSystemPrompt(3);
+    expect(finale).toContain("Cataclysm Epoch");
+    expect(finale).toContain("threshold of becoming a Beyonder");
+  });
+});
+
 // ── generatePrologueFinale Tests ──
 
 describe("generatePrologueFinale", () => {
@@ -5007,6 +5114,26 @@ describe("generatePrologueFinale", () => {
     await expect(
       generatePrologueFinale(makeProviderConfig(), "Klein", "", makeHistory(), []),
     ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("renders the finale in the chosen epoch's setting", async () => {
+    mockOpenAIFetch(makeFinaleApiResponse([1]));
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    // Fourth Epoch (Epoch of the Gods): the Solomon Empire, not Tingen.
+    await generatePrologueFinale(
+      makeProviderConfig(),
+      "Klein",
+      "",
+      makeHistory(),
+      [1],
+      4,
+    );
+
+    const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+    const messages: ChatMessage[] = body.messages as ChatMessage[];
+    expect(messages[0]!.content).toContain("Solomon Empire");
+    expect(messages[0]!.content).not.toContain("Tingen");
   });
 
   it("de-duplicates repeated finale choice ids so React keys stay unique", async () => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { GameState } from "@/lib/ai";
+import { getEpoch } from "@/lib/lore";
 
 import {
   applySetback,
@@ -90,6 +91,39 @@ describe("applySetback", () => {
     const result = applySetback(state(), firstAlways);
     expect(result.state.location).toBe("A fog-choked alley in Tingen");
     expect(result.notes.join("\n")).toContain("no memory of how you got there");
+  });
+
+  it("anchors Fifth-Epoch displacement to the same city (explicit epoch)", () => {
+    const result = applySetback(state({ location: "Bayam Harbour" }), firstAlways, 0, 5);
+    expect(result.state.location).toBe("A fog-choked alley in Bayam");
+  });
+
+  it("draws an era-appropriate place in earlier epochs, never an Iron-Age venue", () => {
+    // Each pre-Fifth epoch wakes the character somewhere from its OWN setting,
+    // with no "in <city>" suffix (those eras have no city model) and no
+    // anachronistic Loen venue.
+    const eraPlaces: Record<number, string> = {
+      1: "A cold fire-pit at the edge of the camp",
+      2: "A slave-pen beneath the overseers' hall",
+      3: "A churned-mud trench at the camp's edge",
+      4: "A pilgrims' almshouse cot",
+    };
+    for (const [epoch, expected] of Object.entries(eraPlaces)) {
+      const result = applySetback(
+        state({ location: getEpoch(Number(epoch)).startingLocation }),
+        firstAlways,
+        0,
+        Number(epoch),
+      );
+      expect(result.state.location).toBe(expected);
+      expect(result.state.location).not.toContain(" in ");
+      expect(result.state.location.toLowerCase()).not.toContain("warehouse");
+    }
+  });
+
+  it("falls back to the Fifth Epoch for an unknown epoch id", () => {
+    const result = applySetback(state(), firstAlways, 0, 99);
+    expect(result.state.location).toBe("A fog-choked alley in Tingen");
   });
 
   it("records the reputation cost as a memory fact for the narrator", () => {

@@ -85,6 +85,8 @@ export function CombatEncounterView({
   identityContext,
   profileContext,
   recognitionContext,
+  epochContext,
+  cityNarration,
   onUpdate,
   onApplyResult,
   onExit,
@@ -107,6 +109,12 @@ export function CombatEncounterView({
   /** Recognition gap (character-info storage): set only while showing the true
    * face, so a drastically-changed character is narrated consistently in-fight. */
   recognitionContext?: string | null;
+  /** Epoch tone (issues #26/#29): so a fight in a pre-Iron-Age era is narrated
+   * in that era's framing, not the Fifth-Epoch default. Null for the Fifth. */
+  epochContext?: string | null;
+  /** Per-city narration tone (issue #23): one tone sentence for the current
+   * place. Null for cities with no specific tone. */
+  cityNarration?: string | null;
   onUpdate: (next: CombatEncounter) => void;
   onApplyResult: (result: CombatResult) => void;
   onExit: () => void;
@@ -146,6 +154,10 @@ export function CombatEncounterView({
       identityContext,
       profileContext,
       recognitionContext,
+      // Era + place tone so the fight reads in the right setting, not the
+      // Fifth-Epoch default (parity with the normal turn).
+      epochContext,
+      cityNarration,
       instruction: "combat",
       playerAction,
       abilities,

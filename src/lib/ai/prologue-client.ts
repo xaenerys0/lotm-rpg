@@ -149,18 +149,113 @@ function buildAffinityGuide(): string {
   ).join("\n");
 }
 
-export const PROLOGUE_SYSTEM_PROMPT = `You are running an interactive character creation prologue for a Lord of the Mysteries text RPG.
+// ── Per-epoch prologue setting (character epoch isolation) ──
+// The prologue is the ONE narration surface that runs on its own system prompt
+// (not `assemblePrompt`), so the epoch tone the main turn/combat get from
+// `epochNarrationDirective` would never reach it. The setting was hardcoded to
+// Fifth-Epoch Tingen, so a pre-Iron-Age character's "becoming" was narrated with
+// gaslamps and churches that don't exist in their era. This table supplies the
+// epoch-specific framing the prompt builders weave in; the mechanical contract
+// (affinity regions, choice rules, response format) stays identical for every era.
+//
+// Self-contained on purpose — the provider-agnostic AI layer keeps no dependency
+// on the lore/rules engines (mirrors PROLOGUE_AFFINITY_REGIONS). A data-integrity
+// test holds the keys to the five canon epochs. Grounded in the canon epoch tone
+// directives in `@/lib/lore` `epochs.ts`.
+export interface PrologueEpochSetting {
+  /** The SETTING paragraph: era, place, and what the world is like. */
+  setting: string;
+  /** One or two sentences on how the supernatural reads / what the character
+   * does-not-know in this era — replacing the Fifth-Epoch "it is hidden" frame. */
+  concealment: string;
+  /** The "early scenes" subject for SCENE STRUCTURE (era-appropriate daily life). */
+  dailyLife: string;
+  /** The WRITING GUIDELINES atmosphere line. */
+  atmosphere: string;
+  /** The fallback background when the player supplies none. */
+  defaultBackground: string;
+}
 
-SETTING: Tingen City, Kingdom of Loen. Year 1349 of the Gregorian Calendar. Victorian-era industrial city — gaslamps, steam trams, telegrams, coal smoke, brick tenements, horse-drawn cabs. The character begins as an ordinary person with no knowledge of the supernatural world.
+export const PROLOGUE_DEFAULT_EPOCH = 5;
+
+export const PROLOGUE_EPOCH_SETTINGS: Record<number, PrologueEpochSetting> = {
+  1: {
+    setting:
+      "The First Epoch — the Age of Chaos. The pathways have only just differentiated; there are no churches, no nations, no law — only scattered settlements, raw wilderness, and newly-changed Beyonders who walk the land as living calamities. Technology is bronze and bone; speech is elemental and superstitious. The character begins as an ordinary person of the wild lands.",
+    concealment:
+      "There is no hidden order to uncover and no authority that polices power: the world is lawless and superstitious, and the uncanny walks it openly as omen, spirit, and monster — wondrous and lethal, yet understood by no one.",
+    dailyLife: "daily survival in a settlement at the edge of the wild lands",
+    atmosphere:
+      "Raw, primal atmosphere: open wilderness, hide and timber, bronze and bone, fire and weather, the press of the dark beyond the firelight.",
+    defaultBackground:
+      "A dweller of a settlement in the wild lands, seeking something more.",
+  },
+  2: {
+    setting:
+      "The Second Epoch — the Dark Epoch. Ancient, inhuman gods rule openly and humanity survives in their shadow — enslaved, hidden, or hunted. Power belongs to inhuman courts and their overseers; hope itself is contraband. The character begins as an ordinary human in an enclave beneath an inhuman dominion.",
+    concealment:
+      "The inhuman gods and their overseers are openly, terrifyingly real and rule without question; the danger is not disbelief but exposure — a lowly human who comes into forbidden power must hide it from masters who would harvest or destroy them.",
+    dailyLife: "daily life in a human enclave beneath an inhuman dominion",
+    atmosphere:
+      "Oppressive, liturgical atmosphere: the shadow of inhuman masters, hushed voices, idols and overseers, the constant care not to be noticed.",
+    defaultBackground:
+      "A quiet soul in a human enclave under inhuman rule, seeking something more.",
+  },
+  3: {
+    setting:
+      "The Third Epoch — the Cataclysm Epoch. The Ancient Sun God has risen and humanity revolts; the old order burns in a world of war-camps, crusades, and falling thrones. Power is martial and fervent. The character begins as an ordinary person caught up in the uprising.",
+    concealment:
+      "Miracles and monsters ride the uprising openly under the Ancient Sun God's banner; amid the fervour and the slaughter the character's nascent power is a perilous secret, coveted by prophets and zealots alike.",
+    dailyLife: "daily life in and around a war-camp of the uprising",
+    atmosphere:
+      "Martial, fervent atmosphere: war-camps and banners, smoke and prayer, the clamour of a burning old order and a desperate uprising.",
+    defaultBackground: "A follower of the uprising's war-camp, seeking something more.",
+  },
+  4: {
+    setting:
+      "The Fourth Epoch — the Epoch of the Gods. The Solomon Empire spans the continent and gods intervene in person, administering miracles like taxes through divine courts, imperial bureaus, and angel-blooded houses. The character begins as an ordinary person on the outskirts of the imperial capital.",
+    concealment:
+      "Gods and their works are an open, administered fact — sanctioned, ranked, and taxed by the Solomon Empire and its divine courts; uncatalogued power that answers to no temple or bureau draws dangerous official attention.",
+    dailyLife: "daily life on the outskirts of the Solomon Empire's capital",
+    atmosphere:
+      "Imperial, theological atmosphere: processions and temples, miracles administered like law, pilgrims and petitioners under the eye of divine courts.",
+    defaultBackground:
+      "A petitioner on the outskirts of the Solomon Empire's capital, seeking something more.",
+  },
+  5: {
+    setting:
+      "Tingen City, Kingdom of Loen. Year 1349 of the Gregorian Calendar. A Victorian-era industrial city — gaslamps, steam trams, telegrams, coal smoke, brick tenements, horse-drawn cabs. The character begins as an ordinary person with no knowledge of the supernatural world.",
+    concealment:
+      "In this Iron-Age world the supernatural stays hidden beneath ordinary industry — when it surfaces it is rare, secret, and frightening — and concealed arms of the churches and other powers quietly police anyone who stumbles into it. The character does not know that any company, firm, or church hides such a division.",
+    dailyLife: "daily life in Tingen City",
+    atmosphere:
+      "Rich Victorian atmosphere: gaslamps, wool coats, telegraph wires, coal dust, fog, sounds of industry.",
+    defaultBackground: "A resident of Tingen City, seeking something more.",
+  },
+};
+
+/** Resolve a character epoch to its prologue setting; absent/unknown → Fifth. */
+export function resolvePrologueSetting(epoch?: number): PrologueEpochSetting {
+  return (
+    PROLOGUE_EPOCH_SETTINGS[epoch ?? PROLOGUE_DEFAULT_EPOCH] ??
+    PROLOGUE_EPOCH_SETTINGS[PROLOGUE_DEFAULT_EPOCH]
+  );
+}
+
+/** Build the epoch-aware scored-scene system prompt (Fifth-Epoch by default). */
+export function buildPrologueSystemPrompt(epoch?: number): string {
+  const s = resolvePrologueSetting(epoch);
+  return `You are running an interactive character creation prologue for a Lord of the Mysteries text RPG.
+
+SETTING: ${s.setting}
 
 YOUR TASK: Guide the player through an atmospheric prologue of natural length — typically 6 to 8 scenes. You narrate scenes and offer choices. Do NOT judge or score the character — the system determines the character's Beyonder affinity from the choices the player actually makes. You never decide, name, or hint at a pathway.
 
-CHARACTER'S STARTING KNOWLEDGE — the character does NOT know:
-• That Beyonders, potions, or any supernatural power system exists
-• The names of pathways, sequences, or Beyonder organizations
-• That any security company, private firm, or church has a hidden supernatural division
-• The internal workings, hierarchy, or Beyonder nature of any organization
-The supernatural, when it appears, must feel genuinely mysterious and frightening — not categorized or understood by the character.
+CHARACTER'S STARTING KNOWLEDGE — the character begins as an ordinary person who does NOT know:
+• That Beyonders, potions, or any classifiable system of supernatural power exists
+• The names of pathways, sequences, or any Beyonder organization, or that powers can be ranked or deliberately gained
+${s.concealment}
+The power the character is moving toward must feel genuinely mysterious — never named, ranked, categorized, or explained as a system.
 
 THE AFFINITY REGIONS (NEVER name or hint at these in narration — they only shape what each choice expresses). Each region is a cluster of kindred temperaments; the affinity ids in each region are NEIGHBORS that share a texture:
 ${buildAffinityGuide()}
@@ -173,14 +268,14 @@ CHOICE CONTRACT (every scene):
 • VARY which regions and which ids appear from scene to scene. Do not surface the same options in lockstep every scene.
 
 SCENE STRUCTURE:
-• Early scenes: daily life in Tingen. Grounded and atmospheric. Reveal instincts and values through ordinary situations.
+• Early scenes: ${s.dailyLife}. Grounded and atmospheric. Reveal instincts and values through ordinary situations.
 • Later scenes: something uncanny fractures the ordinary — a disturbing discovery, an inexplicable encounter, a moment of crisis.
 
 READINESS:
 • Set \`readyToConclude: true\` only once the story feels complete (typically 6–8 scenes). It is advisory — the system enforces the minimum and maximum scene counts and authors the conclusion itself. You do not author the conclusion or choose a pathway.
 
 WRITING GUIDELINES:
-• Rich Victorian atmosphere: gaslamps, wool coats, telegraph wires, coal dust, fog, sounds of industry.
+• ${s.atmosphere}
 • Address the character by name. Use the provided background naturally.
 • Each scene: 2–4 paragraphs, ends with dramatic tension.
 
@@ -191,12 +286,19 @@ RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
   {"id":"c","text":"...","affinities":{"4":2,"5":1}},
   {"id":"d","text":"...","affinities":{"2":1}}
 ],"readyToConclude":false}`;
+}
 
-export const PROLOGUE_FINALE_SYSTEM_PROMPT = `You are writing the FINALE scene of a Lord of the Mysteries character-creation prologue.
+/** The Fifth-Epoch scored-scene system prompt (the baseline). */
+export const PROLOGUE_SYSTEM_PROMPT = buildPrologueSystemPrompt(PROLOGUE_DEFAULT_EPOCH);
 
-SETTING: Tingen City, Kingdom of Loen, year 1349 — a Victorian-era industrial city of gaslamps, coal smoke, and fog. The character has just lived through the prologue and now stands at the threshold of becoming a Beyonder.
+/** Build the epoch-aware finale system prompt (Fifth-Epoch by default). */
+export function buildPrologueFinaleSystemPrompt(epoch?: number): string {
+  const s = resolvePrologueSetting(epoch);
+  return `You are writing the FINALE scene of a Lord of the Mysteries character-creation prologue.
 
-YOUR TASK: Write a single "chance encounter" scene that places the character at the exact moment a choice of potions is offered to them — by a mysterious figure, a found formula, an inherited box, or some other evocative device that fits the story so far. End the narrative on the brink of the decision.
+SETTING: ${s.setting} The character has just lived through the prologue and now stands at the threshold of becoming a Beyonder.
+
+YOUR TASK: Write a single "chance encounter" scene that places the character at the exact moment a choice of potions is offered to them — by a mysterious figure, a found formula, an inherited box, or some other evocative device that fits the story so far and the era. End the narrative on the brink of the decision.
 
 The player will be offered EXACTLY the candidate potions provided to you, one choice each. You do NOT decide which potion the character takes — the player does. You also do NOT name pathways, sequences, or any Beyonder terminology.
 
@@ -207,16 +309,23 @@ POTION CHOICES:
 
 RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
 {"narrative":"...","choices":[{"id":"p<id>","text":"...","affinities":{"<id>":1}}, ...]}`;
+}
+
+/** The Fifth-Epoch finale system prompt (the baseline). */
+export const PROLOGUE_FINALE_SYSTEM_PROMPT =
+  buildPrologueFinaleSystemPrompt(PROLOGUE_DEFAULT_EPOCH);
 
 function buildBaseMessages(
   characterName: string,
   characterBackground: string,
+  epoch?: number,
 ): ChatMessage[] {
+  const setting = resolvePrologueSetting(epoch);
   return [
-    { role: "system", content: PROLOGUE_SYSTEM_PROMPT },
+    { role: "system", content: buildPrologueSystemPrompt(epoch) },
     {
       role: "user",
-      content: `Character name: ${characterName}\nBackground: ${characterBackground || "A resident of Tingen City, seeking something more."}\n\nBegin the prologue. Set the opening scene for this character.`,
+      content: `Character name: ${characterName}\nBackground: ${characterBackground || setting.defaultBackground}\n\nBegin the prologue. Set the opening scene for this character.`,
     },
   ];
 }
@@ -353,9 +462,10 @@ export async function generatePrologueScene(
   characterName: string,
   characterBackground: string,
   history: PrologueTurn[],
+  epoch?: number,
 ): Promise<AIPrologueResponse> {
   const messages: ChatMessage[] = [
-    ...buildBaseMessages(characterName, characterBackground),
+    ...buildBaseMessages(characterName, characterBackground, epoch),
     ...buildHistoryMessages(history),
   ];
   const { content, obj, narrative } = await executePrologueRequest(config, messages);
@@ -410,6 +520,7 @@ export async function generatePrologueFinale(
   characterBackground: string,
   history: PrologueTurn[],
   candidatePathwayIds: number[],
+  epoch?: number,
 ): Promise<AIPrologueFinale> {
   if (candidatePathwayIds.length === 0) {
     throw new AIError(
@@ -419,8 +530,8 @@ export async function generatePrologueFinale(
   }
 
   const messages: ChatMessage[] = [
-    { role: "system", content: PROLOGUE_FINALE_SYSTEM_PROMPT },
-    ...buildBaseMessages(characterName, characterBackground).slice(1),
+    { role: "system", content: buildPrologueFinaleSystemPrompt(epoch) },
+    ...buildBaseMessages(characterName, characterBackground, epoch).slice(1),
     ...buildHistoryMessages(history),
     {
       role: "user",
