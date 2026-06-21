@@ -120,10 +120,11 @@ describe("accessibility — character creation", () => {
     );
   });
 
-  it("the start picker (location + archetypes) has no violations (issue #131)", async () => {
-    // Drive the manual path to the first-potion step, where the start picker —
-    // now offering plain locations AND start archetypes (begin in an NPC's
-    // circle) — renders, and assert the new optgroup-bearing select is clean.
+  it("the start chooser (place / circle / origin cards) has no violations (issues #131/#132)", async () => {
+    // Drive the manual path to the first-potion step, where the start chooser —
+    // now a two-level card picker (opening families + browsable option cards)
+    // that replaced the single crammed <select> — renders, and assert each
+    // revealed family is clean.
     const { container } = render(
       <CharacterCreation onComplete={vi.fn()} onBack={vi.fn()} />,
     );
@@ -133,15 +134,19 @@ describe("accessibility — character creation", () => {
       target: { value: "Test" },
     });
     fireEvent.click(screen.getByRole("button", { name: /^Continue$/ }));
-    // The picker is present (its label) AND actually lists a start archetype —
-    // so this guards the new optgroup-bearing control, not just the plain select.
-    const picker = screen.getByLabelText(/Where Your Chronicle Begins/i);
-    screen.getByRole("option", { name: /junior Nighthawk/i });
+    // The chooser is present (its fieldset legend) and the opening families are
+    // selectable toggle cards (aria-pressed).
+    screen.getByText(/Where Your Chronicle Begins/i);
+
+    // "Within someone's circle" reveals the start-archetype cards (begin in an
+    // NPC's circle) — each card shows its label AND blurb inline (no dropdown).
+    fireEvent.click(screen.getByRole("button", { name: /Within someone's circle/i }));
+    screen.getByRole("button", { name: /junior Nighthawk/i });
     await expectNoAxeViolationsInContainer(container);
 
-    // Open the "Describe your own circle" form and re-scan — the custom inputs
-    // (tie, companions add-control + chips, location) must be accessible too.
-    fireEvent.change(picker, { target: { value: "custom" } });
+    // "Author your own circle" reveals the custom inputs (tie, companions
+    // add-control + chips, location) — all must be accessible too.
+    fireEvent.click(screen.getByRole("button", { name: /Author your own circle/i }));
     screen.getByLabelText(/Your tie to this world/i);
     const companion = screen.getByLabelText(/Who stands with you/i);
     fireEvent.change(companion, { target: { value: "Mara" } });
@@ -149,13 +154,13 @@ describe("accessibility — character creation", () => {
     screen.getByRole("button", { name: /Remove Mara/i });
     await expectNoAxeViolationsInContainer(container);
 
-    // Reveal the gated origin starts (issue #132) and re-scan — the affordance
-    // checkbox and the origin optgroup must be accessible too.
-    const originToggle = screen.getByRole("checkbox", {
-      name: /Begin as a native of a sealed/i,
-    });
-    fireEvent.click(originToggle);
-    screen.getByRole("option", { name: /Born in the City of Silver/i });
+    // Reveal the gated origin starts (issue #132): the affordance checkbox
+    // surfaces the "A sealed origin" family, whose cards must be accessible too.
+    fireEvent.click(
+      screen.getByRole("checkbox", { name: /Begin as a native of a sealed/i }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /A sealed origin/i }));
+    screen.getByRole("button", { name: /Born in the City of Silver/i });
     await expectNoAxeViolationsInContainer(container);
   });
 });
