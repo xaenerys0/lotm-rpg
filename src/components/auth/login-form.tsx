@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
+const labelClass = "block text-sm font-medium text-foreground";
+const inputClass =
+  "mt-1.5 block w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted transition-colors focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30";
+
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -35,7 +39,7 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-foreground">
+        <label htmlFor="email" className={labelClass}>
           Email
         </label>
         <input
@@ -47,12 +51,12 @@ export function LoginForm() {
           autoComplete="email"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "login-error" : undefined}
-          className="mt-1 block w-full rounded border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
+          className={inputClass}
           placeholder="beyonder@tingen.city"
         />
       </div>
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-foreground">
+        <label htmlFor="password" className={labelClass}>
           Password
         </label>
         <input
@@ -65,21 +69,21 @@ export function LoginForm() {
           autoComplete="current-password"
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? "login-error" : undefined}
-          className="mt-1 block w-full rounded border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber"
+          className={inputClass}
           placeholder="••••••••"
         />
       </div>
       {error && (
-        <p id="login-error" role="alert" className="text-sm text-red-400">
+        <p id="login-error" role="alert" className="text-sm text-crimson">
           {error}
         </p>
       )}
       <button
         type="submit"
         disabled={loading}
-        className="w-full rounded bg-amber px-4 py-2 font-medium text-background transition-colors hover:bg-gold disabled:opacity-50"
+        className="w-full rounded-lg bg-amber px-4 py-2.5 font-semibold text-background transition-colors hover:bg-gold disabled:opacity-50"
       >
-        {loading ? "Signing in..." : "Sign In"}
+        {loading ? "Signing in…" : "Sign In"}
       </button>
     </form>
   );

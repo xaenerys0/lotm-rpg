@@ -10,6 +10,87 @@ import {
   useSessionSummaries,
 } from "@/lib/react/session-store";
 
+// Clean 16px line icons keyed by route. Decorative (aria-hidden) — the label
+// always carries the meaning.
+function Icon({ name }: { name: string }) {
+  const common = {
+    width: 16,
+    height: 16,
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.8,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+    "aria-hidden": true,
+  };
+  const paths: Record<string, React.ReactNode> = {
+    "/play": <path d="M4 5v14l14-7z" />,
+    "/character": (
+      <>
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
+      </>
+    ),
+    "/journal": (
+      <>
+        <path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z" />
+        <path d="M8 8h8M8 12h8" />
+      </>
+    ),
+    "/map": (
+      <>
+        <path d="M9 4 4 6v14l5-2 6 2 5-2V4l-5 2-6-2z" />
+        <path d="M9 4v14M15 6v14" />
+      </>
+    ),
+    "/glossary": (
+      <>
+        <path d="M6 4h9a3 3 0 0 1 3 3v13H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z" />
+        <path d="M9 9h6" />
+      </>
+    ),
+    "/market": (
+      <>
+        <path d="M4 9h16l-1 11H5z" />
+        <path d="M9 9V6a3 3 0 0 1 6 0v3" />
+      </>
+    ),
+    "/profile": (
+      <>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M12 8v8M8 12h8" />
+      </>
+    ),
+    "/leaderboard": (
+      <>
+        <path d="M6 20V11M12 20V5M18 20v-6" />
+      </>
+    ),
+    "/society": (
+      <>
+        <circle cx="9" cy="9" r="3" />
+        <circle cx="16" cy="11" r="2.5" />
+        <path d="M4 20c0-3 2.5-5 5-5s5 2 5 5M14 20c0-2 1.5-3.5 2.5-3.5S20 18 20 20" />
+      </>
+    ),
+    "/guide": (
+      <>
+        <circle cx="12" cy="12" r="8" />
+        <path d="M9.5 9.5a2.5 2.5 0 0 1 4.5 1.5c0 1.5-2 2-2 3.5" />
+        <path d="M12 17.5h.01" />
+      </>
+    ),
+    "/settings": (
+      <>
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+      </>
+    ),
+  };
+  return <svg {...common}>{paths[name]}</svg>;
+}
+
 const navItems = [
   { href: "/play", label: "Dashboard" },
   { href: "/character", label: "Character" },
@@ -40,29 +121,35 @@ function CharacterSwitcher() {
     summaries.find((s) => s.id === id)?.characterName ?? "Unnamed Beyonder";
 
   return (
-    <div className="border-b border-border px-4 py-3">
-      <p className="text-[10px] tracking-widest text-muted uppercase">Active character</p>
-      {summaries.length === 1 ? (
-        <p className="mt-1 truncate text-sm font-medium text-amber">{label(activeId)}</p>
-      ) : (
-        <>
-          <label htmlFor="active-character" className="sr-only">
-            Active character
-          </label>
-          <select
-            id="active-character"
-            value={activeId ?? ""}
-            onChange={(e) => saveActiveSessionId(e.target.value)}
-            className="mt-1 w-full truncate rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
-          >
-            {summaries.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.characterName ?? "Unnamed Beyonder"} — Seq {s.sequenceLevel}
-              </option>
-            ))}
-          </select>
-        </>
-      )}
+    <div className="px-3 pb-3">
+      <div className="rounded-lg border border-border bg-surface-raised/60 px-3 py-2.5">
+        <p className="text-[10px] font-medium tracking-wider text-muted uppercase">
+          Active character
+        </p>
+        {summaries.length === 1 ? (
+          <p className="mt-1 truncate text-sm font-semibold text-foreground">
+            {label(activeId)}
+          </p>
+        ) : (
+          <>
+            <label htmlFor="active-character" className="sr-only">
+              Active character
+            </label>
+            <select
+              id="active-character"
+              value={activeId ?? ""}
+              onChange={(e) => saveActiveSessionId(e.target.value)}
+              className="mt-1 w-full truncate rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-1 focus:ring-amber/40"
+            >
+              {summaries.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.characterName ?? "Unnamed Beyonder"} — Seq {s.sequenceLevel}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -97,14 +184,14 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
   return (
     <>
       {/* Mobile top bar */}
-      <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur-sm md:hidden">
-        <span className="font-serif text-lg font-bold text-amber">
+      <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-surface/90 px-4 backdrop-blur-md md:hidden">
+        <span className="font-serif text-lg font-semibold text-foreground">
           Lord of the Mysteries
         </span>
         <button
           type="button"
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="flex h-10 w-10 items-center justify-center rounded text-foreground transition-colors hover:bg-amber/10 hover:text-amber"
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-foreground transition-colors hover:bg-surface-raised"
           aria-label={mobileOpen ? "Close navigation" : "Open navigation"}
           aria-expanded={mobileOpen}
           aria-controls="game-sidebar"
@@ -117,6 +204,7 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
             stroke="currentColor"
             strokeWidth="1.5"
             strokeLinecap="round"
+            aria-hidden="true"
           >
             {mobileOpen ? (
               <>
@@ -137,7 +225,7 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
       {/* Mobile backdrop */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
+          className="fixed inset-0 z-40 bg-background/70 backdrop-blur-sm md:hidden"
           onClick={() => setMobileOpen(false)}
           aria-hidden="true"
         />
@@ -151,17 +239,16 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
           mobileOpen ? "translate-x-0" : "-translate-x-full max-md:invisible"
         }`}
       >
-        <div className="relative border-b border-border px-6 py-5">
-          <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-amber/[0.03] to-transparent"
-            aria-hidden="true"
-          />
+        <div className="px-5 py-5">
           {/* Branding, not a document heading — keeping it a non-heading avoids
               an h2 landing before each page's h1 (heading order, WCAG 1.3.1). */}
-          <p className="relative font-serif text-xl font-bold tracking-tight text-amber">
-            Lord of the Mysteries
+          <p className="font-serif text-lg font-semibold tracking-tight text-foreground">
+            Lord of the{" "}
+            <span className="bg-gradient-to-r from-gold to-amber bg-clip-text text-transparent">
+              Mysteries
+            </span>
           </p>
-          <p className="relative mt-1 text-xs tracking-widest text-muted uppercase">
+          <p className="mt-0.5 text-[11px] tracking-wider text-muted uppercase">
             Fifth Epoch
           </p>
         </div>
@@ -170,11 +257,8 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
 
         {/* The nav list owns the overflow: it flexes to fill the space between
             the pinned header/switcher above and the sign-out footer below, and
-            scrolls internally (overflow-y-auto) when the items exceed the
-            viewport height — so the footer stays reachable and no item is
-            clipped on short screens. This is the responsive strategy for the
-            growing item list; don't move the scroll to the page. */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Game navigation">
+            scrolls internally when the items exceed the viewport height. */}
+        <nav className="flex-1 overflow-y-auto px-3 py-1" aria-label="Game navigation">
           <ul className="space-y-0.5" role="list">
             {navItems.map(({ href, label }) => {
               const isActive = pathname === href || pathname.startsWith(href + "/");
@@ -183,21 +267,22 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
                   <Link
                     href={href}
                     onClick={() => setMobileOpen(false)}
-                    className={`group flex items-center rounded-md px-3 py-2.5 text-sm transition-[color,background-color,box-shadow] duration-150 ${
+                    className={`group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors duration-150 ${
                       isActive
-                        ? "bg-amber/10 font-medium text-amber shadow-[inset_2px_0_0_var(--color-amber)]"
-                        : "text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground"
+                        ? "bg-amber/10 font-medium text-amber"
+                        : "text-muted hover:bg-surface-raised hover:text-foreground"
                     }`}
                     aria-current={isActive ? "page" : undefined}
                   >
                     <span
-                      className={`mr-3 inline-block h-1 w-1 rounded-full transition-all duration-150 ${
+                      className={
                         isActive
-                          ? "h-1.5 w-1.5 bg-amber shadow-[0_0_6px_var(--color-amber)]"
-                          : "bg-muted/30 group-hover:bg-muted/60"
-                      }`}
-                      aria-hidden="true"
-                    />
+                          ? "text-amber"
+                          : "text-fog transition-colors group-hover:text-foreground"
+                      }
+                    >
+                      <Icon name={href} />
+                    </span>
                     {label}
                   </Link>
                 </li>
@@ -206,21 +291,13 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
           </ul>
         </nav>
 
-        <div className="mx-6 flex items-center gap-3" aria-hidden="true">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          <span className="text-[10px] text-muted/30">&#9670;</span>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-        </div>
-
-        <div className="px-4 py-4">
-          <p className="truncate text-sm text-foreground/70">
-            {userEmail || "Unknown user"}
-          </p>
+        <div className="border-t border-border px-4 py-4">
+          <p className="truncate text-sm text-muted">{userEmail || "Unknown user"}</p>
           <button
             type="button"
             onClick={handleSignOut}
             disabled={signingOut}
-            className="mt-2 inline-flex min-h-[24px] items-center text-xs text-muted transition-colors hover:text-amber disabled:opacity-50"
+            className="mt-2 inline-flex min-h-[24px] items-center text-xs font-medium text-muted transition-colors hover:text-amber disabled:opacity-50"
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>
