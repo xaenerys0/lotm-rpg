@@ -385,6 +385,51 @@ const EARLIER_EPOCH_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Feysac / Feynapotter-region archetypes (world build-out 7, issue #136) ──
+// A Combat-church squire in the militarist north (Feysac is a real travel
+// region) and a Knowledge-faith acolyte in Lenburg (an off-map nation — the map
+// shows the neutral "uncertain" atlas until first travel, the Stoen pattern).
+const FEYSAC_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "feysac-combat-squire",
+    label: "A squire of the Church of the God of Combat",
+    epoch: 5,
+    location: "Feysac Empire",
+    relationship: "subordinate",
+    circleNpcs: ["Larrion"],
+    affiliationOrg: "combat-church-overview",
+    blurb:
+      "A sworn squire of the war-faith in the militarist Feysac Empire, serving under the Chief Shepherd Larrion.",
+    openingBeat: `The strange draught still burns in me as I stand in the cold shadow of the Great Twilight Hall outside Saint Millom, my training-blade heavy at my side — I am the lowest squire of the war-faith, sworn under the Chief Shepherd Larrion, and whatever I have just become, the brothers who prize only honest strength must never learn of it. ${SCENE_CUE}`,
+    pathwayAffinity: [11],
+    seeds: {
+      society: { orgSlug: "combat-church-overview", role: "squire" },
+      facts: [
+        "You are a sworn squire of the Church of the God of Combat in the Feysac Empire, serving under the Chief Shepherd Larrion among the war-faith's brothers.",
+      ],
+    },
+  },
+  {
+    id: "lenburg-knowledge-acolyte",
+    label: "An acolyte of the Holy Temple of Knowledge in Lenburg",
+    epoch: 5,
+    location: "Lenburg",
+    relationship: "subordinate",
+    circleNpcs: ["Edwina Edwards"],
+    affiliationOrg: "knowledge-church-overview",
+    blurb:
+      "A junior scholar of the Church of Knowledge in Azshara, under the Lenburg-born archbishop Edwina Edwards.",
+    openingBeat: `The strange draught still burns in me as I shelve a stack of brass-clasped tomes in the Holy Temple of Knowledge at Azshara, the seat of the faith that rules Lenburg — I answer to the authority of the archbishop Edwina Edwards, and in a realm of endless examinations a secret is the one thing that cannot be filed away, so what I have just become I must keep off every ledger. ${SCENE_CUE}`,
+    pathwayAffinity: [10],
+    seeds: {
+      society: { orgSlug: "knowledge-church-overview", role: "acolyte" },
+      facts: [
+        "You serve as a junior acolyte of the Church of the God of Knowledge and Wisdom at the Holy Temple of Knowledge in Azshara, Lenburg, under the authority of the Lenburg-born archbishop Edwina Edwards.",
+      ],
+    },
+  },
+] as const;
+
 /** Every start archetype, all regions/epochs (append-only) — including gated
  * ORIGIN archetypes (so `getStartArchetype` resolves them by id). Default
  * selection filters origins out; `forsakenLandArchetypesForEpoch` filters in. */
@@ -395,6 +440,7 @@ export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...INTIS_ARCHETYPES,
   ...FORSAKEN_ARCHETYPES,
   ...EARLIER_EPOCH_ARCHETYPES,
+  ...FEYSAC_ARCHETYPES,
 ];
 
 /**

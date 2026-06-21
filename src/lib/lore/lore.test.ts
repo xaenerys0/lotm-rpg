@@ -14,6 +14,7 @@ import {
   FOURTH_EPOCH_LORE,
   FIFTH_EPOCH_LORE,
   FORSAKEN_LAND_LORE,
+  FEYSAC_LORE,
   HISTORICAL_LORE,
   FOOL_PATHWAY_LORE,
   selectCuratedLore,
@@ -201,6 +202,57 @@ describe("Lore content coverage", () => {
 
   it("has Fifth Epoch baseline entries", () => {
     expect(FIFTH_EPOCH_LORE.length).toBeGreaterThanOrEqual(3);
+  });
+
+  describe("Feysac Empire & Feynapotter Kingdom (issue #136)", () => {
+    it("authors the northern nations as ungated Fifth-Epoch surface geography", () => {
+      expect(FEYSAC_LORE.length).toBeGreaterThanOrEqual(5);
+      expect(FEYSAC_LORE.every((e) => e.category === "location")).toBe(true);
+      expect(FEYSAC_LORE.every((e) => e.epoch === 5)).toBe(true);
+      expect(FEYSAC_LORE.every((e) => e.narratorOnly === false)).toBe(true);
+      expect(FEYSAC_LORE.every((e) => e.sequences.length === 0)).toBe(true);
+    });
+
+    it("deepens Feysac and adds Feynapotter + the Knowledge splinter-states, city-keyed", () => {
+      // Feysac is the existing travel region — its deepening keys to `feysac`.
+      expect(getLoreBySlug("feysac-saint-millom")?.city).toBe("feysac");
+      expect(getLoreBySlug("feysac-imperial-state")?.city).toBe("feysac");
+      // The foreign nations carry their own lore-only city keys.
+      expect(getLoreBySlug("feynapotter-kingdom")?.city).toBe("feynapotter");
+      expect(getLoreBySlug("lenburg-knowledge-realm")?.city).toBe("lenburg");
+      expect(getLoreBySlug("masin-knowledge-state")?.city).toBe("masin");
+      expect(getLoreBySlug("segar-knowledge-state")?.city).toBe("segar");
+      // Each foreign nation's lore reaches a character located there.
+      for (const city of ["feynapotter", "lenburg", "masin", "segar"]) {
+        expect(getLoreByCity(city).length).toBeGreaterThanOrEqual(1);
+      }
+    });
+
+    it("adds the Combat-church structure entry with its named member, leak-safe", () => {
+      const structure = getLoreBySlug("combat-church-structure");
+      expect(structure?.category).toBe("organization");
+      expect(structure?.city).toBe("feysac");
+      expect(structure?.narratorOnly).toBe(false);
+      // The only canon-named member is the Chief Shepherd Larrion (the dioceses
+      // are listed by office, not name) — no members are invented.
+      expect(structure?.npcs).toContain("Larrion");
+    });
+
+    it("adds the Feysac NPCs with relationship data, never pathway-keyed (leak rule)", () => {
+      const names = NPC_LORE.flatMap((e) => e.npcs);
+      for (const name of ["Awatoma Einhorn", "Egor Einhorn", "Ozil"]) {
+        expect(names).toContain(name);
+      }
+      // The Einhorn naval house is city-keyed to Feysac; Ozil operates in Bayam.
+      expect(getLoreBySlug("npc-awatoma-einhorn")?.city).toBe("feysac");
+      expect(getLoreBySlug("npc-egor-einhorn")?.city).toBe("feysac");
+      expect(getLoreBySlug("npc-ozil")?.city).toBe("bayam");
+      // None is pathway-keyed; all narrator-only for the Beyonder/Angel truths.
+      for (const slug of ["npc-awatoma-einhorn", "npc-egor-einhorn", "npc-ozil"]) {
+        expect(getLoreBySlug(slug)?.pathway).toBeUndefined();
+        expect(getLoreBySlug(slug)?.narratorOnly).toBe(true);
+      }
+    });
   });
 
   it("deepens Trier and the Intis Republic (issue #135)", () => {
@@ -834,6 +886,7 @@ describe("Total lore corpus", () => {
       BAYAM_LORE.length +
       REGIONS_LORE.length +
       LOEN_LORE.length +
+      FEYSAC_LORE.length +
       FORSAKEN_LAND_LORE.length +
       HISTORICAL_LORE.length +
       FIRST_EPOCH_LORE.length +

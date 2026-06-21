@@ -610,4 +610,31 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tokenCount: 250,
     narratorOnly: true,
   },
+  // ── Church of the God of Combat — structure & members (world build-out 7,
+  // issue #136). Complements the #139 `combat-church-overview` (doctrine) and
+  // gated `combat-church-inner-secret` (Badheil) with the church's ranks,
+  // dioceses, and roster. CANON (corpus-verified): the corpus names almost no
+  // Combat clergy beyond the Chief Shepherd Larrion (the dioceses are listed by
+  // OFFICE, not name) — so no members are invented. "Warrior"/"Hunter" are
+  // Twilight Giant SEQUENCE names (Seq 9 / Seq 4), not separate pathways.
+  {
+    slug: "combat-church-structure",
+    title: "Church of the God of Combat — Structure & Ranks",
+    category: "organization",
+    content: `Beneath its Chief Shepherd, the Church of the God of Combat is a martial hierarchy seated at the Great Twilight Hall outside Saint Millom — a hall raised in the likeness of the Giant King's Court, by tradition the old residence of Giant King Aurmir himself. The Chief Shepherd Larrion commands the dioceses of the Feysac heartland and the colonies: Gargas (whose archbishop is but a Sequence 5 Guardian), Sonia Island, and West Balam, with the Holy Lake Cathedral at Raklev among its seats. Its clergy climb the Twilight Giant ladder rung by rung — Warrior, Pugilist, Weapon Master, Dawn Paladin, Guardian, Demon Hunter, Silver Knight, Glory — so that the "Warrior" and "Hunter" outsiders speak of are not separate paths but sequences of the one Twilight Giant Pathway the Church wields (the Death and Darkness paths it holds only in part). It keeps no separately named inquisition; its Beyonders themselves are its enforcers, and the policing of every Beyonder incident in the empire is the Church's own charge. A brotherhood of men, height-proud and hard-drinking, it brooks no rival faith in Feysac and has feuded with the Church of the Evernight Goddess since its founding.`,
+    epoch: 5,
+    city: "feysac",
+    npcs: ["Larrion"],
+    sequences: [],
+    tags: [
+      "god-of-combat",
+      "church",
+      "feysac",
+      "twilight-giant-pathway",
+      "structure",
+      "religion",
+    ],
+    tokenCount: 255,
+    narratorOnly: false,
+  },
 ];

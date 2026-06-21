@@ -182,6 +182,29 @@ describe("START_ARCHETYPES data integrity", () => {
     );
   });
 
+  it("ships the Feysac & Lenburg archetypes (issue #136)", () => {
+    const squire = getStartArchetype("feysac-combat-squire");
+    expect(squire?.epoch).toBe(5);
+    expect(squire?.origin).toBeUndefined();
+    expect(squire?.location).toBe("Feysac Empire");
+    expect(squire?.circleNpcs).toContain("Larrion");
+    expect(squire?.affiliationOrg).toBe("combat-church-overview");
+    expect(squire?.pathwayAffinity).toContain(11); // Twilight Giant
+
+    const acolyte = getStartArchetype("lenburg-knowledge-acolyte");
+    expect(acolyte?.epoch).toBe(5);
+    expect(acolyte?.location).toBe("Lenburg");
+    expect(acolyte?.circleNpcs).toContain("Edwina Edwards");
+    expect(acolyte?.affiliationOrg).toBe("knowledge-church-overview");
+    expect(acolyte?.pathwayAffinity).toContain(10); // White Tower
+
+    // Both are default (non-origin) Fifth-Epoch starts surfaced by the picker.
+    const fifthIds = startArchetypesForEpoch(5).map((a) => a.id);
+    expect(fifthIds).toEqual(
+      expect.arrayContaining(["feysac-combat-squire", "lenburg-knowledge-acolyte"]),
+    );
+  });
+
   it("ships the earlier-epoch archetypes, era-tagged and never Fifth (issue #141)", () => {
     // Epoch 3 (Glorious Era) and Epoch 4 (Solomon Empire) starts, each tied to a
     // named historical figure from history.ts and surfaced by the SAME picker.
