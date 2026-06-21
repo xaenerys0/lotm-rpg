@@ -394,6 +394,23 @@ function personaPromptContexts(session: GameSession): {
   };
 }
 
+// Epoch + per-city narrator tone, derived from a session's world state and
+// shared by the normal turn (`buildAICallParams`) and the combat narration call
+// site so a fight reads in the right era and place rather than the Fifth-Epoch
+// default — the same drift-proofing the persona contexts get above.
+function worldTonePromptContexts(session: GameSession): {
+  epochContext: string | null;
+  cityNarration: string | null;
+} {
+  return {
+    // Epoch tone (issues #26/#29): null for the Fifth-Epoch baseline.
+    epochContext: epochNarrationDirective(session.gameState.epoch),
+    // Per-city narration tone (issue #23): one tone sentence per city, null
+    // for cities (incl. the Tingen start) with no specific tone.
+    cityNarration: cityNarrationDirective(session.gameState.location),
+  };
+}
+
 function buildAICallParams(currentSession: GameSession) {
   const pathway = getPathway(currentSession.gameState.pathwayId);
   const seq = getSequence(
@@ -412,8 +429,8 @@ function buildAICallParams(currentSession: GameSession) {
     actingReqs: acting,
     // Persona / true-self / recognition narrator contexts (shared helper).
     ...personaPromptContexts(currentSession),
-    // Epoch tone (issues #26/#29): null for the Fifth-Epoch baseline.
-    epochContext: epochNarrationDirective(currentSession.gameState.epoch),
+    // Epoch + per-city narrator tone (shared helper, also used by combat).
+    ...worldTonePromptContexts(currentSession),
     // Curated guardrail selection lives in @/lib/lore (tested); the component
     // stays a thin caller (issue #63).
     loreContext: selectCuratedLore(
@@ -425,9 +442,6 @@ function buildAICallParams(currentSession: GameSession) {
       // the pathway they have actually reached (issue: P2 sequence gate).
       currentSession.gameState.sequenceLevel,
     ),
-    // Per-city narration tone (issue #23): one tone sentence per city, null
-    // for cities (incl. the Tingen start) with no specific tone.
-    cityNarration: cityNarrationDirective(currentSession.gameState.location),
   };
 }
 
@@ -1687,6 +1701,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             // Persona / true-self / recognition contexts (shared with the normal
             // turn) so the fight is narrated as the face the player wears.
             {...personaPromptContexts(session)}
+            // Epoch + per-city tone (shared with the normal turn) so a fight
+            // reads in the right era/place, not the Fifth-Epoch default.
+            {...worldTonePromptContexts(session)}
             onUpdate={handleCombatUpdate}
             onApplyResult={handleCombatResult}
             onExit={handleCombatExit}
