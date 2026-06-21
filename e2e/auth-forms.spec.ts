@@ -1,10 +1,23 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 // Functional coverage of the public auth forms — behaviour, not just layout.
 // These run on the backend-free public tier: the dummy Supabase URL has nothing
 // listening, so a submit's network call fails closed and the form surfaces its
 // error state (an `aria-live` alert + `aria-invalid` fields), which is exactly
 // the path we want to exercise. No real account or backend required.
+
+/** Make the Supabase auth endpoint reject, so the form's error path runs
+ *  deterministically — independent of the dummy backend's network-failure
+ *  timing, which exceeded the assertion timeout in CI. */
+async function rejectAuth(page: Page, body: Record<string, unknown>): Promise<void> {
+  await page.route("**/auth/v1/**", (route) =>
+    route.fulfill({
+      status: 400,
+      contentType: "application/json",
+      body: JSON.stringify(body),
+    }),
+  );
+}
 
 test.describe("signup form", () => {
   test("labels its fields and sets paste-friendly autocomplete (accessibility)", async ({
@@ -34,16 +47,7 @@ test.describe("signup form", () => {
   });
 
   test("surfaces an accessible error when sign-up is rejected", async ({ page }) => {
-    // Deterministically fail the Supabase auth call (the dummy backend's real
-    // network error is timing-dependent across CI runners) so this exercises the
-    // form's error-rendering path, not the network.
-    await page.route("**/auth/v1/**", (route) =>
-      route.fulfill({
-        status: 400,
-        contentType: "application/json",
-        body: JSON.stringify({ code: 400, error_code: "weak_password", msg: "boom" }),
-      }),
-    );
+    await rejectAuth(page, { code: 400, error_code: "weak_password", msg: "boom" });
     await page.goto("/signup");
     await page.getByLabel("Email").fill("beyonder@tingen.city");
     await page.getByLabel("Password").fill("klein-moretti");
@@ -56,19 +60,11 @@ test.describe("signup form", () => {
 
 test.describe("login form", () => {
   test("surfaces an accessible error on a failed sign-in", async ({ page }) => {
-    // Mock the auth endpoint to reject, so the error path is deterministic (not
-    // dependent on the dummy backend's network-failure timing).
-    await page.route("**/auth/v1/**", (route) =>
-      route.fulfill({
-        status: 400,
-        contentType: "application/json",
-        body: JSON.stringify({
-          code: 400,
-          error_code: "invalid_credentials",
-          msg: "Invalid login credentials",
-        }),
-      }),
-    );
+    await rejectAuth(page, {
+      code: 400,
+      error_code: "invalid_credentials",
+      msg: "Invalid login credentials",
+    });
     await page.goto("/login");
     await page.getByLabel("Email").fill("beyonder@tingen.city");
     await page.getByLabel("Password").fill("wrong-password");
