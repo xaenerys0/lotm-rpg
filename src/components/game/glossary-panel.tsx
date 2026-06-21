@@ -61,9 +61,12 @@ export function GlossaryPanel() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-5 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <label htmlFor="glossary-search" className="mb-1.5 block text-xs text-muted">
+          <label
+            htmlFor="glossary-search"
+            className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+          >
             Search the lexicon
           </label>
           <input
@@ -72,7 +75,7 @@ export function GlossaryPanel() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Beyonder, potion, ritual…"
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder-muted focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground placeholder-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           />
         </div>
         {sealed > 0 && (
@@ -84,7 +87,7 @@ export function GlossaryPanel() {
       </div>
 
       {byCategory.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border/60 p-8 text-center text-sm text-muted">
+        <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">
           Nothing in the lexicon matches — or it has not been unsealed yet.
         </p>
       ) : (
@@ -92,15 +95,20 @@ export function GlossaryPanel() {
           <section key={category} aria-labelledby={`glossary-${category}`}>
             <h2
               id={`glossary-${category}`}
-              className="gaslit font-serif text-lg font-semibold text-amber/90"
+              className="gaslit font-serif text-lg font-semibold text-foreground"
             >
               {category}
             </h2>
             <dl className="mt-3 space-y-3">
               {terms.map((term: GlossaryTerm) => (
-                <div key={term.slug} className="parchment rounded-md p-4">
-                  <dt className="text-sm font-semibold text-foreground">{term.term}</dt>
-                  <dd className="mt-1 font-serif text-sm leading-relaxed text-foreground/80">
+                <div
+                  key={term.slug}
+                  className="rounded-xl border border-border bg-surface p-5"
+                >
+                  <dt className="font-serif text-base font-semibold text-foreground">
+                    {term.term}
+                  </dt>
+                  <dd className="mt-1.5 font-serif text-sm leading-relaxed text-foreground">
                     {term.definition}
                   </dd>
                 </div>

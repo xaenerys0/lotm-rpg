@@ -42,16 +42,19 @@ export function LeaderboardPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface p-5">
         <div>
-          <label htmlFor="board-metric" className="mb-1 block text-xs text-muted">
+          <label
+            htmlFor="board-metric"
+            className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+          >
             Rank by
           </label>
           <select
             id="board-metric"
             value={metric}
             onChange={(e) => setMetric(e.target.value as LeaderboardMetric)}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           >
             {(Object.keys(METRIC_LABELS) as LeaderboardMetric[]).map((value) => (
               <option key={value} value={value}>
@@ -61,7 +64,10 @@ export function LeaderboardPanel() {
           </select>
         </div>
         <div>
-          <label htmlFor="board-pathway" className="mb-1 block text-xs text-muted">
+          <label
+            htmlFor="board-pathway"
+            className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+          >
             Pathway
           </label>
           <select
@@ -70,7 +76,7 @@ export function LeaderboardPanel() {
             onChange={(e) =>
               setPathwayId(e.target.value ? Number(e.target.value) : undefined)
             }
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           >
             <option value="">All pathways</option>
             {ALL_PATHWAYS.map((pathway) => (
@@ -83,32 +89,36 @@ export function LeaderboardPanel() {
       </div>
 
       {entries === null ? (
-        <p className="text-sm text-muted">Reading the board…</p>
+        <p className="text-sm text-muted" role="status">
+          Reading the board…
+        </p>
       ) : entries.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-border/60 p-8 text-center text-sm text-muted">
+        <p className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted">
           The board is bare — no Beyonder has published a public record yet.
         </p>
       ) : (
-        <ol className="space-y-2">
+        <ol className="space-y-2.5">
           {entries.map((entry, index) => (
             <li
               key={entry.userId}
-              className="parchment flex flex-wrap items-baseline justify-between gap-2 rounded-md px-4 py-3"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-surface px-4 py-3.5 transition-all duration-200 hover:border-amber/40"
             >
-              <span className="flex items-baseline gap-3">
-                <span className="w-6 text-right font-serif text-sm text-muted">
-                  {index + 1}.
+              <span className="flex items-center gap-3.5">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border bg-surface-raised font-serif text-sm font-semibold text-amber">
+                  {index + 1}
                 </span>
-                <span className="text-sm font-semibold text-foreground">
-                  {entry.displayName}
-                </span>
-                <span className="text-xs text-muted">
-                  {entry.sequenceLevel <= 0
-                    ? `${sequenceLabel(entry.pathwayId, entry.sequenceLevel)} (${sequenceClassificationFor(entry.sequenceLevel)})`
-                    : `Seq ${entry.sequenceLevel} · ${getPathway(entry.pathwayId)?.name ?? "Unknown"}`}
+                <span className="flex flex-col">
+                  <span className="text-sm font-semibold text-foreground">
+                    {entry.displayName}
+                  </span>
+                  <span className="text-xs font-medium text-muted">
+                    {entry.sequenceLevel <= 0
+                      ? `${sequenceLabel(entry.pathwayId, entry.sequenceLevel)} (${sequenceClassificationFor(entry.sequenceLevel)})`
+                      : `Seq ${entry.sequenceLevel} · ${getPathway(entry.pathwayId)?.name ?? "Unknown"}`}
+                  </span>
                 </span>
               </span>
-              <span className="text-xs text-muted">
+              <span className="text-xs font-medium text-muted">
                 {metric === "achievements"
                   ? `${entry.achievementCount} achievements`
                   : metric === "divergence"

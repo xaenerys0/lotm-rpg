@@ -43,7 +43,7 @@ export function SanityPreferences() {
   );
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <PreferenceToggle
         label="Show sanity meter"
         description="By default your sanity is hidden — you read your state from the world itself, as it distorts around you. Reveal the numeric meter for strategic management."
@@ -90,10 +90,10 @@ function PreferenceToggle({
   onToggle: () => void;
 }) {
   return (
-    <div className="mt-4 flex items-start justify-between gap-4 rounded border border-border/60 bg-background/40 p-4">
+    <div className="flex items-start justify-between gap-4 rounded-xl border border-border bg-surface p-5 transition-all duration-200">
       <div>
-        <p className="text-sm font-medium text-foreground/90">{label}</p>
-        <p className="mt-1 text-xs leading-relaxed text-muted">{description}</p>
+        <p className="text-sm font-medium text-foreground">{label}</p>
+        <p className="mt-1.5 text-xs leading-relaxed text-muted">{description}</p>
       </div>
       <button
         type="button"

@@ -154,8 +154,8 @@ export function SocietyPanel() {
 
   if (!session) {
     return (
-      <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
-        <p className="font-serif text-lg italic text-foreground/70">
+      <div className="rounded-xl border border-dashed border-border bg-surface p-12 text-center">
+        <p className="font-serif text-lg italic text-foreground">
           &ldquo;The long table waits in the fog&rdquo;
         </p>
         <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted">
@@ -171,8 +171,8 @@ export function SocietyPanel() {
   if (!society) {
     const eligible = canFoundSociety(session.gameState.sequenceLevel);
     return (
-      <div className="max-w-lg space-y-4">
-        <p className="font-serif text-sm leading-relaxed text-foreground/85">
+      <div className="max-w-lg space-y-5 rounded-xl border border-border bg-surface p-6">
+        <p className="font-serif text-sm leading-relaxed text-foreground">
           Your pathway would gather as{" "}
           <span className="text-occult-bright">{SOCIETY_KIND_LABELS[kind]}</span> — a
           circle of code names and careful favors, convened where no one can follow.
@@ -180,7 +180,10 @@ export function SocietyPanel() {
         {eligible ? (
           <>
             <div>
-              <label htmlFor="society-name" className="mb-1 block text-xs text-muted">
+              <label
+                htmlFor="society-name"
+                className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
+              >
                 Name it (optional)
               </label>
               <input
@@ -189,13 +192,13 @@ export function SocietyPanel() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={SOCIETY_KIND_LABELS[kind]}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 font-serif text-sm text-foreground placeholder-muted focus:border-occult/50 focus:outline-none"
+                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 font-serif text-sm text-foreground placeholder-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               />
             </div>
             <button
               type="button"
               onClick={handleFound}
-              className="rounded-md border border-occult/40 bg-occult/[0.08] px-4 py-2 text-sm font-medium text-occult-bright hover:border-occult/60"
+              className="rounded-lg bg-amber px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
             >
               Found it
             </button>
@@ -219,17 +222,17 @@ export function SocietyPanel() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-surface p-5">
         <p className="font-serif text-sm italic text-muted">
           {society.name} · {society.members.length}{" "}
           {society.members.length === 1 ? "member" : "members"} · {society.gatheringCount}{" "}
           {society.gatheringCount === 1 ? "gathering" : "gatherings"} held
         </p>
-        <span className="flex gap-2">
+        <span className="flex flex-wrap gap-2">
           <button
             type="button"
             onClick={handleRecruit}
-            className="rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-2 text-xs font-medium text-amber hover:border-amber/50"
+            className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
           >
             Extend an invitation
           </button>
@@ -242,7 +245,7 @@ export function SocietyPanel() {
                 ? undefined
                 : `The fog opens every ${GATHERING_COOLDOWN_TURNS} turns, and only for a peopled table.`
             }
-            className="rounded-md border border-occult/40 bg-occult/[0.08] px-3 py-2 text-xs font-medium text-occult-bright hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-30"
+            className="rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40"
           >
             Convene above the gray fog
           </button>
@@ -250,7 +253,7 @@ export function SocietyPanel() {
       </div>
 
       {notice && (
-        <p role="status" className="font-serif text-sm italic text-foreground/80">
+        <p role="status" className="font-serif text-sm italic text-foreground">
           {notice}
         </p>
       )}
@@ -258,13 +261,13 @@ export function SocietyPanel() {
       {lastOutcome && (
         <section
           aria-label="Latest gathering"
-          className="parchment rounded-lg p-5 animate-fade-in"
+          className="parchment rounded-xl p-6 animate-fade-in"
         >
-          <p className="font-serif text-sm leading-relaxed text-foreground/90">
+          <p className="font-serif text-sm leading-relaxed text-foreground">
             {lastOutcome.narrativeSeed}
           </p>
           {lastOutcome.facts.length > 0 && (
-            <ul className="mt-3 space-y-1 text-sm text-foreground/80">
+            <ul className="mt-3 space-y-1 text-sm text-foreground">
               {lastOutcome.facts.map((fact) => (
                 <li key={fact.description}>
                   <span aria-hidden="true" className="mr-2 text-occult-bright">
@@ -293,7 +296,7 @@ export function SocietyPanel() {
       <section aria-labelledby="society-members">
         <h2
           id="society-members"
-          className="gaslit font-serif text-lg font-semibold text-amber/90"
+          className="gaslit font-serif text-lg font-semibold text-foreground"
         >
           The long table
         </h2>
@@ -302,16 +305,19 @@ export function SocietyPanel() {
             Empty seats. Extend an invitation before convening.
           </p>
         ) : (
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {society.members.map((member) => (
-              <li key={member.id} className="parchment rounded-md p-4">
+              <li
+                key={member.id}
+                className="rounded-xl border border-border bg-surface p-5"
+              >
                 <p className="text-sm font-semibold text-occult-bright">
                   {member.codeName}
                 </p>
-                <p className="mt-1 text-xs leading-relaxed text-muted">
+                <p className="mt-1.5 text-xs leading-relaxed text-muted">
                   This one {memberPathwayHint(member)}. They {memberArc(member)}.
                 </p>
-                <div className="mt-3">
+                <div className="mt-4">
                   <div className="flex items-center justify-between text-[11px] text-muted">
                     <span id={`trust-${member.id}`}>Trust</span>
                     <span>{member.disposition}</span>
@@ -322,7 +328,7 @@ export function SocietyPanel() {
                     aria-valuenow={member.disposition}
                     aria-valuemin={-100}
                     aria-valuemax={100}
-                    className="mt-1 h-1.5 overflow-hidden rounded-full bg-border/60"
+                    className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-border"
                   >
                     <div
                       className="h-full bg-occult"
@@ -334,7 +340,7 @@ export function SocietyPanel() {
                   <button
                     type="button"
                     onClick={() => handleResolveArc(member.id)}
-                    className="mt-3 min-h-[24px] rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber hover:border-amber/50"
+                    className="mt-4 min-h-[24px] rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-amber transition-colors hover:border-amber/40"
                   >
                     Help settle their matter
                   </button>
