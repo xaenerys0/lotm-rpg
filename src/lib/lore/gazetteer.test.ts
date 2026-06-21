@@ -7,6 +7,7 @@ import {
   uncertainFifthGazetteer,
 } from "./gazetteer";
 import { DEFAULT_EPOCH_ID, getEpoch } from "./epochs";
+import { regionIdentity } from "./region-registry";
 import { ACCESS_FLAGS } from "@/lib/ai";
 import { CITIES, CROSSING_CITY, getCity } from "@/lib/game";
 
@@ -162,6 +163,34 @@ describe("gazetteerForEpoch", () => {
       "dream-world-passage",
     ]).fartherCities.map((c) => c.id);
     expect(courtIds).toContain("balam");
+  });
+
+  it("derives every farther city's name + realm from the shared region registry (issue #85)", () => {
+    // The gazetteer and the travel layer both derive a place's name + realm prefix
+    // from the single source of truth (REGION_IDENTITIES), so they can never drift.
+    // A city is excluded from its OWN farther-list, so union two origins (a
+    // mainlander holding the dream passage sees central + Balam + the Court; a
+    // Court-stander holding every passage sees central + Balam + Silver + Moon) to
+    // gather all twelve places exactly once.
+    const all = new Map<string, { id: string; name: string; realm: string }>();
+    for (const origin of [
+      { city: "tingen", flags: ["dream-world-passage"] },
+      {
+        city: GAZETTEER_CROSSING_CITY,
+        flags: ["dream-world-passage", "silver-city-passage", "moon-city-passage"],
+      },
+    ]) {
+      for (const c of gazetteerForEpoch(5, origin.city, origin.flags).fartherCities) {
+        all.set(c.id, c);
+      }
+    }
+    // All twelve places are reconciled (8 central + Balam + 3 Forsaken).
+    expect(all.size).toBe(12);
+    for (const c of all.values()) {
+      const identity = regionIdentity(c.id);
+      expect(c.name, c.id).toBe(identity.name);
+      expect(c.realm.startsWith(`${identity.kingdom} — `), c.id).toBe(true);
+    }
   });
 
   it("reconciles the gazetteer's freely-reachable cities with the travel-layer CITIES (issue #134/#138)", () => {

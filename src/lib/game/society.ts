@@ -1,4 +1,5 @@
 import type { SessionFact } from "@/lib/ai";
+import { pickRandom, randomIndex } from "@/lib/lore/random";
 import type { Item } from "@/lib/types/rules";
 
 // ---------------------------------------------------------------------------
@@ -234,10 +235,10 @@ export function recruitMember(
   }
   const member: SocietyMember = {
     id,
-    codeName: available[Math.floor(random() * available.length)],
-    pathwayHintId: Math.floor(random() * PATHWAY_HINTS.length),
+    codeName: pickRandom(available, random),
+    pathwayHintId: randomIndex(PATHWAY_HINTS.length, random),
     disposition: 10,
-    arcId: Math.floor(random() * MEMBER_ARCS.length),
+    arcId: randomIndex(MEMBER_ARCS.length, random),
     arcStage: 0,
   };
   return { ...society, members: [...society.members, member] };
@@ -284,7 +285,7 @@ export function holdGathering(
     const shareChance = 0.4 + member.disposition / 200;
     let next = member;
     if (random() < shareChance) {
-      const lead = INTEL_LEADS[Math.floor(random() * INTEL_LEADS.length)];
+      const lead = pickRandom(INTEL_LEADS, random);
       facts.push({
         type: "npc-encounter",
         description: `At the gathering, ${member.codeName} ${lead}.`,
@@ -301,7 +302,7 @@ export function holdGathering(
   });
 
   if (members.length > 0 && random() < 0.34) {
-    items.push(TRADE_GOODS[Math.floor(random() * TRADE_GOODS.length)]);
+    items.push(pickRandom(TRADE_GOODS, random));
   }
 
   const updated: SocietyState = {

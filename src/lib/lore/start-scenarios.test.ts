@@ -5,11 +5,50 @@ import {
   startScenariosForEpoch,
   forsakenLandStartsForEpoch,
   startLocationsForEpoch,
+  startOptionSuitsPathway,
+  describeStartLocation,
   selectStartScenario,
   selectStartScenarioForLocation,
   getStartScenario,
   type StartScenario,
+  type StartLocationOption,
 } from "./start-scenarios";
+
+describe("startOptionSuitsPathway (issue #85)", () => {
+  it("is true only when the affinity list includes the pathway", () => {
+    expect(startOptionSuitsPathway([1, 8], 1)).toBe(true);
+    expect(startOptionSuitsPathway([1, 8], 8)).toBe(true);
+    expect(startOptionSuitsPathway([1, 8], 2)).toBe(false);
+  });
+
+  it("treats an absent or empty affinity as suiting no pathway", () => {
+    expect(startOptionSuitsPathway(undefined, 1)).toBe(false);
+    expect(startOptionSuitsPathway([], 1)).toBe(false);
+  });
+});
+
+describe("describeStartLocation (issue #85)", () => {
+  const option: StartLocationOption = {
+    location: "Backlund",
+    blurb: "The smog-bound capital.",
+    pathwayAffinity: [1, 8],
+    sceneCount: 2,
+  };
+
+  it("appends a 'fitting start' suffix when the place suits the pathway", () => {
+    expect(describeStartLocation(option, 1, "Fool")).toBe(
+      "The smog-bound capital. A fitting start for the Fool pathway.",
+    );
+  });
+
+  it("returns the bare blurb when the place does not suit the pathway", () => {
+    expect(describeStartLocation(option, 2, "Sun")).toBe("The smog-bound capital.");
+  });
+
+  it("returns the bare blurb when the pathway has no name (even if it suits)", () => {
+    expect(describeStartLocation(option, 1, undefined)).toBe("The smog-bound capital.");
+  });
+});
 
 describe("START_SCENARIOS data integrity", () => {
   it("has unique ids", () => {

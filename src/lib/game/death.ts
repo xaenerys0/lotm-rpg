@@ -1,5 +1,6 @@
 import type { GameState, SessionFact } from "@/lib/ai";
 import { DEFAULT_EPOCH_ID, isFifthEpoch } from "@/lib/lore";
+import { pickRandom, randomIndex } from "@/lib/lore/random";
 
 import { evaluateLossOfControl, type LossOfControlSeverity } from "./sanity";
 import type { GameSession } from "./types";
@@ -151,7 +152,7 @@ export function applySetback(
   const remaining = [...state.inventory];
   const lostNames: string[] = [];
   for (let i = 0; i < lostCount; i++) {
-    const index = Math.floor(random() * remaining.length);
+    const index = randomIndex(remaining.length, random);
     lostNames.push(remaining[index].name);
     remaining.splice(index, 1);
   }
@@ -167,7 +168,7 @@ export function applySetback(
       ? epoch
       : DEFAULT_EPOCH_ID;
   const places = DISPLACEMENT_PLACES_BY_EPOCH[epochId];
-  const place = places[Math.floor(random() * places.length)];
+  const place = pickRandom(places, random);
   // The Fifth Epoch anchors displacement to the character's current city — its
   // cross-city travel is gated, so a breakdown must not teleport them to another
   // city. Earlier epochs have no city model, so the era-appropriate place stands

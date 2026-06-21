@@ -10,6 +10,7 @@
 // static region list (the CITIES travel model is Fifth-Epoch only).
 
 import { DEFAULT_EPOCH_ID, getEpoch } from "./epochs";
+import { regionIdentity } from "./region-registry";
 
 export interface GazetteerDistrict {
   slug: string;
@@ -387,111 +388,104 @@ const FEYSAC_DISTRICTS: GazetteerDistrict[] = [
   },
 ];
 
+/**
+ * Build a farther-city from the shared region identity (issue #85): `name` and
+ * the `realm` PREFIX come from the single source of truth (`REGION_IDENTITIES`),
+ * so the gazetteer and the travel layer can never drift on a place's name or
+ * realm. `realmDescriptor` is the gazetteer-specific clause after the em dash,
+ * and `blurb`/`continent`/`requiresFlag` are surface-specific too — only the
+ * scalar identity is shared.
+ */
+function fartherCity(
+  id: string,
+  realmDescriptor: string,
+  blurb: string,
+  extra: Pick<GazetteerFartherCity, "continent" | "requiresFlag"> = {},
+): GazetteerFartherCity {
+  const { name, kingdom } = regionIdentity(id);
+  return { id, name, realm: `${kingdom} — ${realmDescriptor}`, blurb, ...extra };
+}
+
 // The full Fifth-Epoch city roster (Tingen + the rest), used both for the
-// per-city district lookup and the "farther afield" travel list.
+// per-city district lookup and the "farther afield" travel list. Name + realm
+// prefix are derived from the shared region registry (issue #85); the realm
+// descriptor and blurb are the gazetteer's own surface-specific prose.
 const FIFTH_CITIES: GazetteerFartherCity[] = [
-  {
-    id: "tingen",
-    name: "Tingen City",
-    realm: "Loen Kingdom — the Awwa region",
-    blurb:
-      "A mid-sized industrial city under coal-smoke and overcast skies, where most chronicles begin.",
-  },
-  {
-    id: "backlund",
-    name: "Backlund",
-    realm: "Loen Kingdom — the capital",
-    blurb:
-      "The capital, days downriver: a vast metropolis of five million souls under a permanent pall of yellow smog. Opera houses and counting-houses on one bank, factories and rookeries on the other, joined by the great Backlund Bridge over the Tussock.",
-  },
-  {
-    id: "trier",
-    name: "Trier",
-    realm: "Intis Republic — the capital",
-    blurb:
-      "The sunlit capital of the Intis Republic across the border, a walled city of fifty-four gates famed for its artists and its fashion. Students shout politics in the boulevards; quarries and catacombs honeycomb the ground beneath.",
-  },
-  {
-    id: "bayam",
-    name: "Bayam",
-    realm: "Rorsted Archipelago — the capital",
-    blurb:
-      "A colonial port-capital far out in the Sonia Sea, built on a forested island and named the City of Generosity for its gold and spice. Its harbour bars are loud with sailors and adventurers; a curfew falls hard at nightfall.",
-  },
-  {
-    id: "pritz",
-    name: "Pritz Harbor",
-    realm: "Loen Kingdom — the chief naval port",
-    blurb:
-      "Loen's great navy town on the cold northern coast, under the shadow of the Amantha range that walls the kingdom off from Feysac. Fog, dry-docks, and anchored ironclads; smugglers work the mountain passes at its back, so the garrison is heavy and the night watch real.",
-  },
-  {
-    id: "enmat",
-    name: "Enmat Harbor",
-    realm: "Loen Kingdom — a coastal town",
-    blurb:
-      "A small fishing town the sea-fog swallows most nights — net-lofts, lamplit lanes, and old charms over the doorways. Quiet enough that strangers are counted, and quiet enough to hide the kind of business that wants no neighbours.",
-  },
-  {
-    id: "feysac",
-    name: "Feysac",
-    realm: "Feysac Empire — the militarist north",
-    blurb:
-      "The cold northern empire of the God of Combat, beyond the Amantha range: walled towns, drilled militias, and martial faith. The winters are long and the frontier dangerous, where monsters press at the walls and strength commands open respect.",
-  },
-  {
-    id: "constant",
-    name: "Constant City",
-    realm: "Loen Kingdom — Midseashire's capital",
-    blurb:
-      "The Wind City — Loen's second city, on the north-eastern Midseashire coast. A relentlessly industrial place of blast furnaces and rolling-mills, scoured cleaner than Backlund by a hard sea wind, where the Church of Steam holds the working faithful and the coal-and-steel money runs deep.",
-  },
+  fartherCity(
+    "tingen",
+    "the Awwa region",
+    "A mid-sized industrial city under coal-smoke and overcast skies, where most chronicles begin.",
+  ),
+  fartherCity(
+    "backlund",
+    "the capital",
+    "The capital, days downriver: a vast metropolis of five million souls under a permanent pall of yellow smog. Opera houses and counting-houses on one bank, factories and rookeries on the other, joined by the great Backlund Bridge over the Tussock.",
+  ),
+  fartherCity(
+    "trier",
+    "the capital",
+    "The sunlit capital of the Intis Republic across the border, a walled city of fifty-four gates famed for its artists and its fashion. Students shout politics in the boulevards; quarries and catacombs honeycomb the ground beneath.",
+  ),
+  fartherCity(
+    "bayam",
+    "the capital",
+    "A colonial port-capital far out in the Sonia Sea, built on a forested island and named the City of Generosity for its gold and spice. Its harbour bars are loud with sailors and adventurers; a curfew falls hard at nightfall.",
+  ),
+  fartherCity(
+    "pritz",
+    "the chief naval port",
+    "Loen's great navy town on the cold northern coast, under the shadow of the Amantha range that walls the kingdom off from Feysac. Fog, dry-docks, and anchored ironclads; smugglers work the mountain passes at its back, so the garrison is heavy and the night watch real.",
+  ),
+  fartherCity(
+    "enmat",
+    "a coastal town",
+    "A small fishing town the sea-fog swallows most nights — net-lofts, lamplit lanes, and old charms over the doorways. Quiet enough that strangers are counted, and quiet enough to hide the kind of business that wants no neighbours.",
+  ),
+  fartherCity(
+    "feysac",
+    "the militarist north",
+    "The cold northern empire of the God of Combat, beyond the Amantha range: walled towns, drilled militias, and martial faith. The winters are long and the frontier dangerous, where monsters press at the walls and strength commands open respect.",
+  ),
+  fartherCity(
+    "constant",
+    "Midseashire's capital",
+    "The Wind City — Loen's second city, on the north-eastern Midseashire coast. A relentlessly industrial place of blast furnaces and rolling-mills, scoured cleaner than Backlund by a hard sea wind, where the Church of Steam holds the working faithful and the coal-and-steel money runs deep.",
+  ),
   // ── Forsaken Land of the Gods — the sealed Eastern Continent (issues #130/#133). ──
   // A central character never sees these (the continent filter). Each Forsaken
   // city is gated by its OWN flag: the City of Silver and Moon City were isolated,
   // mutually-unaware settlements, so a native of one never sees the other; the
   // Court carries the shared dream-world passage. Mirrors the game-layer access gates.
-  {
-    id: "silver-city",
-    name: "Silver City",
-    realm: "Forsaken Land of the Gods — the silver capital",
-    blurb:
-      "The lightless silver capital of the giant-descended, beneath the Forsaken Land's eternal lightning.",
-    continent: "forsaken-land",
-    requiresFlag: "silver-city-passage",
-  },
-  {
-    id: "giant-kings-court",
-    name: "Giant King's Court",
-    realm: "Forsaken Land of the Gods — the Giant King's seat",
-    blurb:
-      "The seat of the Giant King in the Forsaken Land, whose Dream-World shadow is the only passage to the sealed continent.",
-    continent: "forsaken-land",
-    requiresFlag: "dream-world-passage",
-  },
-  {
-    id: "moon-city",
-    name: "Moon City",
-    realm: "Forsaken Land of the Gods — the eastern fog-watch",
-    blurb:
-      "An isolated city of the Forsaken Land's eastern reaches, whose people have kept an ancient watch on the world-ending gray fog.",
-    continent: "forsaken-land",
-    requiresFlag: "moon-city-passage",
-  },
+  fartherCity(
+    "silver-city",
+    "the silver capital",
+    "The lightless silver capital of the giant-descended, beneath the Forsaken Land's eternal lightning.",
+    { continent: "forsaken-land", requiresFlag: "silver-city-passage" },
+  ),
+  fartherCity(
+    "giant-kings-court",
+    "the Giant King's seat",
+    "The seat of the Giant King in the Forsaken Land, whose Dream-World shadow is the only passage to the sealed continent.",
+    { continent: "forsaken-land", requiresFlag: "dream-world-passage" },
+  ),
+  fartherCity(
+    "moon-city",
+    "the eastern fog-watch",
+    "An isolated city of the Forsaken Land's eastern reaches, whose people have kept an ancient watch on the world-ending gray fog.",
+    { continent: "forsaken-land", requiresFlag: "moon-city-passage" },
+  ),
   // ── Southern Continent — the colonized lands of the old Balam Empire (world
   // build-out 9, issue #138). FREELY reachable across the Berserk Sea (NO flag,
   // NO chokepoint) — so it shows in a mainland character's travel list, and a
   // Southern character can sail back to the mainland; only a Forsaken native is
   // kept from it (they leave through the Court). The long, perilous voyage is the
   // cost (see the game-layer `BERSERK_SEA_CROSSING_DAYS`), not a sealed gate.
-  {
-    id: "balam",
-    name: "Balam",
-    realm: "Southern Continent — the colonized Balam lands",
-    blurb:
-      "Across the storm-wracked Berserk Sea: the colonized Southern Continent of jungles, deserts, and Balam Empire ruins, where Loen and Intis rule death-haunted native tribes a long and dangerous voyage from the mainland.",
-    continent: "southern-continent",
-  },
+  fartherCity(
+    "balam",
+    "the colonized Balam lands",
+    "Across the storm-wracked Berserk Sea: the colonized Southern Continent of jungles, deserts, and Balam Empire ruins, where Loen and Intis rule death-haunted native tribes a long and dangerous voyage from the mainland.",
+    { continent: "southern-continent" },
+  ),
 ];
 
 /** A farther city's continent, defaulting an absent value to `central`. */
