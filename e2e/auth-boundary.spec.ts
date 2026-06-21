@@ -23,8 +23,8 @@ for (const path of PROTECTED_ROUTES) {
   test(`${path} redirects unauthenticated visitors to /login`, async ({ page }) => {
     await page.goto(path);
     await expect(page).toHaveURL(/\/login(\?.*)?$/);
-    await expect(
-      page.getByRole("heading", { name: "Lord of the Mysteries", level: 1 }),
-    ).toBeVisible();
+    // The login page actually rendered — assert the form's submit control rather
+    // than copy-sensitive heading text.
+    await expect(page.getByRole("button", { name: "Sign In" })).toBeVisible();
   });
 }
