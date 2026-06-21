@@ -526,6 +526,73 @@ const SOUTHERN_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Secret organizations & Families archetypes (world build-out 11, issue #140)
+// — begin embedded in the social web of the secret orders and the great Angel
+// Families. Normal (non-origin) Fifth-Epoch starts tied to existing NPCs (Emlyn
+// White the Sanguine / The Moon, Leonard Mitchell / The Star, Awatoma Einhorn of
+// the Feysac imperial house). The deep secrets of these circles stay narrator-
+// only in the lore; the archetype grounds only what the character would know of
+// their own tie. ──
+const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "backlund-sanguine-moon",
+    label: "A Sanguine in Emlyn White's circle",
+    epoch: 5,
+    location: "Backlund",
+    relationship: "circle-member",
+    circleNpcs: ["Emlyn White"],
+    blurb:
+      "One of the scarlet-moon Sanguines of Backlund, kin and confidant to Emlyn White — the vampire who hides among the Harvest Church.",
+    openingBeat: `The strange potion still burns cold in me as I keep to the shuttered Backlund townhouse of my own kind, where Emlyn White — the Sanguine the humans never suspect — holds our little court against the soot-yellow dark; whatever I have become tonight, the blood remembers, and our secret must hold. ${SCENE_CUE}`,
+    // Moon (id 17) — the Sanguines' ancestral path of the scarlet moon.
+    pathwayAffinity: [17],
+    seeds: {
+      trackedAllies: ["Emlyn White"],
+      facts: [
+        "You are a Sanguine of Backlund's hidden scarlet-moon kin, close to Emlyn White, who passes among humans as a member of the Harvest Church; he knows your face and your blood.",
+      ],
+    },
+  },
+  {
+    id: "tingen-tarot-associate",
+    label: "An associate of Leonard Mitchell, the Tarot Club's Star",
+    epoch: 5,
+    location: "Tingen City",
+    relationship: "circle-member",
+    circleNpcs: ["Leonard Mitchell"],
+    blurb:
+      "A trusted associate of the Nighthawk-poet Leonard Mitchell in Tingen — close enough to brush the edge of secrets even the Nighthawks don't keep.",
+    openingBeat: `The change still hums under my skin as I meet Leonard Mitchell in a quiet Tingen coffee-house, the poet-Nighthawk who counts me a friend — there are circles behind his circles, I have always sensed it, and tonight I have a secret of my own to keep from him. ${SCENE_CUE}`,
+    // Darkness (id 5) — Leonard's own pathway, the night-watch road.
+    pathwayAffinity: [5],
+    seeds: {
+      trackedAllies: ["Leonard Mitchell"],
+      facts: [
+        "You are a trusted associate of Leonard Mitchell, the Tingen Nighthawk and poet; he knows your face, though not yet what you have become.",
+      ],
+    },
+  },
+  {
+    id: "feysac-einhorn-retainer",
+    label: "A retainer of the Einhorn imperial family",
+    epoch: 5,
+    location: "Feysac",
+    relationship: "subordinate",
+    circleNpcs: ["Awatoma Einhorn"],
+    blurb:
+      "A sworn retainer of Feysac's Einhorn imperial house, in service near the naval supreme commander Awatoma Einhorn.",
+    openingBeat: `The bitter draught still scalds me as I stand my post in the cold halls of the Einhorn house, the imperial family of Feysac whose supreme commander Awatoma Einhorn I serve — strength is the only god respected here, and whatever I have just become must look, to them, like nothing at all. ${SCENE_CUE}`,
+    // Red Priest (id 14) — the Einhorn house's own crimson, conquering path.
+    pathwayAffinity: [14],
+    seeds: {
+      trackedAllies: ["Awatoma Einhorn"],
+      facts: [
+        "You serve as a sworn retainer of the Einhorn imperial family of Feysac, in the household of the naval supreme commander Awatoma Einhorn, who knows your face.",
+      ],
+    },
+  },
+] as const;
+
 /** Every start archetype, all regions/epochs (append-only) — including gated
  * ORIGIN archetypes (so `getStartArchetype` resolves them by id). Default
  * selection filters origins out; `forsakenLandArchetypesForEpoch` filters in. */
@@ -539,6 +606,7 @@ export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...FEYSAC_ARCHETYPES,
   ...RORSTED_ARCHETYPES,
   ...SOUTHERN_ARCHETYPES,
+  ...SECRET_SOCIETY_ARCHETYPES,
 ];
 
 /**

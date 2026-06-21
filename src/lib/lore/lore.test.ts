@@ -44,6 +44,7 @@ import {
   LOEN_LORE,
   NPC_LORE,
   ORGANIZATION_LORE,
+  SECRET_SOCIETIES_LORE,
   REGIONS_LORE,
   SUN_PATHWAY_LORE,
   TINGEN_LORE,
@@ -704,6 +705,115 @@ describe("Lore content coverage", () => {
     });
   });
 
+  describe("Secret organizations & Families (issue #140)", () => {
+    const FAMILY_SLUGS = [
+      "abraham-family",
+      "amon-family",
+      "antigonus-family",
+      "augustus-family",
+      "andariel-family",
+      "beria-family",
+      "castiya-family",
+      "einhorn-family",
+      "eggers-family",
+    ];
+    const ORDER_SLUGS = ["tarot-club-roster", "twilight-hermit-order", "demoness-sect"];
+
+    it("ships the secret-order and family org entries, all gated and leak-safe", () => {
+      // 12 org entries: 3 secret orders + 9 great Families. Every one is the
+      // DEEPEST kind of spoiler, so each is epoch 5, narratorOnly, sequence-gated,
+      // and carries NO city/pathway key (never curated-injected) and is never
+      // `metaphysics` (which would inject as global epoch-setting).
+      expect(SECRET_SOCIETIES_LORE.length).toBe(12);
+      for (const e of SECRET_SOCIETIES_LORE) {
+        expect(e.epoch).toBe(5);
+        expect(e.category).toBe("organization");
+        expect(e.narratorOnly).toBe(true);
+        expect(e.sequences.length).toBeGreaterThan(0);
+        expect(e.city).toBeUndefined();
+        expect(e.pathway).toBeUndefined();
+      }
+      for (const slug of [...ORDER_SLUGS, ...FAMILY_SLUGS]) {
+        expect(getLoreBySlug(slug)).toBeDefined();
+      }
+    });
+
+    it("never injects the secret societies into any character's curated lore", () => {
+      // No city/pathway key + narratorOnly means selectCuratedLore (which pulls
+      // pathway, epoch-setting, and city lore) can never surface them. Spot-check a
+      // Backlund Fool character and a Feysac Red Priest at full budget.
+      for (const [pathway, location] of [
+        ["fool", "Backlund"],
+        ["red priest", "Feysac"],
+      ] as const) {
+        const slugs = selectCuratedLore(pathway, location, 100000, 5, 1).entries.map(
+          (e) => e.slug,
+        );
+        for (const s of [...ORDER_SLUGS, ...FAMILY_SLUGS]) {
+          expect(slugs).not.toContain(s);
+        }
+      }
+    });
+
+    it("cross-links the Demoness Sect to the Fourth-Epoch Demoness Family (epoch-split)", () => {
+      // The present-day Sect (epoch 5) and the historical Family (epoch 4, history.ts)
+      // are kept as SEPARATE entries — never mixed (passesEpochGate is exact-match).
+      expect(getLoreBySlug("demoness-sect")?.epoch).toBe(5);
+      expect(getLoreBySlug("demoness-family")?.epoch).toBe(4);
+    });
+
+    it("has the notable members as NPCs with relationship data, never pathway-keyed", () => {
+      const names = NPC_LORE.flatMap((e) => e.npcs);
+      for (const name of [
+        "Alger Wilson",
+        "Fors Wall",
+        "Cattleya",
+        "Judith",
+        "Amon",
+        "William Augustus I",
+        "Antigonus",
+        "Camus Castiya",
+        "Elros Einhorn",
+        "Iveljsta Eggers",
+        "Jason Beria",
+      ]) {
+        expect(names).toContain(name);
+      }
+      // The deepest spoilers: each new member NPC is narrator-only, sequence-gated,
+      // and NOT pathway-keyed (the leak rule — pathway named only in prose).
+      for (const slug of [
+        "npc-alger-wilson",
+        "npc-fors-wall",
+        "npc-cattleya",
+        "npc-judith",
+        "npc-amon",
+        "npc-william-augustus",
+        "npc-antigonus",
+        "npc-camus-castiya",
+        "npc-elros-einhorn",
+        "npc-iveljsta-eggers",
+        "npc-jason-beria",
+      ]) {
+        const npc = getLoreBySlug(slug);
+        expect(npc?.narratorOnly).toBe(true);
+        expect(npc!.sequences.length).toBeGreaterThan(0);
+        expect(npc?.pathway).toBeUndefined();
+        expect(npc?.city).toBeUndefined();
+      }
+    });
+
+    it("keeps the Tarot roster consistent with the existing Tarot Club entries", () => {
+      // The roster cross-links existing member NPCs by name and stays gated like
+      // the origins/fate entries (issue #140 builds on #133's Tarot Club).
+      const roster = getLoreBySlug("tarot-club-roster");
+      expect(roster?.narratorOnly).toBe(true);
+      expect(roster!.sequences.length).toBeGreaterThan(0);
+      for (const name of ["Audrey Hall", "Emlyn White", "Leonard Mitchell"]) {
+        expect(roster!.npcs).toContain(name);
+      }
+    });
+  });
+
   it("has deepened Backlund to capital depth (issue #133)", () => {
     // The stub gains notable boroughs/landmarks, bringing Backlund toward
     // Tingen-level depth. Every location entry stays epoch 5, city backlund.
@@ -775,9 +885,14 @@ describe("Lore content coverage", () => {
     expect(names).toContain("Dwayne Dantès");
     expect(names).toContain("Sharron");
     expect(names).toContain("Maric");
-    // Alger Wilson was REMOVED — he is a Sonia Sea figure, not Backlund, and the
-    // earlier Rose-School attribution was a memory error caught against the corpus.
-    expect(names).not.toContain("Alger Wilson");
+    // Alger Wilson is NOT a Backlund / Rose-School figure — that earlier
+    // attribution was a memory error caught against the corpus (issue #133). He is
+    // re-added in world build-out 11 (#140) ONLY in his correct role as the Tarot
+    // Club's Hanged Man, a Sonia Sea storms figure: not city-keyed Backlund, not
+    // tied to the Rose School.
+    const alger = getLoreBySlug("npc-alger-wilson");
+    expect(alger?.city).not.toBe("backlund");
+    expect(alger?.tags ?? []).not.toContain("rose-school-of-thought");
     // City-keyed Backlund NPCs are NOT pathway-keyed (the issue #132 leak rule).
     const audrey = getLoreBySlug("npc-audrey-hall");
     expect(audrey?.city).toBe("backlund");
@@ -1070,6 +1185,7 @@ describe("Total lore corpus", () => {
       FOURTH_EPOCH_LORE.length +
       FIFTH_EPOCH_LORE.length +
       ORGANIZATION_LORE.length +
+      SECRET_SOCIETIES_LORE.length +
       NPC_LORE.length +
       FOOL_PATHWAY_LORE.length +
       VISIONARY_PATHWAY_LORE.length +

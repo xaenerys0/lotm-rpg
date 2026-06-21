@@ -253,6 +253,33 @@ describe("START_ARCHETYPES data integrity", () => {
     );
   });
 
+  it("ships the secret-society & Family circle archetypes (issue #140)", () => {
+    // Normal (non-origin) Fifth-Epoch starts tied to the social web of the secret
+    // orders and the great Families, anchored on existing NPCs (resolution covered
+    // by the data-integrity tests above).
+    const sanguine = getStartArchetype("backlund-sanguine-moon");
+    expect(sanguine?.epoch).toBe(5);
+    expect(sanguine?.origin).toBeUndefined();
+    expect(sanguine?.circleNpcs).toContain("Emlyn White");
+    expect(sanguine?.pathwayAffinity).toContain(17); // Moon — the Sanguines' path
+
+    const tarot = getStartArchetype("tingen-tarot-associate");
+    expect(tarot?.circleNpcs).toContain("Leonard Mitchell");
+
+    const retainer = getStartArchetype("feysac-einhorn-retainer");
+    expect(retainer?.circleNpcs).toContain("Awatoma Einhorn");
+    expect(retainer?.pathwayAffinity).toContain(14); // Red Priest — the Einhorn path
+
+    const fifthIds = startArchetypesForEpoch(5).map((a) => a.id);
+    expect(fifthIds).toEqual(
+      expect.arrayContaining([
+        "backlund-sanguine-moon",
+        "tingen-tarot-associate",
+        "feysac-einhorn-retainer",
+      ]),
+    );
+  });
+
   it("ships the earlier-epoch archetypes, era-tagged and never Fifth (issue #141)", () => {
     // Epoch 3 (Glorious Era) and Epoch 4 (Solomon Empire) starts, each tied to a
     // named historical figure from history.ts and surfaced by the SAME picker.
