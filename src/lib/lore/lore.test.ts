@@ -14,6 +14,7 @@ import {
   FOURTH_EPOCH_LORE,
   FIFTH_EPOCH_LORE,
   FORSAKEN_LAND_LORE,
+  SOUTHERN_CONTINENT_LORE,
   FEYSAC_LORE,
   HISTORICAL_LORE,
   FOOL_PATHWAY_LORE,
@@ -616,6 +617,93 @@ describe("Lore content coverage", () => {
     expect(names).toContain("Giant King Aurmir");
   });
 
+  describe("Southern Continent (issue #138)", () => {
+    it("has present-day content, city-keyed to Balam, never global epoch-setting", () => {
+      expect(SOUTHERN_CONTINENT_LORE.length).toBeGreaterThanOrEqual(5);
+      // Every present-day entry is epoch 5, city-keyed "balam" (so curated
+      // selection injects it only for a character THERE — never the mainland) and
+      // never `metaphysics` (which would inject into every Fifth prompt and leak
+      // the continent to the mainland — the forsaken-land / issue #132 rule).
+      for (const e of SOUTHERN_CONTINENT_LORE) {
+        expect(e.epoch).toBe(5);
+        expect(e.city).toBe("balam");
+        expect(e.category).not.toBe("metaphysics");
+      }
+      expect(getLoreBySlug("southern-continent-overview")).toBeDefined();
+      expect(getLoreBySlug("balam-colonies")).toBeDefined();
+      expect(getLoreBySlug("southern-continent-tribes")).toBeDefined();
+      expect(getLoreBySlug("berserk-sea")).toBeDefined();
+      // No epoch-5 Southern metaphysics entry exists to leak via getLoreByEpochSetting.
+      const fifthSetting = getLoreByEpoch(5).filter((e) => e.category === "metaphysics");
+      expect(fifthSetting.every((e) => !e.tags.includes("southern-continent"))).toBe(
+        true,
+      );
+    });
+
+    it("gates the death-god's undersea tomb (narrator-only + sequence)", () => {
+      const tomb = getLoreBySlug("death-undersea-mausoleum");
+      expect(tomb?.city).toBe("balam");
+      expect(tomb?.narratorOnly).toBe(true);
+      expect(tomb!.sequences.length).toBeGreaterThan(0);
+    });
+
+    it("keeps the historical Church of Death as Fourth-Epoch history (epoch-split)", () => {
+      // The Church of Death is the Balam Empire's Fourth-Epoch state religion — it
+      // must NOT be mixed with the present day (passesEpochGate is exact-match) and
+      // carries no Fifth-Epoch city key, so a Fifth character never sees it.
+      const church = getLoreBySlug("church-of-death");
+      expect(church?.epoch).toBe(4);
+      expect(church?.city).toBeUndefined();
+      expect(church?.narratorOnly).toBe(false);
+    });
+
+    it("adds the present-day folk death-worship, city-local to Balam (surface)", () => {
+      const faith = getLoreBySlug("southern-death-worship");
+      expect(faith?.epoch).toBe(5);
+      expect(faith?.city).toBe("balam");
+      expect(faith?.narratorOnly).toBe(false);
+    });
+
+    it("cross-links the Numinous Episcopate's Southern roots without leaking it", () => {
+      // Cross-links #132's Numinous Episcopate to its Balam origin. As a cross-
+      // cutting secret society it carries NO city/pathway key (never curated-
+      // injected, the Numinous pattern) and is narrator-only + sequence-gated.
+      const roots = getLoreBySlug("numinous-episcopate-southern-roots");
+      expect(roots?.tags).toContain("numinous-episcopate");
+      expect(roots?.city).toBeUndefined();
+      expect(roots?.pathway).toBeUndefined();
+      expect(roots?.narratorOnly).toBe(true);
+      expect(roots!.sequences.length).toBeGreaterThan(0);
+    });
+
+    it("has the Southern NPCs with relationship data, city-keyed but not pathway-keyed", () => {
+      const names = NPC_LORE.flatMap((e) => e.npcs);
+      expect(names).toContain("Sia Palenque Eggers");
+      expect(names).toContain("Haiter");
+      for (const slug of ["npc-sia-palenque-eggers", "npc-haiter"]) {
+        const npc = getLoreBySlug(slug);
+        expect(npc?.city).toBe("balam");
+        // The leak rule: a regional NPC is never pathway-keyed (pathway in prose).
+        expect(npc?.pathway).toBeUndefined();
+        expect(npc?.narratorOnly).toBe(true);
+      }
+    });
+
+    it("never injects Southern present-day lore into a mainland character", () => {
+      // selectCuratedLore pulls city lore by the location's leading word. A central
+      // Fifth character is never at "balam", so getLoreByCity("balam") is the only
+      // way the present lore surfaces — and every entry under it is epoch 5.
+      const balam = getLoreByCity("balam");
+      expect(balam.length).toBeGreaterThan(0);
+      expect(balam.every((e) => e.epoch === 5)).toBe(true);
+      // A Tingen character's curated lore never contains the Southern entries.
+      const tingen = selectCuratedLore("death", "Tingen City", 100000, 5, 1);
+      const slugs = tingen.entries.map((e) => e.slug);
+      expect(slugs).not.toContain("southern-continent-overview");
+      expect(slugs).not.toContain("southern-death-worship");
+    });
+  });
+
   it("has deepened Backlund to capital depth (issue #133)", () => {
     // The stub gains notable boroughs/landmarks, bringing Backlund toward
     // Tingen-level depth. Every location entry stays epoch 5, city backlund.
@@ -974,6 +1062,7 @@ describe("Total lore corpus", () => {
       LOEN_LORE.length +
       FEYSAC_LORE.length +
       FORSAKEN_LAND_LORE.length +
+      SOUTHERN_CONTINENT_LORE.length +
       HISTORICAL_LORE.length +
       FIRST_EPOCH_LORE.length +
       SECOND_EPOCH_LORE.length +

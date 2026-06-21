@@ -1016,6 +1016,25 @@ describe("gateLocationChange", () => {
     expect(r.location).toBe("Giant King's Court");
   });
 
+  it("refuses a narrator teleport across the Berserk Sea to Balam with a sea-voyage message, NOT the dream gate (issue #138)", () => {
+    // The Southern Continent is freely reachable by deliberate travel, but the
+    // narrator still cannot teleport a character across the Berserk Sea mid-scene.
+    // The redirect message must read as a sea voyage — naming Giant King's Court
+    // (the Forsaken Land's dream gate) for a Balam crossing would be a lore error.
+    const r = gateLocationChange({
+      ...base,
+      epoch: 5,
+      from: "Tingen City",
+      to: "Balam",
+      gateEnabled: true,
+      sequenceLevel: 9,
+    });
+    expect(r.blocked).toBe(true);
+    expect(r.location).toBe("Tingen City");
+    expect(r.fact?.description).toContain("sea voyage");
+    expect(r.fact?.description).not.toContain("Giant King's Court");
+  });
+
   it("enforces the crossing chokepoint even with the movement gate OFF", () => {
     const r = gateLocationChange({
       ...base,

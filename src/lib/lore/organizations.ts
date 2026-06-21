@@ -702,4 +702,79 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tokenCount: 235,
     narratorOnly: false,
   },
+  // ── Southern Continent — the death-faith & the Numinous Episcopate's roots
+  // (world build-out 9, issue #138). Canon (corpus-verified): the Church of Death
+  // was the Balam Empire's state religion (Fourth Epoch); after Death perished it
+  // collapsed and surviving Eggers + Church-of-Death remnants founded the
+  // Numinous Episcopate (early Fifth Epoch). The folk death-worship of the
+  // colonized tribes persists separately. The Numinous Episcopate's overview /
+  // true-goal already exist above (issue #132) — this CROSS-LINKS its Southern
+  // origin without duplicating them. ──
+  //
+  // EPOCH SPLIT (passesEpochGate is exact-match): the Church of Death is Fourth-
+  // Epoch history (epoch 4), never mixed with the present-day folk faith (epoch 5).
+  // LEAK CONTROL: `southern-death-worship` is city-keyed `balam` (injected only
+  // for a character there); `numinous-episcopate-southern-roots` carries NO city/
+  // pathway key (cross-cutting secret — never curated-injected, the Numinous
+  // pattern) and is narratorOnly + sequence-gated.
+  {
+    slug: "church-of-death",
+    title: "The Church of Death (Balam Empire)",
+    category: "organization",
+    content: `The Church of Death was the state religion of the Balam Empire that ruled the Southern Continent through the Fourth Epoch — the faith of the Underworld Emperor, the god the histories simply call Death, first sovereign of the dead. Its priesthood deified death and the grave: it taught that dying is no ending but a threshold that may be crossed and even reversed, kept the full mysteries of the death-god's path, and governed the southern plains and rainforests hand in hand with the imperial Eggers line descended from the god himself. Its symbol was the feathered serpent, and its rites — coffins, ancestor-bones, blood offerings — set the death-soaked customs the Balam tribes keep to this day. When the orthodox gods united and slew Death near the epoch's end, the empire collapsed and the Church fell with it, its archbishops and faithful scattered or hunted down. From those remnants, and from the surviving Eggers, would grow the secret Numinous Episcopate of the Fifth Epoch — so the dead empire's church never wholly died.`,
+    epoch: 4,
+    npcs: [],
+    sequences: [],
+    tags: [
+      "church-of-death",
+      "balam-empire",
+      "death-pathway",
+      "fourth-epoch",
+      "history",
+      "religion",
+    ],
+    tokenCount: 235,
+    narratorOnly: false,
+  },
+  {
+    slug: "southern-death-worship",
+    title: "The Death-Worship of the Balam Tribes",
+    category: "organization",
+    content: `Long after the empire fell, the death-worship of the Southern Continent endures among its colonized tribes — the folk faith the orthodox churches have outlawed. In the old imperial fiefs the people still keep the dead god's ways: they bury their dead apart and keep ancestor-bones in the home, bear the dead to rest in coffins, and wear the white feathers of the feathered serpent that was his sign. It is not a church but a creed of village shamans and grave-rites, woven through every part of native life — and in the deep jungles of West Balam its old sacrifices still run red. To the Northern colonists and the Church of the Evernight Goddess, who now holds the authority over death the old god once wielded, it is heresy and savagery to be stamped out, and its shrines are pulled down and its priests hunted. To the Balam people it is simply who they are, and the longer the colonists try to burn it out of them, the more it becomes a banner for revolt.`,
+    epoch: 5,
+    city: "balam",
+    npcs: [],
+    sequences: [],
+    tags: [
+      "southern-continent",
+      "balam",
+      "death-worship",
+      "native-belief",
+      "shamanism",
+      "religion",
+      "fifth-epoch",
+    ],
+    tokenCount: 235,
+    narratorOnly: false,
+  },
+  {
+    slug: "numinous-episcopate-southern-roots",
+    title: "Numinous Episcopate — Roots in the Fallen Empire",
+    category: "organization",
+    content: `The Numinous Episcopate's roots run back to the fall of the Balam Empire. When the death-god perished and the Church of Death collapsed, a few surviving members of the Eggers family — the imperial line descended from the god himself — bound themselves into a secret society to undo that death: to resurrect the first Underworld Emperor and, with him, raise the empire again and cast the Northern colonists into the sea. "Only death endures forever," they say. From the Southern Continent the brotherhood spread; nearly eradicated by the Seven Orthodox Churches in the colonial era, it survived stubbornly and crept into the nations of the Northern Continent. Its strongest arm is the Royal Family Faction of the Eggers descendants, led by Sia Palenque Eggers; another, the Artificial Death Faction, is led by Haiter, once an archbishop of the old Church of Death. To the Church of the Evernight Goddess — who took the dead god's authority over death for her own — the Episcopate is among the deadliest heresies alive, a wound from the elder ages that has never closed.`,
+    epoch: 5,
+    npcs: ["Sia Palenque Eggers", "Haiter"],
+    sequences: [4],
+    tags: [
+      "numinous-episcopate",
+      "balam-empire",
+      "eggers-family",
+      "death-pathway",
+      "secret-organization",
+      "southern-continent",
+      "spoiler",
+    ],
+    tokenCount: 240,
+    narratorOnly: true,
+  },
 ];

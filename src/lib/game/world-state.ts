@@ -23,6 +23,7 @@ import {
   getCity,
   grantAccessFlag,
   hasAccessFlag,
+  isChokepointContinent,
   meetsAccessGate,
   reachedDreamWorldGate,
 } from "./travel";
@@ -174,13 +175,25 @@ export function gateLocationChange({
     fromCityId !== CROSSING_CITY &&
     destCityId !== CROSSING_CITY
   ) {
+    // The redirect message depends on WHICH crossing was refused (issue #138):
+    // a crossing involving the dream-gated Forsaken Land routes through the Giant
+    // King's Court, but a Southern-Continent crossing is a long Berserk Sea
+    // voyage — naming the Court for it would be a lore error. Either way the
+    // narrator can't teleport across a continent; deliberate travel is the path.
+    const fromCityObj = getCity(fromCityId);
+    const involvesChokepoint =
+      isChokepointContinent(continentOf(destCity)) ||
+      (fromCityObj !== undefined && isChokepointContinent(continentOf(fromCityObj)));
+    const description = involvesChokepoint
+      ? `There is no direct way from ${from} to ${to} — the only passage across lies through Giant King's Court. You remain in ${from}.`
+      : `There is no direct way from ${from} to ${to} — such a crossing is a long sea voyage that must be set out on deliberately, not made in passing. You remain in ${from}.`;
     return {
       location: from,
       blocked: true,
       crossCity,
       fact: {
         type: "event",
-        description: `There is no direct way from ${from} to ${to} — the only passage across lies through Giant King's Court. You remain in ${from}.`,
+        description,
         turnNumber,
       },
     };

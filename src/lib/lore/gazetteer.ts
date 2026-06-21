@@ -19,6 +19,15 @@ export interface GazetteerDistrict {
   keywords: string[];
 }
 
+/**
+ * The continents the gazetteer distinguishes — a lore-local mirror of `@/lib/ai`
+ * `Continent` (the gazetteer must not import the ai/game layers; a reconciliation
+ * test holds the two together). Centralized so the union is written once, not
+ * repeated across the interface field, `continentReachable`, and
+ * `gazetteerContinentOf` (world build-out 9, issue #138).
+ */
+type GazetteerContinent = "central" | "forsaken-land" | "southern-continent";
+
 export interface GazetteerFartherCity {
   id: string;
   name: string;
@@ -28,9 +37,10 @@ export interface GazetteerFartherCity {
    * The continent the city sits on (world build-out, issue #130). Absent means
    * `central` — the seven mainland cities. A `forsaken-land` city is on the
    * sealed Eastern Continent and only appears in the travel list of a character
-   * who holds its required capability flag.
+   * who holds its required capability flag; a `southern-continent` city (issue
+   * #138) is freely reachable across the Berserk Sea (no flag).
    */
-  continent?: "central" | "forsaken-land";
+  continent?: GazetteerContinent;
   /**
    * The capability flag a character must hold for this city to appear in their
    * travel list (issues #130/#133). Only the Forsaken-Land cities carry one — and
@@ -76,7 +86,7 @@ export const GAZETTEER_CROSSING_CITY = "giant-kings-court";
 function continentReachable(
   targetCity: GazetteerFartherCity,
   currentCityId: string,
-  currentContinent: "central" | "forsaken-land",
+  currentContinent: GazetteerContinent,
   accessFlags: readonly string[],
 ): boolean {
   const target = gazetteerContinentOf(targetCity);
@@ -95,13 +105,19 @@ function continentReachable(
       accessFlags.includes(CONTINENT_CROSSING_FLAG)
     );
   }
-  // Central target: shown to a mainlander; from the Forsaken side only at the
-  // crossing city with the dream passage (the way out routes through the Court).
-  if (currentContinent === "central") return true;
-  return (
-    currentCityId === GAZETTEER_CROSSING_CITY &&
-    accessFlags.includes(CONTINENT_CROSSING_FLAG)
-  );
+  // A NON-chokepoint target — the central mainland or the freely-reachable
+  // Southern Continent across the Berserk Sea (issue #138). Both follow the same
+  // rule: shown to any character NOT sealed inside the Forsaken Land, and to a
+  // Forsaken native only at the crossing city with the passage (leaving routes
+  // through the Court). Kept as one branch so the gazetteer display and the
+  // travel gate can never diverge for one of the two non-chokepoint continents.
+  if (currentContinent === "forsaken-land") {
+    return (
+      currentCityId === GAZETTEER_CROSSING_CITY &&
+      accessFlags.includes(CONTINENT_CROSSING_FLAG)
+    );
+  }
+  return true;
 }
 
 export interface EpochGazetteer {
@@ -462,10 +478,24 @@ const FIFTH_CITIES: GazetteerFartherCity[] = [
     continent: "forsaken-land",
     requiresFlag: "moon-city-passage",
   },
+  // ── Southern Continent — the colonized lands of the old Balam Empire (world
+  // build-out 9, issue #138). FREELY reachable across the Berserk Sea (NO flag,
+  // NO chokepoint) — so it shows in a mainland character's travel list, and a
+  // Southern character can sail back to the mainland; only a Forsaken native is
+  // kept from it (they leave through the Court). The long, perilous voyage is the
+  // cost (see the game-layer `BERSERK_SEA_CROSSING_DAYS`), not a sealed gate.
+  {
+    id: "balam",
+    name: "Balam",
+    realm: "Southern Continent — the colonized Balam lands",
+    blurb:
+      "Across the storm-wracked Berserk Sea: the colonized Southern Continent of jungles, deserts, and Balam Empire ruins, where Loen and Intis rule death-haunted native tribes a long and dangerous voyage from the mainland.",
+    continent: "southern-continent",
+  },
 ];
 
 /** A farther city's continent, defaulting an absent value to `central`. */
-function gazetteerContinentOf(city: GazetteerFartherCity): "central" | "forsaken-land" {
+function gazetteerContinentOf(city: GazetteerFartherCity): GazetteerContinent {
   return city.continent ?? "central";
 }
 
@@ -555,6 +585,33 @@ const MOON_CITY_DISTRICTS: GazetteerDistrict[] = [
   },
 ];
 
+// ── Balam — the colonized Southern Continent (world build-out 9, issue #138).
+// Public, player-safe districts only; the death-cult and Balam-Empire-ruin
+// spoilers stay in narrator-only curated entries. ──
+const BALAM_DISTRICTS: GazetteerDistrict[] = [
+  {
+    slug: "balam-colonial-quarter",
+    name: "The Colonial Quarter",
+    blurb:
+      "The Loen and Intis governing town on the coast — customs houses, garrison barracks, plantation factors, and the wharves where the Berserk Sea ships unload, all raised over a conquered land in a few short decades.",
+    keywords: ["colonial", "colony", "port", "quarter", "balam"],
+  },
+  {
+    slug: "balam-native-town",
+    name: "The Native Town & Bone-Shrines",
+    blurb:
+      "The crowded native quarter beyond the colonial streets, where the Balam people keep their death-haunted ways — coffins borne through the lanes, ancestor-bones kept at home, and the outlawed worship of the old death-god murmured out of the colonists' sight.",
+    keywords: ["native", "shrine", "bone", "tribe", "tribal"],
+  },
+  {
+    slug: "balam-jungle-ruins",
+    name: "The Jungle & Empire Ruins",
+    blurb:
+      "The hot rainforest pressing in past the cleared land, swallowing the broken temples and tombs of the fallen Balam Empire — overgrown step-pyramids, feathered-serpent carvings, and the relics that draw adventurers and worse into the green dark.",
+    keywords: ["jungle", "rainforest", "ruins", "ruin", "tomb", "temple"],
+  },
+];
+
 // District lists keyed by city id — the intra-city "site" layer per place.
 const FIFTH_CITY_DISTRICTS: Record<string, GazetteerDistrict[]> = {
   tingen: FIFTH_DISTRICTS,
@@ -568,6 +625,7 @@ const FIFTH_CITY_DISTRICTS: Record<string, GazetteerDistrict[]> = {
   "silver-city": SILVER_CITY_DISTRICTS,
   "giant-kings-court": GIANT_KINGS_COURT_DISTRICTS,
   "moon-city": MOON_CITY_DISTRICTS,
+  balam: BALAM_DISTRICTS,
 };
 
 const FIFTH_CITY_BY_ID: Record<string, GazetteerFartherCity> = Object.fromEntries(
@@ -686,8 +744,15 @@ export function uncertainFifthGazetteer(): EpochGazetteer {
       "Your whereabouts are uncertain — no district here answers to where you stand. Set out for a city below to find your bearings.",
     districts: [],
     // A character whose city can't be resolved is treated as on the central
-    // continent (issue #130): the Forsaken cities never surface here.
-    fartherCities: FIFTH_CITIES.filter((c) => gazetteerContinentOf(c) === "central"),
+    // continent (issue #130): only the dream-gated Forsaken cities are hidden.
+    // The freely-reachable Southern Continent (Balam, issue #138) IS shown — the
+    // engine permits sailing there from an unresolved location (`canTravelTo`
+    // returns true), so omitting it would leave a reachable destination the
+    // travel UI never offers, the very display/travel divergence this atlas
+    // exists to avoid.
+    fartherCities: FIFTH_CITIES.filter(
+      (c) => gazetteerContinentOf(c) !== "forsaken-land",
+    ),
     travelEnabled: true,
   };
 }
