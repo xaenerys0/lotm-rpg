@@ -20,18 +20,32 @@ const authFile = "playwright/.auth/user.json";
 // so the public tier stays green in sandboxes/CI without Supabase.
 const hasBackend = Boolean(process.env.E2E_SUPABASE_URL);
 
+// Public-tier specs: layout/responsiveness, the auth redirect boundary, the
+// auth-form behaviour, the security headers, the PWA surface, and real-browser
+// a11y. All run without a backend (the dummy Supabase URL fails closed).
+const PUBLIC_SPECS =
+  /(responsive|auth-boundary|auth-forms|security-headers|pwa|a11y)\.spec\.ts/;
+
 const publicProjects: Project[] = [
   // Phone-sized viewport with touch + mobile UA — the case the user reported
   // ("various mobile screens don't fit naturally").
   {
     name: "mobile",
-    testMatch: /(responsive|auth-boundary)\.spec\.ts/,
+    testMatch: PUBLIC_SPECS,
     use: { ...devices["Pixel 5"] },
+  },
+  // iOS Safari (WebKit) — the PWA explicitly targets "Add to Home Screen" on
+  // iOS and the original complaint was mobile fit, so exercise the engine that
+  // actually ships those, not just Chromium.
+  {
+    name: "mobile-webkit",
+    testMatch: PUBLIC_SPECS,
+    use: { ...devices["iPhone 13"] },
   },
   // Desktop sanity check that the same pages still hold up wide.
   {
     name: "desktop",
-    testMatch: /(responsive|auth-boundary)\.spec\.ts/,
+    testMatch: PUBLIC_SPECS,
     use: { ...devices["Desktop Chrome"] },
   },
 ];

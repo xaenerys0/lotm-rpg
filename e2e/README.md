@@ -1,9 +1,30 @@
 # End-to-end / UI tests (Playwright)
 
-These specs drive a real Chromium against the running app to verify things
-jsdom cannot measure — chiefly **layout and responsiveness** (no horizontal
-overflow, controls inside the viewport). They are separate from the Vitest unit
-and jsdom-a11y suite under `src/**`.
+These specs drive a real browser against the running app to verify things jsdom
+cannot measure. They are separate from the Vitest unit and jsdom-a11y suite
+under `src/**`, and cover:
+
+- **Layout & responsiveness** (`responsive.spec.ts`) — no horizontal overflow,
+  controls inside the viewport.
+- **Auth redirect boundary** (`auth-boundary.spec.ts`) — protected routes bounce
+  a signed-out visitor to `/login`.
+- **Auth-form behaviour** (`auth-forms.spec.ts`) — signup/login field labels and
+  autocomplete (paste-friendly), native validation, and the accessible error
+  state (`role="alert"` + `aria-invalid`) when the backend is unreachable.
+- **Security headers** (`security-headers.spec.ts`) — the running server actually
+  emits the nonce-based CSP (`'strict-dynamic'`) and the hardening headers from
+  `src/proxy.ts`. Backstops the proxy unit test against a real response.
+- **PWA surface** (`pwa.spec.ts`) — the web app manifest parses with the right
+  fields, the icon routes return PNGs, and `/sw.js` is scoped to `/`.
+- **Real-browser accessibility** (`a11y.spec.ts`) — runs axe (the existing
+  `axe-core` dep, injected via `page.evaluate` so the strict CSP doesn't block
+  it) on the public pages with **`color-contrast` enabled**, which the jsdom
+  suite must disable.
+
+Specs run across three public-tier browser projects: **mobile** (Pixel 5,
+Chromium), **mobile-webkit** (iPhone 13, WebKit/iOS Safari — the PWA's real
+target), and **desktop** (Desktop Chrome). To add a new public spec, register
+its filename in the `PUBLIC_SPECS` matcher in `playwright.config.ts`.
 
 ```bash
 pnpm test:e2e            # run the suite (boots the app via webServer)
@@ -18,13 +39,13 @@ so you don't need a server running first.
 
 ### Public tier — always runs (no backend)
 
-`responsive.spec.ts` and `auth-boundary.spec.ts` cover the unauthenticated
-surface: the auth pages fit every viewport (320px → desktop) with no sideways
-scroll, and every protected route bounces a signed-out visitor to `/login`. A
-dummy Supabase URL lets the server boot; the auth call fails closed.
+The public specs (see the list above) cover the unauthenticated surface —
+layout, the redirect boundary, auth-form behaviour, security headers, the PWA
+surface, and real-browser a11y. A dummy Supabase URL lets the server boot; the
+auth call fails closed, which is exactly what the auth-form error tests rely on.
 
-Runs across two device projects: **mobile** (Pixel 5) and **desktop**
-(Desktop Chrome).
+Runs across three device projects: **mobile** (Pixel 5, Chromium),
+**mobile-webkit** (iPhone 13, WebKit) and **desktop** (Desktop Chrome).
 
 ### Authenticated tier — runs only with a Supabase backend
 
@@ -52,7 +73,9 @@ runs (so CI/sandboxes without Supabase stay green).
 
 The `CI` workflow (`.github/workflows/ci.yml`) runs the **public tier** on every
 PR and push to `main` — the `webServer` block boots the app with dummy Supabase
-env, so no backend is required.
+env, so no backend is required. CI installs both **Chromium and WebKit** (the
+iOS project), so a new browser project here needs the matching `playwright
+install` target added to the workflow.
 
 The **authenticated tier** is a secret-gated follow-up. To enable it in CI,
 store `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`, `E2E_USER_EMAIL`, and

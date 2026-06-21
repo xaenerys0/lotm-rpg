@@ -74,14 +74,15 @@ jobs:
 
       # System (apt) deps aren't part of the cached browser bundle, so install
       # them every run.
-      - name: Install Chromium system deps
-        run: pnpm exec playwright install-deps chromium
+      - name: Install browser system deps
+        run: pnpm exec playwright install-deps chromium webkit
 
-      # Chromium-only — the config defines mobile/desktop Chromium projects.
-      # Runs unconditionally: a no-op when the cache restored a complete bundle,
-      # and a self-heal that re-downloads if the cache was partial or stale.
-      - name: Install Chromium
-        run: pnpm exec playwright install chromium
+      # Chromium (mobile/desktop projects) + WebKit (the iOS Safari project,
+      # for the PWA/mobile-fit surface). Runs unconditionally: a no-op when the
+      # cache restored a complete bundle, and a self-heal that re-downloads if
+      # the cache was partial or stale.
+      - name: Install browsers
+        run: pnpm exec playwright install chromium webkit
 
       - name: Run Playwright (public tier)
         run: pnpm test:e2e
