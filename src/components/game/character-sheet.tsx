@@ -116,8 +116,8 @@ export function CharacterSheet() {
 
   if (summaries.length === 0 || !session) {
     return (
-      <div className="rounded-lg border border-dashed border-border/60 p-12 text-center">
-        <p className="font-serif text-lg italic text-foreground/70">
+      <div className="rounded-xl border border-dashed border-border bg-surface p-12 text-center">
+        <p className="font-serif text-lg italic text-foreground">
           &ldquo;The pathways await your choice&rdquo;
         </p>
         <p className="mx-auto mt-4 max-w-md text-sm leading-relaxed text-muted">
@@ -153,14 +153,17 @@ export function CharacterSheet() {
     <div className="space-y-8">
       {summaries.length > 1 && (
         <div>
-          <label htmlFor="sheet-session" className="mb-1.5 block text-xs text-muted">
+          <label
+            htmlFor="sheet-session"
+            className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+          >
             Active Beyonder
           </label>
           <select
             id="sheet-session"
             value={session.id}
             onChange={(e) => saveActiveSessionId(e.target.value)}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20 sm:w-auto"
+            className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30 sm:w-auto"
           >
             {summaries.map((s) => (
               <option key={s.id} value={s.id}>
@@ -174,7 +177,7 @@ export function CharacterSheet() {
       {/* Identity */}
       <section
         aria-labelledby="sheet-identity"
-        className="parchment rounded-lg p-6 md:p-8"
+        className="parchment rounded-xl p-6 md:p-8"
       >
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
@@ -198,7 +201,7 @@ export function CharacterSheet() {
               · {pathway?.name ?? "Unknown"} Pathway
             </p>
             <p className="mt-2">
-              <span className="inline-flex items-center rounded-sm border border-amber/40 bg-amber/10 px-2 py-0.5 text-[11px] font-medium tracking-[0.1em] text-amber uppercase">
+              <span className="inline-flex items-center rounded-md border border-amber/30 bg-amber/10 px-2 py-0.5 text-[11px] font-medium tracking-[0.1em] text-amber uppercase">
                 {epoch.name} · {epoch.era}
               </span>
             </p>
@@ -209,7 +212,7 @@ export function CharacterSheet() {
           </p>
         </div>
         {state.characterBackground && (
-          <p className="mt-4 max-w-2xl font-serif text-sm leading-relaxed text-foreground/80">
+          <p className="mt-4 max-w-2xl font-serif text-sm leading-relaxed text-foreground">
             {state.characterBackground}
           </p>
         )}
@@ -219,11 +222,11 @@ export function CharacterSheet() {
         {/* Abilities & acting */}
         <section
           aria-labelledby="sheet-abilities"
-          className="rounded-lg border border-border/70 bg-surface/60 p-6"
+          className="rounded-xl border border-border bg-surface p-6"
         >
           <h2
             id="sheet-abilities"
-            className="gaslit font-serif text-lg font-semibold text-amber/90"
+            className="font-serif text-lg font-semibold text-foreground"
           >
             Abilities
           </h2>
@@ -237,12 +240,12 @@ export function CharacterSheet() {
             <div className="mt-4 space-y-5">
               {abilityGroups.map((group) => (
                 <div key={group.level}>
-                  <h3 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-semibold tracking-wide text-foreground/70 uppercase">
+                  <h3 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
                     <span>
                       Sequence {group.level} · {group.name}
                     </span>
                     {group.enhanced && (
-                      <span className="rounded-sm border border-amber/40 bg-amber/10 px-1.5 py-0.5 text-[10px] font-medium tracking-[0.1em] text-amber normal-case">
+                      <span className="rounded-md border border-amber/30 bg-amber/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.1em] text-amber normal-case">
                         Enhanced
                       </span>
                     )}
@@ -267,12 +270,12 @@ export function CharacterSheet() {
               the potion is hidden: the role guidance still shows, but under a
               neutral heading that names neither the mechanic nor digestion. The
               heading flips to "Acting Method" once the character discovers it. */}
-          <h3 className="mt-6 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+          <h3 className="mt-6 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
             {knowsMethod ? "Acting Method" : "Your Role"}
           </h3>
           <ul className="mt-2 list-inside space-y-1.5">
             {(sequence?.actingRequirements ?? []).map((req) => (
-              <li key={req} className="text-sm leading-relaxed text-foreground/80">
+              <li key={req} className="text-sm leading-relaxed text-foreground">
                 {req}
               </li>
             ))}
@@ -282,26 +285,28 @@ export function CharacterSheet() {
         {/* Condition */}
         <section
           aria-labelledby="sheet-condition"
-          className="rounded-lg border border-border/70 bg-surface/60 p-6"
+          className="rounded-xl border border-border bg-surface p-6"
         >
           <h2
             id="sheet-condition"
-            className="gaslit font-serif text-lg font-semibold text-amber/90"
+            className="font-serif text-lg font-semibold text-foreground"
           >
             Condition
           </h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div>
-              <dt className="text-xs tracking-wide text-muted uppercase">Mind</dt>
-              <dd className="mt-0.5 font-serif italic text-foreground/85">
+              <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                Mind
+              </dt>
+              <dd className="mt-0.5 font-serif italic text-foreground">
                 {SANITY_DESCRIPTORS[tier]}
               </dd>
             </div>
             <div>
-              <dt className="text-xs tracking-wide text-muted uppercase">
+              <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
                 {knowsMethod ? "Potion digestion" : "Within"}
               </dt>
-              <dd className="mt-0.5 text-foreground/85">
+              <dd className="mt-0.5 text-foreground">
                 {!state.digestion
                   ? "No potion taken."
                   : !knowsMethod
@@ -318,8 +323,10 @@ export function CharacterSheet() {
               </dd>
             </div>
             <div>
-              <dt className="text-xs tracking-wide text-muted uppercase">Injuries</dt>
-              <dd className="mt-0.5 text-foreground/85">
+              <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                Injuries
+              </dt>
+              <dd className="mt-0.5 text-foreground">
                 {state.injuries && state.injuries.length > 0 ? (
                   <ul className="space-y-1">
                     {state.injuries.map((injury) => (
@@ -335,10 +342,10 @@ export function CharacterSheet() {
               </dd>
             </div>
             <div>
-              <dt className="text-xs tracking-wide text-muted uppercase">
+              <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
                 Active quests
               </dt>
-              <dd className="mt-0.5 text-foreground/85">
+              <dd className="mt-0.5 text-foreground">
                 {state.activeQuests.length > 0 ? state.activeQuests.join("; ") : "None."}
               </dd>
             </div>
@@ -356,10 +363,13 @@ export function CharacterSheet() {
       <CompanionsSection session={session} onUpdate={persistSession} />
 
       {/* Inventory */}
-      <section aria-labelledby="sheet-inventory">
+      <section
+        aria-labelledby="sheet-inventory"
+        className="rounded-xl border border-border bg-surface p-6"
+      >
         <h2
           id="sheet-inventory"
-          className="gaslit font-serif text-lg font-semibold text-amber/90"
+          className="font-serif text-lg font-semibold text-foreground"
         >
           Inventory
         </h2>
@@ -373,17 +383,17 @@ export function CharacterSheet() {
               .filter((group) => group.items.length > 0)
               .map((group) => (
                 <div key={group.category}>
-                  <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">
+                  <h3 className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
                     {ITEM_CATEGORY_LABELS[group.category]}
                   </h3>
                   <ul className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                     {group.items.map((item, index) => (
                       <li
                         key={`${item.name}-${index}`}
-                        className="parchment rounded-md p-4"
+                        className="parchment rounded-lg p-4"
                       >
                         <p className="text-sm font-medium text-foreground">
-                          <span aria-hidden="true" className="mr-2 text-amber/80">
+                          <span aria-hidden="true" className="mr-2 text-amber">
                             {ITEM_CATEGORY_GLYPHS[group.category]}
                           </span>
                           {item.name}
@@ -422,13 +432,13 @@ function DeleteCharacter({ name, onDelete }: { name: string; onDelete: () => voi
   return (
     <section
       aria-labelledby="sheet-danger"
-      className="rounded-lg border border-crimson/30 bg-crimson/[0.04] p-6"
+      className="rounded-xl border border-crimson/30 bg-surface p-6"
     >
       <h2 id="sheet-danger" className="font-serif text-lg font-semibold text-sanity-low">
         Delete Character
       </h2>
       <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted">
-        Permanently erase <span className="text-foreground/85">{name}</span> — the save,
+        Permanently erase <span className="text-foreground">{name}</span> — the save,
         journal, in-progress combat, and usage record all vanish. This cannot be undone.
       </p>
       {confirming ? (
@@ -443,14 +453,14 @@ function DeleteCharacter({ name, onDelete }: { name: string; onDelete: () => voi
           <button
             type="button"
             onClick={onDelete}
-            className="min-h-[32px] rounded border border-crimson/50 bg-crimson/10 px-3 py-1.5 text-xs font-medium text-sanity-low transition-colors hover:bg-crimson/20"
+            className="min-h-[32px] rounded-lg border border-crimson/50 bg-crimson/10 px-3 py-1.5 text-xs font-medium text-sanity-low transition-colors hover:bg-crimson/20"
           >
             Delete
           </button>
           <button
             type="button"
             onClick={() => setConfirming(false)}
-            className="min-h-[32px] rounded border border-border px-3 py-1.5 text-xs text-muted transition-colors hover:text-foreground"
+            className="min-h-[32px] rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
           >
             Cancel
           </button>
@@ -459,7 +469,7 @@ function DeleteCharacter({ name, onDelete }: { name: string; onDelete: () => voi
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="mt-4 min-h-[32px] rounded border border-crimson/40 px-3 py-1.5 text-xs font-medium text-sanity-low transition-colors hover:border-crimson/60 hover:bg-crimson/10"
+          className="mt-4 min-h-[32px] rounded-lg border border-crimson/40 px-3 py-1.5 text-xs font-medium text-sanity-low transition-colors hover:border-crimson/60 hover:bg-crimson/10"
           aria-label={`Delete ${name}`}
         >
           Delete this character
@@ -492,11 +502,11 @@ function CompanionsSection({
   return (
     <section
       aria-labelledby="sheet-companions"
-      className="rounded-lg border border-border/70 bg-surface/60 p-6"
+      className="rounded-xl border border-border bg-surface p-6"
     >
       <h2
         id="sheet-companions"
-        className="gaslit font-serif text-lg font-semibold text-amber/90"
+        className="font-serif text-lg font-semibold text-foreground"
       >
         Companions &amp; pursuers
       </h2>
@@ -514,9 +524,9 @@ function CompanionsSection({
             return (
               <li
                 key={npc.name}
-                className="flex items-center justify-between gap-3 rounded border border-border/60 bg-background/40 p-3"
+                className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface-raised p-4"
               >
-                <span className="text-sm text-foreground/90">
+                <span className="text-sm text-foreground">
                   {npc.name}{" "}
                   <span className="text-xs text-muted">
                     ({role}
@@ -532,7 +542,7 @@ function CompanionsSection({
                         : leaveRoster(session, npc.name),
                     )
                   }
-                  className="inline-flex min-h-[24px] items-center rounded border border-border px-3 py-1 text-xs font-medium text-foreground/80 transition-colors hover:border-amber/40 hover:text-amber"
+                  className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
                 >
                   {npc.disposition === "hostile" ? "Shake off" : "Part ways"}
                 </button>
@@ -544,7 +554,7 @@ function CompanionsSection({
 
       {present.length > 0 && (
         <div className="mt-5">
-          <h3 className="text-xs tracking-wide text-muted uppercase">
+          <h3 className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
             Present in the scene
           </h3>
           <p className="mt-1 text-xs text-muted">
@@ -555,9 +565,9 @@ function CompanionsSection({
             {present.map((name) => (
               <li
                 key={name}
-                className="flex flex-wrap items-center justify-between gap-2 rounded border border-border/60 bg-background/40 p-3"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-surface-raised p-4"
               >
-                <span className="text-sm text-foreground/90">{name}</span>
+                <span className="text-sm text-foreground">{name}</span>
                 <button
                   type="button"
                   onClick={() =>
@@ -569,7 +579,7 @@ function CompanionsSection({
                       }),
                     )
                   }
-                  className="inline-flex min-h-[24px] items-center rounded border border-amber/40 px-3 py-1 text-xs font-medium text-amber transition-colors hover:bg-amber/10"
+                  className="inline-flex min-h-[24px] items-center rounded-lg border border-amber/40 px-3 py-1.5 text-xs font-medium text-amber transition-colors hover:bg-amber/10"
                   aria-label={`Have ${name} travel with you`}
                 >
                   Travel with
@@ -637,10 +647,13 @@ function IdentitySection({
   };
 
   return (
-    <section aria-labelledby="sheet-identities">
+    <section
+      aria-labelledby="sheet-identities"
+      className="rounded-xl border border-border bg-surface p-6"
+    >
       <h2
         id="sheet-identities"
-        className="gaslit font-serif text-lg font-semibold text-amber/90"
+        className="font-serif text-lg font-semibold text-foreground"
       >
         Identities
       </h2>
@@ -653,7 +666,7 @@ function IdentitySection({
       </p>
 
       {active && (
-        <p className="mt-3 text-sm text-foreground/85">
+        <p className="mt-3 text-sm text-foreground">
           Currently presenting as{" "}
           <span className="font-medium text-amber">{active.name}</span>.
         </p>
@@ -663,17 +676,20 @@ function IdentitySection({
         {identityState.identities.map((identity) => {
           const isActive = identity.id === identityState.activeIdentityId;
           return (
-            <li key={identity.id} className="parchment rounded-md p-4">
+            <li
+              key={identity.id}
+              className="rounded-lg border border-border bg-surface-raised p-4"
+            >
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-sm font-semibold text-foreground">
                   {identity.name}
                   {identity.activeDisguise && (
-                    <span className="ml-2 text-[10px] tracking-[0.15em] text-muted uppercase">
+                    <span className="ml-2 rounded-md border border-border bg-surface px-1.5 py-0.5 text-[10px] tracking-[0.1em] text-muted uppercase">
                       disguise
                     </span>
                   )}
                   {identity.flawless && (
-                    <span className="ml-2 text-[10px] tracking-[0.15em] text-amber/90 uppercase">
+                    <span className="ml-2 rounded-md border border-amber/30 bg-amber/10 px-1.5 py-0.5 text-[10px] tracking-[0.1em] text-amber uppercase">
                       {identity.fateProof ? "fate-proof" : "flawless"}
                     </span>
                   )}
@@ -686,7 +702,7 @@ function IdentitySection({
                 </p>
               )}
               {identity.flawless ? (
-                <p className="mt-3 text-[11px] text-amber/80">
+                <p className="mt-3 text-[11px] text-amber">
                   A real, separate person — no exposure risk.
                 </p>
               ) : (
@@ -701,7 +717,7 @@ function IdentitySection({
                     aria-valuenow={identity.exposureRisk}
                     aria-valuemin={0}
                     aria-valuemax={100}
-                    className="mt-1 h-1.5 overflow-hidden rounded-full bg-border/60"
+                    className="mt-1 h-1.5 overflow-hidden rounded-full bg-border"
                   >
                     <div
                       className={`h-full ${identity.exposureRisk >= 60 ? "bg-sanity-low" : identity.exposureRisk >= 30 ? "bg-sanity-mid" : "bg-sanity-high"}`}
@@ -730,14 +746,14 @@ function IdentitySection({
                   onClick={() =>
                     apply(switchIdentity(identityState, isActive ? null : identity.id))
                   }
-                  className="min-h-[24px] rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber hover:border-amber/50"
+                  className="min-h-[24px] rounded-lg border border-amber/30 bg-amber/10 px-3 py-1.5 text-xs font-medium text-amber transition-colors hover:border-amber/50"
                 >
                   {isActive ? "Return to your own face" : "Wear this face"}
                 </button>
                 <button
                   type="button"
                   onClick={() => apply(discardIdentity(identityState, identity.id))}
-                  className="min-h-[24px] rounded-md border border-border px-3 py-1.5 text-xs text-muted hover:border-crimson/40 hover:text-sanity-low"
+                  className="min-h-[24px] rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-crimson/40 hover:text-sanity-low"
                 >
                   Discard
                 </button>
@@ -750,7 +766,10 @@ function IdentitySection({
       {showForm ? (
         <form onSubmit={handleCreate} className="mt-4 max-w-md space-y-3">
           <div>
-            <label htmlFor="identity-name" className="mb-1 block text-xs text-muted">
+            <label
+              htmlFor="identity-name"
+              className="mb-1 block text-xs font-medium text-muted"
+            >
               Name
             </label>
             <input
@@ -758,13 +777,13 @@ function IdentitySection({
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
           </div>
           <div>
             <label
               htmlFor="identity-appearance"
-              className="mb-1 block text-xs text-muted"
+              className="mb-1 block text-xs font-medium text-muted"
             >
               Appearance
             </label>
@@ -773,18 +792,21 @@ function IdentitySection({
               type="text"
               value={appearance}
               onChange={(e) => setAppearance(e.target.value)}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
           </div>
           <div>
-            <label htmlFor="identity-class" className="mb-1 block text-xs text-muted">
+            <label
+              htmlFor="identity-class"
+              className="mb-1 block text-xs font-medium text-muted"
+            >
               Social class
             </label>
             <select
               id="identity-class"
               value={socialClass}
               onChange={(e) => setSocialClass(e.target.value as SocialClass)}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             >
               {SOCIAL_CLASSES.map((value) => (
                 <option key={value} value={value}>
@@ -794,7 +816,10 @@ function IdentitySection({
             </select>
           </div>
           <div>
-            <label htmlFor="identity-backstory" className="mb-1 block text-xs text-muted">
+            <label
+              htmlFor="identity-backstory"
+              className="mb-1 block text-xs font-medium text-muted"
+            >
               Backstory (optional)
             </label>
             <textarea
@@ -802,7 +827,7 @@ function IdentitySection({
               rows={2}
               value={backstory}
               onChange={(e) => setBackstory(e.target.value)}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
           </div>
           {formError && (
@@ -813,14 +838,14 @@ function IdentitySection({
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded-md bg-amber/90 px-4 py-2 text-sm font-medium text-background hover:bg-amber"
+              className="rounded-lg bg-amber px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
             >
               Craft the identity
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+              className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
             >
               Cancel
             </button>
@@ -830,7 +855,7 @@ function IdentitySection({
         <button
           type="button"
           onClick={() => setShowForm(true)}
-          className="mt-4 rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber hover:border-amber/50"
+          className="mt-4 rounded-lg border border-amber/30 bg-amber/10 px-4 py-2.5 text-sm font-semibold text-amber transition-colors hover:border-amber/50"
         >
           {capability === "basic" ? "Prepare a disguise" : "Craft a new identity"}
         </button>
@@ -1007,10 +1032,13 @@ function TrueSelfSection({
   };
 
   return (
-    <section aria-labelledby="sheet-trueself">
+    <section
+      aria-labelledby="sheet-trueself"
+      className="rounded-xl border border-border bg-surface p-6"
+    >
       <h2
         id="sheet-trueself"
-        className="gaslit font-serif text-lg font-semibold text-amber/90"
+        className="font-serif text-lg font-semibold text-foreground"
       >
         True Self
       </h2>
@@ -1026,7 +1054,7 @@ function TrueSelfSection({
         </p>
       )}
       {profileState.recognition && (
-        <p className="mt-2 text-xs text-amber/80" role="status">
+        <p className="mt-2 text-xs text-amber" role="status">
           {profileState.recognition.pendingNpcs.length}{" "}
           {profileState.recognition.pendingNpcs.length === 1 ? "person" : "people"} who
           knew you have not yet recognised your new face.
@@ -1048,7 +1076,7 @@ function TrueSelfSection({
               ],
             })
           }
-          className="mt-3 mr-2 rounded-md border border-occult/40 bg-occult/[0.08] px-4 py-2 text-sm font-medium text-occult-bright hover:border-occult/60"
+          className="mt-3 mr-2 rounded-lg border border-occult/40 bg-occult/10 px-4 py-2.5 text-sm font-semibold text-occult-bright transition-colors hover:border-occult/60"
         >
           Begin the rite of the {rite.riteName}
         </button>
@@ -1058,7 +1086,10 @@ function TrueSelfSection({
         <form onSubmit={handleSubmit} className="mt-4 max-w-md space-y-3">
           {SELF_TEXT_FIELDS.map(({ key, label, multiline }) => (
             <div key={key}>
-              <label htmlFor={`self-${key}`} className="mb-1 block text-xs text-muted">
+              <label
+                htmlFor={`self-${key}`}
+                className="mb-1 block text-xs font-medium text-muted"
+              >
                 {label}
               </label>
               {multiline ? (
@@ -1067,7 +1098,7 @@ function TrueSelfSection({
                   rows={2}
                   value={fields[key]}
                   onChange={(e) => setField(key, e.target.value)}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 />
               ) : (
                 <input
@@ -1075,14 +1106,17 @@ function TrueSelfSection({
                   type="text"
                   value={fields[key]}
                   onChange={(e) => setField(key, e.target.value)}
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                  className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 />
               )}
             </div>
           ))}
 
           <div>
-            <label htmlFor="self-trait" className="mb-1 block text-xs text-muted">
+            <label
+              htmlFor="self-trait"
+              className="mb-1 block text-xs font-medium text-muted"
+            >
               Demeanor / allure traits
             </label>
             {fields.demeanor.length > 0 && (
@@ -1092,7 +1126,7 @@ function TrueSelfSection({
                     <button
                       type="button"
                       onClick={() => removeTrait(trait.id)}
-                      className="inline-flex min-h-[24px] items-center gap-1 rounded-full border border-amber/30 bg-amber/[0.06] px-3 py-1 text-xs text-amber hover:border-crimson/50 hover:text-sanity-low"
+                      className="inline-flex min-h-[24px] items-center gap-1 rounded-full border border-amber/30 bg-amber/10 px-3 py-1 text-xs font-medium text-amber transition-colors hover:border-crimson/50 hover:text-sanity-low"
                       aria-label={`Remove trait ${trait.label}`}
                     >
                       {trait.label}
@@ -1108,12 +1142,12 @@ function TrueSelfSection({
                 type="text"
                 value={newTrait}
                 onChange={(e) => setNewTrait(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               />
               <button
                 type="button"
                 onClick={addTrait}
-                className="rounded-md border border-amber/30 px-3 py-1.5 text-sm text-amber hover:border-amber/50"
+                className="rounded-lg border border-amber/30 px-3 py-1.5 text-sm font-medium text-amber transition-colors hover:border-amber/50"
               >
                 Add
               </button>
@@ -1145,14 +1179,14 @@ function TrueSelfSection({
           <div className="flex gap-2">
             <button
               type="submit"
-              className="rounded-md bg-amber/90 px-4 py-2 text-sm font-medium text-background hover:bg-amber"
+              className="rounded-lg bg-amber px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
             >
               Become who you are
             </button>
             <button
               type="button"
               onClick={() => setShowForm(false)}
-              className="rounded-md border border-border px-4 py-2 text-sm text-muted hover:text-foreground"
+              className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
             >
               Cancel
             </button>
@@ -1162,7 +1196,7 @@ function TrueSelfSection({
         <button
           type="button"
           onClick={() => openForm()}
-          className="mt-3 rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber hover:border-amber/50"
+          className="mt-3 rounded-lg border border-amber/30 bg-amber/10 px-4 py-2.5 text-sm font-semibold text-amber transition-colors hover:border-amber/50"
         >
           Edit true self
         </button>
@@ -1170,7 +1204,7 @@ function TrueSelfSection({
 
       {/* Personal log — player-authored, never fed to the narrator. */}
       <div className="mt-6">
-        <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">
+        <h3 className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
           Personal log
         </h3>
         {profileState.profile.notes.length > 0 && (
@@ -1178,13 +1212,13 @@ function TrueSelfSection({
             {profileState.profile.notes.map((note) => (
               <li
                 key={note.id}
-                className="flex items-start justify-between gap-2 parchment rounded-md p-3"
+                className="flex items-start justify-between gap-2 rounded-lg border border-border bg-surface-raised p-4"
               >
-                <span className="text-sm text-foreground/85">{note.text}</span>
+                <span className="text-sm text-foreground">{note.text}</span>
                 <button
                   type="button"
                   onClick={() => persistProfile(removeProfileNote(profileState, note.id))}
-                  className="min-h-[24px] shrink-0 rounded border border-border px-2 py-1 text-xs text-muted hover:border-crimson/40 hover:text-sanity-low"
+                  className="min-h-[24px] shrink-0 rounded-lg border border-border px-2 py-1 text-xs font-medium text-muted transition-colors hover:border-crimson/40 hover:text-sanity-low"
                   aria-label="Delete note"
                 >
                   Delete
@@ -1203,12 +1237,12 @@ function TrueSelfSection({
             value={newNote}
             onChange={(e) => setNewNote(e.target.value)}
             placeholder="Record an oath, an event, a memory…"
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           />
           <button
             type="button"
             onClick={handleAddNote}
-            className="rounded-md border border-amber/30 px-3 py-1.5 text-sm text-amber hover:border-amber/50"
+            className="rounded-lg border border-amber/30 px-3 py-1.5 text-sm font-medium text-amber transition-colors hover:border-amber/50"
           >
             Add
           </button>
