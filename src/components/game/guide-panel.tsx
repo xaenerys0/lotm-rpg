@@ -61,7 +61,7 @@ const DESTINATIONS: Destination[] = [
   {
     title: "Character",
     blurb:
-      "Your dossier. Powers earned across the Sequences, the acting method your potion demands, your condition, your True Self and the false faces you wear, the companions and pursuers at your heels, and everything in your pockets.",
+      "Your dossier. Powers earned across the Sequences, the role your Sequence demands, your condition, your True Self and the false faces you wear, the companions and pursuers at your heels, and everything in your pockets.",
     href: "/character",
   },
   {

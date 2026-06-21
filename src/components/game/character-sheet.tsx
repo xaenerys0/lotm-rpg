@@ -263,8 +263,12 @@ export function CharacterSheet() {
               ))}
             </div>
           )}
+          {/* Pre-discovery (issue #95) the secret that living the role digests
+              the potion is hidden: the role guidance still shows, but under a
+              neutral heading that names neither the mechanic nor digestion. The
+              heading flips to "Acting Method" once the character discovers it. */}
           <h3 className="mt-6 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
-            Acting Method
+            {knowsMethod ? "Acting Method" : "Your Role"}
           </h3>
           <ul className="mt-2 list-inside space-y-1.5">
             {(sequence?.actingRequirements ?? []).map((req) => (

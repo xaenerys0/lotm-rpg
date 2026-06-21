@@ -28,9 +28,9 @@ const whiteTowerSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Reader, leaning into the pathway of white tower",
-      "Practise memory in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Read, study, and divine in the manner of a Reader",
+      "Pursue knowledge through ritual and divination, never idle guesswork",
+      "Set down what you learn and keep your knowledge ordered",
     ],
     prerequisiteItems: [
       {
@@ -79,9 +79,9 @@ const whiteTowerSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Student of Ratiocination, leaning into the pathway of white tower",
-      "Practise memory in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Reason every problem through to its conclusion as a Student of Ratiocination",
+      "Deduce from evidence; trust logic over impulse",
+      "Sharpen memory and mind in keeping with your sequence",
     ],
     prerequisiteItems: [
       {
@@ -142,9 +142,9 @@ const whiteTowerSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Detective, leaning into the pathway of white tower",
-      "Practise memory in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Investigate mysteries and chase the truth like a Detective",
+      "Pair sharpened wits with the readiness to act on what you uncover",
+      "Leave no question unanswered, yet reveal less than you learn",
     ],
     prerequisiteItems: [
       {
@@ -200,9 +200,9 @@ const whiteTowerSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Polymath, leaning into the pathway of white tower",
-      "Practise memory in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Range across every field of learning as a Polymath",
+      "Analyse and imitate what you study until you have mastered it",
+      "Let breadth of knowledge, not pride, be your measure",
     ],
     prerequisiteItems: [
       {
@@ -259,9 +259,9 @@ const whiteTowerSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Mysticism Magister, leaning into the pathway of white tower",
-      "Practise memory in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Command spells and mystic arts as a Mysticism Magister",
+      "Analyse a mystery, then imitate and wield its principle",
+      "Discipline your spellcraft; never cast what you do not understand",
     ],
     prerequisiteItems: [
       {
@@ -324,9 +324,9 @@ const whiteTowerSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Prophet, leaning into the pathway of white tower",
-      "Practise memory in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Foretell and seal what is to come as a Prophet",
+      "Practise prophecy and sealed analysis with grave care",
+      "Master the swelling spirituality of a Saint without letting foreknowledge harden into fatalism",
     ],
     prerequisiteItems: [
       {
@@ -389,9 +389,9 @@ const whiteTowerSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Cognizer, leaning into the pathway of white tower",
-      "Practise memory in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Apprehend the truth directly as a Cognizer",
+      "Confer and accelerate knowledge, thinking faster than the world",
+      "Hold the human thread that keeps your near-omniscience kind rather than cold",
     ],
     prerequisiteItems: [
       {
@@ -454,9 +454,9 @@ const whiteTowerSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Wisdom Angel, leaning into the pathway of white tower",
-      "Practise memory in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Bear near-omniscience as a Wisdom Angel",
+      "Wield the authority of wisdom over all that may be known",
+      "Anchor your overflowing spirituality before the mythical character of the Wisdom Angel overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -513,9 +513,9 @@ const whiteTowerSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Omniscient Eye, leaning into the pathway of white tower",
-      "Practise memory in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "See all as the Omniscient Eye, withholding judgement",
+      "Read foreknowledge as a King of Angels, never as a tyrant of fate",
+      "Reign over knowledge as its god, yet remember the blind, living world you came from",
     ],
     prerequisiteItems: [
       {
@@ -568,9 +568,9 @@ const twilightGiantSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Warrior, leaning into the pathway of twilight giant",
-      "Practise overwhelming strength in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Fight and train as a Warrior born of divine blood",
+      "Test your strength in battle and ritual alike",
+      "Let raw might serve discipline, not temper",
     ],
     prerequisiteItems: [
       {
@@ -613,9 +613,9 @@ const twilightGiantSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Pugilist, leaning into the pathway of twilight giant",
-      "Practise overwhelming strength in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Settle matters with your fists as a Pugilist",
+      "Harden body and resistance through constant combat",
+      "Meet every challenge head-on, never from behind",
     ],
     prerequisiteItems: [
       {
@@ -678,9 +678,9 @@ const twilightGiantSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Weapon Master, leaning into the pathway of twilight giant",
-      "Practise overwhelming strength in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Master every weapon as a Weapon Master",
+      "Drill divine strength and skill until the blade is part of you",
+      "Wield overwhelming force with a craftsman's control",
     ],
     prerequisiteItems: [
       {
@@ -737,9 +737,9 @@ const twilightGiantSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Dawn Paladin, leaning into the pathway of twilight giant",
-      "Practise overwhelming strength in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Stand as a Dawn Paladin against the dark",
+      "Wield the light of dawn and dawn-forged arms",
+      "Carry your strength as a shield for others, not a cudgel",
     ],
     prerequisiteItems: [
       {
@@ -800,9 +800,9 @@ const twilightGiantSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Guardian, leaning into the pathway of twilight giant",
-      "Practise overwhelming strength in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Guard and endure as a Guardian",
+      "Take others' wounds upon yourself and bear them",
+      "Hold the line; let no one fall behind you",
     ],
     prerequisiteItems: [
       {
@@ -865,9 +865,9 @@ const twilightGiantSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Demon Hunter, leaning into the pathway of twilight giant",
-      "Practise overwhelming strength in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Hunt the monstrous as a Demon Hunter",
+      "Loose banishing light with an indomitable frame",
+      "Master the swelling might of a Saint without letting the hunt make a monster of you",
     ],
     prerequisiteItems: [
       {
@@ -930,9 +930,9 @@ const twilightGiantSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Silver Knight, leaning into the pathway of twilight giant",
-      "Practise overwhelming strength in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Charge gloriously and keep the vigil as a Silver Knight",
+      "Raise the silver aegis for the defenceless",
+      "Hold the human thread that keeps your glory a duty, not a hunger",
     ],
     prerequisiteItems: [
       {
@@ -995,9 +995,9 @@ const twilightGiantSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Glory, leaning into the pathway of twilight giant",
-      "Practise overwhelming strength in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Embody Glory, cataclysmic yet upright",
+      "Loose cataclysmic strength only where it is earned",
+      "Anchor your overflowing spirituality before the mythical character of Glory overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -1054,9 +1054,9 @@ const twilightGiantSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Hand of God, leaning into the pathway of twilight giant",
-      "Practise overwhelming strength in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Strike as the Hand of God, glory incarnate",
+      "Wield a King of Angels' strength as judgement, not slaughter",
+      "Reign over might as its god, yet remember the frail world a single blow can shatter",
     ],
     prerequisiteItems: [
       {
@@ -1104,9 +1104,9 @@ const justiciarSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Arbiter, leaning into the pathway of justiciar",
-      "Practise setting binding laws in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Settle disputes and uphold order as an Arbiter",
+      "Exercise your authority plainly and fairly",
+      "Judge by the rule, never by your mood",
     ],
     prerequisiteItems: [
       {
@@ -1155,9 +1155,9 @@ const justiciarSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Sheriff, leaning into the pathway of justiciar",
-      "Practise setting binding laws in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Keep the peace of your jurisdiction as a Sheriff",
+      "Recognise wrongdoing and act on your intuition",
+      "Patrol your territory; let no disorder fester in it",
     ],
     prerequisiteItems: [
       {
@@ -1220,9 +1220,9 @@ const justiciarSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Interrogator, leaning into the pathway of justiciar",
-      "Practise setting binding laws in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Draw out the truth as an Interrogator",
+      "Bind and press the guilty with restraint, never cruelty",
+      "Wield pain only in the service of the law",
     ],
     prerequisiteItems: [
       {
@@ -1285,9 +1285,9 @@ const justiciarSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Judge, leaning into the pathway of justiciar",
-      "Practise setting binding laws in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Pronounce fair verdicts as a Judge",
+      "Weigh every case fully before you render judgement",
+      "Let your sentence fit the deed, no more and no less",
     ],
     prerequisiteItems: [
       {
@@ -1348,9 +1348,9 @@ const justiciarSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Disciplinary Paladin, leaning into the pathway of justiciar",
-      "Practise setting binding laws in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Enforce discipline as a Disciplinary Paladin",
+      "Mete out punishment by authority, not by anger",
+      "Embody in your own conduct the law you uphold",
     ],
     prerequisiteItems: [
       {
@@ -1413,9 +1413,9 @@ const justiciarSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Imperative Mage, leaning into the pathway of justiciar",
-      "Practise setting binding laws in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Decree and weave law as an Imperative Mage",
+      "Speak imperatives that bind, with a judge's discernment",
+      "Master the swelling authority of a Saint without letting the law become your private will",
     ],
     prerequisiteItems: [
       {
@@ -1478,9 +1478,9 @@ const justiciarSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Chaos Hunter, leaning into the pathway of justiciar",
-      "Practise setting binding laws in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Hunt down chaos and bind it as a Chaos Hunter",
+      "Pass binding sentence under an aura of order",
+      "Hold the human thread that keeps order a shelter rather than a cage",
     ],
     prerequisiteItems: [
       {
@@ -1543,9 +1543,9 @@ const justiciarSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Balancer, leaning into the pathway of justiciar",
-      "Practise setting binding laws in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Hold all things in equilibrium as the Balancer",
+      "Wield the authority of law over the scales",
+      "Anchor your overflowing spirituality before the mythical character of the Balancer overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -1602,9 +1602,9 @@ const justiciarSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Hand of Order, leaning into the pathway of justiciar",
-      "Practise setting binding laws in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Hand down absolute edict as the Hand of Order",
+      "Speak a King of Angels' law as justice, never as tyranny",
+      "Reign over order as its god, yet remember the living chaos worth sparing",
     ],
     prerequisiteItems: [
       {
@@ -1652,9 +1652,9 @@ const blackEmperorSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Lawyer, leaning into the pathway of black emperor",
-      "Practise loophole exploitation in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Argue and bend the rules as a Lawyer",
+      "Wield eloquence and the letter of the law",
+      "Find the loophole others miss, and keep your own counsel",
     ],
     prerequisiteItems: [
       {
@@ -1697,9 +1697,9 @@ const blackEmperorSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Barbarian, leaning into the pathway of black emperor",
-      "Practise loophole exploitation in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Break what binds you as a Barbarian",
+      "Harden body and mind against coercion",
+      "Answer every constraint with defiance",
     ],
     prerequisiteItems: [
       {
@@ -1761,9 +1761,9 @@ const blackEmperorSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Briber, leaning into the pathway of black emperor",
-      "Practise loophole exploitation in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Buy loyalty and weaken resolve as a Briber",
+      "Tempt the proud, the weak, and the charmed alike",
+      "Corrupt by offer, never by open force",
     ],
     prerequisiteItems: [
       {
@@ -1820,9 +1820,9 @@ const blackEmperorSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Baron of Corruption, leaning into the pathway of black emperor",
-      "Practise loophole exploitation in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Spread distortion and decay as a Baron of Corruption",
+      "Detect weakness and corrode it from within",
+      "Let rot do your work quietly, unseen",
     ],
     prerequisiteItems: [
       {
@@ -1879,9 +1879,9 @@ const blackEmperorSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Mentor of Disorder, leaning into the pathway of black emperor",
-      "Practise loophole exploitation in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Sow disorder with majesty as a Mentor of Disorder",
+      "Distort order until it unravels of itself",
+      "Command ruin without becoming its first victim",
     ],
     prerequisiteItems: [
       {
@@ -1944,9 +1944,9 @@ const blackEmperorSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Earl of the Fallen, leaning into the pathway of black emperor",
-      "Practise loophole exploitation in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Bestow corruption's gift as an Earl of the Fallen",
+      "Touch with entropy, endure with fallen resilience",
+      "Master the swelling corruption of a Saint without letting the ruin rule your purpose",
     ],
     prerequisiteItems: [
       {
@@ -2009,9 +2009,9 @@ const blackEmperorSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Frenzied Mage, leaning into the pathway of black emperor",
-      "Practise loophole exploitation in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Cast in a frenzy of ruin as a Frenzied Mage",
+      "Exploit every loophole under an aura of ruin",
+      "Hold the human thread that keeps your defiance a cause, not mere wreckage",
     ],
     prerequisiteItems: [
       {
@@ -2074,9 +2074,9 @@ const blackEmperorSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Duke of Entropy, leaning into the pathway of black emperor",
-      "Practise loophole exploitation in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Preside over decay as the Duke of Entropy",
+      "Wield the authority of disorder over all that holds together",
+      "Anchor your overflowing spirituality before the mythical character of the Duke of Entropy overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -2133,9 +2133,9 @@ const blackEmperorSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Prince of Abolition, leaning into the pathway of black emperor",
-      "Practise loophole exploitation in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Abolish what others build as the Prince of Abolition",
+      "Loose a King of Angels' entropy with deliberate aim",
+      "Reign over ruin as its god, yet remember the order whose fall would leave you nothing to break",
     ],
     prerequisiteItems: [
       {
@@ -2194,9 +2194,9 @@ const redPriestSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Hunter, leaning into the pathway of red priest",
-      "Practise fire in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Stalk and strike as a Hunter",
+      "Sharpen your senses and heed danger's warning",
+      "Trust instinct, and never blunt your edge",
     ],
     prerequisiteItems: [
       {
@@ -2249,9 +2249,9 @@ const redPriestSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Provoker, leaning into the pathway of red priest",
-      "Practise fire in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Goad your enemies to rash action as a Provoker",
+      "Provoke, then read the spirits stirred to anger",
+      "Turn another's temper into your own weapon",
     ],
     prerequisiteItems: [
       {
@@ -2313,9 +2313,9 @@ const redPriestSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Pyromaniac, leaning into the pathway of red priest",
-      "Practise fire in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Conjure and revel in flame as a Pyromaniac",
+      "Compress and loose fire, armoured in it",
+      "Let fire answer to you, never you to it",
     ],
     prerequisiteItems: [
       {
@@ -2377,9 +2377,9 @@ const redPriestSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Conspirer, leaning into the pathway of red priest",
-      "Practise fire in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Incite strife and conflict as a Conspirer",
+      "Stoke flame and turn crowds with instigation",
+      "Set the blaze, then master where it spreads",
     ],
     prerequisiteItems: [
       {
@@ -2441,9 +2441,9 @@ const redPriestSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Reaper, leaning into the pathway of red priest",
-      "Practise fire in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Cull the weak with precision as a Reaper",
+      "Investigate weakness, then end it cleanly with fire",
+      "Strike to finish; waste no flame on display",
     ],
     prerequisiteItems: [
       {
@@ -2506,9 +2506,9 @@ const redPriestSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Iron-blooded Knight, leaning into the pathway of red priest",
-      "Practise fire in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Wage war with iron blood as an Iron-blooded Knight",
+      "Kindle war-fire with a battle-saint's vigour",
+      "Master the swelling fury of a Saint without letting war become your only answer",
     ],
     prerequisiteItems: [
       {
@@ -2570,9 +2570,9 @@ const redPriestSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a War Bishop, leaning into the pathway of red priest",
-      "Practise fire in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Consecrate the rite of war as a War Bishop",
+      "Pass pyre-judgement under an aura of destruction",
+      "Hold the human thread that keeps your fire a purge of the deserving, not the helpless",
     ],
     prerequisiteItems: [
       {
@@ -2635,9 +2635,9 @@ const redPriestSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Weather Warlock, leaning into the pathway of red priest",
-      "Practise fire in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Command the weather of war as a Weather Warlock",
+      "Wield the authority of war over storm and flame",
+      "Anchor your overflowing spirituality before the mythical character of the Weather Warlock overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -2694,9 +2694,9 @@ const redPriestSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Conqueror, leaning into the pathway of red priest",
-      "Practise fire in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Conquer all before you as the Conqueror",
+      "Loose an all-consuming pyre with a King of Angels' will",
+      "Reign over war as its god, yet remember the lands your fire would leave as ash",
     ],
     prerequisiteItems: [
       {
@@ -2756,9 +2756,9 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Assassin, leaning into the pathway of demoness",
-      "Practise assassination in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Kill from the shadows as an Assassin",
+      "Move concealed and strike with a single mighty blow",
+      "Leave no trace, and never strike from the front",
     ],
     prerequisiteItems: [
       {
@@ -2801,9 +2801,9 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Instigator, leaning into the pathway of demoness",
-      "Practise assassination in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Turn others against each other as an Instigator",
+      "Instigate discord and let it do your work",
+      "Pull strings from outside the quarrel you start",
     ],
     prerequisiteItems: [
       {
@@ -2865,9 +2865,9 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Witch, leaning into the pathway of demoness",
-      "Practise assassination in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Charm and curse as a Witch",
+      "Weave dark magic and slip a substitution in your place",
+      "Bind hearts with allure; never be bound by them",
     ],
     prerequisiteItems: [
       {
@@ -2928,9 +2928,9 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Pleasure, leaning into the pathway of demoness",
-      "Practise assassination in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Ensnare with delight as Pleasure",
+      "Cast threads of charm and dark magic over your prey",
+      "Offer indulgence as a hook, not as a habit of your own",
     ],
     prerequisiteItems: [
       {
@@ -2990,9 +2990,9 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Affliction, leaning into the pathway of demoness",
-      "Practise assassination in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Spread sickness and ruin as Affliction",
+      "Loose disease, threads, and charm together",
+      "Let suffering serve your aim, not mere cruelty",
     ],
     prerequisiteItems: [
       {
@@ -3055,9 +3055,9 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Despair, leaning into the pathway of demoness",
-      "Practise assassination in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Drown your foes in despair as Despair",
+      "Loose a wave of despair and a saint's ruinous allure",
+      "Master the swelling temptation of a Saint without letting calamity become your only joy",
     ],
     prerequisiteItems: [
       {
@@ -3119,9 +3119,9 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Unaging, leaning into the pathway of demoness",
-      "Practise assassination in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Defy time in unaging flesh as the Unaging",
+      "Caress chaos under an aura of temptation",
+      "Hold the human thread that keeps your endless youth from emptying your heart",
     ],
     prerequisiteItems: [
       {
@@ -3184,9 +3184,9 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Catastrophe, leaning into the pathway of demoness",
-      "Practise assassination in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Become living Catastrophe",
+      "Wield the authority of chaos over all that stands whole",
+      "Anchor your overflowing spirituality before the mythical character of Catastrophe overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -3243,9 +3243,9 @@ const demonessSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Apocalypse, leaning into the pathway of demoness",
-      "Practise assassination in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Herald the Apocalypse as the Empress of Calamity",
+      "Loose a King of Angels' ruin with deliberate aim",
+      "Reign over calamity as its goddess, yet remember the world whose ending leaves you alone",
     ],
     prerequisiteItems: [
       {
@@ -3299,9 +3299,9 @@ const motherSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Planter, leaning into the pathway of mother",
-      "Practise life in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Tend the soil and the seasons as a Planter",
+      "Coax growth and read the coming weather",
+      "Nurture what you plant; take only what has ripened",
     ],
     prerequisiteItems: [
       {
@@ -3355,9 +3355,9 @@ const motherSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Doctor, leaning into the pathway of mother",
-      "Practise life in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Heal the sick and the injured as a Doctor",
+      "Practise surgery and treat even evil ailments",
+      "Preserve life wherever you can reach it",
     ],
     prerequisiteItems: [
       {
@@ -3418,9 +3418,9 @@ const motherSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Harvest Priest, leaning into the pathway of mother",
-      "Practise life in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Bless growth and harvest as a Harvest Priest",
+      "Catalyse seeds and command plant and insect",
+      "Hold the cycle of growth in trust, never in waste",
     ],
     prerequisiteItems: [
       {
@@ -3470,9 +3470,9 @@ const motherSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Biologist, leaning into the pathway of mother",
-      "Practise life in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Study and shape living things as a Biologist",
+      "Crossbreed and refine life with patient care",
+      "Improve life without violating what makes it whole",
     ],
     prerequisiteItems: [
       {
@@ -3535,9 +3535,9 @@ const motherSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Druid, leaning into the pathway of mother",
-      "Practise life in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Walk with the wild as a Druid",
+      "Take beast-shape and move through the deep earth",
+      "Keep the balance of the wild you draw upon",
     ],
     prerequisiteItems: [
       {
@@ -3599,9 +3599,9 @@ const motherSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Classical Alchemist, leaning into the pathway of mother",
-      "Practise life in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Transmute and quicken life as a Classical Alchemist",
+      "Work the bloom of life with a saint's vitality",
+      "Master the swelling vitality of a Saint without letting creation run past your control",
     ],
     prerequisiteItems: [
       {
@@ -3664,9 +3664,9 @@ const motherSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Pallbearer, leaning into the pathway of mother",
-      "Practise life in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Carry the cycle of life and death as a Pallbearer",
+      "Open passage through the cycle under an aura of growth",
+      "Hold the human thread that keeps your dominion a tending, not a harvest of souls",
     ],
     prerequisiteItems: [
       {
@@ -3729,9 +3729,9 @@ const motherSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Desolate Matriarch, leaning into the pathway of mother",
-      "Practise life in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Mother both bloom and barren as the Desolate Matriarch",
+      "Wield the authority of life over all that grows and fades",
+      "Anchor your overflowing spirituality before the mythical character of the Desolate Matriarch overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -3788,9 +3788,9 @@ const motherSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Naturewalker, leaning into the pathway of mother",
-      "Practise life in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Walk as life itself, the Naturewalker",
+      "Work genesis with a King of Angels' hand",
+      "Reign over life as its goddess, yet remember the small, mortal things you once tended",
     ],
     prerequisiteItems: [
       {
@@ -3848,9 +3848,9 @@ const moonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Apothecary, leaning into the pathway of moon",
-      "Practise potent restorative and buffing potions in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Brew remedies and tame creatures as an Apothecary",
+      "Concoct medicines and tend what you have tamed",
+      "Measure every draught with care",
     ],
     prerequisiteItems: [
       {
@@ -3904,9 +3904,9 @@ const moonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Beast Tamer, leaning into the pathway of moon",
-      "Practise potent restorative and buffing potions in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Master beasts as a Beast Tamer",
+      "Intimidate, sense, and tame the wild",
+      "Rule your beasts by understanding, not by force alone",
     ],
     prerequisiteItems: [
       {
@@ -3969,9 +3969,9 @@ const moonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Vampire, leaning into the pathway of moon",
-      "Practise potent restorative and buffing potions in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Stalk the night as a Vampire",
+      "Embrace with wings of darkness and corroding claw",
+      "Take what you must to endure, and no more",
     ],
     prerequisiteItems: [
       {
@@ -4032,9 +4032,9 @@ const moonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Potions Professor, leaning into the pathway of moon",
-      "Practise potent restorative and buffing potions in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Craft potions and perfumes as a Potions Professor",
+      "Discern materials and distil their virtues",
+      "Perfect your formulae; never brew what you cannot control",
     ],
     prerequisiteItems: [
       {
@@ -4096,9 +4096,9 @@ const moonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Scarlet Scholar, leaning into the pathway of moon",
-      "Practise potent restorative and buffing potions in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Command the lunar battlefield as a Scarlet Scholar",
+      "Transform in moonlight and flash across the field",
+      "Bend the moon's tides without losing your own shape",
     ],
     prerequisiteItems: [
       {
@@ -4161,9 +4161,9 @@ const moonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Shaman King, leaning into the pathway of moon",
-      "Practise potent restorative and buffing potions in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Summon and rule spirits as a Shaman King",
+      "Work blood rites with a saint's regeneration",
+      "Master the swelling life of a Saint without letting the blood-rite hollow your mercy",
     ],
     prerequisiteItems: [
       {
@@ -4226,9 +4226,9 @@ const moonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a High Summoner, leaning into the pathway of moon",
-      "Practise potent restorative and buffing potions in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Call great powers as a High Summoner",
+      "Transform under the moon within an aura of night",
+      "Hold the human thread that keeps what you summon answerable to you",
     ],
     prerequisiteItems: [
       {
@@ -4291,9 +4291,9 @@ const moonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Life-Giver, leaning into the pathway of moon",
-      "Practise potent restorative and buffing potions in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Bestow life and fertility as the Life-Giver",
+      "Wield the authority of fertility over the barren",
+      "Anchor your overflowing spirituality before the mythical character of the Life-Giver overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -4350,9 +4350,9 @@ const moonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Beauty Goddess, leaning into the pathway of moon",
-      "Practise potent restorative and buffing potions in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Bring forth proliferating life as the Beauty Goddess",
+      "Work proliferation with a King of Angels' grace",
+      "Reign over life and beauty as its goddess, yet remember the plain, mortal world that adored you",
     ],
     prerequisiteItems: [
       {
@@ -4411,9 +4411,9 @@ const hermitSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Mystery Pryer, leaning into the pathway of hermit",
-      "Practise ritual magic in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Pry into hidden mysteries as a Mystery Pryer",
+      "Pursue forbidden knowledge through magic and divination",
+      "Seek the secret, but guard what you find",
     ],
     prerequisiteItems: [
       {
@@ -4456,9 +4456,9 @@ const hermitSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Melee Scholar, leaning into the pathway of hermit",
-      "Practise ritual magic in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Join learning to combat as a Melee Scholar",
+      "Drill combat mastery upon a Beyonder's frame",
+      "Let neither the book nor the blade outpace the other",
     ],
     prerequisiteItems: [
       {
@@ -4521,9 +4521,9 @@ const hermitSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Warlock, leaning into the pathway of hermit",
-      "Practise ritual magic in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Bind spirits and cast spells as a Warlock",
+      "Summon souls and work the invisible hand",
+      "Command what you call up; never serve it",
     ],
     prerequisiteItems: [
       {
@@ -4584,9 +4584,9 @@ const hermitSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Scrolls Professor, leaning into the pathway of hermit",
-      "Practise ritual magic in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Inscribe power into scrolls as a Scrolls Professor",
+      "Bind freezing, storm, and secret voice into your work",
+      "Guard your scrolls and the spaces you keep them",
     ],
     prerequisiteItems: [
       {
@@ -4649,9 +4649,9 @@ const hermitSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Constellations Master, leaning into the pathway of hermit",
-      "Practise ritual magic in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Draw on the stars as a Constellations Master",
+      "Cast by starlight, raising star-pillar and starry amber",
+      "Read the constellations without letting their cold draw you away",
     ],
     prerequisiteItems: [
       {
@@ -4714,9 +4714,9 @@ const hermitSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Mysticologist, leaning into the pathway of hermit",
-      "Practise ritual magic in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Codify the mystic arts as a Mysticologist",
+      "Invent spells with a saint's insight into lore",
+      "Master the swelling knowledge of a Saint without letting the lore unmoor you",
     ],
     prerequisiteItems: [
       {
@@ -4779,9 +4779,9 @@ const hermitSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Clairvoyant, leaning into the pathway of hermit",
-      "Practise ritual magic in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "See the hidden as a Clairvoyant",
+      "Master ritual under an aura of mysteries",
+      "Hold the human thread that keeps your sight a guide rather than a haunting",
     ],
     prerequisiteItems: [
       {
@@ -4844,9 +4844,9 @@ const hermitSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Sage, leaning into the pathway of hermit",
-      "Practise ritual magic in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Know the mystic order of things as a Sage",
+      "Wield the authority of mystical knowledge",
+      "Anchor your overflowing spirituality before the mythical character of the Sage overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -4902,9 +4902,9 @@ const hermitSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Knowledge Emperor, leaning into the pathway of hermit",
-      "Practise ritual magic in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Command grand ritual as the Knowledge Emperor",
+      "Work a King of Angels' rites with restraint",
+      "Reign over hidden knowledge as its god, yet remember the wonder of not-knowing you began with",
     ],
     prerequisiteItems: [
       {
@@ -4951,9 +4951,9 @@ const paragonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Savant, leaning into the pathway of paragon",
-      "Practise science in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Master many disciplines as a Savant",
+      "Pair mysticism with mechanics, recalling all you learn",
+      "Build your learning brick by brick, forgetting nothing",
     ],
     prerequisiteItems: [
       {
@@ -4995,9 +4995,9 @@ const paragonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Archaeologist, leaning into the pathway of paragon",
-      "Practise science in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Unearth the past as an Archaeologist",
+      "Join ritual magic to patient excavation",
+      "Preserve what you recover; never plunder it",
     ],
     prerequisiteItems: [
       {
@@ -5047,9 +5047,9 @@ const paragonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Appraiser, leaning into the pathway of paragon",
-      "Practise science in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Judge the worth of things as an Appraiser",
+      "Appraise true value upon a Beyonder's frame",
+      "Value by truth, not by what others will pay",
     ],
     prerequisiteItems: [
       {
@@ -5099,9 +5099,9 @@ const paragonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Artisan, leaning into the pathway of paragon",
-      "Practise science in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Make and mend with mastery as an Artisan",
+      "Join craftsmanship to mystic knowledge",
+      "Let nothing leave your hands unfinished",
     ],
     prerequisiteItems: [
       {
@@ -5152,9 +5152,9 @@ const paragonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Astronomer, leaning into the pathway of paragon",
-      "Practise science in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Chart the heavens as an Astronomer",
+      "Reckon the celestial order upon a Beyonder's frame",
+      "Measure the sky precisely; never guess where you can compute",
     ],
     prerequisiteItems: [
       {
@@ -5217,9 +5217,9 @@ const paragonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Alchemist, leaning into the pathway of paragon",
-      "Practise science in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Work grand alchemy as an Alchemist",
+      "Invent and transmute with a saint's acumen",
+      "Master the swelling craft of a Saint without letting invention outrun your wisdom",
     ],
     prerequisiteItems: [
       {
@@ -5282,9 +5282,9 @@ const paragonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Arcane Scholar, leaning into the pathway of paragon",
-      "Practise science in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Engineer the arcane as an Arcane Scholar",
+      "Analyse first principles under an aura of civilisation",
+      "Hold the human thread that keeps your works a gift to the living, not monuments to yourself",
     ],
     prerequisiteItems: [
       {
@@ -5347,9 +5347,9 @@ const paragonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Knowledge Magister, leaning into the pathway of paragon",
-      "Practise science in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Govern craft and knowing as the Knowledge Magister",
+      "Wield the authority of craft over all that is made",
+      "Anchor your overflowing spirituality before the mythical character of the Knowledge Magister overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -5405,9 +5405,9 @@ const paragonSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Illuminator, leaning into the pathway of paragon",
-      "Practise science in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Build the architecture of ages as the Illuminator",
+      "Raise a King of Angels' works with deliberate care",
+      "Reign over craft and knowledge as its god, yet remember the small hands that first taught you to make",
     ],
     prerequisiteItems: [
       {
@@ -5459,9 +5459,9 @@ const wheelOfFortuneSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Monster, leaning into the pathway of wheel of fortune",
-      "Practise high spirituality in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Heed your premonitions as a Monster",
+      "Foresee danger and let foresight guide your step",
+      "Trust the omen; do not court the danger it names",
     ],
     prerequisiteItems: [
       {
@@ -5508,9 +5508,9 @@ const wheelOfFortuneSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Robot, leaning into the pathway of wheel of fortune",
-      "Practise high spirituality in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Move with relentless precision as a Robot",
+      "Strengthen body and mind under high spirituality",
+      "Hold to your purpose without wavering",
     ],
     prerequisiteItems: [
       {
@@ -5561,9 +5561,9 @@ const wheelOfFortuneSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Lucky One, leaning into the pathway of wheel of fortune",
-      "Practise high spirituality in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Trust to your fortune as a Lucky One",
+      "Lean on luck that shifts and never sits still",
+      "Ride your luck, but never stake all upon it",
     ],
     prerequisiteItems: [
       {
@@ -5613,9 +5613,9 @@ const wheelOfFortuneSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Calamity Priest, leaning into the pathway of wheel of fortune",
-      "Practise high spirituality in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Draw and direct calamity as a Calamity Priest",
+      "Attract misfortune and loose the psyche storm",
+      "Aim the disaster you summon; never let it run wild",
     ],
     prerequisiteItems: [
       {
@@ -5677,9 +5677,9 @@ const wheelOfFortuneSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Winner, leaning into the pathway of wheel of fortune",
-      "Practise high spirituality in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Turn fortune against your foes as a Winner",
+      "Lay curses of misfortune while your own luck holds",
+      "Spend your fortune wisely; it is never owed to you",
     ],
     prerequisiteItems: [
       {
@@ -5742,9 +5742,9 @@ const wheelOfFortuneSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Misfortune Mage, leaning into the pathway of wheel of fortune",
-      "Practise high spirituality in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Curse and read fate as a Misfortune Mage",
+      "Lay misfortune and read fortune with a saint's providence",
+      "Master the swelling fate of a Saint without coming to believe yourself its master",
     ],
     prerequisiteItems: [
       {
@@ -5805,9 +5805,9 @@ const wheelOfFortuneSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Chaoswalker, leaning into the pathway of wheel of fortune",
-      "Practise high spirituality in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Walk unscathed through chaos as a Chaoswalker",
+      "Shift probability under an aura of fortune",
+      "Hold the human thread that keeps fate a current you ride, not a throne you claim",
     ],
     prerequisiteItems: [
       {
@@ -5870,9 +5870,9 @@ const wheelOfFortuneSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Soothsayer, leaning into the pathway of wheel of fortune",
-      "Practise high spirituality in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Speak the turns of fate as a Soothsayer",
+      "Wield the authority of fate over all that may befall",
+      "Anchor your overflowing spirituality before the mythical character of the Soothsayer overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -5929,9 +5929,9 @@ const wheelOfFortuneSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Snake of Mercury, leaning into the pathway of wheel of fortune",
-      "Practise high spirituality in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Decree fortune as the Snake of Mercury",
+      "Hand down a King of Angels' fate with care",
+      "Reign over fortune as its god, yet remember the gamble that once made you mortal",
     ],
     prerequisiteItems: [
       {
@@ -5977,9 +5977,9 @@ const abyssSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Criminal, leaning into the pathway of abyss",
-      "Practise great strength and perception in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Take what you want as a Criminal",
+      "Strengthen body and frame for the deed",
+      "Answer to your own desire, but leave yourself a way back",
     ],
     prerequisiteItems: [
       {
@@ -6020,9 +6020,9 @@ const abyssSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Unwinged Angel, leaning into the pathway of abyss",
-      "Practise great strength and perception in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Bear the fallen mark as an Unwinged Angel",
+      "Wield your demonic attribute with raw strength",
+      "Fall toward power without falling out of yourself",
     ],
     prerequisiteItems: [
       {
@@ -6073,9 +6073,9 @@ const abyssSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Serial Killer, leaning into the pathway of abyss",
-      "Practise great strength and perception in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Hunt and indulge the forbidden as a Serial Killer",
+      "Wield devil-worship's knowledge with a cold mind",
+      "Feed the abyss only what you choose, and keep the rest",
     ],
     prerequisiteItems: [
       {
@@ -6138,9 +6138,9 @@ const abyssSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Devil, leaning into the pathway of abyss",
-      "Practise great strength and perception in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Stir desire and dread as a Devil",
+      "Shift through shadow on a devil's bloodline",
+      "Tempt and unmake, but do not believe your own lies",
     ],
     prerequisiteItems: [
       {
@@ -6190,9 +6190,9 @@ const abyssSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Desire Apostle, leaning into the pathway of abyss",
-      "Practise great strength and perception in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Preach and master desire as a Desire Apostle",
+      "Become the avatar of the desires you command",
+      "Rule desire, lest it come to rule you",
     ],
     prerequisiteItems: [
       {
@@ -6255,9 +6255,9 @@ const abyssSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Demon, leaning into the pathway of abyss",
-      "Practise great strength and perception in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Loose demonic might as a Demon",
+      "Hook the hearts of others with a saint's corruption",
+      "Master the swelling corruption of a Saint without letting desire devour your purpose",
     ],
     prerequisiteItems: [
       {
@@ -6319,9 +6319,9 @@ const abyssSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Blatherer, leaning into the pathway of abyss",
-      "Practise great strength and perception in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Madden with a word as a Blatherer",
+      "Reach across the abyss under its own aura",
+      "Hold the human thread that keeps your voice a temptation borne, not a poison loosed",
     ],
     prerequisiteItems: [
       {
@@ -6384,9 +6384,9 @@ const abyssSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Bloody Archduke, leaning into the pathway of abyss",
-      "Practise great strength and perception in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Preside over corruption as the Bloody Archduke",
+      "Wield the authority of desire over all who want",
+      "Anchor your overflowing spirituality before the mythical character of the Bloody Archduke overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -6443,9 +6443,9 @@ const abyssSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Filthy Monarch, leaning into the pathway of abyss",
-      "Practise great strength and perception in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Loose the tide of corruption as the Filthy Monarch",
+      "Command a King of Angels' desire with deliberate aim",
+      "Reign over desire as its god, yet remember the clean, wanting world you rose from",
     ],
     prerequisiteItems: [
       {
@@ -6499,9 +6499,9 @@ const chainedSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Prisoner, leaning into the pathway of chained",
-      "Practise summoning the dead in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Endure and break bonds as a Prisoner",
+      "Strengthen the body and master what binds",
+      "Bear your chains without letting them break your mind",
     ],
     prerequisiteItems: [
       {
@@ -6550,9 +6550,9 @@ const chainedSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Lunatic, leaning into the pathway of chained",
-      "Practise summoning the dead in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Loose your fury as a Lunatic",
+      "Go berserk and bind under the lunatic's curse",
+      "Court madness without surrendering to it",
     ],
     prerequisiteItems: [
       {
@@ -6615,9 +6615,9 @@ const chainedSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Werewolf, leaning into the pathway of chained",
-      "Practise summoning the dead in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Take the beast's shape as a Werewolf",
+      "Spread the infection as darkness encroaches",
+      "Master the change; never let the beast keep the reins",
     ],
     prerequisiteItems: [
       {
@@ -6679,9 +6679,9 @@ const chainedSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Zombie, leaning into the pathway of chained",
-      "Practise summoning the dead in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Endure past death as a Zombie",
+      "Wield undying strength and the freezing cold",
+      "Hold your mind together though the body rots",
     ],
     prerequisiteItems: [
       {
@@ -6743,9 +6743,9 @@ const chainedSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Wraith, leaning into the pathway of chained",
-      "Practise summoning the dead in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Haunt unseen as a Wraith",
+      "Turn invisible, shriek, and possess the living",
+      "Drift and possess without forgetting which body is your own",
     ],
     prerequisiteItems: [
       {
@@ -6807,9 +6807,9 @@ const chainedSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Puppet, leaning into the pathway of chained",
-      "Practise summoning the dead in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Pull the strings of the dead as a Puppet",
+      "Spread madness through a saint's undeath",
+      "Master the swelling madness of a Saint without losing which hand pulls your own strings",
     ],
     prerequisiteItems: [
       {
@@ -6871,9 +6871,9 @@ const chainedSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of a Disciple of Silence, leaning into the pathway of chained",
-      "Practise summoning the dead in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Keep the silent discipline as a Disciple of Silence",
+      "Mutate with a touch under an aura of madness",
+      "Hold the human thread that keeps your silence a vigil rather than a void",
     ],
     prerequisiteItems: [
       {
@@ -6936,9 +6936,9 @@ const chainedSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Ancient Bane, leaning into the pathway of chained",
-      "Practise summoning the dead in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Become the Ancient Bane the world dreads",
+      "Wield the authority of madness over sound minds",
+      "Anchor your overflowing spirituality before the mythical character of the Ancient Bane overtakes you",
     ],
     prerequisiteItems: [
       {
@@ -6995,9 +6995,9 @@ const chainedSequences: Sequence[] = [
       },
     ],
     actingRequirements: [
-      "Live the role of an Abomination, leaning into the pathway of chained",
-      "Practise summoning the dead in keeping with your sequence",
-      "Let the act deceive the characteristic's imprint until the potion is digested",
+      "Raise the legion of the dead as an Abomination",
+      "Command a King of Angels' madness with deliberate aim",
+      "Reign over madness and death as its god, yet remember the sane, living self you began as",
     ],
     prerequisiteItems: [
       {

@@ -21,8 +21,10 @@ describe("GLOSSARY_TERMS", () => {
   });
 
   it("covers the core newcomer concepts from the start", () => {
+    // The Acting Method is deliberately NOT here — it is secret knowledge gated on
+    // discovery (issue #95), covered by its own suite below.
     const visible = glossaryForSequence(9).map((t) => t.slug);
-    for (const slug of ["beyonder", "sequence", "pathway", "potion", "acting-method"]) {
+    for (const slug of ["beyonder", "sequence", "pathway", "potion"]) {
       expect(visible).toContain(slug);
     }
   });
@@ -89,7 +91,10 @@ describe("glossaryForSequence (progressive disclosure)", () => {
     // epoch given the lexicon defaults to the Fifth (other-epoch terms never
     // appear), and with no flags held the capability-gated Forsaken terms don't.
     const fifthUngated = GLOSSARY_TERMS.filter(
-      (t) => (t.epoch === undefined || t.epoch === 5) && t.requiresFlag === undefined,
+      (t) =>
+        (t.epoch === undefined || t.epoch === 5) &&
+        t.requiresFlag === undefined &&
+        !t.requiresActingMethod,
     );
     expect(glossaryForSequence(1)).toHaveLength(fifthUngated.length);
   });
@@ -154,18 +159,46 @@ describe("capability gate (issue #132)", () => {
     // The sealed count for a flagless character is computed only over terms it
     // could ever reach, so the gated Forsaken entries are invisible to it.
     const flagless = GLOSSARY_TERMS.filter(
-      (t) => (t.epoch === undefined || t.epoch === 5) && t.requiresFlag === undefined,
+      (t) =>
+        (t.epoch === undefined || t.epoch === 5) &&
+        t.requiresFlag === undefined &&
+        !t.requiresActingMethod,
     );
     expect(sealedTermCount(9)).toBe(flagless.length - glossaryForSequence(9).length);
     // Holding the flag widens the applicable universe, so the count can change.
     const withFlag = GLOSSARY_TERMS.filter(
       (t) =>
         (t.epoch === undefined || t.epoch === 5) &&
-        (t.requiresFlag === undefined || t.requiresFlag === "dream-world-passage"),
+        (t.requiresFlag === undefined || t.requiresFlag === "dream-world-passage") &&
+        !t.requiresActingMethod,
     );
     expect(sealedTermCount(9, 5, ["dream-world-passage"])).toBe(
       withFlag.length - glossaryForSequence(9, 5, ["dream-world-passage"]).length,
     );
+  });
+});
+
+describe("acting-method discovery gate (issue #95)", () => {
+  it("tags the Acting Method term as discovery-gated", () => {
+    expect(getGlossaryTerm("acting-method")?.requiresActingMethod).toBe(true);
+  });
+
+  it("hides the term until the method is discovered", () => {
+    // Undiscovered (the default and explicit false) — the secret stays sealed.
+    expect(glossaryForSequence(9).map((t) => t.slug)).not.toContain("acting-method");
+    expect(glossaryForSequence(9, 5, [], false).map((t) => t.slug)).not.toContain(
+      "acting-method",
+    );
+    // Discovered — it joins the first-night basics.
+    expect(glossaryForSequence(9, 5, [], true).map((t) => t.slug)).toContain(
+      "acting-method",
+    );
+  });
+
+  it("never leaks the term's existence through the sealed count before discovery", () => {
+    // The term is left out of the sealed universe entirely until discovered, so
+    // the count is identical with the method known or not — no +1 hint.
+    expect(sealedTermCount(9, 5, [], false)).toBe(sealedTermCount(9, 5, [], true));
   });
 });
 
@@ -196,7 +229,7 @@ describe("epoch isolation (issue: character epoch isolation)", () => {
     // A First-Epoch newcomer's sealed count is computed only over First-Epoch-
     // applicable terms — never hinting that Fifth-Epoch entries exist.
     const applicable = GLOSSARY_TERMS.filter(
-      (t) => t.epoch === undefined || t.epoch === 1,
+      (t) => (t.epoch === undefined || t.epoch === 1) && !t.requiresActingMethod,
     );
     expect(sealedTermCount(9, 1)).toBe(
       applicable.length - glossaryForSequence(9, 1).length,
@@ -210,7 +243,10 @@ describe("getGlossaryTerm / sealedTermCount", () => {
     expect(getGlossaryTerm("beyonder")?.term).toBe("Beyonder");
     expect(getGlossaryTerm("nope")).toBeUndefined();
     const fifthApplicable = GLOSSARY_TERMS.filter(
-      (t) => (t.epoch === undefined || t.epoch === 5) && t.requiresFlag === undefined,
+      (t) =>
+        (t.epoch === undefined || t.epoch === 5) &&
+        t.requiresFlag === undefined &&
+        !t.requiresActingMethod,
     );
     expect(sealedTermCount(9)).toBe(
       fifthApplicable.length - glossaryForSequence(9).length,
