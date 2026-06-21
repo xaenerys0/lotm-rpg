@@ -430,6 +430,52 @@ const FEYSAC_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Rorsted Archipelago archetypes (world build-out 8, issue #137) ──
+// Begin embedded in a circle of the Loen Kingdom's Sonia Sea colony: an initiate
+// of the outlawed native sea-god faith (tied to the secret merchant-devotee
+// Ralph), and a crewmember of a treasure-seeking privateer fleet (tied to the
+// Golden Dream boatswain Danitz Dubois). Both open in Bayam, a real travel city.
+const RORSTED_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "bayam-sea-god-acolyte",
+    label: "An initiate of the outlawed sea-god faith in Bayam",
+    epoch: 5,
+    location: "Bayam",
+    relationship: "subordinate",
+    circleNpcs: ["Ralph"],
+    affiliationOrg: "sea-god-faith-overview",
+    blurb:
+      "A native initiate of the hunted Sea-God faith, brought into the fold by the merchant-devotee Ralph in colonial Bayam.",
+    openingBeat: `The strange draught still burns in me as I keep the curfew in a back-street shrine above Bayam's harbour, the salt-spice dark pressing close and a charm of the old sea-god cool in my fist — Ralph, the trader who brought me to the faith, vouches for me among the islanders, and whatever I have just become, the storm-priests who hunt heretics must never learn of it. ${SCENE_CUE}`,
+    pathwayAffinity: [6],
+    seeds: {
+      trackedAllies: ["Ralph"],
+      society: { orgSlug: "sea-god-faith-overview", role: "initiate" },
+      facts: [
+        "You are a native initiate of the outlawed Sea-God faith in Bayam, brought into it by the half-native merchant Ralph, who funds the islanders' Resistance from behind his respectable trading company.",
+      ],
+    },
+  },
+  {
+    id: "bayam-golden-dream-privateer",
+    label: "A crewmember of the Golden Dream privateer fleet",
+    epoch: 5,
+    location: "Bayam",
+    relationship: "circle-member",
+    circleNpcs: ["Danitz Dubois"],
+    blurb:
+      "A hand aboard Vice Admiral Iceberg's treasure-seeking fleet, signed on through the boatswain Danitz Dubois in the bars of Bayam.",
+    openingBeat: `The strange draught still burns in me as the harbour bars of Bayam roar behind us and the dark island sea breathes ahead, my sea-bag over my shoulder and a berth on a famous treasure-fleet waiting — the boatswain Danitz Dubois clapped me aboard on his own word, and whatever I have just become out here among the salt and the rumour, I must keep it from every soul on the crew. ${SCENE_CUE}`,
+    pathwayAffinity: [6],
+    seeds: {
+      trackedAllies: ["Danitz Dubois"],
+      facts: [
+        "You crew for the Golden Dream, the treasure-seeking pirate fleet of Vice Admiral Iceberg (Edwina Edwards), signed on through the boatswain Danitz Dubois, who knows your face in Bayam's harbour.",
+      ],
+    },
+  },
+] as const;
+
 /** Every start archetype, all regions/epochs (append-only) — including gated
  * ORIGIN archetypes (so `getStartArchetype` resolves them by id). Default
  * selection filters origins out; `forsakenLandArchetypesForEpoch` filters in. */
@@ -441,6 +487,7 @@ export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...FORSAKEN_ARCHETYPES,
   ...EARLIER_EPOCH_ARCHETYPES,
   ...FEYSAC_ARCHETYPES,
+  ...RORSTED_ARCHETYPES,
 ];
 
 /**

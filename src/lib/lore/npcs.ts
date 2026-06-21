@@ -591,4 +591,49 @@ export const NPC_LORE: LoreEntry[] = [
     tokenCount: 175,
     narratorOnly: true,
   },
+  // ── Rorsted Archipelago NPCs (world build-out 8, issue #137) — corpus-
+  // verified figures of the sea-god faith and the colonial trade. Like every
+  // other regional NPC they are city-keyed (bayam) but NEVER pathway-keyed (the
+  // leak rule: a pathway field injects an NPC into any same-pathway character's
+  // prompt; pathways are named only in prose), and narrator-only for the
+  // Resistance/Beyonder secrets beneath their public faces.
+  {
+    slug: "npc-kalat",
+    title: "Baldy Kalat — Leader of the Resistance",
+    category: "npc",
+    content: `Kalat, called "Baldy Kalat," is the leader of the Resistance — the independence movement of the Rorsted Archipelago that fights the Loen colony beneath the banner of the outlawed Sea God Kalvetua. A wheelchair-bound mid-Sequence Beyonder once schooled in the Feysac Empire, he is shrewd, patient, and devout, holding the back-country camps and sea-hideouts of the movement together and trading in the sea-god's relics — among them a sword he will swear is the holy blade of Kalvetua himself. He keeps faith with the fanatic Edmonton and the merchant Ralph, courts the archipelago's pirates and adventurers, and takes quiet coin from Loen's rivals, all toward the one end of seeing the islands rule themselves again. To the Church of the Lord of Storms he is a heretic and a rebel to be hunted; to the natives of Bayam he is the keeper of the last thing the colony could not take from them.`,
+    epoch: 5,
+    city: "bayam",
+    npcs: ["Kalat", "Ralph"],
+    sequences: [6],
+    tags: ["resistance", "sea-god", "kalvetua", "bayam", "native-belief"],
+    tokenCount: 195,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-ralph",
+    title: "Ralph — The Half-Native Trader of Bayam",
+    category: "npc",
+    content: `Ralph is the owner of the Ralph Trading Company, a respectable Bayam merchant house built on the spice trade and the long sea-routes of the Sonia Sea — and a former pirate and seaman besides. Half-native, his mother a woman of the Rorsted islands, he keeps two faces: the prosperous colonial trader who deals openly with Loen factors and foreign captains alike, and the secret and reverent worshipper of the Sea God Kalvetua who funds the Resistance from behind his clean ledgers. He will, given the measure of a likely stranger, try to introduce them to "our god," for he believes the islanders' cause and the islanders' faith are one and the same. His wealth, his ships, and his standing make him far more useful to the movement than any zealot — a quiet pillar of the independence struggle whom the colonial authorities have never thought to suspect.`,
+    epoch: 5,
+    city: "bayam",
+    npcs: ["Ralph", "Kalat"],
+    sequences: [],
+    tags: ["resistance", "sea-god", "kalvetua", "bayam", "trade", "colony"],
+    tokenCount: 185,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-danitz-dubois",
+    title: "Danitz Dubois — Boatswain of the Golden Dream",
+    category: "npc",
+    content: `Danitz Dubois is a boatswain of the Golden Dream, the treasure-seeking pirate fleet of the Pirate Admiral "Vice Admiral Iceberg," Edwina Edwards — a fleet that, unlike most, neither murders nor plunders but hunts the relics and ruins of the seas. A restless, talkative young seaman who has drifted between the great pirate crews and the Bayam underworld, he keeps one foot in the Rorsted Archipelago's tangled affairs and a quiet sympathy for its native cause. He is the kind of crewman who knows every bar on the harbour and every captain worth the name, and who can get a willing hand a berth on a ship bound anywhere in the Sonia Sea. In the great events to come he will find a stranger role still as a go-between for the islands' hidden powers — but for now he is simply an able sailor of a famous fleet, at home in Bayam's salt and rumour.`,
+    epoch: 5,
+    city: "bayam",
+    npcs: ["Danitz Dubois", "Edwina Edwards"],
+    sequences: [],
+    tags: ["golden-dream", "pirate", "privateer", "bayam", "sonia-sea"],
+    tokenCount: 195,
+    narratorOnly: true,
+  },
 ];

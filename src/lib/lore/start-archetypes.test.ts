@@ -205,6 +205,29 @@ describe("START_ARCHETYPES data integrity", () => {
     );
   });
 
+  it("ships the Rorsted Archipelago archetypes (issue #137)", () => {
+    const acolyte = getStartArchetype("bayam-sea-god-acolyte");
+    expect(acolyte?.epoch).toBe(5);
+    expect(acolyte?.origin).toBeUndefined();
+    expect(acolyte?.location).toBe("Bayam");
+    expect(acolyte?.circleNpcs).toContain("Ralph");
+    expect(acolyte?.affiliationOrg).toBe("sea-god-faith-overview");
+    expect(acolyte?.seeds.society?.orgSlug).toBe("sea-god-faith-overview");
+    expect(acolyte?.pathwayAffinity).toContain(6); // Tyrant — the sea-god's path
+
+    const privateer = getStartArchetype("bayam-golden-dream-privateer");
+    expect(privateer?.epoch).toBe(5);
+    expect(privateer?.location).toBe("Bayam");
+    expect(privateer?.circleNpcs).toContain("Danitz Dubois");
+    expect(privateer?.seeds.trackedAllies).toContain("Danitz Dubois");
+
+    // Both are default (non-origin) Fifth-Epoch starts surfaced by the picker.
+    const fifthIds = startArchetypesForEpoch(5).map((a) => a.id);
+    expect(fifthIds).toEqual(
+      expect.arrayContaining(["bayam-sea-god-acolyte", "bayam-golden-dream-privateer"]),
+    );
+  });
+
   it("ships the earlier-epoch archetypes, era-tagged and never Fifth (issue #141)", () => {
     // Epoch 3 (Glorious Era) and Epoch 4 (Solomon Empire) starts, each tied to a
     // named historical figure from history.ts and surfaced by the SAME picker.
