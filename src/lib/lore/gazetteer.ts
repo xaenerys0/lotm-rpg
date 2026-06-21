@@ -284,11 +284,11 @@ const PRITZ_DISTRICTS: GazetteerDistrict[] = [
     keywords: ["garrison", "barracks", "town"],
   },
   {
-    slug: "pritz-hornacis-passes",
-    name: "The Hornacis Passes",
+    slug: "pritz-amantha-passes",
+    name: "The Amantha Passes",
     blurb:
       "The cold mountain roads at the harbour's back, where smugglers work the high trails. Beyond them the range climbs into killing weather.",
-    keywords: ["hornacis", "pass", "mountain"],
+    keywords: ["amantha", "pass", "mountain"],
   },
 ];
 
@@ -407,7 +407,7 @@ const FIFTH_CITIES: GazetteerFartherCity[] = [
     name: "Pritz Harbor",
     realm: "Loen Kingdom — the chief naval port",
     blurb:
-      "Loen's great navy town on the cold northern coast, under the shadow of the Hornacis range. Fog, dry-docks, and anchored ironclads; smugglers work the mountain passes at its back, so the garrison is heavy and the night watch real.",
+      "Loen's great navy town on the cold northern coast, under the shadow of the Amantha range that walls the kingdom off from Feysac. Fog, dry-docks, and anchored ironclads; smugglers work the mountain passes at its back, so the garrison is heavy and the night watch real.",
   },
   {
     id: "enmat",
@@ -421,7 +421,7 @@ const FIFTH_CITIES: GazetteerFartherCity[] = [
     name: "Feysac",
     realm: "Feysac Empire — the militarist north",
     blurb:
-      "The cold northern empire of the God of Combat, beyond the Hornacis range: walled towns, drilled militias, and martial faith. The winters are long and the frontier dangerous, where monsters press at the walls and strength commands open respect.",
+      "The cold northern empire of the God of Combat, beyond the Amantha range: walled towns, drilled militias, and martial faith. The winters are long and the frontier dangerous, where monsters press at the walls and strength commands open respect.",
   },
   {
     id: "constant",

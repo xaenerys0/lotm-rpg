@@ -3,7 +3,7 @@ import type { LoreEntry } from "./types";
 // Farther Fifth-Epoch regions beyond the four hub cities (varied story
 // openings). Each is a first-class start location and travel destination, so it
 // carries a player-safe overview the same way the city files do. Grounded in
-// the LOTM source: Pritz Harbor (the Loen navy's chief port below the Hornacis
+// the LOTM source: Pritz Harbor (the Loen navy's chief port below the Amantha
 // range), Enmat Harbor (a small fog-bound Loen coastal town), and Feysac (the
 // militarist northern empire of the God of Combat). Tagged `epoch: 5`; the
 // `city` field is the lowercase leading word so selection/narration/travel all
@@ -13,7 +13,7 @@ export const REGIONS_LORE: LoreEntry[] = [
     slug: "pritz-harbor-overview",
     title: "Pritz Harbor — Overview",
     category: "location",
-    content: `Pritz Harbor is the Loen Kingdom's chief naval port, set on the cold northern coast below the Hornacis mountain range that walls Loen off from the Feysac Empire. It is a working navy town before it is anything else: dry-docks and shipyards, powder magazines and victualling yards, ironclads and gunboats riding at anchor in a grey, fog-bound roadstead, and streets full of sailors, marines, and the families that supply them. The Hornacis passes at its back are a smuggler's country and a monster's country both, so the garrison is heavy and the night watch real. For the Beyonder world the harbour matters as a chokepoint: contraband curios, sealed artifacts, and people who would rather not be noticed all move through a port this busy, and the Church of the Lord of Storms keeps a watchful presence over a town that lives and dies by the sea's temper.`,
+    content: `Pritz Harbor is the Loen Kingdom's chief naval port, set on the cold northern coast below the Amantha mountain range that walls Loen off from the Feysac Empire. It is a working navy town before it is anything else: dry-docks and shipyards, powder magazines and victualling yards, ironclads and gunboats riding at anchor in a grey, fog-bound roadstead, and streets full of sailors, marines, and the families that supply them. The Amantha passes at its back are a smuggler's country and a monster's country both, so the garrison is heavy and the night watch real. For the Beyonder world the harbour matters as a chokepoint: contraband curios, sealed artifacts, and people who would rather not be noticed all move through a port this busy, and the Church of the Lord of Storms keeps a watchful presence over a town that lives and dies by the sea's temper.`,
     epoch: 5,
     city: "pritz",
     npcs: [],
