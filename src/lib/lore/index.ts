@@ -86,6 +86,7 @@ export { THIRD_EPOCH_LORE } from "./epoch-third";
 export { FOURTH_EPOCH_LORE } from "./epoch-fourth";
 export { FIFTH_EPOCH_LORE } from "./fifth-epoch";
 export { ORGANIZATION_LORE } from "./organizations";
+export { SECRET_SOCIETIES_LORE } from "./secret-societies";
 export { NPC_LORE } from "./npcs";
 export { FOOL_PATHWAY_LORE } from "./pathway-fool";
 export { VISIONARY_PATHWAY_LORE } from "./pathway-visionary";
@@ -128,6 +129,7 @@ import { THIRD_EPOCH_LORE } from "./epoch-third";
 import { FOURTH_EPOCH_LORE } from "./epoch-fourth";
 import { FIFTH_EPOCH_LORE } from "./fifth-epoch";
 import { ORGANIZATION_LORE } from "./organizations";
+import { SECRET_SOCIETIES_LORE } from "./secret-societies";
 import { NPC_LORE } from "./npcs";
 import { FOOL_PATHWAY_LORE } from "./pathway-fool";
 import { VISIONARY_PATHWAY_LORE } from "./pathway-visionary";
@@ -169,6 +171,7 @@ export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...FOURTH_EPOCH_LORE,
   ...FIFTH_EPOCH_LORE,
   ...ORGANIZATION_LORE,
+  ...SECRET_SOCIETIES_LORE,
   ...NPC_LORE,
   ...FOOL_PATHWAY_LORE,
   ...VISIONARY_PATHWAY_LORE,
