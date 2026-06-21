@@ -16,8 +16,8 @@ export default function CharacterPage() {
       </header>
 
       <FirstTimeHint id="character">
-        Your sheet reads like a dossier: abilities, the acting method your potion demands,
-        your condition, and everything in your pockets.
+        Your sheet reads like a dossier: abilities, the role your Sequence demands, your
+        condition, and everything in your pockets.
       </FirstTimeHint>
 
       <CharacterSheet />

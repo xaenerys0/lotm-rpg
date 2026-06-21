@@ -50,6 +50,15 @@ export interface GlossaryTerm {
    * existence. Absent = no capability required.
    */
   requiresFlag?: AccessFlag;
+  /**
+   * Discovery gate (issue #95). The Acting Method is LOTM secret knowledge a
+   * Beyonder earns through play, not a fact known from the first night. A term
+   * tagged here is shown ONLY once the character has discovered the method
+   * (`actingMethodState.knowsMethod`) — and, like the capability gate, it is left
+   * out of the sealed-term universe entirely until then, so its very existence is
+   * never hinted before discovery. Absent = no discovery required.
+   */
+  requiresActingMethod?: boolean;
 }
 
 export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
@@ -93,6 +102,9 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     definition:
       "The craft of digesting a potion by living its role: a Seer divines, a Bard performs, a Gravedigger tends the dead. Play the part honestly and the potion forgets it was ever separate from you.",
     revealAtSequence: 9,
+    // Secret knowledge — sealed until the character discovers the method in play
+    // (issue #95), even though the concept itself is first-night basic once known.
+    requiresActingMethod: true,
   },
   {
     slug: "loss-of-control",
@@ -498,24 +510,42 @@ function passesFlagGate(
 }
 
 /**
+ * Whether a term's discovery gate is satisfied (issue #95). A term that doesn't
+ * require the Acting Method is ungated; one that does shows only once the
+ * character has discovered the method. Mirrors `passesFlagGate`'s shape so the
+ * gates compose, and (applied in `sealedTermCount` too) keeps an undiscovered
+ * term out of the sealed universe entirely — its existence stays hidden.
+ */
+function passesActingMethodGate(
+  required: boolean | undefined,
+  knowsMethod: boolean | undefined,
+): boolean {
+  if (!required) return true;
+  return knowsMethod === true;
+}
+
+/**
  * Terms visible to a character at `sequenceLevel` (progressive disclosure):
  * a term unlocks once the player's sequence is at or below its threshold. Terms
  * are also epoch-gated (issue: character epoch isolation) — a character only
  * ever sees universal mechanics plus terms tagged for its own epoch — AND
  * capability-gated (issue #132): a flag-gated term (the Forsaken Land's) shows
  * only to a character holding that `accessFlag`. An absent `epoch` defaults to
- * the Fifth; absent `accessFlags` means none held.
+ * the Fifth; absent `accessFlags` means none held. The Acting Method term is
+ * additionally discovery-gated (issue #95): hidden until `knowsMethod`.
  */
 export function glossaryForSequence(
   sequenceLevel: number,
   epoch?: number,
   accessFlags?: readonly string[],
+  knowsMethod?: boolean,
 ): GlossaryTerm[] {
   return GLOSSARY_TERMS.filter(
     (term) =>
       term.revealAtSequence >= sequenceLevel &&
       passesEpochGate(term.epoch, epoch) &&
-      passesFlagGate(term.requiresFlag, accessFlags),
+      passesFlagGate(term.requiresFlag, accessFlags) &&
+      passesActingMethodGate(term.requiresActingMethod, knowsMethod),
   );
 }
 
@@ -533,15 +563,19 @@ export function sealedTermCount(
   sequenceLevel: number,
   epoch?: number,
   accessFlags?: readonly string[],
+  knowsMethod?: boolean,
 ): number {
   // A single pass over the epoch- AND capability-applicable universe: a term is
   // sealed when its reveal threshold is still below the player's sequence.
   // Counting only terms the character could ever reach keeps other-epoch and
-  // flag-gated (Forsaken) entries' existence hidden (issue #132).
+  // flag-gated (Forsaken) entries' existence hidden (issue #132) — and the same
+  // for the undiscovered Acting Method term (issue #95), so the count never hints
+  // at the secret before it is earned.
   return GLOSSARY_TERMS.filter(
     (term) =>
       passesEpochGate(term.epoch, epoch) &&
       passesFlagGate(term.requiresFlag, accessFlags) &&
+      passesActingMethodGate(term.requiresActingMethod, knowsMethod) &&
       term.revealAtSequence < sequenceLevel,
   ).length;
 }

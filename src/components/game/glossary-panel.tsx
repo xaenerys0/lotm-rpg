@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { useActiveSession } from "@/lib/react/session-store";
+import { resolveActingMethodState } from "@/lib/game";
 import {
   glossaryForSequence,
   sealedTermCount,
@@ -26,18 +27,21 @@ export function GlossaryPanel() {
   // memo honest without depending on array identity.
   const accessFlags = session?.gameState.accessFlags;
   const accessFlagsKey = (accessFlags ?? []).join(",");
+  // Discovery gate (issue #95): the Acting Method term stays sealed — and its
+  // existence unhinted in the sealed count — until the character earns it in play.
+  const knowsMethod = resolveActingMethodState(session?.actingMethodState).knowsMethod;
 
   const [query, setQuery] = useState("");
 
   const visible = useMemo(
-    () => glossaryForSequence(sequenceLevel, epoch, accessFlags),
+    () => glossaryForSequence(sequenceLevel, epoch, accessFlags, knowsMethod),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- accessFlagsKey stands in for the accessFlags array identity
-    [sequenceLevel, epoch, accessFlagsKey],
+    [sequenceLevel, epoch, accessFlagsKey, knowsMethod],
   );
   const sealed = useMemo(
-    () => sealedTermCount(sequenceLevel, epoch, accessFlags),
+    () => sealedTermCount(sequenceLevel, epoch, accessFlags, knowsMethod),
     // eslint-disable-next-line react-hooks/exhaustive-deps -- accessFlagsKey stands in for the accessFlags array identity
-    [sequenceLevel, epoch, accessFlagsKey],
+    [sequenceLevel, epoch, accessFlagsKey, knowsMethod],
   );
 
   const filtered = useMemo(() => {
