@@ -461,7 +461,7 @@ export function ProviderConfig() {
     <div className="space-y-8 animate-fade-in-up">
       {/* Provider Selector */}
       <fieldset>
-        <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+        <legend className="mb-3 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
           Provider
         </legend>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -471,10 +471,10 @@ export function ProviderConfig() {
               type="button"
               onClick={() => handleProviderChange(p.id)}
               aria-pressed={form.providerId === p.id}
-              className={`group relative rounded-md border px-3 py-2.5 text-sm transition-all duration-200 ${
+              className={`group relative rounded-xl border px-4 py-3 text-sm transition-all duration-200 ${
                 form.providerId === p.id
-                  ? "border-amber/60 bg-amber/[0.08] text-amber shadow-[inset_0_1px_0_rgba(217,119,6,0.1),0_0_12px_rgba(217,119,6,0.06)]"
-                  : "border-border bg-surface text-muted hover:border-amber/20 hover:text-foreground/80"
+                  ? "border-amber bg-amber/10 text-amber"
+                  : "border-border bg-surface-raised text-muted hover:border-amber/40 hover:text-foreground"
               }`}
             >
               <span
@@ -493,7 +493,7 @@ export function ProviderConfig() {
 
       {/* API Key */}
       <fieldset>
-        <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+        <legend className="mb-3 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
           {providerMeta.requiresAuth ? "API Key" : "Connection"}
         </legend>
         {providerMeta.requiresAuth && (
@@ -514,7 +514,7 @@ export function ProviderConfig() {
                       : "Enter your API key"
               }
               autoComplete="off"
-              className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 pr-20 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
             <button
               type="button"
@@ -536,9 +536,9 @@ export function ProviderConfig() {
               : "Your key is stored locally in this browser. It is never sent to our servers."}
         </p>
         {providerMeta.requiresAuth && (
-          <p className="mt-2 rounded-md border border-border bg-background/60 px-3 py-2 text-xs leading-relaxed text-muted">
-            <strong className="font-semibold text-foreground/80">Privacy:</strong> your
-            key lives only in this browser&apos;s local storage and is sent only to your
+          <p className="mt-2 rounded-lg border border-border bg-surface px-3 py-2 text-xs leading-relaxed text-muted">
+            <strong className="font-semibold text-foreground">Privacy:</strong> your key
+            lives only in this browser&apos;s local storage and is sent only to your
             chosen provider, directly from your browser, with each AI call. It never
             touches our servers or database, and nothing derived from it is logged. Remove
             it at any time with &ldquo;Remove key&rdquo; below.
@@ -549,7 +549,7 @@ export function ProviderConfig() {
       {/* Base URL (conditional) */}
       {providerMeta.needsBaseUrl && (
         <fieldset>
-          <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+          <legend className="mb-3 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
             Base URL
           </legend>
           <input
@@ -562,14 +562,14 @@ export function ProviderConfig() {
                 ? "http://localhost:11434"
                 : "https://your-endpoint.example.com/v1"
             }
-            className="w-full rounded-md border border-border bg-background px-4 py-3 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           />
         </fieldset>
       )}
 
       {/* Model Selection */}
       <fieldset>
-        <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+        <legend className="mb-3 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
           Models
         </legend>
         {!isCustom && (
@@ -587,7 +587,7 @@ export function ProviderConfig() {
                   type="button"
                   onClick={handleCheckModels}
                   disabled={accessStatus === "checking" || !canTest}
-                  className="shrink-0 rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30"
+                  className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber disabled:cursor-not-allowed disabled:opacity-30"
                 >
                   {accessStatus === "checking" ? "Checking..." : "Check models"}
                 </button>
@@ -596,7 +596,7 @@ export function ProviderConfig() {
                 type="button"
                 onClick={handleRefreshModels}
                 disabled={modelsStatus === "loading" || !canTest}
-                className="shrink-0 rounded-md border border-amber/30 bg-amber/[0.06] px-3 py-1.5 text-xs font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30"
+                className="shrink-0 rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber disabled:cursor-not-allowed disabled:opacity-30"
               >
                 {modelsStatus === "loading" ? "Refreshing..." : "Refresh list"}
               </button>
@@ -606,7 +606,10 @@ export function ProviderConfig() {
         <div className="grid gap-4 sm:grid-cols-2">
           {/* Routine Model */}
           <div>
-            <label htmlFor="routine-model" className="mb-1.5 block text-xs text-muted">
+            <label
+              htmlFor="routine-model"
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
               Routine <span className="text-muted">— narration, choices, evaluation</span>
             </label>
             {isCustom ? (
@@ -616,14 +619,14 @@ export function ProviderConfig() {
                 value={form.customRoutineModel}
                 onChange={(e) => updateField("customRoutineModel", e.target.value)}
                 placeholder="e.g. gpt-4o-mini"
-                className="w-full rounded-md border border-border bg-background px-4 py-2.5 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               />
             ) : (
               <select
                 id="routine-model"
                 value={form.routineModel}
                 onChange={(e) => updateField("routineModel", e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               >
                 {displayModels.length === 0 && <option value="">No models found</option>}
                 {withSelected(displayModels, form.routineModel).map((m) => (
@@ -637,7 +640,10 @@ export function ProviderConfig() {
 
           {/* Premium Model */}
           <div>
-            <label htmlFor="premium-model" className="mb-1.5 block text-xs text-muted">
+            <label
+              htmlFor="premium-model"
+              className="mb-1.5 block text-sm font-medium text-foreground"
+            >
               Premium <span className="text-muted">— advancement, combat</span>
             </label>
             {isCustom ? (
@@ -647,14 +653,14 @@ export function ProviderConfig() {
                 value={form.customPremiumModel}
                 onChange={(e) => updateField("customPremiumModel", e.target.value)}
                 placeholder="e.g. gpt-4o"
-                className="w-full rounded-md border border-border bg-background px-4 py-2.5 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               />
             ) : (
               <select
                 id="premium-model"
                 value={form.premiumModel}
                 onChange={(e) => updateField("premiumModel", e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               >
                 {displayModels.length === 0 && <option value="">No models found</option>}
                 {withSelected(displayModels, form.premiumModel).map((m) => (
@@ -669,7 +675,7 @@ export function ProviderConfig() {
         {unservedModels.length > 0 && (
           <p
             role="alert"
-            className="mt-3 rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-2 text-xs leading-relaxed text-sanity-low"
+            className="mt-3 rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-2 text-xs leading-relaxed text-sanity-low"
           >
             <strong className="font-semibold">Heads up:</strong>{" "}
             {unservedModels.length === 1 ? "Model" : "Models"}{" "}
@@ -687,7 +693,7 @@ export function ProviderConfig() {
         {inaccessibleModels.length > 0 && (
           <div
             role="alert"
-            className="mt-3 rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-2 text-xs leading-relaxed text-sanity-low"
+            className="mt-3 rounded-lg border border-crimson/40 bg-crimson/10 px-3 py-2 text-xs leading-relaxed text-sanity-low"
           >
             <p className="font-semibold">
               Your ollama.com plan can&apos;t run{" "}
@@ -734,7 +740,7 @@ export function ProviderConfig() {
             type="button"
             onClick={handleTestConnection}
             disabled={connectionStatus === "testing" || !canTest}
-            className="rounded-md border border-amber/30 bg-amber/[0.06] px-4 py-2 text-sm font-medium text-amber transition-all duration-200 hover:border-amber/50 hover:bg-amber/[0.1] disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:border-amber/30 disabled:hover:bg-amber/[0.06]"
+            className="rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber disabled:cursor-not-allowed disabled:opacity-40"
           >
             {connectionStatus === "testing" ? "Testing..." : "Test Connection"}
           </button>
@@ -743,7 +749,7 @@ export function ProviderConfig() {
             type="button"
             onClick={handleSave}
             disabled={saveStatus === "saving" || saveStatus === "saved"}
-            className="rounded-md bg-amber/90 px-4 py-2 text-sm font-medium text-background transition-all duration-200 hover:bg-amber disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg bg-amber px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber"
           >
             {saveStatus === "saving"
               ? "Saving..."
@@ -756,7 +762,7 @@ export function ProviderConfig() {
             <button
               type="button"
               onClick={handleRemoveKey}
-              className="rounded-md border border-crimson/30 px-4 py-2 text-sm font-medium text-sanity-low transition-all duration-200 hover:border-crimson/50 hover:bg-crimson/[0.06]"
+              className="rounded-lg border border-crimson/30 px-4 py-2.5 text-sm font-medium text-sanity-low transition-colors hover:border-crimson/50 hover:bg-crimson/10"
             >
               Remove key
             </button>
@@ -805,7 +811,7 @@ export function ProviderConfig() {
       {connectionStatus === "invalid" && connectionError && (
         <div
           role="alert"
-          className="rounded-md border border-crimson/30 bg-crimson/[0.06] px-4 py-3 text-sm text-sanity-low"
+          className="rounded-lg border border-crimson/30 bg-crimson/10 px-4 py-3 text-sm text-sanity-low"
         >
           {connectionError}
         </div>

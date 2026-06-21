@@ -175,7 +175,7 @@ export function ImageProviderConfig() {
     <div className="space-y-8 animate-fade-in-up">
       {/* Provider Selector */}
       <fieldset>
-        <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+        <legend className="mb-3 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
           Image provider
         </legend>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -185,10 +185,10 @@ export function ImageProviderConfig() {
               type="button"
               onClick={() => handleProviderChange(p.id)}
               aria-pressed={form.providerId === p.id}
-              className={`group relative rounded-md border px-3 py-2.5 text-sm transition-all duration-200 ${
+              className={`group relative rounded-xl border px-4 py-3 text-sm transition-all duration-200 ${
                 form.providerId === p.id
-                  ? "border-amber/60 bg-amber/[0.08] text-amber shadow-[inset_0_1px_0_rgba(217,119,6,0.1),0_0_12px_rgba(217,119,6,0.06)]"
-                  : "border-border bg-surface text-muted hover:border-amber/20 hover:text-foreground/80"
+                  ? "border-amber bg-amber/10 text-amber"
+                  : "border-border bg-surface-raised text-muted hover:border-amber/40 hover:text-foreground"
               }`}
             >
               <span
@@ -207,7 +207,7 @@ export function ImageProviderConfig() {
 
       {/* API Key */}
       <fieldset>
-        <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+        <legend className="mb-3 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
           {requiresKey ? "API Key" : "Connection"}
         </legend>
         {requiresKey ? (
@@ -220,7 +220,7 @@ export function ImageProviderConfig() {
               onChange={(e) => updateField("apiKey", e.target.value)}
               placeholder="sk-..."
               autoComplete="off"
-              className="w-full rounded-md border border-border bg-background px-4 py-3 pr-20 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 pr-20 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
             <button
               type="button"
@@ -246,7 +246,7 @@ export function ImageProviderConfig() {
       {/* Base URL (conditional) */}
       {needsBaseUrl && (
         <fieldset>
-          <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+          <legend className="mb-3 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
             Base URL
           </legend>
           <input
@@ -255,14 +255,14 @@ export function ImageProviderConfig() {
             value={form.baseUrl}
             onChange={(e) => updateField("baseUrl", e.target.value)}
             placeholder={defaultImageBaseUrl(form.providerId)}
-            className="w-full rounded-md border border-border bg-background px-4 py-3 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           />
         </fieldset>
       )}
 
       {/* Model */}
       <fieldset>
-        <legend className="mb-3 font-serif text-sm font-semibold tracking-wide text-foreground/80 uppercase">
+        <legend className="mb-3 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
           Image model
         </legend>
         {needsModel ? (
@@ -273,7 +273,7 @@ export function ImageProviderConfig() {
                 aria-label="Image model"
                 value={selectValue}
                 onChange={(e) => handleModelSelect(e.target.value)}
-                className="w-full rounded-md border border-border bg-background px-4 py-2.5 text-sm text-foreground transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               >
                 {catalog.map((m) => (
                   <option key={m.id} value={m.id}>
@@ -291,7 +291,7 @@ export function ImageProviderConfig() {
                 value={form.model}
                 onChange={(e) => updateField("model", e.target.value)}
                 placeholder="e.g. z-image-turbo or x/flux2-klein:9b"
-                className="w-full rounded-md border border-border bg-background px-4 py-2.5 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               />
             )}
           </div>
@@ -303,7 +303,7 @@ export function ImageProviderConfig() {
             value={form.model}
             onChange={(e) => updateField("model", e.target.value)}
             placeholder="Checkpoint name (optional — uses the WebUI's loaded model)"
-            className="w-full rounded-md border border-border bg-background px-4 py-2.5 font-mono text-sm text-foreground placeholder-muted transition-colors duration-200 focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           />
         )}
       </fieldset>
@@ -315,7 +315,7 @@ export function ImageProviderConfig() {
             type="button"
             onClick={handleSave}
             disabled={saveStatus === "saving" || saveStatus === "saved"}
-            className="rounded-md bg-amber/90 px-4 py-2 text-sm font-medium text-background transition-all duration-200 hover:bg-amber disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-lg bg-amber px-4 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-amber"
           >
             {saveStatus === "saving"
               ? "Saving..."
@@ -327,7 +327,7 @@ export function ImageProviderConfig() {
             <button
               type="button"
               onClick={handleRemoveKey}
-              className="rounded-md border border-crimson/30 px-4 py-2 text-sm font-medium text-sanity-low transition-all duration-200 hover:border-crimson/50 hover:bg-crimson/[0.06]"
+              className="rounded-lg border border-crimson/30 px-4 py-2.5 text-sm font-medium text-sanity-low transition-colors hover:border-crimson/50 hover:bg-crimson/10"
             >
               Remove key
             </button>
