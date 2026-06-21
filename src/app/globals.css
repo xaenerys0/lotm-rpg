@@ -1,39 +1,48 @@
 @import "tailwindcss";
 
-/* Victorian Steampunk Dark Theme */
-@theme inline {
-  /* Core palette */
-  --color-background: #0c0a09;
-  --color-surface: #1c1917;
-  --color-foreground: #e7e5e4;
-  /* Lightened from #78716c so body text clears WCAG 2.2 AA (4.5:1) on both
-     the background and the surface. Now ~5.2:1 on background. */
-  --color-muted: #8a8178;
-  --color-border: #292524;
+/* ═══════════════════════════════════════════════════════════════════════
+   GASLIGHT GRIMOIRE — an elevated occult-Victorian theme.
 
-  /* Accent colors */
-  --color-amber: #d97706;
-  --color-gold: #f59e0b;
-  --color-copper: #b45309;
-  --color-fog: #57534e;
-  --color-crimson: #991b1b;
-  --color-occult: #7c3aed;
-  /* A lighter violet for occult-tinted *text*: #7c3aed only reaches ~3.5:1 on
-     the background (fine for bars/glyphs, fails for body text). This clears
-     AA (~7:1) while keeping the supernatural register. */
-  --color-occult-bright: #a78bfa;
-  --color-gaslight: #fbbf24;
+   A gilded séance read by lamplight: warm ink-black grounds, antique-gilt
+   accents, and a séance-violet that surfaces only where the supernatural
+   leaks through. Every token name is stable so the whole app re-skins from
+   here; the atmosphere utilities (.parchment/.gaslit/.fog-overlay/
+   .candle-flicker) keep their contracts and gain depth.
+   ═══════════════════════════════════════════════════════════════════════ */
+@theme inline {
+  /* Core palette — warm, deep, lamp-lit */
+  --color-background: #0a0806;
+  --color-surface: #16110c;
+  --color-surface-raised: #1e1810;
+  --color-foreground: #ece3d2;
+  /* Warm taupe secondary text — ~6:1 on background, clears WCAG 2.2 AA on
+     both background and surface. */
+  --color-muted: #a89377;
+  --color-border: #2b2117;
+
+  /* Accent colors — antique gilt + séance violet */
+  --color-amber: #c89a3c;
+  --color-gold: #e7c573;
+  --color-copper: #9c5a2a;
+  --color-fog: #6b6053;
+  --color-crimson: #8c2f2f;
+  --color-occult: #6d4ea8;
+  /* Lighter violet for occult-tinted *text* (plain occult only reaches the
+     non-text 3:1 threshold). This clears AA while keeping the register. */
+  --color-occult-bright: #bca3ec;
+  --color-gaslight: #f2cf6b;
 
   /* Semantic colors */
-  --color-sanity-high: #22c55e;
-  --color-sanity-mid: #eab308;
-  --color-sanity-low: #ef4444;
+  --color-sanity-high: #4fae72;
+  --color-sanity-mid: #e0b13f;
+  --color-sanity-low: #e26060;
   --color-sanity-critical: #7f1d1d;
 
-  /* Typography */
-  --font-serif: var(--font-lora), "Georgia", serif;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Typography — Fraunces (display, soft optical serif) over Spectral (body,
+     a screen-tuned literary serif). Mono stays Geist Mono. */
+  --font-serif: var(--font-fraunces), "Georgia", serif;
+  --font-sans: var(--font-spectral), "Georgia", serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
   /* Spacing / sizing */
   --container-game: 1200px;
@@ -155,7 +164,7 @@
     ),
     radial-gradient(
       ellipse 90% 60% at 50% 120%,
-      rgba(124, 58, 237, 0.12) 0%,
+      rgba(109, 78, 168, 0.12) 0%,
       transparent 60%
     );
   mix-blend-mode: multiply;
@@ -191,23 +200,23 @@
    parchment narrative panels, and a gaslight halo for headers. All motion
    here is decorative and inherits the global reduced-motion neutraliser. */
 
-/* Parchment: a paper-grain texture for narrative panels. The grain is an
-   inline SVG turbulence tile so no asset is shipped; tinted warm and edged
-   with a deep inner shadow like a page read by lamplight. */
+/* Parchment: a paper-grain texture for narrative panels, edged with a gilt
+   hairline and a deep inner shadow like a page read by lamplight. */
 .parchment {
   position: relative;
   background-color: var(--color-surface);
   background-image:
-    radial-gradient(ellipse 90% 70% at 20% 0%, rgba(217, 119, 6, 0.05), transparent 60%),
+    radial-gradient(ellipse 90% 70% at 20% 0%, rgba(200, 154, 60, 0.06), transparent 60%),
     radial-gradient(
       ellipse 70% 60% at 95% 100%,
-      rgba(124, 58, 237, 0.025),
+      rgba(109, 78, 168, 0.03),
       transparent 60%
     ),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.45 0 0 0 0 0.30 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.55 0 0 0 0 0.45 0 0 0 0 0.30 0 0 0 0.06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
   box-shadow:
-    inset 0 0 48px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(231, 229, 228, 0.04);
+    inset 0 0 56px rgba(0, 0, 0, 0.5),
+    inset 0 0 0 1px rgba(200, 154, 60, 0.08),
+    inset 0 1px 0 rgba(236, 227, 210, 0.04);
 }
 
 /* Gaslight halo: a warm radial bloom behind a heading, like a wall sconce. */
@@ -220,7 +229,7 @@
   inset: -2.5rem -3rem;
   background: radial-gradient(
     ellipse 60% 90% at 18% 50%,
-    rgba(251, 191, 36, 0.07),
+    rgba(242, 207, 107, 0.09),
     transparent 70%
   );
   pointer-events: none;
@@ -240,18 +249,18 @@
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 45% 30% at 25% 35%, rgba(87, 83, 78, 0.13), transparent 70%),
-    radial-gradient(ellipse 55% 35% at 75% 75%, rgba(87, 83, 78, 0.1), transparent 70%);
+    radial-gradient(ellipse 45% 30% at 25% 35%, rgba(107, 96, 83, 0.15), transparent 70%),
+    radial-gradient(ellipse 55% 35% at 75% 75%, rgba(107, 96, 83, 0.11), transparent 70%);
   animation: fog-drift 90s ease-in-out infinite alternate;
 }
 .fog-overlay::after {
   background:
     radial-gradient(
       ellipse 40% 28% at 70% 25%,
-      rgba(138, 129, 120, 0.07),
+      rgba(168, 147, 119, 0.07),
       transparent 70%
     ),
-    radial-gradient(ellipse 50% 30% at 20% 80%, rgba(87, 83, 78, 0.09), transparent 70%);
+    radial-gradient(ellipse 50% 30% at 20% 80%, rgba(107, 96, 83, 0.1), transparent 70%);
   animation-duration: 140s;
   animation-direction: alternate-reverse;
 }
@@ -296,15 +305,61 @@
   }
 }
 
+/* ─── Gilt ornaments (Gaslight Grimoire chrome) ───────────────────────
+   Reusable decorative flourishes for the new shell. All are aria-hidden in
+   markup; purely visual. */
+
+/* A centred horizontal rule that fades from a gilt core out to nothing,
+   with a small lozenge at its middle — a chapter divider. */
+.gilt-rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(200, 154, 60, 0.45) 50%,
+    transparent
+  );
+}
+
+/* A thin gilt frame for "grimoire page" cards, with softly lit corners. */
+.grimoire-frame {
+  position: relative;
+  background-color: var(--color-surface);
+  box-shadow:
+    0 1px 0 0 rgba(236, 227, 210, 0.03) inset,
+    0 24px 60px -28px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(200, 154, 60, 0.16) inset;
+}
+.grimoire-frame::before,
+.grimoire-frame::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  pointer-events: none;
+  border-color: rgba(231, 197, 115, 0.55);
+  border-style: solid;
+}
+.grimoire-frame::before {
+  top: 8px;
+  left: 8px;
+  border-width: 1px 0 0 1px;
+}
+.grimoire-frame::after {
+  bottom: 8px;
+  right: 8px;
+  border-width: 0 1px 1px 0;
+}
+
 /* ─── High-contrast mode (issue #13, WCAG 1.4.3/1.4.6 support) ─────────
    Toggled from Settings (data-contrast on <html>) and honoured automatically
-   for users whose system asks for more contrast. Brightens text, borders,
-   and muted copy; mutes the decorative atmosphere so content leads. */
+   for users whose system asks for more contrast. */
 [data-contrast="high"] {
-  --color-foreground: #fafaf9;
-  --color-muted: #c9c1b8;
-  --color-border: #57534e;
-  --color-amber: #f59e0b;
+  --color-foreground: #fdfaf3;
+  --color-muted: #d8cbb6;
+  --color-border: #6b6053;
+  --color-amber: #e7c573;
 }
 [data-contrast="high"] .fog-overlay::before,
 [data-contrast="high"] .fog-overlay::after,
@@ -315,18 +370,21 @@
   background-image: none;
   box-shadow: none;
 }
+[data-contrast="high"] .grimoire-frame::before,
+[data-contrast="high"] .grimoire-frame::after {
+  display: none;
+}
 @media (prefers-contrast: more) {
   :root:not([data-contrast="normal"]) {
-    --color-foreground: #fafaf9;
-    --color-muted: #c9c1b8;
-    --color-border: #57534e;
-    --color-amber: #f59e0b;
+    --color-foreground: #fdfaf3;
+    --color-muted: #d8cbb6;
+    --color-border: #6b6053;
+    --color-amber: #e7c573;
   }
 }
 
-/* Small screens (issue #27): the critical-tier sanity glitch uses the
-   costliest filter stack — soften it so low-power mobile GPUs keep frame
-   rate; every other effect is cheap (opacity/hue shifts). */
+/* Small screens (issue #27): soften the costliest sanity glitch and stop the
+   ambient fog drift so low-power mobile GPUs keep frame rate. */
 @media (max-width: 640px) {
   .sanity-fx-critical {
     animation-duration: 6s;
@@ -357,22 +415,34 @@
     background:
       radial-gradient(
         ellipse 80% 50% at 50% -10%,
-        rgba(217, 119, 6, 0.035) 0%,
+        rgba(200, 154, 60, 0.05) 0%,
         transparent 100%
       ),
       radial-gradient(
         ellipse 60% 40% at 100% 85%,
-        rgba(180, 83, 9, 0.02) 0%,
+        rgba(156, 90, 42, 0.03) 0%,
         transparent 100%
       ),
       radial-gradient(
         ellipse 50% 50% at 0% 60%,
-        rgba(124, 58, 237, 0.012) 0%,
+        rgba(109, 78, 168, 0.02) 0%,
         transparent 100%
       ),
       var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
+    /* A whisper of film grain over the whole page — ties the lamplight
+       together. Fixed so it doesn't scroll; non-interactive. */
+  }
+
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
   ::selection {
@@ -384,16 +454,15 @@
   h2,
   h3 {
     text-rendering: optimizeLegibility;
+    font-feature-settings:
+      "liga" 1,
+      "dlig" 1;
   }
 
   /* ─── Visible focus indicator (WCAG 2.2 — 2.4.7 / 2.4.11) ───────────
      A single, consistent, high-contrast focus ring for every keyboard-
-     focused control. The 2px offset places the ring on the page background
-     (not the control's own fill), so it keeps ≥3:1 contrast even on amber
-     buttons. Mouse clicks (:focus without :focus-visible) stay clean.
-     `!important` is used deliberately so the ring always wins over the
-     `focus:outline-none` utilities the controls carry — every keyboard focus
-     gets one consistent, visible indicator. */
+     focused control. The 2px offset places the ring on the page background,
+     so it keeps ≥3:1 contrast even on gilt fills. */
   :focus-visible {
     outline: 2px solid var(--color-gaslight) !important;
     outline-offset: 2px !important;

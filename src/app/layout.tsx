@@ -1,23 +1,28 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Lora } from "next/font/google";
+import { Fraunces, Spectral, Geist_Mono } from "next/font/google";
 import { PWA_COLORS } from "@/app/_pwa/palette";
 import { InstallPrompt } from "@/components/pwa/install-prompt";
 import { ServiceWorkerRegistrar } from "@/components/pwa/service-worker-registrar";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+// Display: Fraunces — a soft, high-contrast "old style" serif with real
+// Victorian character (used for headings via `font-serif`).
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
+  axes: ["opsz", "SOFT", "WONK"],
+});
+
+// Body: Spectral — a screen-tuned literary serif (the app's default body via
+// `font-sans`), giving the whole interface a read-by-lamplight feel.
+const spectral = Spectral({
+  variable: "--font-spectral",
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const lora = Lora({
-  variable: "--font-lora",
   subsets: ["latin"],
 });
 
@@ -52,7 +57,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${lora.variable} h-full antialiased`}
+      className={`${fraunces.variable} ${spectral.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <a

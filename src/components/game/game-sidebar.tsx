@@ -10,18 +10,20 @@ import {
   useSessionSummaries,
 } from "@/lib/react/session-store";
 
+// Each destination carries a small decorative glyph (aria-hidden) — the label
+// always carries the meaning.
 const navItems = [
-  { href: "/play", label: "Dashboard" },
-  { href: "/character", label: "Character" },
-  { href: "/journal", label: "Journal" },
-  { href: "/map", label: "Map" },
-  { href: "/glossary", label: "Glossary" },
-  { href: "/market", label: "Market" },
-  { href: "/profile", label: "Profile" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/society", label: "Society" },
-  { href: "/guide", label: "Guide" },
-  { href: "/settings", label: "Settings" },
+  { href: "/play", label: "Dashboard", glyph: "✦" },
+  { href: "/character", label: "Character", glyph: "◉" },
+  { href: "/journal", label: "Journal", glyph: "✒" },
+  { href: "/map", label: "Map", glyph: "✧" },
+  { href: "/glossary", label: "Glossary", glyph: "❧" },
+  { href: "/market", label: "Market", glyph: "⚖" },
+  { href: "/profile", label: "Profile", glyph: "❖" },
+  { href: "/leaderboard", label: "Leaderboard", glyph: "⚜" },
+  { href: "/society", label: "Society", glyph: "☽" },
+  { href: "/guide", label: "Guide", glyph: "❡" },
+  { href: "/settings", label: "Settings", glyph: "⚙" },
 ] as const;
 
 /**
@@ -40,10 +42,14 @@ function CharacterSwitcher() {
     summaries.find((s) => s.id === id)?.characterName ?? "Unnamed Beyonder";
 
   return (
-    <div className="border-b border-border px-4 py-3">
-      <p className="text-[10px] tracking-widest text-muted uppercase">Active character</p>
+    <div className="border-b border-border px-5 py-4">
+      <p className="text-[10px] tracking-[0.25em] text-amber uppercase">
+        Active character
+      </p>
       {summaries.length === 1 ? (
-        <p className="mt-1 truncate text-sm font-medium text-amber">{label(activeId)}</p>
+        <p className="mt-1.5 truncate font-serif text-base font-medium text-foreground">
+          {label(activeId)}
+        </p>
       ) : (
         <>
           <label htmlFor="active-character" className="sr-only">
@@ -53,7 +59,7 @@ function CharacterSwitcher() {
             id="active-character"
             value={activeId ?? ""}
             onChange={(e) => saveActiveSessionId(e.target.value)}
-            className="mt-1 w-full truncate rounded-md border border-border bg-background px-2.5 py-1.5 text-sm text-foreground focus:border-amber/50 focus:outline-none focus:ring-1 focus:ring-amber/20"
+            className="mt-1.5 w-full truncate rounded-sm border border-border bg-background px-2.5 py-1.5 font-serif text-sm text-foreground focus:border-amber/60 focus:outline-none focus:ring-1 focus:ring-amber/30"
           >
             {summaries.map((s) => (
               <option key={s.id} value={s.id}>
@@ -98,7 +104,7 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
     <>
       {/* Mobile top bar */}
       <header className="fixed inset-x-0 top-0 z-50 flex h-14 items-center justify-between border-b border-border bg-surface/95 px-4 backdrop-blur-sm md:hidden">
-        <span className="font-serif text-lg font-bold text-amber">
+        <span className="font-serif text-lg font-semibold text-amber">
           Lord of the Mysteries
         </span>
         <button
@@ -117,6 +123,7 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
             stroke="currentColor"
             strokeWidth="1.5"
             strokeLinecap="round"
+            aria-hidden="true"
           >
             {mobileOpen ? (
               <>
@@ -143,7 +150,7 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar — a gilt-railed grimoire spine. */}
       <aside
         id="game-sidebar"
         aria-label="Game sidebar"
@@ -151,18 +158,27 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
           mobileOpen ? "translate-x-0" : "-translate-x-full max-md:invisible"
         }`}
       >
+        {/* Gilt spine accent down the inner edge. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-y-0 right-0 w-px bg-gradient-to-b from-transparent via-amber/30 to-transparent"
+        />
+
         <div className="relative border-b border-border px-6 py-5">
           <div
-            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-amber/[0.03] to-transparent"
+            className="pointer-events-none absolute inset-0 bg-gradient-to-b from-amber/[0.05] to-transparent"
             aria-hidden="true"
           />
           {/* Branding, not a document heading — keeping it a non-heading avoids
               an h2 landing before each page's h1 (heading order, WCAG 1.3.1). */}
-          <p className="relative font-serif text-xl font-bold tracking-tight text-amber">
-            Lord of the Mysteries
+          <p className="relative font-serif text-xl font-semibold tracking-tight text-foreground">
+            Lord of the{" "}
+            <span className="bg-gradient-to-r from-gold to-amber bg-clip-text text-transparent">
+              Mysteries
+            </span>
           </p>
-          <p className="relative mt-1 text-xs tracking-widest text-muted uppercase">
-            Fifth Epoch
+          <p className="relative mt-1 text-[10px] tracking-[0.3em] text-muted uppercase">
+            ✦ Fifth Epoch ✦
           </p>
         </div>
 
@@ -170,34 +186,31 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
 
         {/* The nav list owns the overflow: it flexes to fill the space between
             the pinned header/switcher above and the sign-out footer below, and
-            scrolls internally (overflow-y-auto) when the items exceed the
-            viewport height — so the footer stays reachable and no item is
-            clipped on short screens. This is the responsive strategy for the
-            growing item list; don't move the scroll to the page. */}
+            scrolls internally when the items exceed the viewport height. */}
         <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Game navigation">
           <ul className="space-y-0.5" role="list">
-            {navItems.map(({ href, label }) => {
+            {navItems.map(({ href, label, glyph }) => {
               const isActive = pathname === href || pathname.startsWith(href + "/");
               return (
                 <li key={href}>
                   <Link
                     href={href}
                     onClick={() => setMobileOpen(false)}
-                    className={`group flex items-center rounded-md px-3 py-2.5 text-sm transition-[color,background-color,box-shadow] duration-150 ${
+                    className={`group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-[color,background-color,box-shadow] duration-150 ${
                       isActive
-                        ? "bg-amber/10 font-medium text-amber shadow-[inset_2px_0_0_var(--color-amber)]"
-                        : "text-foreground/70 hover:bg-foreground/[0.04] hover:text-foreground"
+                        ? "bg-gradient-to-r from-amber/15 to-transparent font-medium text-amber shadow-[inset_2px_0_0_var(--color-amber)]"
+                        : "text-foreground/75 hover:bg-foreground/[0.04] hover:text-foreground"
                     }`}
                     aria-current={isActive ? "page" : undefined}
                   >
                     <span
-                      className={`mr-3 inline-block h-1 w-1 rounded-full transition-all duration-150 ${
-                        isActive
-                          ? "h-1.5 w-1.5 bg-amber shadow-[0_0_6px_var(--color-amber)]"
-                          : "bg-muted/30 group-hover:bg-muted/60"
-                      }`}
                       aria-hidden="true"
-                    />
+                      className={`inline-flex h-5 w-5 items-center justify-center text-sm transition-colors ${
+                        isActive ? "text-gold" : "text-muted group-hover:text-amber"
+                      }`}
+                    >
+                      {glyph}
+                    </span>
                     {label}
                   </Link>
                 </li>
@@ -207,20 +220,20 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
         </nav>
 
         <div className="mx-6 flex items-center gap-3" aria-hidden="true">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          <span className="text-[10px] text-muted/30">&#9670;</span>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber/30 to-transparent" />
+          <span className="text-[10px] text-amber/60">&#10070;</span>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-amber/30 to-transparent" />
         </div>
 
-        <div className="px-4 py-4">
-          <p className="truncate text-sm text-foreground/70">
+        <div className="px-5 py-4">
+          <p className="truncate text-sm text-foreground/75">
             {userEmail || "Unknown user"}
           </p>
           <button
             type="button"
             onClick={handleSignOut}
             disabled={signingOut}
-            className="mt-2 inline-flex min-h-[24px] items-center text-xs text-muted transition-colors hover:text-amber disabled:opacity-50"
+            className="mt-2 inline-flex min-h-[24px] items-center text-xs tracking-wide text-muted transition-colors hover:text-amber disabled:opacity-50"
           >
             {signingOut ? "Signing out…" : "Sign out"}
           </button>

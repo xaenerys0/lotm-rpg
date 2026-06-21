@@ -23,6 +23,10 @@ export function MobileNav() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/95 backdrop-blur-sm md:hidden"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
+      <div
+        aria-hidden="true"
+        className="h-px w-full bg-gradient-to-r from-transparent via-amber/30 to-transparent"
+      />
       <ul className="flex">
         {items.map(({ href, label, glyph }) => {
           const isActive = pathname === href || pathname.startsWith(href + "/");
@@ -31,10 +35,16 @@ export function MobileNav() {
               <Link
                 href={href}
                 aria-current={isActive ? "page" : undefined}
-                className={`flex min-h-[48px] flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
+                className={`relative flex min-h-[48px] flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
                   isActive ? "text-amber" : "text-muted hover:text-foreground"
                 }`}
               >
+                {isActive && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-x-5 top-0 h-px bg-gold shadow-[0_0_8px_var(--color-gold)]"
+                  />
+                )}
                 <span aria-hidden="true" className="text-base leading-none">
                   {glyph}
                 </span>
