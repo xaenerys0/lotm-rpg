@@ -6,17 +6,33 @@ import { expect, test, type Page } from "@playwright/test";
 // error state (an `aria-live` alert + `aria-invalid` fields), which is exactly
 // the path we want to exercise. No real account or backend required.
 
-/** Make the Supabase auth endpoint reject, so the form's error path runs
- *  deterministically — independent of the dummy backend's network-failure
- *  timing, which exceeded the assertion timeout in CI. */
+/** Make the Supabase auth endpoint reject with a terminal 400, so the form's
+ *  error path runs deterministically — independent of the dummy backend's
+ *  network-failure timing, which exceeded the assertion timeout in CI.
+ *
+ *  The app origin (localhost) and the Supabase URL (127.0.0.1) differ, so the
+ *  auth POST is cross-origin: we must answer the CORS preflight and send
+ *  `Access-Control-Allow-Origin` on the 400. Without it the browser blocks the
+ *  response, supabase-js sees a *retryable* network error and backs off/retries
+ *  past the timeout — reintroducing the very flake this mock removes. A real 400
+ *  is terminal (no retry), so the alert renders at once. */
+const CORS_HEADERS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-methods": "*",
+  "access-control-allow-headers": "*",
+};
+
 async function rejectAuth(page: Page, body: Record<string, unknown>): Promise<void> {
-  await page.route("**/auth/v1/**", (route) =>
-    route.fulfill({
+  await page.route("**/auth/v1/**", (route) => {
+    if (route.request().method() === "OPTIONS") {
+      return route.fulfill({ status: 204, headers: CORS_HEADERS });
+    }
+    return route.fulfill({
       status: 400,
-      contentType: "application/json",
+      headers: { ...CORS_HEADERS, "content-type": "application/json" },
       body: JSON.stringify(body),
-    }),
-  );
+    });
+  });
 }
 
 test.describe("signup form", () => {
