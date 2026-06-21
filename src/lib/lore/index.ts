@@ -40,6 +40,8 @@ export {
   startScenariosForEpoch,
   forsakenLandStartsForEpoch,
   startLocationsForEpoch,
+  startOptionSuitsPathway,
+  describeStartLocation,
   getStartScenario,
   START_SCENARIOS,
   type StartScenario,

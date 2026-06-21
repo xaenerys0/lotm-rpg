@@ -25,6 +25,7 @@
 // `blurb` is player-safe street-level flavour for the picker / the map.
 
 import { DEFAULT_EPOCH_ID, EPOCHS, getEpoch } from "./epochs";
+import { pickRandom } from "./random";
 
 export interface StartScenario {
   /** Stable id (`<place>-<scene>` for the Fifth; `epoch-<id>-default` for the
@@ -285,7 +286,7 @@ export function selectStartScenario(
   epoch: number | undefined,
   random: () => number = Math.random,
 ): StartScenario {
-  return pickFrom(startScenariosForEpoch(epoch), random);
+  return pickRandom(startScenariosForEpoch(epoch), random);
 }
 
 /**
@@ -301,7 +302,7 @@ export function selectStartScenarioForLocation(
 ): StartScenario {
   const pool = startScenariosForEpoch(epoch);
   const matches = pool.filter((s) => s.location === location);
-  return pickFrom(matches.length > 0 ? matches : pool, random);
+  return pickRandom(matches.length > 0 ? matches : pool, random);
 }
 
 /** Look up a start scenario by id, or `undefined` if none matches. */
@@ -309,8 +310,35 @@ export function getStartScenario(id: string): StartScenario | undefined {
   return START_SCENARIOS.find((s) => s.id === id);
 }
 
-/** Uniform draw from a non-empty scenario list (clamps the rare random()===1). */
-function pickFrom(pool: StartScenario[], random: () => number): StartScenario {
-  const idx = Math.min(pool.length - 1, Math.floor(random() * pool.length));
-  return pool[idx]!;
+/**
+ * Whether a start option (a location or an archetype) thematically SUITS a
+ * pathway — the single "this place suits the chosen pathway" check the creation
+ * picker shares across its option labels and its selected-blurb line (issue #85;
+ * previously re-computed inline in two places, so they could disagree). An
+ * absent/empty affinity suits no pathway. It is a suggestion only — never a bias.
+ */
+export function startOptionSuitsPathway(
+  pathwayAffinity: readonly number[] | undefined,
+  pathwayId: number,
+): boolean {
+  return (pathwayAffinity ?? []).includes(pathwayId);
+}
+
+/**
+ * The player-facing description for a selected start LOCATION in the picker: its
+ * public blurb, plus a "fitting start for the <pathway>" suffix when the place
+ * suits the chosen pathway (issue #85 — extracted from the inline picker IIFE so
+ * the logic is pure and testable, and the "suits" check is computed once). The
+ * suffix is omitted when the place does not suit the pathway or the pathway has
+ * no name.
+ */
+export function describeStartLocation(
+  option: StartLocationOption,
+  pathwayId: number,
+  pathwayName: string | undefined,
+): string {
+  const suits = startOptionSuitsPathway(option.pathwayAffinity, pathwayId);
+  return `${option.blurb}${
+    suits && pathwayName ? ` A fitting start for the ${pathwayName} pathway.` : ""
+  }`;
 }

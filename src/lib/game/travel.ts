@@ -1,5 +1,6 @@
 import type { AccessFlag, Continent, GameState, SessionFact } from "@/lib/ai";
 import { isAccessFlag } from "@/lib/ai";
+import { regionIdentity } from "@/lib/lore/region-registry";
 import {
   emptyTrackedNpcState,
   reassertFollowersAt,
@@ -46,56 +47,48 @@ export interface City {
 export const CITIES: City[] = [
   {
     id: "tingen",
-    name: "Tingen City",
-    kingdom: "Loen Kingdom",
+    ...regionIdentity("tingen"),
     blurb:
       "A mid-sized industrial city in the Awwa region, overcast and coal-smoked, where the story begins.",
   },
   {
     id: "backlund",
-    name: "Backlund",
-    kingdom: "Loen Kingdom",
+    ...regionIdentity("backlund"),
     blurb:
       "The capital of the Loen Kingdom — the smog-bound City of Dust, vast and divided by the Tussock River.",
   },
   {
     id: "trier",
-    name: "Trier",
-    kingdom: "Intis Republic",
+    ...regionIdentity("trier"),
     blurb:
       "The sunlit capital of the Intis Republic, a walled city of arts, fashion, and revolutionary politics.",
   },
   {
     id: "bayam",
-    name: "Bayam",
-    kingdom: "Rorsted Archipelago",
+    ...regionIdentity("bayam"),
     blurb:
       "The colonial port-capital of the Rorsted Archipelago, the salt-and-spice City of Generosity.",
   },
   {
     id: "pritz",
-    name: "Pritz Harbor",
-    kingdom: "Loen Kingdom",
+    ...regionIdentity("pritz"),
     blurb:
-      "The Loen navy's chief port below the Hornacis range — fog, dry-docks, and warships.",
+      "The Loen navy's chief port below the Amantha range — fog, dry-docks, and warships.",
   },
   {
     id: "enmat",
-    name: "Enmat Harbor",
-    kingdom: "Loen Kingdom",
+    ...regionIdentity("enmat"),
     blurb: "A small, fog-drowned Loen coastal town of fishing boats and old sea-charms.",
   },
   {
     id: "feysac",
-    name: "Feysac",
-    kingdom: "Feysac Empire",
+    ...regionIdentity("feysac"),
     blurb:
-      "The cold militarist empire of the God of Combat, north beyond the Hornacis range.",
+      "The cold militarist empire of the God of Combat, north beyond the Amantha range.",
   },
   {
     id: "constant",
-    name: "Constant City",
-    kingdom: "Loen Kingdom",
+    ...regionIdentity("constant"),
     blurb:
       "The Wind City — Loen's second city, a coal-and-steel industrial port on the Midseashire coast.",
   },
@@ -107,8 +100,7 @@ export const CITIES: City[] = [
   // shared `dream-world-passage` only opens the Court gate (the way in/out).
   {
     id: "silver-city",
-    name: "Silver City",
-    kingdom: "Forsaken Land of the Gods",
+    ...regionIdentity("silver-city"),
     blurb:
       "The lightless silver capital of the giant-descended, beneath the Forsaken Land's eternal lightning.",
     continent: "forsaken-land",
@@ -116,8 +108,7 @@ export const CITIES: City[] = [
   },
   {
     id: "giant-kings-court",
-    name: "Giant King's Court",
-    kingdom: "Forsaken Land of the Gods",
+    ...regionIdentity("giant-kings-court"),
     blurb:
       "The seat of the Giant King in the Forsaken Land, whose Dream-World shadow is the only passage to the sealed continent.",
     continent: "forsaken-land",
@@ -125,8 +116,7 @@ export const CITIES: City[] = [
   },
   {
     id: "moon-city",
-    name: "Moon City",
-    kingdom: "Forsaken Land of the Gods",
+    ...regionIdentity("moon-city"),
     blurb:
       "An isolated city of the Forsaken Land's eastern reaches, keeping its ancient watch on the gray fog.",
     continent: "forsaken-land",
@@ -142,8 +132,7 @@ export const CITIES: City[] = [
   // lore prose). The id's leading word "balam" is the lore `city` key.
   {
     id: "balam",
-    name: "Balam",
-    kingdom: "Southern Continent",
+    ...regionIdentity("balam"),
     blurb:
       "The colonized Southern Continent across the Berserk Sea — jungles, deserts, Balam Empire ruins, and the death-haunted tribes beneath Loen and Intis rule.",
     continent: "southern-continent",

@@ -1,4 +1,5 @@
 import type { SessionFact } from "@/lib/ai";
+import { pickRandom } from "@/lib/lore/random";
 import type { Item } from "@/lib/types/rules";
 
 import type { CharacterLegacy } from "./death";
@@ -130,7 +131,7 @@ export function pickStartingEcho(
 ): TimelineArtifact | null {
   const discoverable = discoverableArtifacts(artifacts, currentEpoch);
   if (discoverable.length === 0 || random() < 0.5) return null;
-  return discoverable[Math.floor(random() * discoverable.length)];
+  return pickRandom(discoverable, random);
 }
 
 export function serializeArtifacts(artifacts: readonly TimelineArtifact[]): string {

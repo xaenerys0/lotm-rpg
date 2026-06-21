@@ -1,4 +1,5 @@
 import type { SessionFact } from "@/lib/ai";
+import { pickRandom } from "@/lib/lore/random";
 import type { Item } from "@/lib/types/rules";
 import { getCumulativeAbilities, getPathway, getSequence } from "@/lib/rules";
 
@@ -361,7 +362,7 @@ export function drawPetition(
   random: () => number = Math.random,
 ): SessionFact | null {
   if (random() >= PETITION_CHANCE) return null;
-  const petition = PETITIONS[Math.floor(random() * PETITIONS.length)];
+  const petition = pickRandom(PETITIONS, random);
   return {
     type: "event",
     description: `A petition rises to ${trueGodName(pathwayId)}: ${petition}.`,

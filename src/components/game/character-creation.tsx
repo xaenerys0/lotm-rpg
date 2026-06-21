@@ -21,6 +21,8 @@ import {
   DEFAULT_EPOCH_ID,
   EPOCHS,
   startLocationsForEpoch,
+  startOptionSuitsPathway,
+  describeStartLocation,
   startArchetypesForEpoch,
   forsakenLandStartsForEpoch,
   forsakenLandArchetypesForEpoch,
@@ -1123,8 +1125,6 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   (s) => s.id === startChoice.slice("origin-scenario:".length),
                 )
               : undefined;
-            const suitsSelectedLoc =
-              selectedLoc?.pathwayAffinity.includes(selectedPathwayId) ?? false;
             // One control: a plain location's value is the bare location string,
             // an archetype's is `archetype:<id>`, an origin scenario's is
             // `origin-scenario:<id>`, `"custom"` opens the author-your-own form,
@@ -1136,11 +1136,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 : isCustom
                   ? "Describe your own place in the world — your tie, and who stands with you. They can be characters from the world or your own invention."
                   : selectedLoc
-                    ? `${selectedLoc.blurb}${
-                        suitsSelectedLoc && pathwayName
-                          ? ` A fitting start for the ${pathwayName} pathway.`
-                          : ""
-                      }`
+                    ? describeStartLocation(selectedLoc, selectedPathwayId, pathwayName)
                     : "The fog will decide where you wake — a different place, and a different opening, each time.";
             return (
               <div className="mb-8">
@@ -1166,7 +1162,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   <option value="custom">Describe your own circle…</option>
                   <optgroup label="Begin in a place">
                     {options.map((o) => {
-                      const suits = o.pathwayAffinity.includes(selectedPathwayId);
+                      const suits = startOptionSuitsPathway(
+                        o.pathwayAffinity,
+                        selectedPathwayId,
+                      );
                       return (
                         <option key={o.location} value={o.location}>
                           {o.location}
@@ -1178,7 +1177,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   {archetypes.length > 0 && (
                     <optgroup label="Begin in someone's circle (examples)">
                       {archetypes.map((a) => {
-                        const suits = (a.pathwayAffinity ?? []).includes(
+                        const suits = startOptionSuitsPathway(
+                          a.pathwayAffinity,
                           selectedPathwayId,
                         );
                         return (
