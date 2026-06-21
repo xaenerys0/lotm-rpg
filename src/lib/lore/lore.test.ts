@@ -255,6 +255,92 @@ describe("Lore content coverage", () => {
     });
   });
 
+  describe("Rorsted Archipelago / Bayam (issue #137)", () => {
+    it("deepens Bayam as ungated Fifth-Epoch surface geography, city-keyed", () => {
+      expect(BAYAM_LORE.length).toBeGreaterThanOrEqual(7);
+      expect(BAYAM_LORE.every((e) => e.epoch === 5)).toBe(true);
+      expect(BAYAM_LORE.every((e) => e.city === "bayam")).toBe(true);
+      // Bayam's set is location geography only — no metaphysics (the leak class).
+      expect(BAYAM_LORE.every((e) => e.category === "location")).toBe(true);
+      // The new isles + sea-lanes entries are ungated surface "known places".
+      for (const slug of ["bayam-rorsted-isles", "bayam-sonia-sea-lanes"]) {
+        const e = getLoreBySlug(slug);
+        expect(e, slug).toBeDefined();
+        expect(e!.city).toBe("bayam");
+        expect(e!.narratorOnly).toBe(false);
+      }
+    });
+
+    it("keeps the native sea-god belief city-local, not global epoch-setting (leak fix)", () => {
+      // A `metaphysics` + epoch entry is injected as Fifth-Epoch SETTING into
+      // EVERY Fifth character's curated lore; a city-specific belief must
+      // therefore be a city-keyed `location`, not `metaphysics` (the issue #132
+      // rule). General invariant: no Fifth-Epoch metaphysics entry has a city key.
+      const kalvetua = getLoreBySlug("bayam-sea-god-kalvetua");
+      expect(kalvetua?.category).toBe("location");
+      expect(kalvetua?.city).toBe("bayam");
+      expect(kalvetua?.narratorOnly).toBe(true);
+      const fifthSetting = getLoreByEpoch(5).filter((e) => e.category === "metaphysics");
+      expect(fifthSetting.every((e) => e.city === undefined)).toBe(true);
+      // End-to-end: a non-Bayam Fifth character never receives Bayam's sea-god
+      // lore even with the sea's own pathway, a deep sequence, and a huge budget.
+      const injected = selectCuratedLore(
+        "tyrant",
+        "Tingen City",
+        100_000,
+        5,
+        1,
+      ).entries.map((e) => e.slug);
+      expect(injected).not.toContain("bayam-sea-god-kalvetua");
+      expect(injected).not.toContain("sea-god-faith-overview");
+      expect(injected).not.toContain("sea-god-resistance");
+    });
+
+    it("authors the sea-god faith + Mandated Punishers maritime org, leak-safe", () => {
+      // Surface faith: city-keyed Bayam, ungated (the island superstition the
+      // colony openly knows of).
+      const surface = getLoreBySlug("sea-god-faith-overview");
+      expect(surface?.category).toBe("organization");
+      expect(surface?.city).toBe("bayam");
+      expect(surface?.narratorOnly).toBe(false);
+      expect(surface!.sequences).toEqual([]);
+      // Deep Resistance + the god's true nature: narrator-only, sequence-gated,
+      // and carrying NO city/pathway key so selectCuratedLore never injects it.
+      const deep = getLoreBySlug("sea-god-resistance");
+      expect(deep?.category).toBe("organization");
+      expect(deep?.narratorOnly).toBe(true);
+      expect(deep!.sequences.length).toBeGreaterThan(0);
+      expect(deep?.city).toBeUndefined();
+      expect(deep?.pathway).toBeUndefined();
+      expect(deep!.npcs).toEqual(expect.arrayContaining(["Kalat", "Ralph"]));
+      // The Mandated Punishers' Sonia Sea presence is city-keyed Bayam surface.
+      const punishers = getLoreBySlug("mandated-punishers-bayam");
+      expect(punishers?.category).toBe("organization");
+      expect(punishers?.city).toBe("bayam");
+      expect(punishers!.npcs).toContain("Jahn Kottman");
+    });
+
+    it("adds the Rorsted NPCs with relationship data, never pathway-keyed (leak rule)", () => {
+      const names = NPC_LORE.flatMap((e) => e.npcs);
+      for (const name of ["Kalat", "Ralph", "Danitz Dubois"]) {
+        expect(names).toContain(name);
+      }
+      for (const slug of ["npc-kalat", "npc-ralph", "npc-danitz-dubois"]) {
+        const e = getLoreBySlug(slug);
+        expect(e, slug).toBeDefined();
+        expect(e!.category).toBe("npc");
+        expect(e!.city).toBe("bayam");
+        expect(e!.pathway).toBeUndefined();
+        expect(e!.narratorOnly).toBe(true);
+      }
+      // None is reachable via the Tyrant pathway index (the #132 leak rule).
+      const tyrantSlugs = getLoreByPathway("tyrant").map((e) => e.slug);
+      for (const slug of ["npc-kalat", "npc-ralph", "npc-danitz-dubois"]) {
+        expect(tyrantSlugs).not.toContain(slug);
+      }
+    });
+  });
+
   it("deepens Trier and the Intis Republic (issue #135)", () => {
     // The stub gains the nation overview, the City-of-Fashion politics, and the
     // wider Republic — all epoch 5, city trier, ungated surface geography.

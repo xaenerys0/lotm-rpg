@@ -637,4 +637,69 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tokenCount: 255,
     narratorOnly: false,
   },
+  // ── Rorsted Archipelago organizations (world build-out 8, issue #137). ──
+  // The native sea-god faith and the Mandated Punishers' maritime presence. All
+  // corpus-verified. CANON CORRECTION (corpus outranks the issue hint): the
+  // organized "Church of the Sea God" is a POST-1352 Fool subsidiary — in the
+  // colonial baseline the worship is a decentralised, OUTLAWED native faith plus
+  // the independence-minded Resistance, so the surface entry below is the hunted
+  // belief, not a formal church. The Resistance's leadership and the sea-god's
+  // true Tyrant-Pathway nature are the gated deep secret.
+  {
+    // SURFACE: the island-superstition the colony openly knows of and fears — no
+    // named leaders, no Beyonder truths. City-keyed Bayam, ungated, so a Bayam
+    // character carries it as setting; the deep secret lives in `sea-god-resistance`.
+    slug: "sea-god-faith-overview",
+    title: "The Sea-God Faith of the Rorsted Archipelago",
+    category: "organization",
+    content: `Long before Loen's fleets came, the islanders of the Rorsted Archipelago prayed to a sea-god of their own — a vast blue serpent said to hold back the earthquakes and the tsunamis — and on Blue Mountain Island and across the Sonia Sea many of them pray to him still. The colony has outlawed the worship: the Church of the Lord of Storms brooks no rival faith on its own waters, and its priests haul heretics in by the handful every month or two, while the natives bury their dead apart and keep their shrines up the jungle slopes and out of sight. Pilgrims still trade in the god's charms — tokens blessed to turn a blade or let a man swim like a fish, though the virtue is said to bleed out of them within a few months — and the faith has become a banner for everything the islanders resent about foreign rule. Where the storm-faith is the religion of the harbour and the garrison, the old sea-god is the religion of the back-streets, the fishing villages, and the quiet talk of independence. To the colonial authorities it is heresy; to the islanders it is the last of themselves they have not surrendered.`,
+    epoch: 5,
+    city: "bayam",
+    npcs: [],
+    sequences: [],
+    tags: ["sea-god", "kalvetua", "native-belief", "bayam", "religion"],
+    tokenCount: 240,
+    narratorOnly: false,
+  },
+  {
+    // DEEP: the organized Resistance + the sea-god's true nature. A cross-cutting
+    // secret of the colony — narrator-only, sequence-gated, and carrying NO
+    // city/pathway key so selectCuratedLore never injects it (the
+    // aurora-order-true-nature / Numinous-Episcopate pattern).
+    slug: "sea-god-resistance",
+    title: "The Resistance & the Drowned God's Devotees",
+    category: "organization",
+    content: `Beneath the scattered back-street worship runs something organised: the Resistance, the independence movement of the Rorsted Archipelago, with the sea-god's faith for its banner and the back-country and the open sea for its hiding-places. Its leader is Kalat — "Baldy Kalat," a wheelchair-bound Beyonder once schooled in the Feysac Empire — and among its quiet backers is the half-native trader Ralph, whose trading company funds it from behind a respectable ledger. The Resistance cooperates with the archipelago's pirates and adventurers and is courted from the shadows by Loen's rivals, who would gladly see the colony bleed. Deeper and far more dangerous are the sea-god's true devotees: the guard who keep his hidden lair, and the old priests who once fed him living sacrifices — for the islanders' god is no superstition but a genuine Sea King of the Tyrant Pathway, a sea-serpent the Church of the Lord of Storms has hunted for over a century. To the colonial authorities the whole tangle is heresy and sedition; to the islanders it is a war for their own souls that the storm-priests must never be allowed to win.`,
+    epoch: 5,
+    npcs: ["Kalat", "Ralph"],
+    sequences: [4],
+    tags: ["sea-god", "resistance", "kalvetua", "tyrant-pathway", "secret-society"],
+    tokenCount: 245,
+    narratorOnly: true,
+  },
+  {
+    // The Lord of Storms' Beyonder enforcement arm in the Sonia Sea — at its
+    // STRONGEST here, where the storm-faith rules the sea (unlike inland Tingen).
+    // City-keyed Bayam, ungated surface like the Tingen/Pritz presences. CANON:
+    // "Tyrant Pathway" (the sea's power), NOT a "Sailor pathway" — Sailor is the
+    // Tyrant's Sequence 9.
+    slug: "mandated-punishers-bayam",
+    title: "Mandated Punishers — Rorsted Archipelago Presence",
+    category: "organization",
+    content: `In the Rorsted Archipelago the Mandated Punishers — the Beyonder arm of the Church of the Lord of Storms — are not the junior partner they are in an inland Loen city; here, on the storm-faith's own sea, they are the first and final word on anything uncanny. Of all the nations only Loen's Church wields authority over the sea, and the Sonia Sea is its domain: from the Cathedral of Waves in Bayam the Punishers police the smuggled curios moving through the busiest port of the eastern ocean, sea-creature manifestations off the islands, rogue Beyonders among the pirate crews and the adventurers' bars, and above all the outlawed sea-god cult they hunt without end. Their members run heavily to the Tyrant Pathway — the sea's own power of storm, water, and the body — leavened with the occasional White Tower analyst, and their style is the pathway's own: headlong, aggressive, more inclined to force than to patient inquiry. Over them all stands the Sea King, Cardinal Jahn Kottman, who has made the archipelago's hidden world answer to Bayam for years.`,
+    epoch: 5,
+    city: "bayam",
+    npcs: ["Jahn Kottman"],
+    sequences: [],
+    tags: [
+      "mandated-punishers",
+      "lord-of-storms",
+      "maritime",
+      "bayam",
+      "tyrant-pathway",
+      "beyonder-organization",
+    ],
+    tokenCount: 235,
+    narratorOnly: false,
+  },
 ];
