@@ -29,7 +29,7 @@ Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
 
 Run a **single test file** with `pnpm vitest run <path>` (e.g. `pnpm vitest run src/lib/game/character-admin.test.ts`); filter to **one test by name** with `-t "<substring>"`. Check coverage with `pnpm vitest run --coverage` (the 95% gate that the pre-commit checklist enforces).
 
-**Playwright UI tests** live in `e2e/` (real-browser layout/responsiveness checks jsdom can't do — see `e2e/README.md`). The public tier runs with no backend; the authenticated game-page tier runs only when `E2E_SUPABASE_URL` is set. Not part of the Vitest run or the coverage gate.
+**Playwright UI tests** live in `e2e/` (real-browser checks jsdom can't do — layout/responsiveness, auth-form behaviour, security headers, the PWA surface, and contrast-aware axe — see `e2e/README.md`). The public tier runs with no backend across Chromium (mobile/desktop) and WebKit (iOS); the authenticated game-page tier runs only when `E2E_SUPABASE_URL` is set. Not part of the Vitest run or the coverage gate. **When you add or change a user-facing flow (auth, a game screen, the PWA, navigation), add or extend an `e2e/` spec for it** — the e2e suite long lagged behind the UI, so treat it as part of "done," not an afterthought.
 
 ## Architecture
 
@@ -94,7 +94,7 @@ The game's canon is **Lord of the Mysteries**, and the authoritative source live
 - **Supabase Auth** with email/password. RLS on all tables — users access only their own data.
 - **CSP nonces** generated in `src/proxy.ts` with `'strict-dynamic'`.
 - **Prettier**: double quotes, semicolons, trailing commas, 90-char print width. Config in `.prettierrc`.
-- **Tests** colocated as `*.test.ts`, run with Vitest 4.x. Coverage enforced on `src/lib/{rules,lore,ai,game,rag}/**/*.ts` (excluding index files).
+- **Tests** colocated as `*.test.ts`, run with Vitest 4.x. Coverage enforced on `src/lib/{rules,lore,ai,game,rag}/**/*.ts` plus the security-sensitive server code and browser-side logic modules: `src/proxy.ts`, `src/lib/supabase/**`, `src/app/api/**/route.ts`, `src/app/auth/callback/route.ts`, and the `src/components/game/*.ts` logic shells (`preferences-store`, `scene-art-cache`, `character-actions`, `lore-retrieval-client`, `cloud-sync`). Index files are excluded. The exact `include` list is in `vitest.config.mts` — extend it when you add a new server route or component-layer logic module.
 - **No component libraries** — pure Tailwind utility classes.
 - **PostCSS** via `@tailwindcss/postcss` plugin (config in `postcss.config.mjs`).
 - **Typed routes** enabled in `next.config.ts` (`typedRoutes: true`).
@@ -105,13 +105,14 @@ The game's canon is **Lord of the Mysteries**, and the authoritative source live
 Before every commit, verify **all** of the following pass:
 
 1. `pnpm test` — all tests pass.
-2. `pnpm vitest run --coverage` — **95% minimum** on statements, branches, functions, and lines. Thresholds are enforced in `vitest.config.mts`; the build fails if coverage drops below 95%. When adding new logic in `src/lib/`, add or update colocated `*.test.ts` files to maintain coverage.
+2. `pnpm vitest run --coverage` — **95% minimum** on statements, branches, functions, and lines. Thresholds are enforced in `vitest.config.mts`; the build fails if coverage drops below 95%. The gate covers `src/lib/**` AND the server/component logic listed under "Key Conventions → Tests". When adding new logic there (a `src/lib/` module, an API route handler, the proxy/Supabase middleware, or a `components/game/*.ts` logic shell), add or update colocated `*.test.ts` files **and** add the file to `coverage.include` if it lives in a newly-covered area. A new user-facing flow should also get an `e2e/` spec (see item below).
 3. `pnpm typecheck` — no TypeScript errors.
 4. `pnpm lint` — no ESLint errors or warnings.
 5. `pnpm format:check` — all files match Prettier style (run `pnpm format` to fix).
 6. **Update scoped CLAUDE.md docs** — if you add, rename, or remove files in a directory that has a `CLAUDE.md`, update that doc to reflect the change. Stale docs mislead future work. Check the list under "Scoped Documentation" below.
 7. **Keep database.ts in sync** — when adding Supabase migrations, update `src/lib/types/database.ts` to match the new schema.
-8. **Accessibility (WCAG 2.2 AA)** — when adding or changing frontend code, follow `docs/rules/accessibility.md` and keep `src/test/a11y.test.tsx` (axe-core) passing; extend it for new screens/interactive components.
+8. **Accessibility (WCAG 2.2 AA)** — when adding or changing frontend code, follow `docs/rules/accessibility.md` and keep `src/test/a11y.test.tsx` (axe-core) passing; extend it for new screens/interactive components. The `e2e/a11y.spec.ts` Playwright suite re-runs axe in a real browser with `color-contrast` enabled (jsdom can't) — colour/contrast regressions surface there.
+9. **End-to-end coverage** — when you add or change a user-facing flow (auth, a game screen, the PWA, navigation, security headers), add or extend an `e2e/` Playwright spec. Public-tier specs run with no backend; register new public specs in the `PUBLIC_SPECS` matcher in `playwright.config.ts`. The suite isn't run by `pnpm test`/the coverage gate, so it's easy to forget — don't.
 
 ## Environment Variables
 
