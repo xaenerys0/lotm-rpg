@@ -24,6 +24,10 @@ describe("gazetteerForEpoch", () => {
       "enmat",
       "feysac",
       "constant",
+      // The Southern Continent is freely reachable across the Berserk Sea (issue
+      // #138), so a mainland character sees it as a "set out" destination — unlike
+      // the flag-gated Forsaken cities, which stay hidden here.
+      "balam",
     ]);
   });
 
@@ -87,7 +91,10 @@ describe("gazetteerForEpoch", () => {
     expect(uncertain.districts).toEqual([]);
     expect(uncertain.travelEnabled).toBe(true);
     expect(uncertain.intro.toLowerCase()).toContain("uncertain");
-    // Every Fifth city is reachable, so setting out re-anchors the player.
+    // Every freely-reachable Fifth city is reachable, so setting out re-anchors
+    // the player — including the Southern Continent (Balam, issue #138), which the
+    // engine permits sailing to from an unresolved location. Only the dream-gated
+    // Forsaken cities stay hidden here.
     expect(uncertain.fartherCities.map((c) => c.id)).toEqual([
       "tingen",
       "backlund",
@@ -97,7 +104,9 @@ describe("gazetteerForEpoch", () => {
       "enmat",
       "feysac",
       "constant",
+      "balam",
     ]);
+    expect(uncertain.fartherCities.map((c) => c.id)).not.toContain("silver-city");
   });
 
   it("hides the Forsaken cities from a central character's travel list (issue #130)", () => {
@@ -119,19 +128,58 @@ describe("gazetteerForEpoch", () => {
     }
   });
 
-  it("reconciles the gazetteer's central cities with the travel-layer CITIES (issue #134)", () => {
+  it("shows the freely-reachable Southern Continent (Balam) to a mainland character (issue #138)", () => {
+    // Unlike the flag-gated Forsaken cities, Balam is reachable across the Berserk
+    // Sea with no flag, so it appears in every central character's travel list.
+    for (const id of ["tingen", "backlund", "bayam"]) {
+      const ids = gazetteerForEpoch(5, id).fartherCities.map((c) => c.id);
+      expect(ids).toContain("balam");
+    }
+  });
+
+  it("gives a Balam character their own atlas with travel back to the mainland (issue #138)", () => {
+    const balam = gazetteerForEpoch(5, "balam");
+    expect(balam.intro).toContain("Balam");
+    expect(balam.districts.length).toBeGreaterThan(0);
+    expect(balam.districts.every((d) => d.slug.startsWith("balam-"))).toBe(true);
+    const ids = balam.fartherCities.map((c) => c.id);
+    expect(ids).toContain("tingen");
+    expect(ids).not.toContain("balam");
+    // The sealed Forsaken cities stay hidden from a Southern character (no flag).
+    expect(ids).not.toContain("silver-city");
+  });
+
+  it("keeps Balam hidden from a Forsaken native except at the crossing city (issue #138)", () => {
+    // A Silver native (not at the Court) cannot see the mainland OR Balam — they
+    // must reach the Court and hold the passage to leave the sealed continent.
+    const silverIds = gazetteerForEpoch(5, "silver-city", [
+      "dream-world-passage",
+      "silver-city-passage",
+    ]).fartherCities.map((c) => c.id);
+    expect(silverIds).not.toContain("balam");
+    // From the Giant King's Court with the passage, Balam (like the mainland) shows.
+    const courtIds = gazetteerForEpoch(5, "giant-kings-court", [
+      "dream-world-passage",
+    ]).fartherCities.map((c) => c.id);
+    expect(courtIds).toContain("balam");
+  });
+
+  it("reconciles the gazetteer's freely-reachable cities with the travel-layer CITIES (issue #134/#138)", () => {
     // FIFTH_CITIES (private to the gazetteer) and the game-layer CITIES roster
-    // must agree on the set of CENTRAL cities, or a city could be travelable but
-    // have no atlas (falls back to Tingen) or appear in the gazetteer while
-    // canTravelTo rejects it. The uncertain atlas lists exactly the central
-    // gazetteer cities, so it is the reconciliation surface.
-    const gazetteerCentral = uncertainFifthGazetteer()
+    // must agree on the set of FREELY-REACHABLE cities (central + the Southern
+    // Continent), or a city could be travelable but have no atlas (falls back to
+    // Tingen) or appear in the gazetteer while canTravelTo rejects it. The
+    // uncertain atlas lists exactly those non-Forsaken cities, so it is the
+    // reconciliation surface.
+    const gazetteerOpen = uncertainFifthGazetteer()
       .fartherCities.map((c) => c.id)
       .sort();
-    const travelCentral = CITIES.filter((c) => c.continent === undefined)
+    const travelOpen = CITIES.filter(
+      (c) => (c.continent ?? "central") !== "forsaken-land",
+    )
       .map((c) => c.id)
       .sort();
-    expect(gazetteerCentral).toEqual(travelCentral);
+    expect(gazetteerOpen).toEqual(travelOpen);
   });
 
   it("a mainland walker with the flag sees the crossing city as the way in, never Silver City direct (issue #132)", () => {

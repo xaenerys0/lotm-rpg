@@ -204,11 +204,12 @@ export function MapPanel() {
   );
 }
 
-// Reference the central CITIES for completeness in the gazetteer's footer so the
-// table stays the single source of truth for known destinations. Forsaken-Land
-// cities (issue #130) are deliberately excluded — they must stay hidden from a
-// character without the crossing capability, like the continent-filtered
-// `fartherCities` list the panel actually renders.
+// Reference the freely-reachable CITIES for completeness in the gazetteer's
+// footer so the table stays the single source of truth for known destinations.
+// Only the dream-gated Forsaken-Land cities (issue #130) are excluded — they must
+// stay hidden from a character without the crossing capability. The Southern
+// Continent (Balam, issue #138) is freely reachable across the Berserk Sea, so it
+// belongs here, like the continent-filtered `fartherCities` list the panel renders.
 export const KNOWN_CITY_NAMES = CITIES.filter(
-  (c) => (c.continent ?? "central") === "central",
+  (c) => (c.continent ?? "central") !== "forsaken-land",
 ).map((c) => c.name);

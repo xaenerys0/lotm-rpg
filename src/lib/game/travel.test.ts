@@ -1,15 +1,18 @@
 import { describe, expect, it } from "vitest";
 import type { AccessFlag, GameState } from "@/lib/ai";
 import {
+  BERSERK_SEA_CROSSING_DAYS,
   CITIES,
   CONTINENT_CROSSING_DAYS,
   canTravelTo,
   cityIdFromLocation,
+  continentCrossingDays,
   continentOf,
   crossesContinent,
   getCity,
   grantAccessFlag,
   hasAccessFlag,
+  isChokepointContinent,
   isValidAccessFlagsShape,
   meetsAccessGate,
   reachedDreamWorldGate,
@@ -478,5 +481,77 @@ describe("reachedDreamWorldGate (issue #132)", () => {
   it("does not trigger on unrelated locations", () => {
     expect(reachedDreamWorldGate("Tingen City")).toBe(false);
     expect(reachedDreamWorldGate("a dream of home")).toBe(false);
+  });
+});
+
+describe("Southern Continent — freely reachable across the Berserk Sea (issue #138)", () => {
+  it("adds Balam as a southern-continent city with NO access gate", () => {
+    const balam = getCity("balam");
+    expect(balam).toBeDefined();
+    expect(continentOf(balam!)).toBe("southern-continent");
+    // Freely reachable: unlike the Forsaken cities, Balam carries no access gate.
+    expect(balam!.accessGate).toBeUndefined();
+    expect(meetsAccessGate(stateAt("Tingen City"), balam!)).toBe(true);
+  });
+
+  it("marks only the Forsaken Land as a chokepoint continent", () => {
+    expect(isChokepointContinent("forsaken-land")).toBe(true);
+    expect(isChokepointContinent("southern-continent")).toBe(false);
+    expect(isChokepointContinent("central")).toBe(false);
+  });
+
+  it("lets a mainland character set sail for Balam directly (no chokepoint, no flag)", () => {
+    // A central character can travel straight to Balam — it is an ordinary (long)
+    // sea voyage, not the dream-gated Forsaken Land routed through the Court.
+    expect(canTravelTo(stateAt("Tingen City"), "balam")).toBe(true);
+    expect(canTravelTo(stateAt("Bayam"), "balam")).toBe(true);
+  });
+
+  it("lets a Balam character sail back to the mainland, but not straight into the Forsaken Land", () => {
+    const inBalam = stateAt("Balam", { currentCity: "balam" });
+    expect(canTravelTo(inBalam, "tingen")).toBe(true);
+    // A Southern character cannot teleport into the sealed continent — that still
+    // routes through the Giant King's Court dream threshold (and needs the flag).
+    expect(canTravelTo(inBalam, "silver-city")).toBe(false);
+    expect(canTravelTo(inBalam, "giant-kings-court")).toBe(false);
+  });
+
+  it("keeps the Forsaken Land's dream chokepoint intact when Southern exists", () => {
+    // A Forsaken native still cannot jump straight to Balam — they must reach the
+    // Court (the only cross-continent door out of the sealed land) and hold the
+    // passage; from the Court itself the Berserk-Sea crossing is then permitted.
+    const flags: AccessFlag[] = ["dream-world-passage", "silver-city-passage"];
+    const inSilver = stateAt("Silver City", {
+      currentCity: "silver-city",
+      accessFlags: flags,
+    });
+    expect(canTravelTo(inSilver, "balam")).toBe(false);
+    const atCourt = stateAt("Giant King's Court", {
+      currentCity: "giant-kings-court",
+      accessFlags: flags,
+    });
+    expect(canTravelTo(atCourt, "balam")).toBe(true);
+  });
+
+  it("charges the long Berserk Sea crossing, distinct from the dream passage", () => {
+    // The Berserk Sea voyage is far longer than the Forsaken Land's flat dream
+    // passage (canon: storms, lightning, chaotic magnetism, few sea-routes).
+    expect(BERSERK_SEA_CROSSING_DAYS).toBeGreaterThan(CONTINENT_CROSSING_DAYS);
+    expect(continentCrossingDays("tingen", "balam")).toBe(BERSERK_SEA_CROSSING_DAYS);
+    expect(continentCrossingDays("balam", "tingen")).toBe(BERSERK_SEA_CROSSING_DAYS);
+    // A Forsaken crossing still uses the dream-passage constant.
+    expect(continentCrossingDays("giant-kings-court", "tingen")).toBe(
+      CONTINENT_CROSSING_DAYS,
+    );
+    // travelDays still has no cross-continent entry (handled by travelTo).
+    expect(travelDays("tingen", "balam")).toBeNull();
+  });
+
+  it("travelTo sails to Balam, sets currentCity, and records the long voyage", () => {
+    const result = travelTo(stateAt("Tingen City"), "balam", 5);
+    expect(result).not.toBeNull();
+    expect(result!.state.location).toBe("Balam");
+    expect(result!.state.currentCity).toBe("balam");
+    expect(result!.fact.description).toContain(`${BERSERK_SEA_CROSSING_DAYS} days`);
   });
 });

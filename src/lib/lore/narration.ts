@@ -27,6 +27,8 @@ const CITY_TONE: Record<string, string> = {
   giant:
     "Giant King's Court is the titan-scaled ruin and holy threshold of the Forsaken Land: render it through colossal fallen halls built for beings no human raised, the walking lightning over broken thrones, the devout treading warily, and the buried sense that this place is where the sealed continent presses closest to the wider world.",
   moon: "Moon City is the isolated eastern fog-watch of the Forsaken Land: render it through the perpetual lightning and the unmoving wall of gray fog at the world's edge, a hard-pressed, inward people descended from an older time who keep an ancient duty under their three High Priests, bearing the slow toll of survival in a dead land — and wholly unaware, at first, that any other city of the Forsaken Land still stands.",
+  balam:
+    "Balam is the colonized Southern Continent across the Berserk Sea: render it through tropical heat and jungle, the brutal machinery of Loen and Intis colonial rule over conquered native tribes, the death-haunted folk customs of a people who once worshipped the god Death (coffins, ancestor-bones, feathered-serpent signs), the overgrown ruins of the fallen Balam Empire, and the buried current of revolt and the hunted death-cult beneath the colonists' order.",
 };
 
 /**

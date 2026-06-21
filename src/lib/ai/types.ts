@@ -69,13 +69,16 @@ export interface Choice {
 }
 
 /**
- * The continents the world model distinguishes (world build-out, issue #130).
+ * The continents the world model distinguishes (world build-out, issues #130/#138).
  * `central` is the ordinary mainland (the seven existing cities); `forsaken-land`
  * is the sealed Eastern Continent — the Forsaken Land of the Gods — reachable
- * only via the Dream-World passage, never an ordinary sea route. Absent on a
+ * only via the Dream-World passage, never an ordinary sea route; `southern-continent`
+ * is the colonized Southern Continent (the old Balam Empire's lands), reachable by
+ * an ordinary — but long and perilous — sea voyage across the Berserk Sea, with NO
+ * capability gate (it is a colonial frontier, not a sealed land). Absent on a
  * `City` means `central` (the existing cities are untouched).
  */
-export type Continent = "central" | "forsaken-land";
+export type Continent = "central" | "forsaken-land" | "southern-continent";
 
 /**
  * Capability flags a character may hold (world build-out, issue #130). A flag is

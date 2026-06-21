@@ -228,6 +228,31 @@ describe("START_ARCHETYPES data integrity", () => {
     );
   });
 
+  it("ships the Southern Continent (Balam) archetypes (issue #138)", () => {
+    // Balam is freely reachable (no access gate), so its starts are NORMAL (non-
+    // origin) archetypes located on the Southern Continent — surfaced by the
+    // default picker, unlike the access-gated Forsaken-Land origin archetypes.
+    const acolyte = getStartArchetype("balam-numinous-acolyte");
+    expect(acolyte?.epoch).toBe(5);
+    expect(acolyte?.origin).toBeUndefined();
+    expect(acolyte?.location).toBe("Balam");
+    expect(acolyte?.circleNpcs).toContain("Haiter");
+    expect(acolyte?.affiliationOrg).toBe("numinous-episcopate-overview");
+    expect(acolyte?.pathwayAffinity).toContain(4); // Death — the death-god's path
+
+    const retainer = getStartArchetype("balam-colonial-retainer");
+    expect(retainer?.epoch).toBe(5);
+    expect(retainer?.origin).toBeUndefined();
+    expect(retainer?.location).toBe("Balam");
+    expect(retainer?.circleNpcs).toContain("Alfred Hall");
+    expect(retainer?.seeds.trackedAllies).toContain("Alfred Hall");
+
+    const fifthIds = startArchetypesForEpoch(5).map((a) => a.id);
+    expect(fifthIds).toEqual(
+      expect.arrayContaining(["balam-numinous-acolyte", "balam-colonial-retainer"]),
+    );
+  });
+
   it("ships the earlier-epoch archetypes, era-tagged and never Fifth (issue #141)", () => {
     // Epoch 3 (Glorious Era) and Epoch 4 (Solomon Empire) starts, each tied to a
     // named historical figure from history.ts and surfaced by the SAME picker.

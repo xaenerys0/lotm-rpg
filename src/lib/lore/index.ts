@@ -78,6 +78,7 @@ export { REGIONS_LORE } from "./regions";
 export { LOEN_LORE } from "./loen";
 export { FEYSAC_LORE } from "./feysac";
 export { FORSAKEN_LAND_LORE } from "./forsaken-land";
+export { SOUTHERN_CONTINENT_LORE } from "./southern-continent";
 export { HISTORICAL_LORE } from "./history";
 export { FIRST_EPOCH_LORE } from "./epoch-first";
 export { SECOND_EPOCH_LORE } from "./epoch-second";
@@ -119,6 +120,7 @@ import { REGIONS_LORE } from "./regions";
 import { LOEN_LORE } from "./loen";
 import { FEYSAC_LORE } from "./feysac";
 import { FORSAKEN_LAND_LORE } from "./forsaken-land";
+import { SOUTHERN_CONTINENT_LORE } from "./southern-continent";
 import { HISTORICAL_LORE } from "./history";
 import { FIRST_EPOCH_LORE } from "./epoch-first";
 import { SECOND_EPOCH_LORE } from "./epoch-second";
@@ -159,6 +161,7 @@ export const ALL_LORE_ENTRIES: LoreEntry[] = [
   ...LOEN_LORE,
   ...FEYSAC_LORE,
   ...FORSAKEN_LAND_LORE,
+  ...SOUTHERN_CONTINENT_LORE,
   ...HISTORICAL_LORE,
   ...FIRST_EPOCH_LORE,
   ...SECOND_EPOCH_LORE,

@@ -132,11 +132,38 @@ export const CITIES: City[] = [
     continent: "forsaken-land",
     accessGate: { requiresFlag: "moon-city-passage" },
   },
+  // ── Southern Continent — the colonized lands of the old Balam Empire (world
+  // build-out 9, issue #138). UNLIKE the sealed Forsaken Land, the Southern
+  // Continent is FREELY reachable: an ordinary — but long and perilous — sea
+  // voyage across the Berserk Sea, with NO access gate. It is therefore NOT
+  // routed through the dream chokepoint; a character may set sail for it (or back)
+  // from any coast. A single present-day travel city stands in for the colonized
+  // continent (East/West Balam + the Star Highlands are distinguished in the
+  // lore prose). The id's leading word "balam" is the lore `city` key.
+  {
+    id: "balam",
+    name: "Balam",
+    kingdom: "Southern Continent",
+    blurb:
+      "The colonized Southern Continent across the Berserk Sea — jungles, deserts, Balam Empire ruins, and the death-haunted tribes beneath Loen and Intis rule.",
+    continent: "southern-continent",
+  },
 ];
 
 /** A city's continent, defaulting an absent value to `central` (issue #130). */
 export function continentOf(city: City): Continent {
   return city.continent ?? "central";
+}
+
+/**
+ * Whether a continent is reached only through a dream chokepoint city (issue
+ * #138). The Forsaken Land is sealed — every crossing to/from it must pass through
+ * the Giant King's Court Dream-World threshold ({@link CROSSING_CITY}). A
+ * non-chokepoint continent (`central`, or the `southern-continent` across the
+ * Berserk Sea) is reached by ordinary sea travel and is never chokepointed. Pure.
+ */
+export function isChokepointContinent(continent: Continent): boolean {
+  return continent === "forsaken-land";
 }
 
 /**
@@ -200,6 +227,31 @@ const TRAVEL_LEGS: TravelLeg[] = [
 export const CONTINENT_CROSSING_DAYS = 7;
 
 /**
+ * Fixed cost of crossing the Berserk Sea to/from the Southern Continent (issue
+ * #138). Canon: the Berserk Sea — created by the death of the god Death — is a
+ * thunder-, lightning-, and storm-wracked water with a chaotic magnetic field
+ * where "only a few sea routes" are passable, so the voyage to the colonies is
+ * far longer and more perilous than the Forsaken Land's dream passage. Applied by
+ * `travelTo` (via {@link continentCrossingDays}) for a Southern-continent crossing.
+ */
+export const BERSERK_SEA_CROSSING_DAYS = 30;
+
+/**
+ * Days for a continent crossing between two known cities (issue #138): the long
+ * Berserk Sea voyage when either endpoint is on the Southern Continent, else the
+ * Forsaken Land's flat dream passage. Both ids must be known cities (the caller
+ * reaches this only after `crossesContinent` is true). Pure.
+ */
+export function continentCrossingDays(fromId: string, toId: string): number {
+  const from = getCity(fromId);
+  const to = getCity(toId);
+  const involvesSouthern =
+    (from && continentOf(from) === "southern-continent") ||
+    (to && continentOf(to) === "southern-continent");
+  return involvesSouthern ? BERSERK_SEA_CROSSING_DAYS : CONTINENT_CROSSING_DAYS;
+}
+
+/**
  * The single city through which every continent crossing is routed (issue #132):
  * the Dream-World threshold of Giant King's Court, the only entrance to (and exit
  * from) the sealed Forsaken Land. Cross-continent travel is permitted ONLY when
@@ -237,10 +289,12 @@ function originCityId(
 }
 
 function crossingPermitted(fromId: string | undefined, dest: City): boolean {
+  const destContinent = continentOf(dest);
   if (fromId === undefined) {
-    // Unknown current city: a central destination is always fine; a Forsaken one
-    // is reachable only AT the crossing city (the dream threshold), never direct.
-    return continentOf(dest) === "central" || dest.id === CROSSING_CITY;
+    // Unknown current city: a central or freely-reachable (Southern, across the
+    // Berserk Sea) destination is always fine; a chokepoint continent (the sealed
+    // Forsaken Land) is reachable only AT the crossing city, never direct.
+    return !isChokepointContinent(destContinent) || dest.id === CROSSING_CITY;
   }
   if (!crossesContinent(fromId, dest.id)) {
     // Same-continent moves are free EXCEPT within the Forsaken Land, whose
@@ -249,7 +303,7 @@ function crossingPermitted(fromId: string | undefined, dest: City): boolean {
     // never journey straight between the City of Silver and Moon City — they
     // route through the Court like everyone else.
     if (
-      continentOf(dest) === "forsaken-land" &&
+      destContinent === "forsaken-land" &&
       fromId !== CROSSING_CITY &&
       dest.id !== CROSSING_CITY
     ) {
@@ -257,7 +311,16 @@ function crossingPermitted(fromId: string | undefined, dest: City): boolean {
     }
     return true;
   }
-  return fromId === CROSSING_CITY || dest.id === CROSSING_CITY;
+  // Cross-continent. A dream-gated continent (the Forsaken Land) on EITHER side
+  // forces the crossing through the Court chokepoint (issue #132); an ordinary
+  // sea crossing between the mainland and the Southern Continent (issue #138) is
+  // freely permitted — it is a long voyage, not a sealed threshold.
+  const from = getCity(fromId);
+  const fromContinent = from ? continentOf(from) : "central";
+  if (isChokepointContinent(fromContinent) || isChokepointContinent(destContinent)) {
+    return fromId === CROSSING_CITY || dest.id === CROSSING_CITY;
+  }
+  return true;
 }
 
 /**
@@ -450,11 +513,13 @@ export function travelTo(
 
   const fromId = cityIdFromLocation(state.location);
   const from = fromId ? getCity(fromId) : undefined;
-  // Cross-continent journeys take the fixed Dream-World passage time rather than
-  // a distance from the matrix (which has no cross-continent entries, issue #130).
+  // Cross-continent journeys take a fixed crossing time rather than a distance
+  // from the matrix (which has no cross-continent entries, issue #130): the long
+  // Berserk Sea voyage to the Southern Continent or the Forsaken Land's dream
+  // passage, per `continentCrossingDays` (issue #138).
   const days = fromId
     ? crossesContinent(fromId, cityId)
-      ? CONTINENT_CROSSING_DAYS
+      ? continentCrossingDays(fromId, cityId)
       : travelDays(fromId, cityId)
     : null;
 

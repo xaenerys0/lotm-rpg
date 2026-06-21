@@ -636,4 +636,52 @@ export const NPC_LORE: LoreEntry[] = [
     tokenCount: 195,
     narratorOnly: true,
   },
+  // ── Southern Continent NPCs (world build-out 9, issue #138, corpus-verified):
+  // the present-day leaders of the Numinous Episcopate's two great factions. Both
+  // descend (in faith or blood) from the fallen Balam Empire and tie to Salinger
+  // (the dead death-god) and Azik Eggers (the existing Tingen mentor entry, the
+  // undying Death Consul). City-keyed `balam` but NOT `pathway`-keyed (the leak
+  // rule — a `pathway` field would inject a regional NPC into any same-pathway
+  // character's prompt; the Death pathway is named only in prose), and
+  // `narratorOnly` + sequence-gated for the Beyonder/heresy secrets. ──
+  {
+    slug: "npc-sia-palenque-eggers",
+    title: "Sia Palenque Eggers — Heir of the Death-Empire",
+    category: "npc",
+    content: `Sia Palenque Eggers leads the Royal Family Faction, the strongest arm of the Numinous Episcopate — and she is of the blood of Death itself, a descendant of the Underworld Emperor Salinger through the imperial Eggers line of the fallen Balam Empire. To her the colonization of the Southern Continent is a wound that can be healed only one way: by resurrecting the first Underworld Emperor, raising the death-empire from its ruins, and casting the Northern churches into the sea. She commands saint-tier apostles and the full inheritance of the death-god's faith, and she hunts the bodies, Beyonder characteristics, and sealed relics that a true resurrection would demand — above all the dead god's legacy hidden beneath the Berserk Sea. She is kin, distant and estranged, to the undying Azik Eggers, who walks a far gentler road than hers. To the Church of the Evernight Goddess she is among the most dangerous heretics alive; to her own people, the rightful heir of a stolen throne.`,
+    epoch: 5,
+    city: "balam",
+    npcs: ["Sia Palenque Eggers", "Salinger", "Azik Eggers"],
+    sequences: [4],
+    tags: [
+      "numinous-episcopate",
+      "eggers-family",
+      "death-pathway",
+      "balam",
+      "southern-continent",
+      "spoiler",
+    ],
+    tokenCount: 230,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-haiter",
+    title: "Haiter — The Last Archbishop of Death",
+    category: "npc",
+    content: `Haiter leads the Artificial Death Faction of the Numinous Episcopate from the jungles of West Balam — and he is old beyond ordinary reckoning, for he was once an archbishop of the Church of Death in the days of the Balam Empire itself, a survivor of the empire's fall who has carried the dead god's faith down more than a thousand years. Where the Royal Family Faction trusts the Eggers bloodline to provide the vessel for the god's return, Haiter's faction pursues another road: to manufacture that vessel by craft and ritual rather than wait on a living heir. Patient, learned, and utterly devoted, he keeps saints and an angel of the faith about him in the deep colony, treats the orthodox churches' centuries of persecution as a delay rather than a defeat, and reckons time in epochs. He has outlived empires and emperors both; he intends to outlive the colonists too, and see Death walk the world again.`,
+    epoch: 5,
+    city: "balam",
+    npcs: ["Haiter", "Sia Palenque Eggers"],
+    sequences: [4],
+    tags: [
+      "numinous-episcopate",
+      "church-of-death",
+      "death-pathway",
+      "balam",
+      "southern-continent",
+      "spoiler",
+    ],
+    tokenCount: 210,
+    narratorOnly: true,
+  },
 ];

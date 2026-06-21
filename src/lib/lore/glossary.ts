@@ -177,6 +177,46 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     revealAtSequence: 9,
     epoch: 5,
   },
+  // ── Southern Continent (world build-out 9, issue #138). Public, player-safe
+  // geography known to any mainlander from the colonial trade and the newspapers;
+  // the Numinous Episcopate is a death-cult heresy known only as a rumour to
+  // Beyonders of some standing (a higher reveal). All epoch 5, ungated. ──
+  {
+    slug: "southern-continent",
+    term: "The Southern Continent",
+    category: "Geography",
+    definition:
+      "A hot land of jungle and desert across the storm-wracked Berserk Sea, once the death-god's Balam Empire. Now the Northern powers' colonial frontier — sun, raw wealth, and the brutal subjugation of its native tribes.",
+    revealAtSequence: 9,
+    epoch: 5,
+  },
+  {
+    slug: "balam",
+    term: "East & West Balam",
+    category: "Geography",
+    definition:
+      "The two great colonies carved from the fallen Balam Empire — East Balam a Loen prize the Feysac Empire covets, West Balam an Intis holding of lawless jungle where the old slavery and blood-rites linger. Death-haunted country, weeks of dangerous sea from home.",
+    revealAtSequence: 9,
+    epoch: 5,
+  },
+  {
+    slug: "berserk-sea",
+    term: "The Berserk Sea",
+    category: "Geography",
+    definition:
+      "The thunder-and-lightning ocean that walls the Southern Continent off from the North, torn open when the death-god fell. Chaotic magnetism blinds compass and telegraph alike; only a few routes cross it, and every voyage is long and perilous.",
+    revealAtSequence: 9,
+    epoch: 5,
+  },
+  {
+    slug: "numinous-episcopate",
+    term: "The Numinous Episcopate",
+    category: "Organizations",
+    definition:
+      "A death-worshipping heresy out of the Southern Continent, whispered of as grave-robbers and resurrectionists. The orthodox churches — the Evernight Goddess's above all — root it out wherever it surfaces, but it survives, and has crept into the Northern nations.",
+    revealAtSequence: 6,
+    epoch: 5,
+  },
   {
     slug: "constant-city",
     term: "Constant City",

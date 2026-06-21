@@ -476,6 +476,56 @@ const RORSTED_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Southern Continent archetypes (world build-out 9, issue #138) — begin
+// embedded in a circle of the colonized Balam lands across the Berserk Sea. These
+// are NORMAL archetypes, not ORIGIN ones: the Southern Continent is freely
+// reachable (no access flag), so a Balam start needs no continent gate — the
+// `createDefaultGameState` location/currentCity seeding orients the map on Balam,
+// and the character may later sail back to the mainland like any traveller. They
+// reference the Numinous NPC Haiter (npcs.ts) and the colonist Alfred Hall (the
+// Backlund Hall family, canonically a letter-writer from the Balam colonies). ──
+const SOUTHERN_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "balam-numinous-acolyte",
+    label: "An acolyte of the Numinous Episcopate in West Balam",
+    epoch: 5,
+    location: "Balam",
+    relationship: "subordinate",
+    circleNpcs: ["Haiter"],
+    affiliationOrg: "numinous-episcopate-overview",
+    blurb:
+      "A sworn acolyte of the outlawed death-faith in the jungles of West Balam, serving the ancient priest Haiter of the Numinous Episcopate.",
+    openingBeat: `The bitter draught still coats my tongue as I kneel in the coffin-lit shrine deep in the West Balam jungle, where old Haiter keeps the outlawed faith of the dead god — and I know that what I have just become must be hidden even from the brothers of the Episcopate until I understand it. ${SCENE_CUE}`,
+    // Death (pathway id 4) — the death-god's own path, the faith of the Balam cult.
+    pathwayAffinity: [4],
+    seeds: {
+      trackedAllies: ["Haiter"],
+      society: { orgSlug: "numinous-episcopate-overview", role: "acolyte" },
+      facts: [
+        "You are a sworn acolyte of the Numinous Episcopate's death-faith in West Balam, serving under the ancient priest Haiter, who knows your face and your devotion.",
+      ],
+    },
+  },
+  {
+    id: "balam-colonial-retainer",
+    label: "A retainer to a Loen colonial gentleman in Balam",
+    epoch: 5,
+    location: "Balam",
+    relationship: "subordinate",
+    circleNpcs: ["Alfred Hall"],
+    blurb:
+      "A retainer in a Loen colonial household across the Berserk Sea, in service to the gentleman-adventurer Alfred Hall in the Balam colonies.",
+    openingBeat: `The strange potion still burns in me as the tropical night presses hot against the verandah of the colonial house in Balam where I serve the Loen gentleman Alfred Hall, the jungle loud beyond the lamplight — and I understand that whatever I drank this night, none of this comfortable, brutal little outpost of home must ever learn it. ${SCENE_CUE}`,
+    pathwayAffinity: [],
+    seeds: {
+      trackedAllies: ["Alfred Hall"],
+      facts: [
+        "You serve as a trusted retainer to the Loen colonial gentleman Alfred Hall in the Balam colonies of the Southern Continent; he knows your face and relies on you.",
+      ],
+    },
+  },
+] as const;
+
 /** Every start archetype, all regions/epochs (append-only) — including gated
  * ORIGIN archetypes (so `getStartArchetype` resolves them by id). Default
  * selection filters origins out; `forsakenLandArchetypesForEpoch` filters in. */
@@ -488,6 +538,7 @@ export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...EARLIER_EPOCH_ARCHETYPES,
   ...FEYSAC_ARCHETYPES,
   ...RORSTED_ARCHETYPES,
+  ...SOUTHERN_ARCHETYPES,
 ];
 
 /**
