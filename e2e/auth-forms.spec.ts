@@ -33,22 +33,42 @@ test.describe("signup form", () => {
     await expect(page.getByText("Check your email to confirm")).toHaveCount(0);
   });
 
-  test("surfaces an accessible error when the backend is unreachable", async ({
-    page,
-  }) => {
+  test("surfaces an accessible error when sign-up is rejected", async ({ page }) => {
+    // Deterministically fail the Supabase auth call (the dummy backend's real
+    // network error is timing-dependent across CI runners) so this exercises the
+    // form's error-rendering path, not the network.
+    await page.route("**/auth/v1/**", (route) =>
+      route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({ code: 400, error_code: "weak_password", msg: "boom" }),
+      }),
+    );
     await page.goto("/signup");
     await page.getByLabel("Email").fill("beyonder@tingen.city");
     await page.getByLabel("Password").fill("klein-moretti");
     await page.getByRole("button", { name: "Create Account" }).click();
 
-    const alert = page.getByRole("alert");
-    await expect(alert).toBeVisible();
+    await expect(page.getByRole("alert")).toBeVisible();
     await expect(page.getByLabel("Email")).toHaveAttribute("aria-invalid", "true");
   });
 });
 
 test.describe("login form", () => {
   test("surfaces an accessible error on a failed sign-in", async ({ page }) => {
+    // Mock the auth endpoint to reject, so the error path is deterministic (not
+    // dependent on the dummy backend's network-failure timing).
+    await page.route("**/auth/v1/**", (route) =>
+      route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: JSON.stringify({
+          code: 400,
+          error_code: "invalid_credentials",
+          msg: "Invalid login credentials",
+        }),
+      }),
+    );
     await page.goto("/login");
     await page.getByLabel("Email").fill("beyonder@tingen.city");
     await page.getByLabel("Password").fill("wrong-password");
