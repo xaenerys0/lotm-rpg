@@ -1,4 +1,5 @@
 import type { GameState, SessionFact } from "@/lib/ai";
+import { DEFAULT_EPOCH_ID, isFifthEpoch } from "@/lib/lore";
 
 import { evaluateLossOfControl, type LossOfControlSeverity } from "./sanity";
 import type { GameSession } from "./types";
@@ -74,27 +75,70 @@ export interface SetbackResult {
   facts: SessionFact[];
 }
 
-// Where a broken Beyonder wakes up — displaced, never comfortably home.
-const DISPLACEMENT_PLACES = [
-  "a fog-choked alley",
-  "a derelict chapel cellar",
-  "the bank of the canal",
-  "a pauper's ward cot",
-  "an abandoned warehouse",
-] as const;
+// Where a broken Beyonder wakes up — displaced, never comfortably home. The
+// place must fit the ERA: a setback in the Age of Chaos cannot drop the
+// character into a gas-lit Iron-Age warehouse. One pool per epoch, each drawn
+// from that epoch's own setting (see `EPOCHS` in `@/lib/lore`); an absent or
+// unknown epoch falls back to the Fifth (the default era).
+const DISPLACEMENT_PLACES_BY_EPOCH: Record<number, readonly string[]> = {
+  // First Epoch — Age of Chaos: hide tents, raw wilderness, bronze and bone.
+  1: [
+    "a cold fire-pit at the edge of the camp",
+    "a thicket beyond the hide tents",
+    "a hollow among moss-grown standing stones",
+    "the muddy bank of a nameless river",
+    "a low cave mouth in the wild lands",
+  ],
+  // Second Epoch — Dark Epoch: inhuman gods rule, humans hidden or enslaved.
+  2: [
+    "a slave-pen beneath the overseers' hall",
+    "a hidden cellar deep in the human enclave",
+    "the cold shadow of a god-idol's plinth",
+    "a refuse-ditch at the enclave's edge",
+    "a cramped warren below the dominion's streets",
+  ],
+  // Third Epoch — Cataclysm Epoch: revolt and crusade, war-camps and banners.
+  3: [
+    "a churned-mud trench at the camp's edge",
+    "an abandoned supply tent behind the lines",
+    "the lee of a broken siege-engine",
+    "a field-surgeon's cot among the wounded",
+    "the ashes of a burned-out roadside shrine",
+  ],
+  // Fourth Epoch — Epoch of the Gods: Solomon Empire, pilgrims and petitioners.
+  4: [
+    "a pilgrims' almshouse cot",
+    "a colonnade nook outside a temple",
+    "a debtor's cell in the imperial undercroft",
+    "a back alley off the processional way",
+    "an abandoned shrine on the capital's outskirts",
+  ],
+  // Fifth Epoch — Iron Age: gas-lit Loen, the baseline setting.
+  5: [
+    "a fog-choked alley",
+    "a derelict chapel cellar",
+    "the bank of the canal",
+    "a pauper's ward cot",
+    "an abandoned warehouse",
+  ],
+};
 
 /** Fraction of sanity restored after surviving a breakdown. */
 export const SETBACK_SANITY_RATIO = 0.25;
 
 /**
  * Apply a recoverable setback: wake with a sliver of sanity, lose roughly half
- * your carried items, displaced to an unknown corner of the city, reputation
- * dented. Deterministic given the injected random source.
+ * your carried items, displaced to an unknown corner of the same locale,
+ * reputation dented. Deterministic given the injected random source. The
+ * displacement place is drawn from the character's `epoch` so a breakdown never
+ * relocates them into another era's setting (an absent/unknown epoch falls back
+ * to the Fifth).
  */
 export function applySetback(
   state: GameState,
   random: () => number = Math.random,
   turnNumber: number = 0,
+  epoch?: number,
 ): SetbackResult {
   const notes: string[] = [];
   const facts: SessionFact[] = [];
@@ -115,9 +159,22 @@ export function applySetback(
     notes.push(`Missing from your pockets: ${lostNames.join(", ")}.`);
   }
 
-  const city = state.location.split(" ")[0] || "the city";
-  const place = DISPLACEMENT_PLACES[Math.floor(random() * DISPLACEMENT_PLACES.length)];
-  const location = `${capitalize(place)} in ${city}`;
+  // Resolve to a known epoch pool up front (mirroring `getEpoch`): an absent or
+  // unknown id falls back to the Fifth, and both the place pool and the
+  // city-anchoring below read this same resolved id so they can never disagree.
+  const epochId =
+    epoch !== undefined && epoch in DISPLACEMENT_PLACES_BY_EPOCH
+      ? epoch
+      : DEFAULT_EPOCH_ID;
+  const places = DISPLACEMENT_PLACES_BY_EPOCH[epochId];
+  const place = places[Math.floor(random() * places.length)];
+  // The Fifth Epoch anchors displacement to the character's current city — its
+  // cross-city travel is gated, so a breakdown must not teleport them to another
+  // city. Earlier epochs have no city model, so the era-appropriate place stands
+  // on its own.
+  const location = isFifthEpoch(epochId)
+    ? `${capitalize(place)} in ${state.location.split(" ")[0] || "the city"}`
+    : capitalize(place);
   notes.push(`You come to in ${place}, with no memory of how you got there.`);
 
   notes.push("Word of your breakdown spreads; your standing suffers.");

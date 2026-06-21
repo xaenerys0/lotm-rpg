@@ -529,7 +529,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
   const handleSetback = useCallback(() => {
     if (!session) return;
-    const result = applySetback(session.gameState, Math.random, session.turnCount);
+    const result = applySetback(
+      session.gameState,
+      Math.random,
+      session.turnCount,
+      session.gameState.epoch,
+    );
     setSetbackNotes(result.notes);
     updateSession({
       ...session,
