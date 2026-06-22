@@ -39,6 +39,13 @@ async function rejectAuth(page: Page, body: Record<string, unknown>): Promise<vo
   });
 }
 
+// supabase-js treats a rejected auth call as potentially retryable and backs
+// off before surfacing the error; on the emulated iPhone-13 WebKit engine that
+// round-trip + retry can outlast the default 5s assertion window (the alert
+// then renders, just late — the test was flaky here, not broken). Give the
+// error-path alert a generous timeout so the slowest engine is deterministic.
+const ERROR_ALERT_TIMEOUT = 15_000;
+
 test.describe("signup form", () => {
   test("labels its fields and sets paste-friendly autocomplete (accessibility)", async ({
     page,
@@ -73,7 +80,9 @@ test.describe("signup form", () => {
     await page.getByLabel("Password").fill("klein-moretti");
     await page.getByRole("button", { name: "Create Account" }).click();
 
-    await expect(page.locator("form").getByRole("alert")).toBeVisible();
+    await expect(page.locator("form").getByRole("alert")).toBeVisible({
+      timeout: ERROR_ALERT_TIMEOUT,
+    });
     await expect(page.getByLabel("Email")).toHaveAttribute("aria-invalid", "true");
   });
 });
@@ -90,7 +99,9 @@ test.describe("login form", () => {
     await page.getByLabel("Password").fill("wrong-password");
     await page.getByRole("button", { name: "Sign In" }).click();
 
-    await expect(page.locator("form").getByRole("alert")).toBeVisible();
+    await expect(page.locator("form").getByRole("alert")).toBeVisible({
+      timeout: ERROR_ALERT_TIMEOUT,
+    });
     await expect(page.getByLabel("Password")).toHaveAttribute("aria-invalid", "true");
     // A failed sign-in never leaves the login page.
     await expect(page).toHaveURL(/\/login(\?.*)?$/);
