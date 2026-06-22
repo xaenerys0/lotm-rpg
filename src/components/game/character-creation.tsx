@@ -51,6 +51,11 @@ import type {
   ProviderConfig,
 } from "@/lib/ai";
 
+// The player's freeform backstory limit (issue #92 — raised from 280 so a rich,
+// prefilled-style backstory can fit; canon-takeover presets supply their own
+// much longer durable backgrounds out of band).
+const MAX_BACKGROUND_LENGTH = 1200;
+
 type CreationStep =
   | "tutorial"
   | "mode-select"
@@ -674,14 +679,16 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             <textarea
               id="setup-bg"
               value={characterBackground}
-              onChange={(e) => setCharacterBackground(e.target.value.slice(0, 280))}
-              maxLength={280}
+              onChange={(e) =>
+                setCharacterBackground(e.target.value.slice(0, MAX_BACKGROUND_LENGTH))
+              }
+              maxLength={MAX_BACKGROUND_LENGTH}
               placeholder="A brief backstory — your occupation, your district, what drew you to this world..."
               rows={3}
               className="w-full resize-none rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
             />
             <p className="mt-1 text-right text-xs text-muted">
-              {characterBackground.length}&thinsp;/&thinsp;280
+              {characterBackground.length}&thinsp;/&thinsp;{MAX_BACKGROUND_LENGTH}
             </p>
           </div>
 
@@ -1024,14 +1031,16 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                 <textarea
                   id="char-bg"
                   value={characterBackground}
-                  onChange={(e) => setCharacterBackground(e.target.value.slice(0, 280))}
-                  maxLength={280}
+                  onChange={(e) =>
+                    setCharacterBackground(e.target.value.slice(0, MAX_BACKGROUND_LENGTH))
+                  }
+                  maxLength={MAX_BACKGROUND_LENGTH}
                   placeholder="A brief backstory — your occupation, your district, what drew you to this world..."
                   rows={3}
                   className="w-full resize-none rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 />
                 <p className="mt-1 text-right text-xs text-muted">
-                  {characterBackground.length}&thinsp;/&thinsp;280
+                  {characterBackground.length}&thinsp;/&thinsp;{MAX_BACKGROUND_LENGTH}
                 </p>
               </div>
               <div className="mb-6 rounded-xl border border-border bg-surface p-4">

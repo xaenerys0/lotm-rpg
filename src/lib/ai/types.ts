@@ -279,6 +279,16 @@ export interface GameState {
   characterName?: string;
   characterBackground?: string;
   /**
+   * Canon-character takeover marker (issue #92). When the player named their
+   * character after a canonical figure on that figure's start-of-story pathway,
+   * this holds the matched preset id (`canon-characters.ts` / the `npcs.ts` slug
+   * stem). Rules-engine-only — NEVER AI-mutable. Drives doppelganger suppression
+   * (the figure never appears as a separate present NPC while the player IS
+   * them) and the "you ARE this character" narrator directive. Absent on every
+   * ordinary save; preserved across (de)serialize on the `...gs` spread.
+   */
+  canonCharacterId?: string;
+  /**
    * A compact, durable recap of the AI prologue (the life the character led and
    * the encounter that made them a Beyonder). The prologue runs on a separate
    * prompt the story narrator never sees, so this is pinned into the

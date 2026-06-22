@@ -31,6 +31,8 @@ export {
 
 export { cityForLocation, isReachable, type ReachableResult } from "./place-graph";
 
+export { createCanonCharacterSession, stripSelfFromNpcs } from "./canon-takeover";
+
 export {
   resolveLocation,
   mapAtlasFor,

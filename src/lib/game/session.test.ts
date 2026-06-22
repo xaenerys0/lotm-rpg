@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createDefaultGameState,
   createSession,
+  isValidSessionShape,
   seedArchetype,
   serializeSession,
   deserializeSession,
@@ -195,5 +196,36 @@ describe("seedArchetype", () => {
     expect(restored?.trackedNpcState?.roster.map((n) => n.name)).toContain(
       "Leonard Mitchell",
     );
+  });
+});
+
+// ─── canonCharacterId (issue #92) ───────────────────────────────────────
+
+describe("canonCharacterId persistence + shape validation", () => {
+  function canonSession() {
+    const gs = createDefaultGameState(1);
+    gs.canonCharacterId = "klein-moretti";
+    return createSession(gs, "canon-1", 1000);
+  }
+
+  it("round-trips canonCharacterId through (de)serialization", () => {
+    const restored = deserializeSession(serializeSession(canonSession()));
+    expect(restored?.gameState.canonCharacterId).toBe("klein-moretti");
+  });
+
+  it("accepts a valid string id and an absent field", () => {
+    expect(isValidSessionShape(canonSession())).toBe(true);
+    const plain = createSession(createDefaultGameState(1), "plain-1", 1000);
+    expect(plain.gameState.canonCharacterId).toBeUndefined();
+    expect(isValidSessionShape(plain)).toBe(true);
+  });
+
+  it("rejects a malformed canonCharacterId (non-string / empty)", () => {
+    const bad = canonSession();
+    (bad.gameState as unknown as Record<string, unknown>).canonCharacterId = 42;
+    expect(isValidSessionShape(bad)).toBe(false);
+    const empty = canonSession();
+    empty.gameState.canonCharacterId = "";
+    expect(isValidSessionShape(empty)).toBe(false);
   });
 });

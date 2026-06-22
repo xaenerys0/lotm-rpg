@@ -256,6 +256,15 @@ export function buildGameStatePrompt(gameState: GameState): PromptLayer {
     parts.push(`## Character & Origin\n${origin.join("\n\n")}`);
   }
 
+  // Canon-character takeover (issue #92): the player IS this canonical figure.
+  // Guard against the residual third-person gap — the narrator must never write
+  // them as a separate present character.
+  if (gameState.canonCharacterId && gameState.characterName) {
+    parts.push(
+      `## You Are This Character\nThe player character IS ${gameState.characterName} — the canonical figure, not a lookalike. Never portray ${gameState.characterName} as a separate present character, NPC, or third party; they are the protagonist you are narrating for.`,
+    );
+  }
+
   return { role: "user", content: parts.join("\n\n") };
 }
 
