@@ -1046,6 +1046,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         setPrepNotice(
           `You cannot yet afford ${itemName} (${result.cost} pence). Hunt the Characteristic for spoils, or sell what you carry.`,
         );
+      } else if (result.outcome === "formula-required") {
+        // The recipe is the canon gate (issue #171) — no reagent can be gathered
+        // until the formula is in hand.
+        setPrepNotice(
+          "You must secure the potion's formula before gathering any of its ingredients.",
+        );
       }
     },
     [session, updateSession],
@@ -2940,6 +2946,12 @@ function PotionPreparationPanel({
         Your potion is digested. Gather the formula and ingredients for the next Sequence
         before you can attempt the climb. Your purse holds {funds} pence.
       </p>
+      {!plan.formulaSecured && (
+        <p className="mt-2 text-xs leading-relaxed text-occult-bright">
+          The recipe is the closely-guarded gate: secure the formula first, and its
+          ingredients can then be gathered.
+        </p>
+      )}
       <ul className="mt-3 space-y-2">
         {plan.items.map((status: PotionItemStatus) => (
           <li
@@ -2962,35 +2974,46 @@ function PotionPreparationPanel({
                 </span>
               </span>
             </span>
-            {!status.owned && (
-              <span className="flex flex-wrap items-center gap-2">
-                {status.methods.includes("purchase") && (
-                  <button
-                    type="button"
-                    onClick={() => onPurchase(status.item.name)}
-                    disabled={busy || funds < status.cost}
-                    className="min-h-[24px] rounded-md border border-amber/40 bg-amber/[0.08] px-3 py-1 text-xs font-medium text-amber transition-colors hover:border-amber/60 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Buy ({status.cost} pence)
-                  </button>
-                )}
-                {status.methods.includes("hunt") &&
-                  (findHunt(session, status.item.name) ? (
-                    <span className="text-xs text-muted">
-                      Hunt underway — see the Quest Log
-                    </span>
-                  ) : (
+            {!status.owned &&
+              (status.locked ? (
+                // The recipe gates the reagents (issue #171): no buy/hunt until
+                // the formula is in hand.
+                <span className="text-xs text-muted">
+                  <span aria-hidden="true" className="mr-1">
+                    🔒
+                  </span>
+                  Sealed until the formula is secured
+                </span>
+              ) : (
+                <span className="flex flex-wrap items-center gap-2">
+                  {status.methods.includes("purchase") && (
                     <button
                       type="button"
-                      onClick={() => onHunt(status.item.name)}
-                      disabled={busy}
-                      className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-crimson/60 disabled:cursor-not-allowed disabled:opacity-40"
+                      onClick={() => onPurchase(status.item.name)}
+                      disabled={busy || funds < status.cost}
+                      className="min-h-[24px] rounded-md border border-amber/40 bg-amber/[0.08] px-3 py-1 text-xs font-medium text-amber transition-colors hover:border-amber/60 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      Begin the hunt
+                      {status.item.category === "potion-formula" ? "Secure" : "Buy"} (
+                      {status.cost} pence)
                     </button>
-                  ))}
-              </span>
-            )}
+                  )}
+                  {status.methods.includes("hunt") &&
+                    (findHunt(session, status.item.name) ? (
+                      <span className="text-xs text-muted">
+                        Hunt underway — see the Quest Log
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onHunt(status.item.name)}
+                        disabled={busy}
+                        className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-crimson/60 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Begin the hunt
+                      </button>
+                    ))}
+                </span>
+              ))}
           </li>
         ))}
       </ul>
