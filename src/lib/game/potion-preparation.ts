@@ -129,11 +129,13 @@ export function isFormula(item: Item): boolean {
 }
 
 /**
- * The shared success tail for both acquisition paths: deliver the item, adjust
- * funds (negative for a purchase, positive for hunt spoils), record a memory
- * fact, and stamp the session. Pure.
+ * The shared success tail for every acquisition path: deliver the item, adjust
+ * funds (negative for a purchase, positive for hunt spoils, zero for a reward
+ * earned through the story), record a memory fact, and stamp the session.
+ * Exported so the formula-pursuit "seek it through the story" route reuses the
+ * one grant convention (with `fundDelta: 0`) instead of re-inlining it. Pure.
  */
-function grantItem(
+export function grantItem(
   session: GameSession,
   item: Item,
   fundDelta: number,

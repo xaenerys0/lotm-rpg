@@ -101,6 +101,7 @@ import {
   type HuntState,
   advanceFormulaPursuit,
   beginFormulaPursuit,
+  clearFormulaPursuit,
   secureFormulaThroughStory,
   isFormulaPursuitReady,
   deserializeArtifacts,
@@ -790,6 +791,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // still grants the Characteristic on victory.
   const [prepNotice, setPrepNotice] = useState<string | null>(null);
 
+  // Securing the formula (trade or seek) routes through an awaited AI narration
+  // before the engine turn commits, so — like the climb (`advancingRef`) — a
+  // second click during that await would re-run on the still-stale store session
+  // (double-spending funds on a trade, double-narrating a secure). The ref guards
+  // the hard race; `formulaActionBusy` disables the controls for the UI.
+  const formulaActionRef = useRef(false);
+  const [formulaActionBusy, setFormulaActionBusy] = useState(false);
+
   const handleAdvancement = useCallback(async () => {
     if (!session || endingInFlight.current || advancingRef.current) return;
     advancingRef.current = true;
@@ -1032,9 +1041,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // (issue #171), whether it was traded for or sought through the story: it
   // plays out as a short narrated beat woven into the turn (best-effort AI, a
   // deterministic scene covers a missing provider), routed through the normal
-  // turn loop so it lands in the chronicle + memory like any other beat and is
-  // stamped `advancement` so the chronicle styles it as a climb beat. `next`
-  // already carries the formula in inventory.
+  // turn loop so it lands in the chronicle + memory like any other beat. It is a
+  // STORY beat, not an `advancement`: an actual Sequence climb is the ascension
+  // the chronicle styles with the Ascension marker — securing a recipe is a
+  // preparatory step, so it carries no engine `kind`. `next` already carries the
+  // formula in inventory.
   const narrateFormulaSecured = useCallback(
     async (next: GameSession, targetSeq: number, viaTrade: boolean) => {
       let scene = viaTrade
@@ -1080,7 +1091,6 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           type: "ENGINE_RESOLUTION",
           result: engineResolution({ narrative: scene }),
           playerAction: `I secured the formula for my next Sequence ${targetSeq} potion.`,
-          kind: "advancement",
         }),
       );
     },
@@ -1092,7 +1102,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // rather than silently failing.
   const handlePurchaseItem = useCallback(
     async (itemName: string) => {
-      if (!session) return;
+      // The async formula path commits only after an awaited narration, so block
+      // re-entry (a second click would re-buy on the stale session). Ingredient
+      // buys are synchronous and self-guard via the committed session.
+      if (!session || formulaActionRef.current) return;
       // Securing the FORMULA is the climb's gating story moment (issue #171): it
       // plays out as a short narrated beat woven into the turn, after which the
       // ingredients unlock. Ordinary ingredient buys stay a quiet panel action.
@@ -1118,8 +1131,17 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           updateSession(next);
           return;
         }
-        // The formula was traded for — narrate the climb's gating beat.
-        await narrateFormulaSecured(next, prePlan.targetSeq, true);
+        // The formula was traded for — narrate the climb's gating beat. Clear any
+        // active story-pursuit for the same recipe so it can't linger as a bogus
+        // quest now that the formula is in hand.
+        formulaActionRef.current = true;
+        setFormulaActionBusy(true);
+        try {
+          await narrateFormulaSecured(clearFormulaPursuit(next), prePlan.targetSeq, true);
+        } finally {
+          formulaActionRef.current = false;
+          setFormulaActionBusy(false);
+        }
       } else if (result.outcome === "unaffordable") {
         setPrepNotice(
           `You cannot yet afford ${itemName} (${result.cost} pence). Hunt the Characteristic for spoils, or sell what you carry.`,
@@ -1161,7 +1183,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // The search is done — claim the recipe (earned, no funds) and narrate the
   // climb's gating beat, exactly like the trade route.
   const handleSecureFormula = useCallback(async () => {
-    if (!session) return;
+    if (!session || formulaActionRef.current) return;
     const seq =
       session.formulaPursuit?.targetSeq ?? potionPreparationPlan(session).targetSeq;
     const result = secureFormulaThroughStory(session);
@@ -1175,7 +1197,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         }),
       ]);
       setPrepNotice(null);
-      await narrateFormulaSecured(result.session, seq, false);
+      formulaActionRef.current = true;
+      setFormulaActionBusy(true);
+      try {
+        await narrateFormulaSecured(result.session, seq, false);
+      } finally {
+        formulaActionRef.current = false;
+        setFormulaActionBusy(false);
+      }
     } else if (result.outcome === "not-ready") {
       setPrepNotice("The recipe still eludes you — keep searching.");
     } else if (result.session) {
@@ -1938,7 +1967,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                     <TheClimb session={session}>
                       <PotionPreparationPanel
                         session={session}
-                        busy={advancing || facingFate}
+                        busy={advancing || facingFate || formulaActionBusy}
                         notice={prepNotice}
                         onPurchase={handlePurchaseItem}
                         onHunt={handleHuntItem}

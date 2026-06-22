@@ -2,8 +2,12 @@ import type { SessionFact } from "@/lib/ai";
 
 import { isAdvanceableSequence, targetSequence } from "./advancement";
 import { hasItemMatching } from "./inventory";
-import { addItemToInventory } from "./marketplace";
-import { acquisitionDepthFactor, isFormula, nextPotionItems } from "./potion-preparation";
+import {
+  acquisitionDepthFactor,
+  grantItem,
+  isFormula,
+  nextPotionItems,
+} from "./potion-preparation";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -204,23 +208,17 @@ export function secureFormulaThroughStory(
     return { outcome: "already-owned", session: cleared };
   }
 
-  const fact: SessionFact = {
-    type: "event",
-    description: `Secured the closely-guarded ${formula.name} through the chase — the recipe for the next Sequence ${pursuit.targetSeq} potion is finally in hand.`,
-    turnNumber: session.turnCount,
-  };
-
+  // Earned through the story, so no funds change (fundDelta 0) — reuse the shared
+  // grant tail so delivery/fact/stamp stay consistent with the trade + hunt paths.
   return {
     outcome: "secured",
-    session: {
-      ...cleared,
-      gameState: addItemToInventory(cleared.gameState, formula),
-      memory: {
-        ...cleared.memory,
-        sessionFacts: [...cleared.memory.sessionFacts, fact],
-      },
-      updatedAt: now,
-    },
+    session: grantItem(
+      cleared,
+      formula,
+      0,
+      `Secured the closely-guarded ${formula.name} through the chase — the recipe for the next Sequence ${pursuit.targetSeq} potion is finally in hand.`,
+      now,
+    ),
   };
 }
 

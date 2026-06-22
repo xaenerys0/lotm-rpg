@@ -16,6 +16,7 @@ import {
   FORMULA_PURSUIT_BASE_TURNS,
   type FormulaPursuitState,
 } from "./formula-pursuit";
+import { getFunds } from "./marketplace";
 import { acquisitionDepthFactor } from "./potion-preparation";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
@@ -175,15 +176,15 @@ describe("secureFormulaThroughStory", () => {
   it("delivers the formula for free and clears the pursuit when ready", () => {
     const formula = formulaItem(9);
     const cur = ready(stuck(9));
-    const fundsBefore = cur.gameState.funds;
+    const fundsBefore = getFunds(cur.gameState);
 
     const result = secureFormulaThroughStory(cur);
     expect(result.outcome).toBe("secured");
     const next = result.session!;
     expect(next.formulaPursuit).toBeUndefined();
     expect(next.gameState.inventory.some((i) => i.name === formula.name)).toBe(true);
-    // Earned through the story — no funds change (the trade route is what costs).
-    expect(next.gameState.funds).toBe(fundsBefore);
+    // Earned through the story — no funds spent (the trade route is what costs).
+    expect(getFunds(next.gameState)).toBe(fundsBefore);
     // The quest label is dropped and a memory fact recorded.
     expect(next.gameState.activeQuests).not.toContain(
       formulaPursuitQuestLabel(cur.formulaPursuit!),
