@@ -110,6 +110,12 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
               ☙
             </span>
             The story so far
+            <span
+              aria-hidden="true"
+              className="ml-2 inline-block text-copper transition-transform group-open:rotate-90"
+            >
+              ▸
+            </span>
           </summary>
           <p className="mt-3 font-serif text-sm leading-relaxed text-muted">{summary}</p>
         </details>
@@ -128,6 +134,12 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
               aria-hidden="true"
               className="h-px flex-1 bg-gradient-to-r from-amber/40 to-transparent"
             />
+            <span
+              aria-hidden="true"
+              className="inline-block text-amber transition-transform group-open:rotate-90"
+            >
+              ▸
+            </span>
           </summary>
 
           <ol className="space-y-5">
