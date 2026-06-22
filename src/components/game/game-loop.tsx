@@ -1028,20 +1028,77 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // engine validates and delivers. An unaffordable buy is surfaced in-world
   // rather than silently failing.
   const handlePurchaseItem = useCallback(
-    (itemName: string) => {
+    async (itemName: string) => {
       if (!session) return;
+      // Securing the FORMULA is the climb's gating story moment (issue #171): it
+      // plays out as a short narrated beat woven into the turn, after which the
+      // ingredients unlock. Ordinary ingredient buys stay a quiet panel action.
+      const prePlan = potionPreparationPlan(session);
+      const wasFormula = prePlan.formula?.item.name === itemName;
       const result = purchasePotionItem(session, itemName);
       if (result.outcome === "purchased" && result.session) {
+        const next = result.session;
         appendJournalEntries(session.id, [
-          buildJournalEntry(result.session.gameState, result.session.turnCount, {
+          buildJournalEntry(next.gameState, next.turnCount, {
             eventType: "discovery",
-            summary: `Acquired ${itemName} for the next potion.`,
-            narrative: `You secured ${itemName}, one step closer to the next Sequence's potion.`,
+            summary: wasFormula
+              ? `Secured the formula for the Sequence ${prePlan.targetSeq} potion.`
+              : `Acquired ${itemName} for the next potion.`,
+            narrative: wasFormula
+              ? `You secured the closely-guarded formula for the Sequence ${prePlan.targetSeq} potion; its ingredients can now be gathered.`
+              : `You secured ${itemName}, one step closer to the next Sequence's potion.`,
             // arc omitted — buildJournalEntry's default is apex-aware (#99 D).
           }),
         ]);
-        updateSession(result.session);
         setPrepNotice(null);
+        if (!wasFormula) {
+          updateSession(next);
+          return;
+        }
+        // Narrate securing the recipe (best-effort; a deterministic scene covers
+        // a missing provider), routed through the normal turn loop so it lands in
+        // the chronicle + memory like any other beat.
+        let scene = `You secure the closely-guarded formula for the Sequence ${prePlan.targetSeq} potion — passed in trade, copied in secret, or prised from those who hoarded it. With the recipe in hand, you can begin gathering its ingredients.`;
+        if (providerConfig) {
+          try {
+            const {
+              abilities,
+              actingReqs,
+              loreContext,
+              identityContext,
+              profileContext,
+              recognitionContext,
+              epochContext,
+              cityNarration,
+            } = buildAICallParams(next);
+            const res = await generate({
+              config: providerConfig,
+              gameState: next.gameState,
+              memory: next.memory,
+              loreContext,
+              identityContext,
+              profileContext,
+              recognitionContext,
+              epochContext,
+              cityNarration,
+              instruction: "advancement",
+              playerAction: `Narrate how I secured the closely-guarded formula for my next Sequence ${prePlan.targetSeq} potion — through a trade, a contact, or my own effort. A short scene; I have NOT yet brewed or drunk it, only obtained the recipe so I can now gather its ingredients.`,
+              abilities,
+              actingRequirements: actingReqs,
+            });
+            if (res.response.narrative) scene = res.response.narrative;
+            recordUsage(res.usage);
+          } catch {
+            // Deterministic scene already set.
+          }
+        }
+        updateSession(
+          transition(next, {
+            type: "ENGINE_RESOLUTION",
+            result: engineResolution({ narrative: scene }),
+            playerAction: `I secured the formula for my next Sequence ${prePlan.targetSeq} potion.`,
+          }),
+        );
       } else if (result.outcome === "unaffordable") {
         setPrepNotice(
           `You cannot yet afford ${itemName} (${result.cost} pence). Hunt the Characteristic for spoils, or sell what you carry.`,
@@ -1054,7 +1111,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         );
       }
     },
-    [session, updateSession],
+    [session, updateSession, providerConfig, recordUsage],
   );
 
   // Hunting a Beyonder Characteristic now begins a tracked, multi-turn QUEST to
