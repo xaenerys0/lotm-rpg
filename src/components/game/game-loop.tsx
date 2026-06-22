@@ -1935,7 +1935,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 <CombatLauncher onStart={startCombat} />
                 {session.gameState.digestion?.complete === true &&
                   isAdvanceableSequence(session.gameState.sequenceLevel) && (
-                    <>
+                    <TheClimb session={session}>
                       <PotionPreparationPanel
                         session={session}
                         busy={advancing || facingFate}
@@ -1955,7 +1955,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                         busy={advancing || facingFate}
                         onAttempt={() => void handleAdvancement()}
                       />
-                    </>
+                    </TheClimb>
                   )}
                 {session.gameState.sequenceLevel === 1 && (
                   <ApotheosisPanel
@@ -3036,6 +3036,96 @@ function RitualAttemptPanel({
         )}
         {ready && <span className="text-xs text-muted">{oddsText}</span>}
       </div>
+    </section>
+  );
+}
+
+// The Climb (issue #171): the unified, progressive frame around the three
+// advancement stages — securing the recipe, gathering the ingredients,
+// performing the rite, and making the climb. It gives the stage panels below it
+// ONE voice (a shared illuminated header) and a stepper that shows the Beyonder
+// exactly where they stand on the ascent, replacing three disconnected cards
+// with a single staged journey. The stage panels still own their own controls
+// and self-hide as each stage completes; this only reframes them. Shown in the
+// choices phase whenever the climb is in reach (digestion complete + an
+// advanceable rung), so it always wraps at least the active stage.
+function TheClimb({ session, children }: { session: GameSession; children: ReactNode }) {
+  const target = targetSequence(session.gameState.sequenceLevel);
+  const targetData = getSequence(session.gameState.pathwayId, target);
+  const roleName = targetData?.name ?? `Sequence ${target}`;
+  const plan = potionPreparationPlan(session);
+  const ritualApplies =
+    ritualRequiredFor(target) && targetData?.advancementRitual !== undefined;
+
+  // The ordered stages of the ascent. "Make the climb" is the terminal act, so
+  // it is never marked done here — the chronicle records the climb once taken.
+  const stages = [
+    { label: "Secure the recipe", done: plan.formulaSecured },
+    { label: "Gather the ingredients", done: plan.allOwned },
+    ...(ritualApplies
+      ? [{ label: "Perform the rite", done: isRitualComplete(session, target) }]
+      : []),
+    { label: "Make the climb", done: false },
+  ];
+  const currentIdx = stages.findIndex((stage) => !stage.done);
+
+  return (
+    <section aria-labelledby="the-climb-heading" className="mt-8">
+      <header className="rounded-lg border border-amber/30 bg-amber/[0.06] px-5 py-4">
+        <p className="text-[0.7rem] uppercase tracking-[0.2em] text-amber/80">
+          The Climb
+        </p>
+        <h2
+          id="the-climb-heading"
+          className="gaslit mt-1 font-serif text-lg font-semibold text-amber"
+        >
+          Ascend to {roleName}
+        </h2>
+        <ol className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
+          {stages.map((stage, i) => {
+            const isCurrent = i === currentIdx;
+            return (
+              <li
+                key={stage.label}
+                aria-current={isCurrent ? "step" : undefined}
+                className="flex items-center gap-1.5"
+              >
+                <span
+                  aria-hidden="true"
+                  className={
+                    stage.done
+                      ? "text-occult-bright"
+                      : isCurrent
+                        ? "text-amber"
+                        : "text-muted"
+                  }
+                >
+                  {stage.done ? "✦" : isCurrent ? "◆" : "◇"}
+                </span>
+                <span
+                  className={
+                    stage.done
+                      ? "text-foreground/70"
+                      : isCurrent
+                        ? "font-medium text-amber"
+                        : "text-muted"
+                  }
+                >
+                  {stage.label}
+                  {stage.done && <span className="sr-only"> (done)</span>}
+                  {isCurrent && <span className="sr-only"> (current stage)</span>}
+                </span>
+                {i < stages.length - 1 && (
+                  <span aria-hidden="true" className="ml-1 text-muted/50">
+                    →
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </header>
+      {children}
     </section>
   );
 }
