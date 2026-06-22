@@ -173,6 +173,7 @@ import {
   epochNarrationDirective,
   epochOpeningBeat,
   cityNarrationDirective,
+  getCanonCharacter,
   getEpoch,
 } from "@/lib/lore";
 import { createClient } from "@/lib/supabase/client";
@@ -441,6 +442,15 @@ function buildAICallParams(currentSession: GameSession) {
       // Progressive disclosure: a character only sees curated lore for rungs of
       // the pathway they have actually reached (issue: P2 sequence gate).
       currentSession.gameState.sequenceLevel,
+      // Doppelganger suppression (issue #92): a canon-takeover player must not
+      // receive their OWN NPC dossier framed as a separate present character.
+      // Use the preset's CANONICAL display name (the lore `npcs` tags use it),
+      // not the player's typed name — which may be an alias ("Klein", "Mr. Fool")
+      // that the lore entries are NOT tagged with, so it would fail to suppress.
+      currentSession.gameState.canonCharacterId
+        ? (getCanonCharacter(currentSession.gameState.canonCharacterId)?.displayName ??
+            currentSession.gameState.characterName)
+        : undefined,
     ),
   };
 }

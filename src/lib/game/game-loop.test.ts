@@ -675,6 +675,21 @@ describe("applyWorldStateChanges", () => {
     expect(next.npcsPresent).toEqual(["Dunn Smith", "Leonard Mitchell"]);
   });
 
+  it("strips the player's own canon identity from npcsPresent (issue #92)", () => {
+    const state = makeGameState({ npcsPresent: [], canonCharacterId: "klein-moretti" });
+    const changes: StateChange[] = [
+      {
+        field: "npcsPresent",
+        oldValue: [],
+        newValue: ["Klein Moretti", "Mr. Fool", "Dunn Smith"],
+        reason: "scene",
+      },
+    ];
+    const next = applyWSC(state, changes);
+    // The doppelganger (and its alias) are removed; the real NPC remains.
+    expect(next.npcsPresent).toEqual(["Dunn Smith"]);
+  });
+
   it("ignores non-mutable fields", () => {
     const state = makeGameState({
       pathwayId: 1,

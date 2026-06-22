@@ -360,6 +360,15 @@ export function isValidSessionShape(obj: unknown): boolean {
   if (gs.accessFlags !== undefined && !isValidAccessFlagsShape(gs.accessFlags)) {
     return false;
   }
+  // Canon-character takeover marker (issue #92) is optional but, when present,
+  // must be a non-empty string id; it rides the deserialize `...gs` spread (no
+  // seeding), exactly like the other optional game-state fields.
+  if (
+    gs.canonCharacterId !== undefined &&
+    (typeof gs.canonCharacterId !== "string" || gs.canonCharacterId.length === 0)
+  ) {
+    return false;
+  }
 
   // RAG fields (issue #63) are optional (older sessions predate them) but
   // must be valid when present: a finite positive position, and a model id on

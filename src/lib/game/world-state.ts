@@ -28,6 +28,7 @@ import {
   reachedDreamWorldGate,
 } from "./travel";
 import { registerCustomLocation } from "./location";
+import { stripSelfFromNpcs } from "./canon-takeover";
 import { reassertFollowersAt, type TrackedNpcState } from "./tracked-npcs";
 import type { AccessFlag } from "@/lib/ai";
 
@@ -397,7 +398,10 @@ export function applyWorldStateChanges(
           next = {
             ...next,
             npcsPresent: reassertFollowersAt(
-              change.newValue.map(String),
+              // Doppelganger suppression (issue #92): strip the player's own
+              // canon identity so the narrator can never add them as a separate
+              // present NPC. A no-op when not a canon takeover.
+              stripSelfFromNpcs(change.newValue.map(String), next.canonCharacterId),
               opts.trackedNpcState,
             ),
           };

@@ -87,6 +87,42 @@ describe("selectCuratedLore", () => {
     const slugs = ungated.entries.map((e) => e.slug);
     expect(slugs).toContain("fool-seq8-clown");
   });
+
+  it("excludeNpc drops the takeover player's own dossier and any entry naming them (issue #92)", () => {
+    // A Fool player IS Klein: the Klein NPC entry and every Fool/Tingen entry
+    // tagged with him must be withheld from the narrator.
+    const withKlein = selectCuratedLore("fool", "Tingen City", 100000, 5, 9);
+    expect(withKlein.entries.some((e) => e.npcs.includes("Klein Moretti"))).toBe(true);
+
+    const excluded = selectCuratedLore(
+      "fool",
+      "Tingen City",
+      100000,
+      5,
+      9,
+      "Klein Moretti",
+    );
+    expect(excluded.entries.some((e) => e.npcs.includes("Klein Moretti"))).toBe(false);
+    expect(excluded.entries.some((e) => e.slug === "npc-klein-moretti")).toBe(false);
+    // Unrelated entries that don't name the player (era setting, city geography
+    // not tagged with Klein) still pass — only Klein-tagged prose is withheld.
+    expect(excluded.entries.length).toBeGreaterThan(0);
+    expect(excluded.entries.some((e) => e.slug === "fifth-epoch-overview")).toBe(true);
+  });
+
+  it("excludeNpc is case/space-insensitive and a no-op when omitted", () => {
+    const a = selectCuratedLore(
+      "fool",
+      "Tingen City",
+      100000,
+      5,
+      9,
+      "  klein   moretti ",
+    );
+    expect(a.entries.some((e) => e.npcs.includes("Klein Moretti"))).toBe(false);
+    const b = selectCuratedLore("fool", "Tingen City", 100000, 5, 9);
+    expect(b.entries.some((e) => e.npcs.includes("Klein Moretti"))).toBe(true);
+  });
 });
 
 describe("passesSequenceGate", () => {

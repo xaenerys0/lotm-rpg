@@ -2,6 +2,13 @@ export type { LoreCategory, LoreEntry } from "./types";
 
 export { selectCuratedLore, passesSequenceGate } from "./selection";
 export {
+  CANON_PLAYABLE_CHARACTERS,
+  getCanonCharacter,
+  matchCanonCharacter,
+  normalizeCanonName,
+  type CanonCharacterPreset,
+} from "./canon-characters";
+export {
   epochNarrationDirective,
   epochOpeningBeat,
   getEpoch,

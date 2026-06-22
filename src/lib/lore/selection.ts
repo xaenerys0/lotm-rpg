@@ -1,5 +1,6 @@
 import type { LoreContext } from "@/lib/ai";
 
+import { normalizeCanonName } from "./canon-characters";
 import { passesEpochGate } from "./epochs";
 import { getLoreByCity, getLoreByEpochSetting, getLoreByPathway } from "./index";
 import type { LoreEntry } from "./types";
@@ -21,6 +22,13 @@ import type { LoreEntry } from "./types";
  * context (politics, society, powers) to the narrator regardless of the awkward
  * prose `startingLocation` strings the city-key heuristic can't match. An absent
  * `epoch` defaults to the Fifth, matching the game's default-Fifth behaviour.
+ *
+ * `excludeNpc` (issue #92, canon-character takeover): when the player IS a canon
+ * figure, their own NPC dossier and any pathway/city entry that names them must
+ * not be fed to the narrator as a SEPARATE character (with its forward-arc
+ * spoilers). Any entry whose `npcs` includes the excluded name (normalized) is
+ * dropped. Pathway MECHANICS still reach the narrator via the rules engine, so
+ * suppressing the prose lore costs no gameplay grounding.
  */
 export function selectCuratedLore(
   pathwayName: string,
@@ -28,10 +36,12 @@ export function selectCuratedLore(
   budgetTokens: number,
   epoch?: number,
   sequenceLevel?: number,
+  excludeNpc?: string,
 ): LoreContext {
   const pathwayLore = getLoreByPathway(pathwayName.toLowerCase());
   const epochLore = getLoreByEpochSetting(epoch);
   const cityLore = getLoreByCity(location.toLowerCase().split(" ")[0]);
+  const excluded = excludeNpc ? normalizeCanonName(excludeNpc) : undefined;
 
   const seen = new Set<string>();
   const combined: LoreEntry[] = [];
@@ -47,6 +57,9 @@ export function selectCuratedLore(
   for (const entry of combined) {
     if (!passesEpochGate(entry.epoch, epoch)) continue;
     if (!passesSequenceGate(entry.sequences, sequenceLevel)) continue;
+    if (excluded && entry.npcs.some((n) => normalizeCanonName(n) === excluded)) {
+      continue;
+    }
     if (totalTokens + entry.tokenCount > budgetTokens) break;
     selected.push(entry);
     totalTokens += entry.tokenCount;

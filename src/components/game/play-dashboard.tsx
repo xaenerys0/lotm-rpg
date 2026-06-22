@@ -7,6 +7,7 @@ import type { GameSessionSummary } from "@/lib/game";
 import {
   createSession,
   createDefaultGameState,
+  createCanonCharacterSession,
   seedArchetype,
   sequenceClassificationFor,
   sequenceLabel,
@@ -34,6 +35,7 @@ import {
   getStartScenario,
   getStartArchetype,
   buildCustomArchetype,
+  matchCanonCharacter,
   type StartArchetype,
   type StartSelection,
 } from "@/lib/lore";
@@ -185,6 +187,43 @@ export function PlayDashboard() {
       prologueRecap: string,
       start: StartSelection,
     ) => {
+      // Canon-character takeover (issue #92): when the player named their
+      // character after a canonical figure AND chose that figure's pathway, they
+      // BECOME that character — a full canon preset (pathway, starting sequence,
+      // location, timeline position, and prefilled durable backstory) takes over.
+      // It supersedes the generic creation path entirely, while still layering
+      // the same world-continuity facts (legacies + echoes) a normal save gets.
+      // Gated on the chosen EPOCH matching the preset's: the canon figures are
+      // Fifth-Epoch novel characters, so a player who deliberately picked a
+      // different era (e.g. the Age of Chaos) is NOT silently forced into the
+      // Fifth — they get an ordinary character of their chosen epoch instead.
+      const canonPreset = matchCanonCharacter(characterName, pathwayId);
+      if (canonPreset && canonPreset.epoch === epoch) {
+        const echoes = loadTimelineEchoes(epoch);
+        const seededMemory = withLegacyFacts({
+          ...initialMemory,
+          sessionFacts: [...initialMemory.sessionFacts, ...echoes.facts],
+        });
+        let canonSession = createCanonCharacterSession(canonPreset, seededMemory);
+        if (echoes.carried) {
+          canonSession = {
+            ...canonSession,
+            gameState: {
+              ...canonSession.gameState,
+              inventory: [
+                ...canonSession.gameState.inventory,
+                artifactToItem(echoes.carried),
+              ],
+            },
+          };
+        }
+        persistSession(canonSession);
+        saveSessionIndex([canonSession.id, ...loadSessionIndex()]);
+        saveActiveSessionId(canonSession.id);
+        setActiveSessionId(canonSession.id);
+        setView("playing");
+        return;
+      }
       // Start archetypes (issue #131): beginning embedded in a circle — either a
       // curated preset OR a player-authored custom circle (built into a normal
       // archetype). It carries its own location + opening beat and seeds a real
