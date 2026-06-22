@@ -34,8 +34,9 @@ import {
 } from "@/lib/lore";
 import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
-import { ALL_PATHWAYS, getSequence } from "@/lib/rules";
+import { ALL_PATHWAYS, getSequence, PATHWAY_GROUPS } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
+import { StepHeader, ChoiceCard } from "./creation-ui";
 import {
   generatePrologueScene,
   generatePrologueFinale,
@@ -59,8 +60,14 @@ type CreationStep =
   | "character-sheet"
   | "first-potion";
 
+/** The opening-chooser families on the final step (the start-opening picker). */
+type OpeningMode = "random" | "place" | "circle" | "custom" | "origin";
+
 const AI_PATH: CreationStep[] = ["character-setup", "ai-prologue", "first-potion"];
 const MANUAL_PATH: CreationStep[] = ["recommendation", "character-sheet", "first-potion"];
+
+/** Pathway families, in canonical order, for the grouped manual-path picker. */
+const ALL_GROUPS = Object.values(PATHWAY_GROUPS);
 
 function getProgress(step: CreationStep, skipPrologue: boolean) {
   const steps = skipPrologue ? MANUAL_PATH : AI_PATH;
@@ -148,6 +155,13 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   // beginning inside a sealed, access-gated continent (the Forsaken Land) is an
   // advanced choice the default picker must not surface.
   const [showOrigins, setShowOrigins] = useState(false);
+  // Which family of openings the final-step chooser is showing. Purely a UI
+  // concern — `startChoice` remains the single source of truth that
+  // `handleBeginChronicle` resolves into the discriminated `StartSelection`;
+  // the mode just decides which set of option cards is revealed (so the player
+  // browses places, circles, or the sealed origins as cards instead of hunting
+  // through one crammed native dropdown).
+  const [openingMode, setOpeningMode] = useState<OpeningMode>("random");
 
   // Character identity — restored from draft when available
   const [characterName, setCharacterName] = useState(savedDraft?.characterName ?? "");
@@ -435,6 +449,32 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     setCustomLocation("");
   }, []);
 
+  // Choosing an epoch resets the start pick so a location/archetype chosen for
+  // the prior epoch can't leak into the new one (issue #131), and returns the
+  // opening chooser to its neutral "random" family.
+  const selectEpoch = useCallback(
+    (id: number) => {
+      setEpoch(id);
+      setStartChoice("");
+      setOpeningMode("random");
+      clearCustomCircle();
+    },
+    [clearCustomCircle],
+  );
+
+  // Switch the opening-chooser family. Each family resets `startChoice` to its
+  // own neutral value so a pick can never linger from a family the player left:
+  // "custom" arms the author-your-own form; every other family clears to "" (a
+  // random start) until the player picks a card within it.
+  const selectOpeningMode = useCallback(
+    (mode: OpeningMode) => {
+      setOpeningMode(mode);
+      setStartChoice(mode === "custom" ? "custom" : "");
+      if (mode !== "custom") clearCustomCircle();
+    },
+    [clearCustomCircle],
+  );
+
   // ── Progress Dots ──
 
   const progress = getProgress(step, skipPrologue);
@@ -443,34 +483,6 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
 
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
-      {/* Step dots — shown for all steps except mode-select */}
-      {step !== "mode-select" && step !== "tutorial" && progress.show && (
-        <div className="mb-8 flex items-center justify-between">
-          <span className="text-xs font-semibold uppercase tracking-[0.18em] text-amber">
-            Character Creation
-          </span>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2" aria-hidden="true">
-              {Array.from({ length: progress.total }, (_, i) => i + 1).map((n) => (
-                <div
-                  key={n}
-                  className={`rounded-full transition-all duration-300 ${
-                    n < progress.number
-                      ? "h-1.5 w-1.5 bg-amber"
-                      : n === progress.number
-                        ? "h-1.5 w-3 bg-amber/70"
-                        : "h-1.5 w-1.5 bg-border"
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="ml-1 text-xs text-muted">
-              Step {progress.number}&thinsp;/&thinsp;{progress.total}
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* ── TUTORIAL (issue #14) ── */}
       {step === "tutorial" && (
         <div className="animate-fade-in-up">
@@ -522,19 +534,13 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       {/* ── MODE SELECT ── */}
       {step === "mode-select" && (
         <div className="animate-fade-in-up">
-          <button
-            type="button"
-            onClick={() => {
+          <StepHeader
+            eyebrow="A New Chronicle Begins"
+            onBack={() => {
               clearDraft();
               onBack();
             }}
-            className="mb-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
-          >
-            &larr; Back
-          </button>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
-            A New Chronicle Begins
-          </p>
+          />
           <h1 className="mb-4 font-serif text-2xl font-semibold text-foreground">
             Who Will You Become?
           </h1>
@@ -543,38 +549,37 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             encounter has led you to the threshold of the Beyonders. What happens next
             depends on who you are.
           </p>
-          <p className="mb-6 text-xs italic text-muted">
+          <p className="mb-8 text-xs italic text-muted">
             The AI prologue takes ~5 minutes and reveals your Beyonder affinity through
             story.
           </p>
-          {/* Epoch start (issues #26/#29): the Fifth is the classic default. */}
-          <div className="mb-6 max-w-md">
-            <label htmlFor="epoch-select" className="mb-1.5 block text-xs text-muted">
-              Begin in
-            </label>
-            <select
-              id="epoch-select"
-              value={epoch}
-              onChange={(e) => {
-                setEpoch(Number(e.target.value));
-                // Reset the start pick: a location/archetype chosen for the prior
-                // epoch must not carry over (issue #131 — a stale archetype id
-                // would otherwise resolve epoch-agnostically and leak that epoch's
-                // location/NPCs into the new one, breaking epoch isolation).
-                setStartChoice("");
-                clearCustomCircle();
-              }}
-              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+
+          {/* Epoch start (issues #26/#29) — a browsable row of eras (the Fifth
+              is the classic default) rather than a dropdown whose summary only
+              showed after selecting. */}
+          <div className="mb-8">
+            <p
+              id="era-label"
+              className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-amber"
+            >
+              Choose Your Era
+            </p>
+            <div
+              role="group"
+              aria-labelledby="era-label"
+              className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
             >
               {EPOCHS.map((era) => (
-                <option key={era.id} value={era.id}>
-                  {era.name} — {era.era}
-                </option>
+                <ChoiceCard
+                  key={era.id}
+                  title={era.name}
+                  badge={era.era}
+                  description={era.summary}
+                  selected={epoch === era.id}
+                  onClick={() => selectEpoch(era.id)}
+                />
               ))}
-            </select>
-            <p className="mt-1.5 text-xs leading-relaxed text-muted">
-              {EPOCHS.find((era) => era.id === epoch)?.summary}
-            </p>
+            </div>
           </div>
 
           {/* Tutorial gate (issue #14): newcomers get the introduction;
@@ -585,7 +590,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               setTutorialIndex(0);
               setStep("tutorial");
             }}
-            className="mb-10 block rounded-xl border border-border bg-surface px-5 py-4 text-left text-sm text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
+            className="mb-10 block w-full rounded-xl border border-border bg-surface px-5 py-4 text-left text-sm text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
           >
             <span className="font-semibold text-amber">
               New to Lord of the Mysteries?
@@ -593,56 +598,31 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             Begin with a short introduction to Beyonders, potions, and the acting method
             (~3 minutes, skippable at any point).
           </button>
-          <div className="grid max-w-2xl gap-4 sm:grid-cols-2">
+
+          <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
+            How Will You Find Your Path?
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
             {/* AI Prologue card */}
-            {providerConfig ? (
-              <button
-                type="button"
-                onClick={() => setStep("character-setup")}
-                className="group rounded-xl border border-border bg-surface p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
-              >
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
-                  AI-Guided
-                </p>
-                <h2 className="mb-2 font-serif text-lg font-semibold text-foreground transition-colors group-hover:text-amber">
-                  Begin the Prologue
-                </h2>
-                <p className="text-sm leading-relaxed text-muted">
-                  A series of AI-generated scenes will shape your character&apos;s fate.
-                  Your choices guide you to the Beyonder pathway that fits your nature.
-                </p>
-              </button>
-            ) : (
-              <div className="cursor-not-allowed rounded-xl border border-border bg-surface p-6 opacity-50">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted">
-                  AI-Guided
-                </p>
-                <h2 className="mb-2 font-serif text-lg font-semibold text-foreground">
-                  Begin the Prologue
-                </h2>
-                <p className="text-sm leading-relaxed text-muted">
-                  Configure an AI provider in Settings first.
-                </p>
-              </div>
-            )}
+            <ChoiceCard
+              title="Begin the Prologue"
+              badge="AI-Guided"
+              description={
+                providerConfig
+                  ? "A series of AI-generated scenes shapes your character's fate. Your choices guide you to the Beyonder pathway that fits your nature."
+                  : "Configure an AI provider in Settings first."
+              }
+              disabled={!providerConfig}
+              onClick={() => setStep("character-setup")}
+            />
 
             {/* Manual card */}
-            <button
-              type="button"
+            <ChoiceCard
+              title="Choose Your Path"
+              badge="Direct"
+              description="Already know your Beyonder pathway? Skip the prologue and select from all available paths directly."
               onClick={handleSkipPrologue}
-              className="group rounded-xl border border-border bg-surface p-6 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
-            >
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
-                Direct
-              </p>
-              <h2 className="mb-2 font-serif text-lg font-semibold text-foreground transition-colors group-hover:text-amber">
-                Choose Your Path
-              </h2>
-              <p className="text-sm leading-relaxed text-muted">
-                Already know your Beyonder pathway? Skip the prologue and select from all
-                available paths directly.
-              </p>
-            </button>
+            />
           </div>
         </div>
       )}
@@ -650,15 +630,13 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       {/* ── CHARACTER SETUP ── */}
       {step === "character-setup" && (
         <div className="max-w-lg animate-fade-in-up">
-          <button
-            type="button"
-            onClick={() => setStep("mode-select")}
-            className="mb-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
-          >
-            &larr; Back
-          </button>
+          <StepHeader
+            eyebrow="Before the Chronicle Begins"
+            onBack={() => setStep("mode-select")}
+            progress={progress.show ? progress : undefined}
+          />
           <h2 className="mb-2 font-serif text-2xl font-semibold text-foreground">
-            Before the Chronicle Begins
+            Tell the Fog Who You Are
           </h2>
           <p className="mb-8 text-sm text-muted">
             The AI will use your name and background to craft a personal story.
@@ -727,9 +705,9 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
               <button
                 type="button"
                 onClick={() => setStep("character-setup")}
-                className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
+                className="min-h-[24px] rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
               >
-                &larr; Back
+                <span aria-hidden="true">&larr;</span> Back
               </button>
               <span className="text-xs text-muted">Scene {sceneNumber}</span>
             </div>
@@ -922,49 +900,59 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       {/* ── RECOMMENDATION (manual path) ── */}
       {step === "recommendation" && (
         <div className="animate-fade-in-up">
-          <button
-            type="button"
-            onClick={() => setStep("mode-select")}
-            className="mb-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
-          >
-            &larr; Back
-          </button>
+          <StepHeader
+            eyebrow="Choose Your Beyonder Path"
+            onBack={() => setStep("mode-select")}
+            progress={progress.show ? progress : undefined}
+          />
           <h2 className="mb-2 font-serif text-2xl font-semibold text-foreground">
-            Choose Your Beyonder Path
+            The Two-and-Twenty Pathways
           </h2>
-          <p className="mb-6 text-sm text-muted">
-            Each pathway shapes your abilities, your obligations, and your fate.
+          <p className="mb-8 text-sm text-muted">
+            Each pathway shapes your abilities, your obligations, and your fate. They are
+            grouped by the cosmic family they descend from.
           </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {ALL_PATHWAYS.map((pathway) => {
-              const seq9 = getSequence(pathway.id, 9);
+          {/* Grouped by pathway family (issue #28 groups) so all twenty-two are
+              scannable instead of one undifferentiated wall of cards. */}
+          <div className="space-y-8">
+            {ALL_GROUPS.map((group) => {
+              const members = ALL_PATHWAYS.filter((p) => p.group === group.id);
+              if (members.length === 0) return null;
               return (
-                <button
-                  key={pathway.id}
-                  type="button"
-                  onClick={() => handleAcceptPathway(pathway.id)}
-                  className="group rounded-xl border border-border bg-surface px-5 py-4 text-left transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
-                >
-                  <div className="mb-2 flex items-start justify-between">
-                    <h3 className="font-serif text-lg font-semibold text-foreground transition-colors group-hover:text-amber">
-                      {pathway.name}
+                <section key={group.id}>
+                  <div className="mb-3">
+                    <h3 className="font-serif text-sm font-semibold uppercase tracking-[0.14em] text-amber">
+                      {group.name}
                     </h3>
-                    <span className="rounded-md border border-border bg-surface-raised px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.1em] text-amber">
-                      {pathway.group}
-                    </span>
+                    <p className="text-xs text-muted">{group.sefirah}</p>
                   </div>
-                  <p className="mb-3 text-xs text-muted">
-                    {PATHWAY_DESCRIPTIONS[pathway.id] ?? "A mysterious path."}
-                  </p>
-                  {seq9 && (
-                    <div className="border-t border-border pt-2">
-                      <p className="text-xs text-muted">
-                        Begins as{" "}
-                        <span className="text-foreground">Sequence 9 — {seq9.name}</span>
-                      </p>
-                    </div>
-                  )}
-                </button>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {members.map((pathway) => {
+                      const seq9 = getSequence(pathway.id, 9);
+                      return (
+                        <ChoiceCard
+                          key={pathway.id}
+                          title={pathway.name}
+                          description={
+                            PATHWAY_DESCRIPTIONS[pathway.id] ?? "A mysterious path."
+                          }
+                          meta={
+                            seq9 ? (
+                              <>
+                                Begins as{" "}
+                                <span className="text-foreground">
+                                  Sequence 9 — {seq9.name}
+                                </span>
+                              </>
+                            ) : undefined
+                          }
+                          selected={selectedPathwayId === pathway.id}
+                          onClick={() => handleAcceptPathway(pathway.id)}
+                        />
+                      );
+                    })}
+                  </div>
+                </section>
               );
             })}
           </div>
@@ -978,15 +966,13 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           const seq9 = pathway ? getSequence(pathway.id, 9) : null;
           return (
             <div className="max-w-xl animate-fade-in-up">
-              <button
-                type="button"
-                onClick={() => setStep("recommendation")}
-                className="mb-6 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
-              >
-                &larr; Back
-              </button>
+              <StepHeader
+                eyebrow="Your Beyonder Identity"
+                onBack={() => setStep("recommendation")}
+                progress={progress.show ? progress : undefined}
+              />
               <h2 className="mb-6 font-serif text-2xl font-semibold text-foreground">
-                Your Beyonder Identity
+                Step Into Your Becoming
               </h2>
               {pathway && seq9 && (
                 <div className="mb-6 rounded-xl border border-amber bg-amber/10 p-4">
@@ -1082,17 +1068,22 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       {/* ── FIRST POTION ── */}
       {step === "first-potion" && selectedPathwayId !== null && (
         <div className="mx-auto max-w-lg animate-fade-in-up">
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
-            The Moment of Becoming
-          </p>
-          <h2 className="mb-8 font-serif text-2xl font-semibold text-foreground">
+          <StepHeader
+            eyebrow="The Moment of Becoming"
+            onBack={() => setStep(skipPrologue ? "character-sheet" : "ai-prologue")}
+            progress={progress.show ? progress : undefined}
+          />
+          <h2 className="mb-8 gaslit font-serif text-2xl font-semibold text-foreground">
             {POTION_HEADINGS[selectedPathwayId] ?? "The First Change"}
           </h2>
-          <div className="mb-10 space-y-5">
+          <div className="parchment mb-10 space-y-5 rounded-xl px-6 py-5">
             {(FIRST_POTION_NARRATIVE[selectedPathwayId] ?? "")
               .split("\n\n")
               .map((para, i) => (
-                <p key={i} className="text-sm leading-relaxed text-muted">
+                <p
+                  key={i}
+                  className="font-serif text-sm leading-[1.85] text-foreground/90"
+                >
                   {para}
                 </p>
               ))}
@@ -1100,10 +1091,12 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
 
           {/* Where the chronicle begins (varied story openings) — a plain place
               OR an existing character's circle (start archetypes, issue #131).
-              "Surprise me" keeps the place random; choosing a place sets a
-              preferred start (the scene still varies); choosing an archetype
-              begins the character embedded in an NPC's circle. Pathway-suiting
-              places/archetypes are flagged as a suggestion — never an auto-bias. */}
+              The old single crammed <select> is now a two-level chooser: a row of
+              opening "families" (random / a place / someone's circle / author your
+              own / a sealed origin), each revealing browsable option cards whose
+              blurb and "suits your pathway" hint are visible without selecting.
+              `startChoice` is still the single source of truth — the cards just
+              set the same encoded values the dropdown used to. */}
           {(() => {
             const options = startLocationsForEpoch(epoch);
             const archetypes = startArchetypesForEpoch(epoch);
@@ -1127,10 +1120,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   (s) => s.id === startChoice.slice("origin-scenario:".length),
                 )
               : undefined;
-            // One control: a plain location's value is the bare location string,
-            // an archetype's is `archetype:<id>`, an origin scenario's is
-            // `origin-scenario:<id>`, `"custom"` opens the author-your-own form,
-            // and "" is the random start (the single `startChoice` state holds it).
+            // The screen-reader summary of the current pick (the cards already
+            // show each blurb inline; this announces the active selection).
             const describe = selectedArchetype
               ? selectedArchetype.blurb
               : selectedOriginScenario
@@ -1140,79 +1131,64 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   : selectedLoc
                     ? describeStartLocation(selectedLoc, selectedPathwayId, pathwayName)
                     : "The fog will decide where you wake — a different place, and a different opening, each time.";
+            const suitsBadge = (affinity: readonly number[] | undefined) =>
+              startOptionSuitsPathway(affinity, selectedPathwayId) && pathwayName
+                ? `Suits the ${pathwayName}`
+                : undefined;
             return (
-              <div className="mb-8">
-                <label
-                  htmlFor="start-location"
-                  className="mb-1.5 block text-xs font-semibold uppercase tracking-[0.18em] text-amber"
-                >
+              <fieldset className="mb-8 min-w-0 border-0 p-0">
+                <legend className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
                   Where Your Chronicle Begins
-                </label>
-                <select
-                  id="start-location"
-                  value={startChoice}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setStartChoice(v);
-                    // Leaving the custom path discards its form so reopening it
-                    // starts fresh (the pick is the single source of truth).
-                    if (v !== "custom") clearCustomCircle();
-                  }}
-                  className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
-                >
-                  <option value="">Surprise me — a random start</option>
-                  <option value="custom">Describe your own circle…</option>
-                  <optgroup label="Begin in a place">
-                    {options.map((o) => {
-                      const suits = startOptionSuitsPathway(
-                        o.pathwayAffinity,
-                        selectedPathwayId,
-                      );
-                      return (
-                        <option key={o.location} value={o.location}>
-                          {o.location}
-                          {suits && pathwayName ? ` · suits the ${pathwayName}` : ""}
-                        </option>
-                      );
-                    })}
-                  </optgroup>
+                </legend>
+
+                {/* Opening families */}
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <ChoiceCard
+                    title="Let the fog decide"
+                    description="A different place, and a different opening, each time."
+                    selected={openingMode === "random"}
+                    onClick={() => selectOpeningMode("random")}
+                  />
+                  <ChoiceCard
+                    title="A place in the world"
+                    description="Begin in a place of your choosing — the scene still varies."
+                    selected={openingMode === "place"}
+                    onClick={() => selectOpeningMode("place")}
+                  />
                   {archetypes.length > 0 && (
-                    <optgroup label="Begin in someone's circle (examples)">
-                      {archetypes.map((a) => {
-                        const suits = startOptionSuitsPathway(
-                          a.pathwayAffinity,
-                          selectedPathwayId,
-                        );
-                        return (
-                          <option key={a.id} value={`archetype:${a.id}`}>
-                            {a.label}
-                            {suits && pathwayName ? ` · suits the ${pathwayName}` : ""}
-                          </option>
-                        );
-                      })}
-                    </optgroup>
+                    <ChoiceCard
+                      title="Within someone's circle"
+                      description="Begin embedded among an existing character's circle."
+                      selected={openingMode === "circle"}
+                      onClick={() => selectOpeningMode("circle")}
+                    />
                   )}
+                  <ChoiceCard
+                    title="Author your own circle"
+                    description="Describe your own tie and who stands with you."
+                    selected={openingMode === "custom"}
+                    onClick={() => selectOpeningMode("custom")}
+                  />
                   {showOrigins && hasOrigins && (
-                    <optgroup label="Begin as an origin (sealed continent)">
-                      {originScenarios.map((s) => (
-                        <option key={s.id} value={`origin-scenario:${s.id}`}>
-                          {s.blurb}
-                        </option>
-                      ))}
-                      {originArchetypes.map((a) => (
-                        <option key={a.id} value={`archetype:${a.id}`}>
-                          {a.label}
-                        </option>
-                      ))}
-                    </optgroup>
+                    <ChoiceCard
+                      tone="occult"
+                      title="A sealed origin"
+                      description="Begin as a native of a sealed, far-off land."
+                      selected={openingMode === "origin"}
+                      onClick={() => selectOpeningMode("origin")}
+                    />
                   )}
-                </select>
-                <p className="mt-1.5 text-xs leading-relaxed text-muted" role="status">
+                </div>
+
+                {/* Status summary of the active pick (polite, for SR users). */}
+                <p className="mt-3 text-xs leading-relaxed text-muted" role="status">
                   {describe}
                 </p>
 
+                {/* The advanced origin affordance (issue #132): an explicit opt-in
+                    that reveals the sealed-continent family above. */}
                 {hasOrigins && (
-                  <label className="mt-2 flex items-center gap-2 text-xs text-foreground">
+                  <label className="mt-3 flex items-center gap-2 text-xs text-foreground">
                     <input
                       type="checkbox"
                       checked={showOrigins}
@@ -1223,11 +1199,13 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                         // the control can't hold a value its options no longer show.
                         if (
                           !on &&
-                          (startChoice.startsWith("origin-scenario:") ||
+                          (openingMode === "origin" ||
+                            startChoice.startsWith("origin-scenario:") ||
                             (archetypeId !== null &&
                               originArchetypes.some((a) => a.id === archetypeId)))
                         ) {
                           setStartChoice("");
+                          setOpeningMode("random");
                           clearCustomCircle();
                         }
                       }}
@@ -1235,6 +1213,74 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     />
                     Begin as a native of a sealed, far-off land (an advanced origin start)
                   </label>
+                )}
+
+                {/* ── Revealed option cards for the chosen family ── */}
+                {openingMode === "place" && (
+                  <div
+                    role="group"
+                    aria-label="Choose a place"
+                    className="mt-4 grid gap-3 sm:grid-cols-2"
+                  >
+                    {options.map((o) => (
+                      <ChoiceCard
+                        key={o.location}
+                        title={o.location}
+                        description={o.blurb}
+                        badge={suitsBadge(o.pathwayAffinity)}
+                        selected={startChoice === o.location}
+                        onClick={() => setStartChoice(o.location)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {openingMode === "circle" && archetypes.length > 0 && (
+                  <div
+                    role="group"
+                    aria-label="Choose a circle"
+                    className="mt-4 grid gap-3"
+                  >
+                    {archetypes.map((a) => (
+                      <ChoiceCard
+                        key={a.id}
+                        title={a.label}
+                        description={a.blurb}
+                        badge={suitsBadge(a.pathwayAffinity)}
+                        selected={startChoice === `archetype:${a.id}`}
+                        onClick={() => setStartChoice(`archetype:${a.id}`)}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {openingMode === "origin" && showOrigins && hasOrigins && (
+                  <div
+                    role="group"
+                    aria-label="Choose a sealed origin"
+                    className="mt-4 grid gap-3"
+                  >
+                    {originScenarios.map((s) => (
+                      <ChoiceCard
+                        key={s.id}
+                        tone="occult"
+                        title={s.location}
+                        description={s.blurb}
+                        selected={startChoice === `origin-scenario:${s.id}`}
+                        onClick={() => setStartChoice(`origin-scenario:${s.id}`)}
+                      />
+                    ))}
+                    {originArchetypes.map((a) => (
+                      <ChoiceCard
+                        key={a.id}
+                        tone="occult"
+                        title={a.label}
+                        description={a.blurb}
+                        selected={startChoice === `archetype:${a.id}`}
+                        onClick={() => setStartChoice(`archetype:${a.id}`)}
+                      />
+                    ))}
+                  </div>
                 )}
 
                 {isCustom && (
@@ -1356,14 +1402,14 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     </div>
                   </div>
                 )}
-              </div>
+              </fieldset>
             );
           })()}
 
           <button
             type="button"
             onClick={handleBeginChronicle}
-            className="rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
+            className="w-full rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
           >
             Begin Your Chronicle
           </button>
