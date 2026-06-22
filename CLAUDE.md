@@ -8,24 +8,26 @@ Lord of the Mysteries browser RPG — Next.js 16 + React 19 + Supabase + Vercel.
 
 ## Commands
 
-| Command             | Purpose              |
-| ------------------- | -------------------- |
-| `pnpm dev`          | Start dev server     |
-| `pnpm build`        | Production build     |
-| `pnpm lint`         | ESLint               |
-| `pnpm format`       | Prettier (write)     |
-| `pnpm format:check` | Prettier (check)     |
-| `pnpm typecheck`    | TypeScript check     |
-| `pnpm test`         | Vitest (single run)  |
-| `pnpm test:watch`   | Vitest (watch mode)  |
-| `pnpm test:e2e`     | Playwright UI tests  |
-| `pnpm test:e2e:ui`  | Playwright (UI mode) |
-| `pnpm rag:chunk`    | RAG chunk stage CLI  |
-| `pnpm rag:embed`    | RAG embed stage CLI  |
-| `pnpm rag:novel`    | RAG novel parse CLI  |
-| `pnpm rag:wiki`     | RAG wiki parse CLI   |
-| `pnpm rag:eval`     | RAG eval harness     |
-| `pnpm rag:load`     | RAG load stage CLI   |
+| Command                      | Purpose                                    |
+| ---------------------------- | ------------------------------------------ |
+| `pnpm dev`                   | Start dev server                           |
+| `pnpm build`                 | Production build                           |
+| `pnpm start`                 | Serve prod build                           |
+| `pnpm lint`                  | ESLint                                     |
+| `pnpm format`                | Prettier (write)                           |
+| `pnpm format:check`          | Prettier (check)                           |
+| `pnpm typecheck`             | TypeScript check                           |
+| `pnpm test`                  | Vitest (single run)                        |
+| `pnpm test:watch`            | Vitest (watch mode)                        |
+| `pnpm test:e2e`              | Playwright UI tests                        |
+| `pnpm test:e2e:ui`           | Playwright (UI mode)                       |
+| `pnpm rag:chunk`             | RAG chunk stage CLI                        |
+| `pnpm rag:embed`             | RAG embed stage CLI                        |
+| `pnpm rag:novel`             | RAG novel parse CLI                        |
+| `pnpm rag:wiki`              | RAG wiki parse CLI                         |
+| `pnpm rag:eval`              | RAG eval harness                           |
+| `pnpm rag:load`              | RAG load stage CLI                         |
+| `pnpm rag:advancement-canon` | Regenerate advancement/sequence-name canon |
 
 Run a **single test file** with `pnpm vitest run <path>` (e.g. `pnpm vitest run src/lib/game/character-admin.test.ts`); filter to **one test by name** with `-t "<substring>"`. Check coverage with `pnpm vitest run --coverage` (the 95% gate that the pre-commit checklist enforces).
 
@@ -37,14 +39,18 @@ Run a **single test file** with `pnpm vitest run <path>` (e.g. `pnpm vitest run 
 src/
 ├── app/                 # Next.js App Router
 │   ├── (auth)/          #   Login, signup (public)
-│   ├── (game)/          #   Game pages (authenticated)
+│   ├── (game)/          #   Game pages (authenticated): play, character, journal, map, market, society, glossary, guide, leaderboard, profile, settings, dev/scene-art
+│   ├── api/proxy/       #   BYOK provider proxies (Cloudflare embed, Ollama Cloud chat/models) — auth-gated, rate-limited, model-allowlisted route handlers
 │   ├── auth/callback/   #   OAuth code-exchange route handler
+│   ├── _pwa/            #   PWA icon art generators (icon-art, icons, palette)
+│   ├── icons/[icon]/    #   Dynamic icon route; manifest.ts + apple-icon.tsx for the PWA
 │   ├── globals.css      #   Tailwind v4 theme tokens (@theme inline)
 │   ├── layout.tsx       #   Root layout — fonts (Geist Sans/Mono, Lora)
 │   └── page.tsx         #   Landing page (redirects to /login)
 ├── components/          # React components
 │   ├── auth/            #   Login & signup forms (client components)
-│   └── game/            #   Game shell, provider config, game loop UI
+│   ├── game/            #   Game shell, provider config, game loop UI, panels
+│   └── pwa/             #   Install prompt + service-worker registrar
 ├── lib/
 │   ├── ai/              # AI integration — providers, prompts, memory, validation
 │   ├── game/            # Game loop engine — state machine, world state, sessions
@@ -54,9 +60,10 @@ src/
 │   ├── rules/           # Rules engine — pathways, laws, validation
 │   ├── supabase/        # Client factories (browser, server, middleware)
 │   └── types/           # TypeScript type definitions
+├── test/                # Test harnesses — axe a11y suite, SSR/hydration helper, localStorage polyfill
 └── proxy.ts             # Middleware — CSP headers + auth session refresh
 scripts/
-└── rag/                 # RAG pipeline stage drivers (chunk stage CLI; dev-only, tsx)
+└── rag/                 # RAG pipeline stage drivers (novel/wiki parse, chunk, embed, load, eval + advancement-canon generator; dev-only, tsx)
 supabase/
 ├── config.toml          # Local dev config (ports, auth, runtime)
 ├── migrations/          # SQL migrations (RLS-enabled)
@@ -67,6 +74,8 @@ docs/
 ├── rag-per-turn-budget.md # RAG latency/token/operator-cost budget (issue #64)
 ├── rag-ingestion.md       # RAG corpus ingestion runbook (novel + wiki → source_chunks)
 ├── anchors-design.md      # Anchors system design (issue #35) — canon + data model
+├── cloud-migration-research.md  # Cross-device cloud-sync research notes
+├── scene-art-testing.md   # Scene-art / image-generation testing notes
 └── rules/                 # Shared rule files (@-imported by scoped CLAUDE.md)
 e2e/                       # Playwright UI tests (real-browser responsiveness) — see e2e/README.md
 corpus/                     # Canon source material, committed via Git LFS (novel EPUB + wiki XML dump). The grounding for RAG ingestion and the canon advancement data — see docs/rag-ingestion.md
@@ -109,7 +118,7 @@ Before every commit, verify **all** of the following pass:
 3. `pnpm typecheck` — no TypeScript errors.
 4. `pnpm lint` — no ESLint errors or warnings.
 5. `pnpm format:check` — all files match Prettier style (run `pnpm format` to fix).
-6. **Update scoped CLAUDE.md docs** — if you add, rename, or remove files in a directory that has a `CLAUDE.md`, update that doc to reflect the change. Stale docs mislead future work. Check the list under "Scoped Documentation" below.
+6. **Update scoped CLAUDE.md docs** — if you add, rename, or remove files in a directory that has a `CLAUDE.md`, update that doc to reflect the change. Stale docs mislead future work. Check the list under "Scoped Documentation" below. A `PostToolUse` **doc-sync hook** (`.claude/hooks/doc-sync-check.mjs`, wired in `.claude/settings.json`) watches every Edit/Write and flags likely doc-impacting changes — a new source file not yet in its directory's `CLAUDE.md`, or a config file (`package.json`, `vitest.config.mts`, a Supabase migration, …) whose content is mirrored in docs — so this step is hard to forget. It only speaks when it finds a signal; treat its note as a reminder, not a gate.
 7. **Keep database.ts in sync** — when adding Supabase migrations, update `src/lib/types/database.ts` to match the new schema.
 8. **Accessibility (WCAG 2.2 AA)** — when adding or changing frontend code, follow `docs/rules/accessibility.md` and keep `src/test/a11y.test.tsx` (axe-core) passing; extend it for new screens/interactive components. The `e2e/a11y.spec.ts` Playwright suite re-runs axe in a real browser with `color-contrast` enabled (jsdom can't) — colour/contrast regressions surface there.
 9. **End-to-end coverage** — when you add or change a user-facing flow (auth, a game screen, the PWA, navigation, security headers), add or extend an `e2e/` Playwright spec. Public-tier specs run with no backend; register new public specs in the `PUBLIC_SPECS` matcher in `playwright.config.ts`. The suite isn't run by `pnpm test`/the coverage gate, so it's easy to forget — don't.

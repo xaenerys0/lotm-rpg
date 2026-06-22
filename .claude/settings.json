@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/doc-sync-check.mjs\" 2>/dev/null || true",
+            "statusMessage": "Checking docs for impact…",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -29,7 +29,7 @@ The app is installable on Android and iOS ("Add to Home Screen"):
 - `manifest.ts` — web app manifest, served at `/manifest.webmanifest` (Next auto-injects the `<link rel="manifest">`).
 - `apple-icon.tsx` — iOS 180×180 touch icon (Next auto-injects `<link rel="apple-touch-icon">`).
 - `icons/[icon]/route.tsx` — Android manifest icons at `/icons/192.png`, `/icons/512.png`, `/icons/512-maskable.png`.
-- `_pwa/icon-art.tsx` — shared, font-free emblem rendered to PNG via `ImageResponse` (no binary icon assets). Used by all of the above.
+- `_pwa/icon-art.tsx` — shared, font-free emblem rendered to PNG via `ImageResponse` (no binary icon assets). Used by all of the above. Backed by `_pwa/icons.ts` (the `PWA_ICONS` source-of-truth array consumed by `manifest.ts` and `icons/[icon]/route.tsx`) and `_pwa/palette.ts` (the shared `PWA_COLORS` constants, also read by `manifest.ts`/`layout.tsx`).
 - Apple meta tags + `theme-color` + viewport come from the `appleWebApp`/`metadata`/`viewport` exports in `layout.tsx`.
 - `public/sw.js` (minimal, no offline caching) is registered by `ServiceWorkerRegistrar`; `InstallPrompt` shows the Android button / iOS instructions. Both live in `@/components/pwa` and are mounted in `layout.tsx`.
 - `next.config.ts` sets no-cache + `Service-Worker-Allowed: /` headers on `/sw.js`.
