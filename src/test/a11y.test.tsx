@@ -295,6 +295,54 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="ritual-1" />);
   });
 
+  it("potion prep panel (unsecured formula) offers trade/seek with no violations", async () => {
+    // A Fool at Seq 9, potion digested, empty satchel — the formula is not yet
+    // secured, so the PotionPreparationPanel offers the recipe via "Trade for it"
+    // or "Seek it through the story" and the ingredients render sealed (issue #171).
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-prep", "Klein"),
+      sequenceLevel: 9,
+      inventory: [],
+      digestion: { pathwayId: 1, sequenceLevel: 9, progress: 100, complete: true },
+    };
+    const session = {
+      ...createSession(gameState, "prep-1", 1000),
+      phase: "choices" as const,
+      currentNarrative: "The potion is digested. The next recipe is closely guarded.",
+      currentChoices: [{ id: "c1", text: "Consider the climb", type: "action" as const }],
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "prep-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="prep-1" />);
+  });
+
+  it("potion prep panel (formula pursuit ready) offers secure with no violations", async () => {
+    // The same Beyonder mid-climb with a completed formula pursuit — the panel
+    // shows the "Secure the recipe" control (issue #171).
+    const formula = getSequence(1, 8)?.prerequisiteItems?.find(
+      (i) => i.category === "potion-formula",
+    );
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-seek", "Klein"),
+      sequenceLevel: 9,
+      inventory: [],
+      digestion: { pathwayId: 1, sequenceLevel: 9, progress: 100, complete: true },
+    };
+    const session = {
+      ...createSession(gameState, "seek-1", 1000),
+      formulaPursuit: {
+        targetItemName: formula?.name ?? "Clown Potion Formula",
+        targetSeq: 8,
+        turnsRemaining: 0,
+        totalTurns: 3,
+      },
+      phase: "choices" as const,
+      currentNarrative: "Your search for the recipe is over — it is within reach.",
+      currentChoices: [{ id: "c1", text: "Claim it", type: "action" as const }],
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "seek-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="seek-1" />);
+  });
+
   it("pillar ascension panel (Sequence 0 choices phase) has no violations", async () => {
     // A True God of a Pillar family (Fool) — the PillarAscensionPanel renders
     // above Sequence 0 (issue #99 Part B).
