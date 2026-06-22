@@ -360,7 +360,18 @@ function PreparationForm({
     });
   };
 
-  const inventoryNames = inventory.map((i) => i.name);
+  // Sealed Artifacts get their own picker (they carry a mid-fight backlash and
+  // are the only items the engine treats as combat artifacts); every OTHER
+  // carried item — ordinary gear, weapons, loot, reagents — is offerable as a
+  // consumed ritual material. The two lists are disjoint, so a mundane item can
+  // no longer be readied as a "sealed artifact" to game the preparation score.
+  const artifactNames = inventory
+    .filter((i) => i.category === "sealed-artifact")
+    .map((i) => i.name);
+  const materialNames = inventory
+    .filter((i) => i.category !== "sealed-artifact")
+    .map((i) => i.name);
+  const hasPreparables = materialNames.length > 0 || artifactNames.length > 0;
 
   return (
     <div className="space-y-6">
@@ -423,22 +434,26 @@ function PreparationForm({
         />
       )}
 
-      {inventory.length > 0 ? (
+      {hasPreparables ? (
         <div className="grid gap-5 sm:grid-cols-2">
-          <CheckGroup
-            legend="Prepare ritual materials (consumed)"
-            items={inventoryNames}
-            selected={materials}
-            onToggle={(v) => toggle(v, materials, setMaterials)}
-            namePrefix="material"
-          />
-          <CheckGroup
-            legend="Ready sealed artifacts (spent only if used)"
-            items={inventoryNames}
-            selected={artifacts}
-            onToggle={(v) => toggle(v, artifacts, setArtifacts)}
-            namePrefix="artifact"
-          />
+          {materialNames.length > 0 && (
+            <CheckGroup
+              legend="Prepare ritual materials (consumed)"
+              items={materialNames}
+              selected={materials}
+              onToggle={(v) => toggle(v, materials, setMaterials)}
+              namePrefix="material"
+            />
+          )}
+          {artifactNames.length > 0 && (
+            <CheckGroup
+              legend="Ready sealed artifacts (spent only if used)"
+              items={artifactNames}
+              selected={artifacts}
+              onToggle={(v) => toggle(v, artifacts, setArtifacts)}
+              namePrefix="artifact"
+            />
+          )}
         </div>
       ) : (
         <p className="text-sm text-muted">

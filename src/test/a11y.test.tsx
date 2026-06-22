@@ -337,6 +337,15 @@ describe("accessibility — combat", () => {
         description: "A bound trinket.",
         category: "supplementary-ingredient",
       },
+      // A real Sealed Artifact + an ordinary belonging so the preparation form
+      // renders BOTH the (artifact-only) sealed-artifacts picker and the
+      // ritual-materials picker for the axe pass.
+      {
+        name: "Sealed Artifact 3-0782 — Mutated Sun Sacred Emblem",
+        description: "A purifying badge with a Sun-worship drawback.",
+        category: "sealed-artifact",
+      },
+      { name: "Tarnished Locket", description: "A bit of loot.", category: "mundane" },
     ],
   };
   const abilities = ["Spirit Vision", "Divination"];
