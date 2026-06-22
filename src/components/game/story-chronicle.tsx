@@ -23,23 +23,29 @@ interface ChronicleBeat {
   kind: BeatKind;
 }
 
+// The exact, distinctive fragments the engine builds into an engine-decided
+// turn's action text — matched precisely so an ordinary story action that merely
+// mentions a verb ("I ascend the staircase", "in combat training") is NOT
+// mis-tinted. Keep in sync with the action strings in `game-loop.tsx`
+// (`handleCombatResult`, `handleAdvancement`, `handleApotheosis`,
+// `handlePillarAscension`). A structured `TurnRecord.kind` would remove the
+// coupling entirely — a worthwhile follow-up if these grow.
+const COMBAT_ACTION_MARK = "in combat; it ended in";
+const ASCENSION_ACTION_MARKS = [
+  "undergo the advancement", // sequence advancement
+  "ascend to sequence 0", // apotheosis
+  "ascend above the sequences", // pillar
+];
+
 /**
  * Classify a past turn for styling, from the engine-controlled action text.
- * Combat and advancement turns carry deterministic phrasings (see
- * `handleCombatResult` / `handleAdvancement` in `game-loop.tsx`); everything
- * else reads as ordinary story.
+ * Combat and advancement/apotheosis/pillar turns carry deterministic phrasings;
+ * everything else reads as ordinary story.
  */
 function classifyBeat(action: string): BeatKind {
   const a = action.toLowerCase();
-  if (a.includes("in combat")) return "combat";
-  if (
-    a.includes("undergo the advancement") ||
-    a.includes("undergo the ascension") ||
-    a.includes("ascend") ||
-    a.includes("drink the sequence")
-  ) {
-    return "ascension";
-  }
+  if (a.includes(COMBAT_ACTION_MARK)) return "combat";
+  if (ASCENSION_ACTION_MARKS.some((mark) => a.includes(mark))) return "ascension";
   return "story";
 }
 
