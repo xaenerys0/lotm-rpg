@@ -103,7 +103,10 @@ export function scorePreparation(
     RITUAL_MATERIAL_CAP,
   );
   const sealedArtifacts = Math.min(
-    input.sealedArtifacts.length * PER_SEALED_ARTIFACT,
+    input.sealedArtifacts.reduce(
+      (sum, artifact) => sum + artifactPrepWeight(gradeForArtifactItem(artifact)),
+      0,
+    ),
     SEALED_ARTIFACT_CAP,
   );
   const readiedAbilities = Math.min(
@@ -546,6 +549,36 @@ const OPTION_MODIFIER = {
 const SIGNATURE_BONUS = 0.05;
 const EDGE_THRESHOLD = 0.5;
 
+// Sealed Artifact combat power scales by danger grade (issue #171): a Grade 0
+// (Angel-tier) relic swings a fight harder than a Grade 3, BUT the scaling is
+// deliberately MODERATE and capped — one mid-fight invoke is still only one
+// option among the sequence gap, matchup, and preparation that decide a fight,
+// so a well-prepared Beyonder beats an artifact-wielder (the engine's
+// "preparation helps but never decides" rule holds). An item with no resolvable
+// catalogue grade keeps the prior flat baseline so balance is unchanged for it.
+const ARTIFACT_GRADE_POWER: Record<ArtifactGrade, number> = {
+  0: 0.36,
+  1: 0.3,
+  2: 0.24,
+  3: 0.18,
+};
+const ARTIFACT_GRADE_PREP: Record<ArtifactGrade, number> = {
+  0: 0.16,
+  1: 0.13,
+  2: 0.1,
+  3: 0.08,
+};
+
+/** Mid-fight invoke modifier for a Sealed Artifact of the given grade (flat fallback). */
+function artifactPower(grade: ArtifactGrade | undefined): number {
+  return grade === undefined ? OPTION_MODIFIER.artifact : ARTIFACT_GRADE_POWER[grade];
+}
+
+/** Readied-preparation score contribution for one artifact, by grade (flat fallback). */
+function artifactPrepWeight(grade: ArtifactGrade | undefined): number {
+  return grade === undefined ? PER_SEALED_ARTIFACT : ARTIFACT_GRADE_PREP[grade];
+}
+
 /** Dynamic ability options offered per decision point (in addition to the trio). */
 export const MAX_DYNAMIC_ABILITY_OPTIONS = 2;
 /** Dynamic carried-artifact options offered per decision point. */
@@ -579,6 +612,7 @@ function optionModifier(
   edge: number,
   intelFactor: number,
   isSignature: boolean,
+  artifactGrade?: ArtifactGrade,
 ): number {
   let modifier: number;
   switch (kind) {
@@ -598,7 +632,7 @@ function optionModifier(
       modifier = OPTION_MODIFIER.abilityBase + OPTION_MODIFIER.abilityIntel * intelFactor;
       break;
     case "artifact":
-      modifier = OPTION_MODIFIER.artifact;
+      modifier = artifactPower(artifactGrade);
       break;
   }
   if (isSignature) {
@@ -662,11 +696,16 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
   for (let i = 0; i < DECISION_POINT_COUNT; i++) {
     const pointId = `${encounter.id}-dp${i}`;
     const kinds = POINT_KINDS[i];
+    const readiedArtifacts = encounter.preparation?.sealedArtifacts ?? [];
     const options: DecisionOption[] = kinds.map((requestedKind) => {
       let kind = requestedKind;
       let consumesArtifact = false;
+      // The templated artifact slot spends readied artifacts in order; its power
+      // scales with the grade of the specific one consumed (issue #171).
+      let artifactGrade: ArtifactGrade | undefined;
       if (kind === "artifact") {
         if (artifactsAllocated < artifactsAvailable) {
+          artifactGrade = gradeForArtifactItem(readiedArtifacts[artifactsAllocated]);
           consumesArtifact = true;
           artifactsAllocated++;
         } else {
@@ -679,7 +718,13 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
         label: template.label,
         kind,
         description: template.description,
-        modifier: optionModifier(kind, edge, intel, kind === style.signatureKind),
+        modifier: optionModifier(
+          kind,
+          edge,
+          intel,
+          kind === style.signatureKind,
+          artifactGrade,
+        ),
       };
       if (consumesArtifact) {
         option.consumesArtifact = true;
@@ -730,6 +775,7 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
           edge,
           intel,
           style.signatureKind === "artifact",
+          gradeForArtifactItem(artifact),
         ),
         consumesArtifact: true,
         artifactItem: artifact,

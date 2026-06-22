@@ -781,6 +781,70 @@ describe("dynamic abilities & artifacts mid-fight", () => {
   });
 });
 
+// ─── Grade-scaled Sealed Artifact power (issue #171) ─────────────────
+
+describe("grade-scaled Sealed Artifact power", () => {
+  const grade0 = mintArtifactItem(getSealedArtifact("0-08")!); // Angel-tier
+  const grade3 = mintArtifactItem(getSealedArtifact("3-0782")!); // low-Sequence
+
+  function artifactOptionModifier(item: Item): number {
+    const encounter = applyPreparation(
+      createEncounter({
+        id: `grade-${item.name}`,
+        enemy: makeEnemy(),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+        availableArtifacts: [item],
+      }),
+      makePrep(),
+    );
+    const option = encounter.decisionPoints
+      .flatMap((p) => p.options)
+      .find((o) => o.artifactItem?.name === item.name);
+    expect(option).toBeDefined();
+    return option!.modifier;
+  }
+
+  it("gives a higher-grade artifact a larger mid-fight swing than a lower-grade one", () => {
+    expect(artifactOptionModifier(grade0)).toBeGreaterThan(
+      artifactOptionModifier(grade3),
+    );
+  });
+
+  it("scales the readied-prep score by grade (a Grade 0 readied artifact counts for more)", () => {
+    const g0 = scorePreparation(makePrep({ sealedArtifacts: [grade0] }), false);
+    const g3 = scorePreparation(makePrep({ sealedArtifacts: [grade3] }), false);
+    expect(g0.breakdown.sealedArtifacts).toBeGreaterThan(g3.breakdown.sealedArtifacts);
+  });
+
+  it("keeps the flat baseline for a non-catalogue 'artifact' item (unchanged balance)", () => {
+    // makeItem produces a non-sealed item with no resolvable grade.
+    expect(artifactOptionModifier(makeItem("Loose Charm"))).toBeCloseTo(0.2, 5);
+  });
+
+  it("preparation still decides: a thoroughly-prepared fighter out-advantages a lone Grade 0 artifact", () => {
+    // A well-prepared Beyonder (intel + terrain + abilities + an even matchup)
+    // enters with a base advantage that exceeds a single Grade 0 artifact swing,
+    // so the artifact never single-handedly decides the fight.
+    const prepared = scorePreparation(
+      makePrep({
+        intelligence: "thorough",
+        terrain: "favorable",
+        readiedAbilities: ["one", "two", "three"],
+      }),
+      false,
+    ).score;
+    const loneArtifactPrep = scorePreparation(
+      makePrep({ sealedArtifacts: [grade0] }),
+      false,
+    ).score;
+    expect(prepared).toBeGreaterThan(loneArtifactPrep);
+    // And the single artifact swing (≤0.36) is smaller than the prep-score gap.
+    expect(artifactOptionModifier(grade0)).toBeLessThan(prepared - loneArtifactPrep);
+  });
+});
+
 // ─── Pathway Combat Styles (ids 5-9) ─────────────────────────────────
 
 describe("new pathway combat styles", () => {
