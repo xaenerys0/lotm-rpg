@@ -12,38 +12,52 @@ import { expect, test, type Page } from "@playwright/test";
  *
  *  The app origin (localhost) and the Supabase URL (127.0.0.1) differ, so the
  *  auth POST is cross-origin. WebKit strictly enforces CORS on a fulfilled
- *  response (Chromium does not), so without these headers WebKit blocks the 400,
- *  supabase-js sees a *retryable* network error and backs off/retries past the
- *  timeout. Answering the preflight (204) and setting `Access-Control-Allow-*`
- *  on the 400 makes the rejection terminal (no retry) on every engine, so the
- *  alert renders at once. The error is a `role="alert"` under `<form>`; assert it
- *  there, since Next also renders a page-level
+ *  response (Chromium does not). A literal `*` for `Access-Control-Allow-Headers`
+ *  is NOT reliably honored by WebKit for the concrete request headers
+ *  supabase-js sets (`apikey`, `authorization`, `x-client-info`, `content-type`,
+ *  `x-supabase-api-version`): when the preflight isn't accepted, supabase-js sees
+ *  a *retryable* network error and backs off/retries past the assertion timeout
+ *  (the residual flake on mobile-webkit even after the first CORS pass). The
+ *  bulletproof mock ECHOES the request's Origin and its
+ *  `Access-Control-Request-Headers` back verbatim — allowing exactly what the
+ *  browser asked for — so the preflight passes and the 400 is terminal (no retry)
+ *  on every engine, and the alert renders at once. The error is a `role="alert"`
+ *  under `<form>`; assert it there, since Next also renders a page-level
  *  `<div role="alert" id="__next-route-announcer__">` that makes a bare
  *  `getByRole("alert")` ambiguous. */
-const CORS_HEADERS = {
-  "access-control-allow-origin": "*",
-  "access-control-allow-methods": "*",
-  "access-control-allow-headers": "*",
-};
-
 async function rejectAuth(page: Page, body: Record<string, unknown>): Promise<void> {
   await page.route("**/auth/v1/**", (route) => {
-    if (route.request().method() === "OPTIONS") {
-      return route.fulfill({ status: 204, headers: CORS_HEADERS });
+    const request = route.request();
+    const origin = request.headers()["origin"] ?? "*";
+    if (request.method() === "OPTIONS") {
+      return route.fulfill({
+        status: 204,
+        headers: {
+          "access-control-allow-origin": origin,
+          "access-control-allow-methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+          // Echo the exact headers the browser asked to send — WebKit honors this
+          // reliably where a literal "*" can be rejected for supabase-js's headers.
+          "access-control-allow-headers":
+            request.headers()["access-control-request-headers"] ?? "*",
+          "access-control-max-age": "86400",
+        },
+      });
     }
     return route.fulfill({
       status: 400,
-      headers: { ...CORS_HEADERS, "content-type": "application/json" },
+      headers: {
+        "access-control-allow-origin": origin,
+        "content-type": "application/json",
+      },
       body: JSON.stringify(body),
     });
   });
 }
 
-// supabase-js treats a rejected auth call as potentially retryable and backs
-// off before surfacing the error; on the emulated iPhone-13 WebKit engine that
-// round-trip + retry can outlast the default 5s assertion window (the alert
-// then renders, just late — the test was flaky here, not broken). Give the
-// error-path alert a generous timeout so the slowest engine is deterministic.
+// With the bulletproof CORS mock above the rejection is terminal (no supabase-js
+// retry/backoff), so the alert renders promptly. Keep a generous timeout anyway
+// as a safety margin for the slowest engine (emulated iPhone-13 WebKit under CI
+// load) — belt-and-suspenders against residual scheduling jitter, not the bug.
 const ERROR_ALERT_TIMEOUT = 15_000;
 
 test.describe("signup form", () => {
