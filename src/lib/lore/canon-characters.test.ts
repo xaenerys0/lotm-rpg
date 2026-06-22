@@ -16,10 +16,10 @@ describe("canon-characters data integrity", () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  it("every preset uses a real playable pathway (ids 1-9)", () => {
+  it("every preset uses a real playable pathway (any of the 22)", () => {
     for (const preset of CANON_PLAYABLE_CHARACTERS) {
       expect(preset.pathwayId).toBeGreaterThanOrEqual(1);
-      expect(preset.pathwayId).toBeLessThanOrEqual(9);
+      expect(preset.pathwayId).toBeLessThanOrEqual(22);
       expect(getPathway(preset.pathwayId)).toBeDefined();
     }
   });
@@ -57,17 +57,25 @@ describe("canon-characters data integrity", () => {
     }
   });
 
-  it("seeds the documented roster (Klein, Dunn, Daly, Leonard, Audrey)", () => {
+  it("seeds the documented roster across pathways beyond the original nine", () => {
     const ids = CANON_PLAYABLE_CHARACTERS.map((p) => p.id).sort();
     expect(ids).toEqual(
       [
         "audrey-hall",
         "daly-simone",
         "dunn-smith",
+        "isengard-stanton",
         "klein-moretti",
         "leonard-mitchell",
+        "old-neil",
       ].sort(),
     );
+  });
+
+  it("covers pathways outside the original 1-9 range (Hermit, White Tower)", () => {
+    const pathwayIds = new Set(CANON_PLAYABLE_CHARACTERS.map((p) => p.pathwayId));
+    expect(pathwayIds.has(18)).toBe(true); // Hermit — Old Neil
+    expect(pathwayIds.has(10)).toBe(true); // White Tower — Isengard Stanton
   });
 });
 

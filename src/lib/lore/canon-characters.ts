@@ -9,8 +9,10 @@
 //
 // Roster scope (per issue #92 + review): every takeover-able character is a
 // KNOWN NOVEL FIGURE who, AT THEIR OWN INTRODUCTION in the novel, is a low
-// Beyonder (Sequence 7-9, "under Sequence 6") on one of the nine richly-detailed
-// playable pathways (ids 1-9). Each preset's `startSequence`/`startLocation`/
+// Beyonder (Sequence 7-9, "under Sequence 6") on ANY of the 22 fully-playable
+// pathways (the prologue + manual creation both reach all 22; a pathway needs
+// no special richness to be taken over — the matcher, seeding, and suppression
+// are pathway-agnostic). Each preset's `startSequence`/`startLocation`/
 // `canonPosition` reflect WHERE AND WHEN that character is introduced — not the
 // literal first chapter — so taking them over begins their story as the novel
 // began it for them. (Derrick Berg — Sun — is deliberately excluded: he only
@@ -36,7 +38,7 @@ export interface CanonCharacterPreset {
    * generic words like "Captain") so suppression never strips an unrelated NPC.
    */
   aliases: string[];
-  /** Canon pathway id at the story's start (1-9 — a richly-detailed pathway). */
+  /** Canon pathway id at the story's start (any of the 22 playable pathways). */
   pathwayId: number;
   /** Canon Sequence at the character's INTRODUCTION (7-9). */
   startSequence: number;
@@ -164,6 +166,40 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
       "You are a Sequence 9 Spectator of the Visionary pathway, newly able to read and sway minds — a secret you keep from everyone.",
       "You are the only daughter of the Hall family of Empress Borough, Backlund: your father an Earl and Cabinet banker, your mother Caitlyn, your brothers Hibbert and Alfred.",
       "Your golden retriever Susie drank one of your potions and is no ordinary dog.",
+    ],
+  },
+  {
+    id: "old-neil",
+    displayName: "Old Neil",
+    aliases: ["Neil"],
+    pathwayId: 18, // Hermit
+    startSequence: 9, // Mystery Pryer
+    startLocation: "Tingen City",
+    epoch: 5,
+    canonPosition: 19, // Introduced among the Tingen team early in Book 1.
+    background: `You are Old Neil, the resident artificer and historian of the Tingen City Nighthawks — an elderly, grandfatherly man who keeps the team's mystical equipment, identifies the relics and ritual materials they recover, and carries more lore of the Beyonder world in his head than any book in Tingen holds. You walk the Hermit pathway at its first rung, a Sequence 9 Mystery Pryer, whose gifts run to divination, analysis, and the patient gathering of hidden knowledge rather than to force. Warm and generous with what you know, you have taken it upon yourself to teach the team's newest recruit, Klein Moretti, the practical craft the formal training never covers — how to handle an artifact without being devoured by it, how to lay out a ritual, how a careful Beyonder stays alive. You serve under Captain Dunn Smith alongside the poet Leonard Mitchell and the seconded Spirit Medium Daly Simone — the steady old hand at the workbench while the younger ones go into the dark. You know better than any of them how fragile a Beyonder's footing is, and how much depends on caution, which is exactly why they trust you to mind the dangerous things.`,
+    openingRecap: `The Nighthawks' workshop in Tingen smells of oil, old paper, and warded iron, and the day's recovered oddments wait on your bench for your patient eye. You settle in among your tools and your lore — the team's quiet keeper of dangerous things — as another case stirs somewhere out in the gaslit city.`,
+    earlySalienceFacts: [
+      "You are a Sequence 9 Mystery Pryer of the Hermit pathway, the Tingen Nighthawks' artificer and lore-keeper.",
+      "You serve under Captain Dunn Smith alongside Leonard Mitchell and Daly Simone, and you mentor the recruit Klein Moretti.",
+      "Your craft is artifacts, rituals, and Beyonder history — knowledge and caution, not force.",
+    ],
+  },
+  {
+    id: "isengard-stanton",
+    displayName: "Isengard Stanton",
+    aliases: ["Isengard", "Mr. Eye of Wisdom"],
+    pathwayId: 10, // White Tower
+    startSequence: 7, // Detective
+    startLocation: "Backlund",
+    epoch: 5,
+    canonPosition: 157, // Introduced as the Backlund detective in Book 1.
+    background: `You are Isengard Stanton, a private detective of notable fame in Backlund, capital of the Loen Kingdom, who styles himself "Mr. Eye of Wisdom." You keep no formal office, working instead from your own home with a handful of hired assistants — a graying man fond of a dark pipe and the quiet of an unlit fireplace while the facts arrange themselves behind your eyes. Behind the detective's reputation you are a Beyonder of the White Tower pathway, a Sequence 7 Detective, whose reason and deduction are precisely the gifts the god you secretly serve prizes above birth or wealth. For you are a believer of the Church of the God of Knowledge and Wisdom, a faith you took up across four years of study in Lenburg; at home in Loen you keep a careful cover as a worshipper of the Evernight Goddess, for the wisdom-faith is foreign here. Your work brings you into the orbit of another Backlund detective, the theatrical Sherlock Moriarty, with whom you keep a wary friendship of professional equals. Devout in your own quiet way, you have asked that when you die your remains be carried to the Holy Temple of Knowledge in distant Azshara — a scholar's last pilgrimage to the seat of the omniscient eye.`,
+    openingRecap: `Backlund's fog presses at the windows, a client waits on your sofa, and your pipe smoulders as the deductions fall into place. You are Mr. Eye of Wisdom, the detective who solves what the police cannot — and, behind that, a quiet servant of the omniscient god, taking up another case in the smog-bound capital.`,
+    earlySalienceFacts: [
+      "You are a Sequence 7 Detective of the White Tower pathway, a famous Backlund private detective who styles himself 'Mr. Eye of Wisdom.'",
+      "You secretly believe in the Church of the God of Knowledge and Wisdom, keeping a cover as an Evernight worshipper at home in Loen.",
+      "You keep a wary professional friendship with the detective Sherlock Moriarty.",
     ],
   },
 ];
