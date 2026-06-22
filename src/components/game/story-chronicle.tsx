@@ -11,6 +11,12 @@ import type { MemoryState, TurnRecord } from "@/lib/ai";
 // land in this same transcript as story beats rather than vanishing into a
 // disconnected side-screen. Past beats recede; the live scene below stays
 // prominent. Derived entirely from persisted memory — no new save state.
+//
+// Layout: the durable "story so far" summary sits at the top, and the running
+// "Chronicle" transcript of recent beats sits below it in its own disclosure.
+// Both are collapsible and closed by default, so the live scene stays the focus
+// — the player unfolds either to read the recap or the turn-by-turn chat. Both
+// are native <details>/<summary>, no client JS.
 
 type BeatKind = "story" | "combat" | "ascension";
 
@@ -96,13 +102,7 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
 
   return (
     <section aria-label="The chronicle so far" className="mb-8">
-      <div className="mb-4 flex items-center gap-3" aria-hidden="true">
-        <span className="font-serif text-[0.7rem] tracking-[0.3em] text-amber uppercase">
-          The Chronicle
-        </span>
-        <span className="h-px flex-1 bg-gradient-to-r from-amber/40 to-transparent" />
-      </div>
-
+      {/* The story so far — the durable summary, kept at the top and collapsible. */}
       {summary && (
         <details className="group mb-5 rounded-lg border border-border bg-surface/70 p-4">
           <summary className="cursor-pointer list-none font-serif text-xs tracking-[0.18em] text-copper uppercase marker:content-none">
@@ -110,35 +110,71 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
               ☙
             </span>
             The story so far
+            <span
+              aria-hidden="true"
+              className="ml-2 inline-block text-copper transition-transform group-open:rotate-90"
+            >
+              ▸
+            </span>
           </summary>
           <p className="mt-3 font-serif text-sm leading-relaxed text-muted">{summary}</p>
         </details>
       )}
 
-      <ol className="space-y-5">
-        {beats.map((beat) => (
-          <li key={beat.turnNumber} className={`border-l-2 ${KIND_RULE[beat.kind]} pl-4`}>
-            <p className="mb-1.5 flex items-baseline gap-2">
-              <span aria-hidden="true" className="text-copper">
-                {KIND_GLYPH[beat.kind]}
-              </span>
-              {KIND_LABEL[beat.kind] && (
-                <span className="text-[0.65rem] font-semibold tracking-[0.2em] text-copper uppercase">
-                  {KIND_LABEL[beat.kind]}
-                </span>
-              )}
-              <span className="font-serif text-xs italic text-muted">{beat.action}</span>
-            </p>
-            <p className="font-serif text-sm leading-[1.8] text-muted">{beat.prose}</p>
-          </li>
-        ))}
-      </ol>
+      {/* The Chronicle — the running transcript of recent beats, at the bottom and
+          collapsible. Closed by default so the live scene stays the focus; the
+          player can unfold it to read the turn as a continuous chat. */}
+      {beats.length > 0 && (
+        <details className="group">
+          <summary className="mb-4 flex cursor-pointer list-none items-center gap-3 marker:content-none">
+            <span className="font-serif text-[0.7rem] tracking-[0.3em] text-amber uppercase">
+              The Chronicle
+            </span>
+            <span
+              aria-hidden="true"
+              className="h-px flex-1 bg-gradient-to-r from-amber/40 to-transparent"
+            />
+            <span
+              aria-hidden="true"
+              className="inline-block text-amber transition-transform group-open:rotate-90"
+            >
+              ▸
+            </span>
+          </summary>
 
-      <div className="mt-6 flex items-center gap-3" aria-hidden="true">
-        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-amber/30 to-transparent" />
-        <span className="text-amber/60">◆</span>
-        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-amber/30 to-transparent" />
-      </div>
+          <ol className="space-y-5">
+            {beats.map((beat) => (
+              <li
+                key={beat.turnNumber}
+                className={`border-l-2 ${KIND_RULE[beat.kind]} pl-4`}
+              >
+                <p className="mb-1.5 flex items-baseline gap-2">
+                  <span aria-hidden="true" className="text-copper">
+                    {KIND_GLYPH[beat.kind]}
+                  </span>
+                  {KIND_LABEL[beat.kind] && (
+                    <span className="text-[0.65rem] font-semibold tracking-[0.2em] text-copper uppercase">
+                      {KIND_LABEL[beat.kind]}
+                    </span>
+                  )}
+                  <span className="font-serif text-xs italic text-muted">
+                    {beat.action}
+                  </span>
+                </p>
+                <p className="font-serif text-sm leading-[1.8] text-muted">
+                  {beat.prose}
+                </p>
+              </li>
+            ))}
+          </ol>
+
+          <div className="mt-6 flex items-center gap-3" aria-hidden="true">
+            <span className="h-px flex-1 bg-gradient-to-r from-transparent via-amber/30 to-transparent" />
+            <span className="text-amber/60">◆</span>
+            <span className="h-px flex-1 bg-gradient-to-r from-transparent via-amber/30 to-transparent" />
+          </div>
+        </details>
+      )}
     </section>
   );
 }
