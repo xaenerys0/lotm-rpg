@@ -93,6 +93,15 @@ export interface GameSession {
    */
   ritualState?: import("./ritual").RitualState;
   /**
+   * Formula pursuit in progress (issue #171, "The Climb"): seeking the next
+   * potion's closely-guarded recipe through the story over several turns — the
+   * alternative to trading for it. Only one is ever in play (the next potion's),
+   * so it is a single optional sub-state, not a list. Absent when no pursuit is
+   * under way; strictly validated when present and preserved on the deserialize
+   * `...s` spread (no seeding), exactly like `ritualState`. No DB migration.
+   */
+  formulaPursuit?: import("./formula-pursuit").FormulaPursuitState;
+  /**
    * Tracked-NPC roster (issue #101): the durable cast the player is bound to —
    * allies who follow (a party) and hostiles who follow (pursuers) — distinct
    * from the transient, scene-scoped `gameState.npcsPresent`. Followers are
@@ -109,6 +118,15 @@ export interface GameSession {
    * keeping the next AI prompt aware of it. Cleared on `APPLY_CONSEQUENCES`.
    */
   pendingPlayerAction?: string | null;
+  /**
+   * Transient structured kind for that same engine-decided turn (issue #171),
+   * carried alongside `pendingPlayerAction` so the committed turn record is
+   * stamped `combat`/`advancement` and the chronicle styles it without sniffing
+   * the action string. Cleared on `APPLY_CONSEQUENCES`. Rides the deserialize
+   * `...s` spread; a rare mid-`consequences` reload that loses it falls back to
+   * the chronicle's string classifier.
+   */
+  pendingTurnKind?: import("@/lib/ai").TurnKind | null;
   /**
    * Permadeath marker (issue #12). Set once, never cleared: the session is
    * preserved as a historical record (inventory, memory, journal stay
@@ -130,7 +148,12 @@ export type GameLoopAction =
   | { type: "SITUATION_READY"; narrative: string; choices: Choice[] }
   | { type: "SELECT_CHOICE"; choiceId: string }
   | { type: "RESOLUTION_READY"; result: ValidatedAIResponse }
-  | { type: "ENGINE_RESOLUTION"; result: ValidatedAIResponse; playerAction: string }
+  | {
+      type: "ENGINE_RESOLUTION";
+      result: ValidatedAIResponse;
+      playerAction: string;
+      kind?: import("@/lib/ai").TurnKind;
+    }
   | { type: "APPLY_CONSEQUENCES" }
   | { type: "ERROR"; message: string; errorCode?: AIErrorCode | "CONFIG_MISSING" }
   | { type: "RETRY" };

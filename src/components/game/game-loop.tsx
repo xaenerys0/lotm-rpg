@@ -99,6 +99,11 @@ import {
   isHuntReady,
   huntQuestLabel,
   type HuntState,
+  advanceFormulaPursuit,
+  beginFormulaPursuit,
+  clearFormulaPursuit,
+  secureFormulaThroughStory,
+  isFormulaPursuitReady,
   deserializeArtifacts,
   mintArtifact,
   serializeArtifacts,
@@ -711,6 +716,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             { eventType: "advancement", summary: apotheosisSummary },
           ),
           playerAction: `I seize the throne and ascend to Sequence 0, becoming ${result.honorific}, a True God of the pathway.`,
+          kind: "advancement",
         }),
       );
       endingInFlight.current = false;
@@ -754,6 +760,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             { eventType: "advancement", summary: pillarSummary },
           ),
           playerAction: `I integrate my family's godhoods and ascend above the sequences, becoming ${result.pillarName}, a Pillar of the universe.`,
+          kind: "advancement",
         }),
       );
       endingInFlight.current = false;
@@ -783,6 +790,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // CombatEncounter (`combat.huntTarget`), not React state, so a mid-hunt reload
   // still grants the Characteristic on victory.
   const [prepNotice, setPrepNotice] = useState<string | null>(null);
+
+  // Securing the formula (trade or seek) routes through an awaited AI narration
+  // before the engine turn commits, so — like the climb (`advancingRef`) — a
+  // second click during that await would re-run on the still-stale store session
+  // (double-spending funds on a trade, double-narrating a secure). The ref guards
+  // the hard race; `formulaActionBusy` disables the controls for the UI.
+  const formulaActionRef = useRef(false);
+  const [formulaActionBusy, setFormulaActionBusy] = useState(false);
 
   const handleAdvancement = useCallback(async () => {
     if (!session || endingInFlight.current || advancingRef.current) return;
@@ -865,6 +880,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             type: "ENGINE_RESOLUTION",
             result: resolution,
             playerAction,
+            kind: "advancement",
           }),
         );
         setAdvancing(false);
@@ -1006,6 +1022,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           type: "ENGINE_RESOLUTION",
           result: engineResolution({ narrative: scene }),
           playerAction,
+          kind: "combat",
         }),
       );
       clearCombatFromStorage(session.id);
@@ -1020,32 +1037,181 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     setCombat(null);
   }, [session]);
 
+  // Securing the next potion's FORMULA is the climb's gating story moment
+  // (issue #171), whether it was traded for or sought through the story: it
+  // plays out as a short narrated beat woven into the turn (best-effort AI, a
+  // deterministic scene covers a missing provider), routed through the normal
+  // turn loop so it lands in the chronicle + memory like any other beat. It is a
+  // STORY beat, not an `advancement`: an actual Sequence climb is the ascension
+  // the chronicle styles with the Ascension marker — securing a recipe is a
+  // preparatory step, so it carries no engine `kind`. `next` already carries the
+  // formula in inventory.
+  const narrateFormulaSecured = useCallback(
+    async (next: GameSession, targetSeq: number, viaTrade: boolean) => {
+      let scene = viaTrade
+        ? `You secure the closely-guarded formula for the Sequence ${targetSeq} potion — passed in trade, copied in secret, or prised from those who hoarded it. With the recipe in hand, you can begin gathering its ingredients.`
+        : `Your long search ends at last: the closely-guarded formula for the Sequence ${targetSeq} potion is yours — chased down through the story, not simply bought. With the recipe in hand, you can begin gathering its ingredients.`;
+      if (providerConfig) {
+        try {
+          const {
+            abilities,
+            actingReqs,
+            loreContext,
+            identityContext,
+            profileContext,
+            recognitionContext,
+            epochContext,
+            cityNarration,
+          } = buildAICallParams(next);
+          const res = await generate({
+            config: providerConfig,
+            gameState: next.gameState,
+            memory: next.memory,
+            loreContext,
+            identityContext,
+            profileContext,
+            recognitionContext,
+            epochContext,
+            cityNarration,
+            instruction: "advancement",
+            playerAction: viaTrade
+              ? `Narrate how I secured the closely-guarded formula for my next Sequence ${targetSeq} potion — through a trade, a contact, or my own effort. A short scene; I have NOT yet brewed or drunk it, only obtained the recipe so I can now gather its ingredients.`
+              : `Narrate how my long search finally won me the closely-guarded formula for my next Sequence ${targetSeq} potion — tracked down through the story, not bought. A short scene; I have NOT yet brewed or drunk it, only obtained the recipe so I can now gather its ingredients.`,
+            abilities,
+            actingRequirements: actingReqs,
+          });
+          if (res.response.narrative) scene = res.response.narrative;
+          recordUsage(res.usage);
+        } catch {
+          // Deterministic scene already set.
+        }
+      }
+      updateSession(
+        transition(next, {
+          type: "ENGINE_RESOLUTION",
+          result: engineResolution({ narrative: scene }),
+          playerAction: `I secured the formula for my next Sequence ${targetSeq} potion.`,
+        }),
+      );
+    },
+    [providerConfig, updateSession, recordUsage],
+  );
+
   // Potion preparation (issue #84). Buying a prerequisite spends funds; the
   // engine validates and delivers. An unaffordable buy is surfaced in-world
   // rather than silently failing.
   const handlePurchaseItem = useCallback(
-    (itemName: string) => {
-      if (!session) return;
+    async (itemName: string) => {
+      // The async formula path commits only after an awaited narration, so block
+      // re-entry (a second click would re-buy on the stale session). Ingredient
+      // buys are synchronous and self-guard via the committed session.
+      if (!session || formulaActionRef.current) return;
+      // Securing the FORMULA is the climb's gating story moment (issue #171): it
+      // plays out as a short narrated beat woven into the turn, after which the
+      // ingredients unlock. Ordinary ingredient buys stay a quiet panel action.
+      const prePlan = potionPreparationPlan(session);
+      const wasFormula = prePlan.formula?.item.name === itemName;
       const result = purchasePotionItem(session, itemName);
       if (result.outcome === "purchased" && result.session) {
+        const next = result.session;
         appendJournalEntries(session.id, [
-          buildJournalEntry(result.session.gameState, result.session.turnCount, {
+          buildJournalEntry(next.gameState, next.turnCount, {
             eventType: "discovery",
-            summary: `Acquired ${itemName} for the next potion.`,
-            narrative: `You secured ${itemName}, one step closer to the next Sequence's potion.`,
+            summary: wasFormula
+              ? `Secured the formula for the Sequence ${prePlan.targetSeq} potion.`
+              : `Acquired ${itemName} for the next potion.`,
+            narrative: wasFormula
+              ? `You secured the closely-guarded formula for the Sequence ${prePlan.targetSeq} potion; its ingredients can now be gathered.`
+              : `You secured ${itemName}, one step closer to the next Sequence's potion.`,
             // arc omitted — buildJournalEntry's default is apex-aware (#99 D).
           }),
         ]);
-        updateSession(result.session);
         setPrepNotice(null);
+        if (!wasFormula) {
+          updateSession(next);
+          return;
+        }
+        // The formula was traded for — narrate the climb's gating beat. Clear any
+        // active story-pursuit for the same recipe so it can't linger as a bogus
+        // quest now that the formula is in hand.
+        formulaActionRef.current = true;
+        setFormulaActionBusy(true);
+        try {
+          await narrateFormulaSecured(clearFormulaPursuit(next), prePlan.targetSeq, true);
+        } finally {
+          formulaActionRef.current = false;
+          setFormulaActionBusy(false);
+        }
       } else if (result.outcome === "unaffordable") {
         setPrepNotice(
           `You cannot yet afford ${itemName} (${result.cost} pence). Hunt the Characteristic for spoils, or sell what you carry.`,
         );
+      } else if (result.outcome === "formula-required") {
+        // The recipe is the canon gate (issue #171) — no reagent can be gathered
+        // until the formula is in hand.
+        setPrepNotice(
+          "You must secure the potion's formula before gathering any of its ingredients.",
+        );
       }
     },
-    [session, updateSession],
+    [session, updateSession, narrateFormulaSecured],
   );
+
+  // Seek the next potion's formula through the story (issue #171) — the
+  // alternative to trading for it. Begins a tracked, multi-turn pursuit; the
+  // search closes over normal turns (advanceFormulaPursuit in handleContinue).
+  const handleSeekFormula = useCallback(() => {
+    if (!session) return;
+    const result = beginFormulaPursuit(session);
+    if (result.outcome === "started" && result.session) {
+      const seq = result.session.formulaPursuit!.targetSeq;
+      appendJournalEntries(session.id, [
+        buildJournalEntry(result.session.gameState, result.session.turnCount, {
+          eventType: "discovery",
+          summary: `Set out to seek the formula for the Sequence ${seq} potion.`,
+          narrative: `You begin chasing down the closely-guarded recipe for your next potion — it will not come quickly.`,
+          // arc omitted — buildJournalEntry's default is apex-aware (#99 D).
+        }),
+      ]);
+      updateSession(result.session);
+      setPrepNotice(null);
+    } else {
+      setPrepNotice("You cannot seek that formula just now.");
+    }
+  }, [session, updateSession]);
+
+  // The search is done — claim the recipe (earned, no funds) and narrate the
+  // climb's gating beat, exactly like the trade route.
+  const handleSecureFormula = useCallback(async () => {
+    if (!session || formulaActionRef.current) return;
+    const seq =
+      session.formulaPursuit?.targetSeq ?? potionPreparationPlan(session).targetSeq;
+    const result = secureFormulaThroughStory(session);
+    if (result.outcome === "secured" && result.session) {
+      appendJournalEntries(session.id, [
+        buildJournalEntry(result.session.gameState, result.session.turnCount, {
+          eventType: "discovery",
+          summary: `Secured the formula for the Sequence ${seq} potion through the chase.`,
+          narrative: `Your search paid off: the closely-guarded recipe for the Sequence ${seq} potion is finally in hand; its ingredients can now be gathered.`,
+          // arc omitted — buildJournalEntry's default is apex-aware (#99 D).
+        }),
+      ]);
+      setPrepNotice(null);
+      formulaActionRef.current = true;
+      setFormulaActionBusy(true);
+      try {
+        await narrateFormulaSecured(result.session, seq, false);
+      } finally {
+        formulaActionRef.current = false;
+        setFormulaActionBusy(false);
+      }
+    } else if (result.outcome === "not-ready") {
+      setPrepNotice("The recipe still eludes you — keep searching.");
+    } else if (result.session) {
+      // already-owned / a stale pursuit cleared: persist the cleared state.
+      updateSession(result.session);
+    }
+  }, [session, updateSession, narrateFormulaSecured]);
 
   // Hunting a Beyonder Characteristic now begins a tracked, multi-turn QUEST to
   // find the creature (longer/harder the deeper the rung). The search plays out
@@ -1439,6 +1605,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         session.gameState.epoch,
         resolveTrackedNpcState(session.trackedNpcState),
         preferences.movementGateEnabled,
+        session.pendingTurnKind ?? undefined,
       );
       const { gameState, memory } = result;
       // Acting-method discovery (issue #95): the moment the player earns the
@@ -1556,7 +1723,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // A turn of play closes the distance on every active hunt (and keeps the
       // AI-visible quest labels in sync).
       const tracked = advanceActiveHunts(updated);
-      const next = transition(tracked, { type: "APPLY_CONSEQUENCES" });
+      // A turn of play likewise advances the search for the next potion's
+      // formula, when one is being sought through the story (issue #171).
+      const seeking = advanceFormulaPursuit(tracked);
+      const next = transition(seeking, { type: "APPLY_CONSEQUENCES" });
       updateSession(next);
     }
   }, [session, updateSession, preferences]);
@@ -1794,13 +1964,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 <CombatLauncher onStart={startCombat} />
                 {session.gameState.digestion?.complete === true &&
                   isAdvanceableSequence(session.gameState.sequenceLevel) && (
-                    <>
+                    <TheClimb session={session}>
                       <PotionPreparationPanel
                         session={session}
-                        busy={advancing || facingFate}
+                        busy={advancing || facingFate || formulaActionBusy}
                         notice={prepNotice}
                         onPurchase={handlePurchaseItem}
                         onHunt={handleHuntItem}
+                        onSeekFormula={handleSeekFormula}
+                        onSecureFormula={handleSecureFormula}
                       />
                       <RitualPerformancePanel
                         session={session}
@@ -1812,7 +1984,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                         busy={advancing || facingFate}
                         onAttempt={() => void handleAdvancement()}
                       />
-                    </>
+                    </TheClimb>
                   )}
                 {session.gameState.sequenceLevel === 1 && (
                   <ApotheosisPanel
@@ -2897,6 +3069,96 @@ function RitualAttemptPanel({
   );
 }
 
+// The Climb (issue #171): the unified, progressive frame around the three
+// advancement stages — securing the recipe, gathering the ingredients,
+// performing the rite, and making the climb. It gives the stage panels below it
+// ONE voice (a shared illuminated header) and a stepper that shows the Beyonder
+// exactly where they stand on the ascent, replacing three disconnected cards
+// with a single staged journey. The stage panels still own their own controls
+// and self-hide as each stage completes; this only reframes them. Shown in the
+// choices phase whenever the climb is in reach (digestion complete + an
+// advanceable rung), so it always wraps at least the active stage.
+function TheClimb({ session, children }: { session: GameSession; children: ReactNode }) {
+  const target = targetSequence(session.gameState.sequenceLevel);
+  const targetData = getSequence(session.gameState.pathwayId, target);
+  const roleName = targetData?.name ?? `Sequence ${target}`;
+  const plan = potionPreparationPlan(session);
+  const ritualApplies =
+    ritualRequiredFor(target) && targetData?.advancementRitual !== undefined;
+
+  // The ordered stages of the ascent. "Make the climb" is the terminal act, so
+  // it is never marked done here — the chronicle records the climb once taken.
+  const stages = [
+    { label: "Secure the recipe", done: plan.formulaSecured },
+    { label: "Gather the ingredients", done: plan.allOwned },
+    ...(ritualApplies
+      ? [{ label: "Perform the rite", done: isRitualComplete(session, target) }]
+      : []),
+    { label: "Make the climb", done: false },
+  ];
+  const currentIdx = stages.findIndex((stage) => !stage.done);
+
+  return (
+    <section aria-labelledby="the-climb-heading" className="mt-8">
+      <header className="rounded-lg border border-amber/30 bg-amber/[0.06] px-5 py-4">
+        <p className="text-[0.7rem] uppercase tracking-[0.2em] text-amber/80">
+          The Climb
+        </p>
+        <h2
+          id="the-climb-heading"
+          className="gaslit mt-1 font-serif text-lg font-semibold text-amber"
+        >
+          Ascend to {roleName}
+        </h2>
+        <ol className="mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-xs">
+          {stages.map((stage, i) => {
+            const isCurrent = i === currentIdx;
+            return (
+              <li
+                key={stage.label}
+                aria-current={isCurrent ? "step" : undefined}
+                className="flex items-center gap-1.5"
+              >
+                <span
+                  aria-hidden="true"
+                  className={
+                    stage.done
+                      ? "text-occult-bright"
+                      : isCurrent
+                        ? "text-amber"
+                        : "text-muted"
+                  }
+                >
+                  {stage.done ? "✦" : isCurrent ? "◆" : "◇"}
+                </span>
+                <span
+                  className={
+                    stage.done
+                      ? "text-foreground/70"
+                      : isCurrent
+                        ? "font-medium text-amber"
+                        : "text-muted"
+                  }
+                >
+                  {stage.label}
+                  {stage.done && <span className="sr-only"> (done)</span>}
+                  {isCurrent && <span className="sr-only"> (current stage)</span>}
+                </span>
+                {i < stages.length - 1 && (
+                  <span aria-hidden="true" className="ml-1 text-muted/50">
+                    →
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </header>
+      {children}
+    </section>
+  );
+}
+
 // Potion preparation (issue #84): once the current potion is digested, the next
 // Sequence's potion must be assembled before the engine will let the Beyonder
 // climb. Each prerequisite is bought with funds or — for a Beyonder
@@ -2908,15 +3170,20 @@ function PotionPreparationPanel({
   notice,
   onPurchase,
   onHunt,
+  onSeekFormula,
+  onSecureFormula,
 }: {
   session: GameSession;
   busy: boolean;
   notice: string | null;
   onPurchase: (itemName: string) => void;
   onHunt: (itemName: string) => void;
+  onSeekFormula: () => void;
+  onSecureFormula: () => void;
 }) {
   const plan = potionPreparationPlan(session);
   const funds = getFunds(session.gameState);
+  const pursuit = session.formulaPursuit;
   // Everything is in hand — the AdvancementPanel takes over.
   if (plan.allOwned) return null;
 
@@ -2935,6 +3202,13 @@ function PotionPreparationPanel({
         Your potion is digested. Gather the formula and ingredients for the next Sequence
         before you can attempt the climb. Your purse holds {funds} pence.
       </p>
+      {!plan.formulaSecured && (
+        <p className="mt-2 text-xs leading-relaxed text-occult-bright">
+          {pursuit
+            ? "You are chasing the recipe down through the story — see it through, then its ingredients can be gathered."
+            : "The recipe is the closely-guarded gate: trade for the formula or seek it through the story first, and its ingredients can then be gathered."}
+        </p>
+      )}
       <ul className="mt-3 space-y-2">
         {plan.items.map((status: PotionItemStatus) => (
           <li
@@ -2957,35 +3231,87 @@ function PotionPreparationPanel({
                 </span>
               </span>
             </span>
-            {!status.owned && (
-              <span className="flex flex-wrap items-center gap-2">
-                {status.methods.includes("purchase") && (
-                  <button
-                    type="button"
-                    onClick={() => onPurchase(status.item.name)}
-                    disabled={busy || funds < status.cost}
-                    className="min-h-[24px] rounded-md border border-amber/40 bg-amber/[0.08] px-3 py-1 text-xs font-medium text-amber transition-colors hover:border-amber/60 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    Buy ({status.cost} pence)
-                  </button>
-                )}
-                {status.methods.includes("hunt") &&
-                  (findHunt(session, status.item.name) ? (
-                    <span className="text-xs text-muted">
-                      Hunt underway — see the Quest Log
-                    </span>
-                  ) : (
+            {!status.owned &&
+              (status.item.category === "potion-formula" ? (
+                // The recipe (issue #171): trade for it OR seek it through the
+                // story. A pursuit, once begun, closes over normal turns.
+                pursuit ? (
+                  isFormulaPursuitReady(pursuit) ? (
                     <button
                       type="button"
-                      onClick={() => onHunt(status.item.name)}
+                      onClick={onSecureFormula}
                       disabled={busy}
-                      className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-crimson/60 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="min-h-[24px] rounded-md border border-occult/50 bg-occult/[0.10] px-3 py-1 text-xs font-medium text-occult-bright transition-colors hover:border-occult/70 disabled:cursor-not-allowed disabled:opacity-40"
                     >
-                      Begin the hunt
+                      Secure the recipe
                     </button>
-                  ))}
-              </span>
-            )}
+                  ) : (
+                    <span className="text-xs text-occult-bright">
+                      Seeking the recipe — {pursuit.turnsRemaining} of{" "}
+                      {pursuit.totalTurns} turn
+                      {pursuit.totalTurns === 1 ? "" : "s"} left
+                    </span>
+                  )
+                ) : (
+                  <span className="flex flex-wrap items-center gap-2">
+                    {status.methods.includes("purchase") && (
+                      <button
+                        type="button"
+                        onClick={() => onPurchase(status.item.name)}
+                        disabled={busy || funds < status.cost}
+                        className="min-h-[24px] rounded-md border border-amber/40 bg-amber/[0.08] px-3 py-1 text-xs font-medium text-amber transition-colors hover:border-amber/60 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Trade for it ({status.cost} pence)
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={onSeekFormula}
+                      disabled={busy}
+                      className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.06] px-3 py-1 text-xs font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Seek it through the story
+                    </button>
+                  </span>
+                )
+              ) : status.locked ? (
+                // The recipe gates the reagents (issue #171): no buy/hunt until
+                // the formula is in hand.
+                <span className="text-xs text-muted">
+                  <span aria-hidden="true" className="mr-1">
+                    🔒
+                  </span>
+                  Sealed until the formula is secured
+                </span>
+              ) : (
+                <span className="flex flex-wrap items-center gap-2">
+                  {status.methods.includes("purchase") && (
+                    <button
+                      type="button"
+                      onClick={() => onPurchase(status.item.name)}
+                      disabled={busy || funds < status.cost}
+                      className="min-h-[24px] rounded-md border border-amber/40 bg-amber/[0.08] px-3 py-1 text-xs font-medium text-amber transition-colors hover:border-amber/60 disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Buy ({status.cost} pence)
+                    </button>
+                  )}
+                  {status.methods.includes("hunt") &&
+                    (findHunt(session, status.item.name) ? (
+                      <span className="text-xs text-muted">
+                        Hunt underway — see the Quest Log
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onHunt(status.item.name)}
+                        disabled={busy}
+                        className="min-h-[24px] rounded-md border border-crimson/40 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-foreground transition-colors hover:border-crimson/60 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Begin the hunt
+                      </button>
+                    ))}
+                </span>
+              ))}
           </li>
         ))}
       </ul>

@@ -329,6 +329,13 @@ export interface GameState {
   injuries?: Injury[];
 }
 
+/**
+ * The kind of engine-decided turn, stamped on the record so consumers (the
+ * Story Chronicle) can style it structurally rather than by sniffing the action
+ * text (issue #171). Absent on an ordinary story turn.
+ */
+export type TurnKind = "combat" | "advancement";
+
 export interface TurnRecord {
   turnNumber: number;
   playerAction: string;
@@ -340,6 +347,12 @@ export interface TurnRecord {
    * forensics. Absent on turns that performed no retrieval.
    */
   retrievedChunkIds?: string[];
+  /**
+   * For an engine-decided turn (combat / advancement / apotheosis / pillar),
+   * the structured kind — set where the turn is dispatched, so the chronicle
+   * need not infer it from the action string. Absent = ordinary story turn.
+   */
+  kind?: TurnKind;
 }
 
 export interface BulletSummary {

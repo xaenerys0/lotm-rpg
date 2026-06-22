@@ -149,6 +149,30 @@ describe("potionPreparationPlan", () => {
     // …and it must not soft-lock the real purchase as "already-owned".
     expect(purchasePotionItem(carrying, formula!.name).outcome).toBe("purchased");
   });
+
+  it("gates the ingredients behind the formula (issue #171)", () => {
+    const { formula } = targetItems(9);
+    expect(formula).toBeDefined();
+    // No formula yet: the plan is not formula-secured and every NON-formula item
+    // is locked, while the formula itself is unlocked.
+    const plan = potionPreparationPlan(stuck(9));
+    expect(plan.formulaSecured).toBe(false);
+    expect(plan.formula?.item.name).toBe(formula!.name);
+    expect(plan.formula?.locked).toBe(false);
+    for (const status of plan.items) {
+      expect(status.locked).toBe(status.item.category !== "potion-formula");
+    }
+
+    // With the formula in hand, the recipe is secured and ingredients unlock.
+    const session = stuck(9);
+    const withFormula: GameSession = {
+      ...session,
+      gameState: { ...session.gameState, inventory: [formula!] },
+    };
+    const unlocked = potionPreparationPlan(withFormula);
+    expect(unlocked.formulaSecured).toBe(true);
+    expect(unlocked.items.every((status) => !status.locked)).toBe(true);
+  });
 });
 
 describe("purchasePotionItem", () => {
@@ -196,11 +220,20 @@ describe("purchasePotionItem", () => {
 
   it("refuses to buy a hunt-only main ingredient at the deep rungs", () => {
     const seqLevel = MAIN_INGREDIENT_HUNT_ONLY_AT_OR_BELOW + 1; // target == gated rung
-    const { main } = targetItems(seqLevel);
+    const { main, formula } = targetItems(seqLevel);
     expect(main).toBeDefined();
-    expect(purchasePotionItem(stuck(seqLevel), main!.name).outcome).toBe(
-      "not-purchasable",
-    );
+    // Secure the formula first so the recipe gate (issue #171) passes and the
+    // hunt-only check is what refuses the purchase.
+    const withFormula: GameSession = formula
+      ? {
+          ...stuck(seqLevel),
+          gameState: {
+            ...stuck(seqLevel).gameState,
+            inventory: [formula],
+          },
+        }
+      : stuck(seqLevel);
+    expect(purchasePotionItem(withFormula, main!.name).outcome).toBe("not-purchasable");
   });
 
   it("refuses an unaffordable purchase without mutating funds or inventory", () => {
@@ -223,6 +256,29 @@ describe("purchasePotionItem", () => {
     };
     expect(getFunds(legacy.gameState)).toBe(STARTING_FUNDS);
     expect(purchasePotionItem(legacy, formula!.name).outcome).toBe("unaffordable");
+  });
+
+  it("refuses to buy an ingredient before the formula is secured (issue #171)", () => {
+    const { supplementary } = targetItems(9);
+    expect(supplementary).toBeDefined();
+    // No formula in hand → buying a supplementary reagent is gated.
+    expect(purchasePotionItem(stuck(9), supplementary!.name).outcome).toBe(
+      "formula-required",
+    );
+  });
+
+  it("allows the ingredient purchase once the formula is in hand (issue #171)", () => {
+    const { formula, supplementary } = targetItems(9);
+    expect(formula).toBeDefined();
+    expect(supplementary).toBeDefined();
+    const session = stuck(9);
+    const withFormula: GameSession = {
+      ...session,
+      gameState: { ...session.gameState, inventory: [formula!] },
+    };
+    expect(purchasePotionItem(withFormula, supplementary!.name).outcome).toBe(
+      "purchased",
+    );
   });
 });
 

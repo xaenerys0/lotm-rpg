@@ -95,6 +95,24 @@ export {
   type RitualState,
 } from "./ritual";
 
+// Formula pursuit — seeking the next potion's recipe through the story (#171).
+export {
+  advanceFormulaPursuit,
+  beginFormulaPursuit,
+  clearFormulaPursuit,
+  formulaPursuitQuestLabel,
+  formulaPursuitTurns,
+  isFormulaPursuitReady,
+  isValidFormulaPursuitShape,
+  secureFormulaThroughStory,
+  FORMULA_PURSUIT_BASE_TURNS,
+  type FormulaPursuitOutcome,
+  type FormulaPursuitResult,
+  type FormulaPursuitState,
+  type FormulaSecureOutcome,
+  type FormulaSecureResult,
+} from "./formula-pursuit";
+
 export {
   DIGESTION_MIN,
   DIGESTION_MAX,

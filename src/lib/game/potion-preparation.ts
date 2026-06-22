@@ -94,6 +94,13 @@ export interface PotionItemStatus {
   methods: AcquisitionMethod[];
   /** Purchase cost in pence; 0 when the item cannot be bought. */
   cost: number;
+  /**
+   * True for an INGREDIENT that cannot be acquired yet because the potion's
+   * formula is not in hand (issue #171). The recipe is the canon gate: a
+   * Beyonder gathers reagents only once they hold the formula. A formula item is
+   * never locked.
+   */
+  locked: boolean;
 }
 
 export interface PotionPreparationPlan {
@@ -102,14 +109,33 @@ export interface PotionPreparationPlan {
   items: PotionItemStatus[];
   /** Every prerequisite item is already carried. */
   allOwned: boolean;
+  /**
+   * Whether the potion's formula is secured (issue #171) — the gate that unlocks
+   * gathering the ingredients. True when the target potion needs no formula at
+   * all, or when the formula prerequisite is already owned.
+   */
+  formulaSecured: boolean;
+  /** The formula prerequisite for the next potion, if it has one. */
+  formula: PotionItemStatus | null;
 }
 
 /**
- * The shared success tail for both acquisition paths: deliver the item, adjust
- * funds (negative for a purchase, positive for hunt spoils), record a memory
- * fact, and stamp the session. Pure.
+ * Whether a prerequisite item is the potion's formula (the recipe gate, #171).
+ * Exported so the formula-pursuit module (the "seek it through the story" route)
+ * shares the one definition of "is this the recipe".
  */
-function grantItem(
+export function isFormula(item: Item): boolean {
+  return item.category === "potion-formula";
+}
+
+/**
+ * The shared success tail for every acquisition path: deliver the item, adjust
+ * funds (negative for a purchase, positive for hunt spoils, zero for a reward
+ * earned through the story), record a memory fact, and stamp the session.
+ * Exported so the formula-pursuit "seek it through the story" route reuses the
+ * one grant convention (with `fundDelta: 0`) instead of re-inlining it. Pure.
+ */
+export function grantItem(
   session: GameSession,
   item: Item,
   fundDelta: number,
@@ -144,16 +170,33 @@ export function nextPotionItems(session: GameSession): Item[] {
  */
 export function potionPreparationPlan(session: GameSession): PotionPreparationPlan {
   const target = targetSequence(session.gameState.sequenceLevel);
-  const items = nextPotionItems(session).map((item): PotionItemStatus => {
+  const prerequisites = nextPotionItems(session);
+  // The formula is the canon gate: until it is in hand, the ingredients can't be
+  // gathered (issue #171). A potion with no formula prerequisite is ungated.
+  const formulaItem = prerequisites.find(isFormula);
+  const formulaSecured =
+    formulaItem === undefined ||
+    hasItemMatching(session.gameState.inventory, formulaItem);
+
+  const items = prerequisites.map((item): PotionItemStatus => {
     const methods = acquisitionMethodsFor(item, target);
     return {
       item,
       owned: hasItemMatching(session.gameState.inventory, item),
       methods,
       cost: methods.includes("purchase") ? acquisitionCost(item, target) : 0,
+      // Ingredients are locked until the formula is secured; the formula itself
+      // is never locked.
+      locked: !isFormula(item) && !formulaSecured,
     };
   });
-  return { targetSeq: target, items, allOwned: items.every((status) => status.owned) };
+  return {
+    targetSeq: target,
+    items,
+    allOwned: items.every((status) => status.owned),
+    formulaSecured,
+    formula: items.find((status) => isFormula(status.item)) ?? null,
+  };
 }
 
 export type PurchaseOutcome =
@@ -161,6 +204,7 @@ export type PurchaseOutcome =
   | "not-required"
   | "already-owned"
   | "not-purchasable"
+  | "formula-required"
   | "unaffordable";
 
 export interface PurchaseResult {
@@ -185,9 +229,20 @@ export function purchasePotionItem(
   const target = targetSequence(state.sequenceLevel);
   if (!isAdvanceableSequence(state.sequenceLevel)) return { outcome: "not-required" };
 
-  const item = nextPotionItems(session).find((candidate) => candidate.name === itemName);
+  const prerequisites = nextPotionItems(session);
+  const item = prerequisites.find((candidate) => candidate.name === itemName);
   if (!item) return { outcome: "not-required" };
   if (hasItemMatching(state.inventory, item)) return { outcome: "already-owned" };
+  // The recipe gates the reagents (issue #171): an ingredient cannot be bought
+  // until the potion's formula is in hand. The formula itself is exempt.
+  const formulaItem = prerequisites.find(isFormula);
+  if (
+    !isFormula(item) &&
+    formulaItem !== undefined &&
+    !hasItemMatching(state.inventory, formulaItem)
+  ) {
+    return { outcome: "formula-required" };
+  }
   if (!acquisitionMethodsFor(item, target).includes("purchase")) {
     return { outcome: "not-purchasable" };
   }

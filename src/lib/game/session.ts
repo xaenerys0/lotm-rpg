@@ -11,6 +11,7 @@ import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
 import { isValidCustomLocationsShape, registerCustomLocation } from "./location";
 import { cityIdFromLocation, isValidAccessFlagsShape } from "./travel";
+import { isValidFormulaPursuitShape } from "./formula-pursuit";
 import { isValidHuntsShape } from "./hunt";
 import { isValidRitualStateShape } from "./ritual";
 import { isValidIdentityStateShape } from "./identity";
@@ -427,6 +428,12 @@ export function isValidSessionShape(obj: unknown): boolean {
     return false;
   }
 
+  // Formula pursuit (issue #171) is optional but strict when present — it rides
+  // the deserialize `...s` spread (no seeding); absent means no pursuit.
+  if (s.formulaPursuit !== undefined && !isValidFormulaPursuitShape(s.formulaPursuit)) {
+    return false;
+  }
+
   // Tracked-NPC roster (issue #101) is optional but strict when present — it
   // rides the deserialize `...s` spread (no seeding); absent means no roster.
   if (
@@ -443,6 +450,17 @@ export function isValidSessionShape(obj: unknown): boolean {
     s.pendingPlayerAction !== undefined &&
     s.pendingPlayerAction !== null &&
     typeof s.pendingPlayerAction !== "string"
+  ) {
+    return false;
+  }
+
+  // The matching transient engine-turn kind (issue #171) is optional but, when
+  // present, must be one of the known kinds or null. Rides the `...s` spread.
+  if (
+    s.pendingTurnKind !== undefined &&
+    s.pendingTurnKind !== null &&
+    s.pendingTurnKind !== "combat" &&
+    s.pendingTurnKind !== "advancement"
   ) {
     return false;
   }

@@ -56,7 +56,14 @@ function toBeat(turn: TurnRecord): ChronicleBeat | null {
     turnNumber: turn.turnNumber,
     action: turn.playerAction.trim(),
     prose,
-    kind: classifyBeat(turn.playerAction),
+    // Prefer the structured engine-turn kind (issue #171); fall back to the
+    // action-text classifier for legacy turns saved before `kind` existed.
+    kind:
+      turn.kind === "combat"
+        ? "combat"
+        : turn.kind === "advancement"
+          ? "ascension"
+          : classifyBeat(turn.playerAction),
   };
 }
 

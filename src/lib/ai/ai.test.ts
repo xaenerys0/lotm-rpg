@@ -2407,6 +2407,19 @@ describe("memory", () => {
       ]);
       expect(turn.retrievedChunkIds).toEqual(["chunk-a", "chunk-b"]);
     });
+
+    it("stamps the engine-turn kind when given, omits it otherwise (issue #171)", () => {
+      const combat = buildTurnRecord(
+        3,
+        "I fought",
+        makeValidAIResponse(),
+        undefined,
+        "combat",
+      );
+      expect(combat.kind).toBe("combat");
+      const story = buildTurnRecord(4, "I look", makeValidAIResponse());
+      expect("kind" in story).toBe(false);
+    });
   });
 
   describe("summarizeTurn", () => {
