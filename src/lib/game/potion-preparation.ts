@@ -119,8 +119,12 @@ export interface PotionPreparationPlan {
   formula: PotionItemStatus | null;
 }
 
-/** Whether a prerequisite item is the potion's formula (the recipe gate, #171). */
-function isFormula(item: Item): boolean {
+/**
+ * Whether a prerequisite item is the potion's formula (the recipe gate, #171).
+ * Exported so the formula-pursuit module (the "seek it through the story" route)
+ * shares the one definition of "is this the recipe".
+ */
+export function isFormula(item: Item): boolean {
   return item.category === "potion-formula";
 }
 

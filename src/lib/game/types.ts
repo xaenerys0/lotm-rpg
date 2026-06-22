@@ -93,6 +93,15 @@ export interface GameSession {
    */
   ritualState?: import("./ritual").RitualState;
   /**
+   * Formula pursuit in progress (issue #171, "The Climb"): seeking the next
+   * potion's closely-guarded recipe through the story over several turns — the
+   * alternative to trading for it. Only one is ever in play (the next potion's),
+   * so it is a single optional sub-state, not a list. Absent when no pursuit is
+   * under way; strictly validated when present and preserved on the deserialize
+   * `...s` spread (no seeding), exactly like `ritualState`. No DB migration.
+   */
+  formulaPursuit?: import("./formula-pursuit").FormulaPursuitState;
+  /**
    * Tracked-NPC roster (issue #101): the durable cast the player is bound to —
    * allies who follow (a party) and hostiles who follow (pursuers) — distinct
    * from the transient, scene-scoped `gameState.npcsPresent`. Followers are

@@ -11,6 +11,7 @@ import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
 import { isValidCustomLocationsShape, registerCustomLocation } from "./location";
 import { cityIdFromLocation, isValidAccessFlagsShape } from "./travel";
+import { isValidFormulaPursuitShape } from "./formula-pursuit";
 import { isValidHuntsShape } from "./hunt";
 import { isValidRitualStateShape } from "./ritual";
 import { isValidIdentityStateShape } from "./identity";
@@ -424,6 +425,12 @@ export function isValidSessionShape(obj: unknown): boolean {
   // when present — it rides the deserialize `...s` spread (no seeding); absent
   // means no rite under way.
   if (s.ritualState !== undefined && !isValidRitualStateShape(s.ritualState)) {
+    return false;
+  }
+
+  // Formula pursuit (issue #171) is optional but strict when present — it rides
+  // the deserialize `...s` spread (no seeding); absent means no pursuit.
+  if (s.formulaPursuit !== undefined && !isValidFormulaPursuitShape(s.formulaPursuit)) {
     return false;
   }
 
