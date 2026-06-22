@@ -177,6 +177,7 @@ import { createClient } from "@/lib/supabase/client";
 import { retrieveLoreForTurn } from "./lore-retrieval-client";
 import { SceneArt } from "./scene-art";
 import { WorldMessages } from "./world-messages";
+import { StoryChronicle } from "./story-chronicle";
 import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
 import { getPathway, getSequence, pillarForPathway } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
@@ -1747,6 +1748,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           />
         ) : (
           <>
+            {/* The running chronicle: recent story/combat/advancement beats from
+                memory, woven above the live scene so the turn reads continuously
+                (a fight or a climb is now a beat in this transcript, not a
+                disconnected side-screen). Renders nothing on the opening scene. */}
+            {(session.phase === "situation" ||
+              session.phase === "choices" ||
+              session.phase === "consequences") && (
+              <StoryChronicle memory={session.memory} />
+            )}
             {/* Phase Content */}
             {session.phase === "idle" && <IdlePhase onStart={handleStartSituation} />}
             {session.phase === "situation" && <SituationPhase />}

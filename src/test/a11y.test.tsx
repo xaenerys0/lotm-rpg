@@ -16,6 +16,7 @@ import { CloudHydrationGate } from "@/components/game/cloud-hydration-gate";
 import { MobileNav } from "@/components/game/mobile-nav";
 import { GameLoop } from "@/components/game/game-loop";
 import { CombatEncounterView } from "@/components/game/combat-encounter";
+import { StoryChronicle } from "@/components/game/story-chronicle";
 import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
 import MapPage from "@/app/(game)/map/page";
@@ -450,6 +451,41 @@ describe("accessibility — combat", () => {
     }
     encounter = resolveEncounter(encounter);
     await expectNoAxeViolations(view(encounter));
+  });
+});
+
+describe("accessibility — story chronicle", () => {
+  it("renders a mixed story/combat/ascension transcript with no violations", async () => {
+    const turn = (turnNumber: number, playerAction: string, narrative: string) => ({
+      turnNumber,
+      playerAction,
+      aiResponse: { narrative },
+      timestamp: 1000 + turnNumber,
+    });
+    const memory = {
+      immediateTurns: [
+        turn(1, "Examine the locked door", "The brass handle is cold under your palm."),
+        turn(
+          2,
+          "I faced a lurking Beyonder in combat; it ended in victory.",
+          "You leave the wraith dispersing into the fog.",
+        ),
+        turn(
+          3,
+          "I drink the Sequence 8 potion and undergo the advancement.",
+          "The role settles into your bones; you are a Clown now.",
+        ),
+      ],
+      recentSummaries: [],
+      sessionFacts: [],
+      runningSummary: "You arrived in Tingen and began to walk the Fool's path.",
+    };
+    await expectNoAxeViolations(<StoryChronicle memory={memory} />);
+  });
+
+  it("renders nothing before any beats exist", async () => {
+    const memory = { immediateTurns: [], recentSummaries: [], sessionFacts: [] };
+    await expectNoAxeViolations(<StoryChronicle memory={memory} />);
   });
 });
 
