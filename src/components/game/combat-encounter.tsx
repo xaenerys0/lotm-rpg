@@ -116,7 +116,7 @@ export function CombatEncounterView({
    * place. Null for cities with no specific tone. */
   cityNarration?: string | null;
   onUpdate: (next: CombatEncounter) => void;
-  onApplyResult: (result: CombatResult) => void;
+  onApplyResult: (result: CombatResult, narratedScene?: string) => void;
   onExit: () => void;
 }) {
   const [aiNarrative, setAiNarrative] = useState<Record<string, string>>({});
@@ -237,13 +237,19 @@ export function CombatEncounterView({
       {encounter.phase === "resolution" && encounter.result && (
         <ResolutionPhase
           result={encounter.result}
-          aiNarrative={resolutionNarrative}
           narrating={narrating}
+          hasNarrative={resolutionNarrative !== undefined}
           artKey={`${sessionId}:combat:${encounter.id}`}
           artContext={combatArtContext(encounter, gameState)}
           imageConfig={imageConfig}
           sceneArtEnabled={sceneArtEnabled}
-          onContinue={() => onApplyResult(encounter.result!)}
+          // The fight's prose returns to the MAIN story (woven into the chronicle
+          // + memory via ENGINE_RESOLUTION), not duplicated here — this screen is
+          // the mechanical aftermath only. Falls back to the engine summary when
+          // no narrator is configured.
+          onContinue={() =>
+            onApplyResult(encounter.result!, resolutionNarrative ?? undefined)
+          }
         />
       )}
     </section>
@@ -360,7 +366,18 @@ function PreparationForm({
     });
   };
 
-  const inventoryNames = inventory.map((i) => i.name);
+  // Sealed Artifacts get their own picker (they carry a mid-fight backlash and
+  // are the only items the engine treats as combat artifacts); every OTHER
+  // carried item — ordinary gear, weapons, loot, reagents — is offerable as a
+  // consumed ritual material. The two lists are disjoint, so a mundane item can
+  // no longer be readied as a "sealed artifact" to game the preparation score.
+  const artifactNames = inventory
+    .filter((i) => i.category === "sealed-artifact")
+    .map((i) => i.name);
+  const materialNames = inventory
+    .filter((i) => i.category !== "sealed-artifact")
+    .map((i) => i.name);
+  const hasPreparables = materialNames.length > 0 || artifactNames.length > 0;
 
   return (
     <div className="space-y-6">
@@ -423,22 +440,26 @@ function PreparationForm({
         />
       )}
 
-      {inventory.length > 0 ? (
+      {hasPreparables ? (
         <div className="grid gap-5 sm:grid-cols-2">
-          <CheckGroup
-            legend="Prepare ritual materials (consumed)"
-            items={inventoryNames}
-            selected={materials}
-            onToggle={(v) => toggle(v, materials, setMaterials)}
-            namePrefix="material"
-          />
-          <CheckGroup
-            legend="Ready sealed artifacts (spent only if used)"
-            items={inventoryNames}
-            selected={artifacts}
-            onToggle={(v) => toggle(v, artifacts, setArtifacts)}
-            namePrefix="artifact"
-          />
+          {materialNames.length > 0 && (
+            <CheckGroup
+              legend="Prepare ritual materials (consumed)"
+              items={materialNames}
+              selected={materials}
+              onToggle={(v) => toggle(v, materials, setMaterials)}
+              namePrefix="material"
+            />
+          )}
+          {artifactNames.length > 0 && (
+            <CheckGroup
+              legend="Ready sealed artifacts (spent only if used)"
+              items={artifactNames}
+              selected={artifacts}
+              onToggle={(v) => toggle(v, artifacts, setArtifacts)}
+              namePrefix="artifact"
+            />
+          )}
         </div>
       ) : (
         <p className="text-sm text-muted">
@@ -590,8 +611,8 @@ function ExchangePhase({
 
 function ResolutionPhase({
   result,
-  aiNarrative,
   narrating,
+  hasNarrative,
   artKey,
   artContext,
   imageConfig,
@@ -599,8 +620,8 @@ function ResolutionPhase({
   onContinue,
 }: {
   result: CombatResult;
-  aiNarrative: string | undefined;
   narrating: boolean;
+  hasNarrative: boolean;
   artKey: string;
   artContext: SceneArtContext;
   imageConfig: ImageProviderConfig | null;
@@ -614,15 +635,6 @@ function ResolutionPhase({
       <p className={`mb-4 text-center font-serif text-xl font-semibold ${copy.tone}`}>
         {copy.title}
       </p>
-
-      <div role="status" className="mb-6 rounded-xl border border-border bg-surface p-6">
-        <p className="font-serif text-base leading-[1.85] text-foreground">
-          {aiNarrative ?? result.narrativeSummary}
-          {narrating && !aiNarrative && (
-            <span className="ml-2 text-sm italic text-muted">the dust settles…</span>
-          )}
-        </p>
-      </div>
 
       {/* Scene art (issue #20): combat is a trigger moment. Renders from cache
           instantly, generates once when the player opted in + configured an
@@ -701,13 +713,19 @@ function ResolutionPhase({
           )}
       </div>
 
+      <p className="mb-4 text-center text-sm text-muted" role="status">
+        {narrating && !hasNarrative
+          ? "The dust settles; the narrator draws breath…"
+          : "The chronicle takes up the clash where you left it."}
+      </p>
+
       <div className="flex justify-center pt-2">
         <button
           type="button"
           onClick={onContinue}
           className="min-h-[24px] rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
         >
-          Continue
+          Return to the story →
         </button>
       </div>
     </div>

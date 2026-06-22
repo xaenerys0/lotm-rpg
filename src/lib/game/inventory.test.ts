@@ -52,6 +52,10 @@ describe("isReagentCategory", () => {
     expect(isReagentCategory("mundane")).toBe(false);
     expect(isReagentCategory("uniqueness")).toBe(false);
   });
+
+  it("is false for a Sealed Artifact — it is church-gated, never a tradable reagent", () => {
+    expect(isReagentCategory("sealed-artifact")).toBe(false);
+  });
 });
 
 describe("removeItemsByName", () => {

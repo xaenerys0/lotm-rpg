@@ -35,7 +35,10 @@ import {
   combatNarrationContext,
   isValidEncounterShape,
   MAX_DYNAMIC_ABILITY_OPTIONS,
+  artifactBacklash,
+  ARTIFACT_VOLATILE_THRESHOLD,
 } from "./combat";
+import { getSealedArtifact, mintArtifactItem } from "@/lib/lore";
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -1192,6 +1195,37 @@ describe("computeConsequences", () => {
     expect(result.itemsLost).toEqual([]);
   });
 
+  it("applies a sanity backlash when a Sealed Artifact is consumed mid-fight", () => {
+    const artifact = mintArtifactItem(getSealedArtifact("0-08")!); // Grade 0
+    const base = resolvedWith("victory", { sequenceLevel: 7 }, 0.5);
+    const withArtifact: CombatEncounter = {
+      ...base,
+      preparation: makePrep({ sealedArtifacts: [artifact] }),
+      decisionPoints: [
+        {
+          id: "dp",
+          prompt: "",
+          options: [
+            {
+              id: "use-artifact",
+              label: "",
+              kind: "artifact",
+              description: "",
+              modifier: 0.2,
+              consumesArtifact: true,
+            },
+          ],
+        },
+      ],
+      chosenOptionIds: ["use-artifact"],
+    };
+    const baseline = computeConsequences(base, "victory", 0.5).sanityImpact;
+    const result = computeConsequences(withArtifact, "victory", 0.5);
+    // The artifact is consumed AND its grade-0 backlash deepens the sanity drain.
+    expect(result.itemsLost).toEqual([artifact]);
+    expect(result.sanityImpact).toBeLessThan(baseline);
+  });
+
   it("loses a dynamically-invoked carried artifact without double-counting sealed ones", () => {
     const dynamic = makeItem("Pocket Mirror");
     const encounter: CombatEncounter = {
@@ -1460,5 +1494,46 @@ describe("enemyIntel", () => {
   it("omits the description field when the enemy has none", () => {
     const bare = makeEnemy({ description: undefined });
     expect(enemyIntel(bare, "none", 9).description).toBeUndefined();
+  });
+});
+
+describe("artifactBacklash", () => {
+  const grade0 = mintArtifactItem(getSealedArtifact("0-08")!); // Angel-tier
+  const grade3 = mintArtifactItem(getSealedArtifact("3-0782")!); // low-Sequence
+  const mundane: Item = { name: "Old coin", description: "", category: "mundane" };
+
+  it("is zero with no artifacts and ignores non-artifact items", () => {
+    expect(artifactBacklash([], 0.5)).toBe(0);
+    expect(artifactBacklash([mundane], 0.5)).toBe(0);
+  });
+
+  it("returns a negative drain scaled by danger grade (deeper grade = worse)", () => {
+    const low = artifactBacklash([grade3], 0.5);
+    const high = artifactBacklash([grade0], 0.5);
+    expect(high).toBeLessThan(0);
+    expect(low).toBeLessThan(0);
+    // A Grade 0 relic costs strictly more sanity than a Grade 3 one.
+    expect(high).toBeLessThan(low);
+  });
+
+  it("sums across multiple consumed artifacts", () => {
+    const single = artifactBacklash([grade3], 0.5);
+    const pair = artifactBacklash([grade3, grade3], 0.5);
+    expect(pair).toBe(single * 2);
+  });
+
+  it("amplifies the backlash when the artifact lurches (high random factor)", () => {
+    const calm = artifactBacklash([grade0], ARTIFACT_VOLATILE_THRESHOLD - 0.01);
+    const volatile = artifactBacklash([grade0], ARTIFACT_VOLATILE_THRESHOLD);
+    expect(volatile).toBeLessThan(calm);
+  });
+
+  it("still bites for a sealed artifact not found in the catalogue", () => {
+    const unknown: Item = {
+      name: "Sealed Artifact 9-999 — Unknown Relic",
+      description: "",
+      category: "sealed-artifact",
+    };
+    expect(artifactBacklash([unknown], 0.5)).toBeLessThan(0);
   });
 });

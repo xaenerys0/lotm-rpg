@@ -21,7 +21,6 @@ import {
   createEncounter,
   deriveEncounterEnemy,
   isValidEncounterShape,
-  isReagentCategory,
   digestionFeedback,
   classifySanityTier,
   isLossOfControl,
@@ -156,8 +155,6 @@ import type {
 } from "@/lib/ai";
 import {
   generate,
-  addTurn,
-  buildTurnRecord,
   TOKEN_BUDGET,
   AIError,
   addUsage,
@@ -180,6 +177,7 @@ import { createClient } from "@/lib/supabase/client";
 import { retrieveLoreForTurn } from "./lore-retrieval-client";
 import { SceneArt } from "./scene-art";
 import { WorldMessages } from "./world-messages";
+import { StoryChronicle } from "./story-chronicle";
 import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
 import { getPathway, getSequence, pillarForPathway } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
@@ -209,6 +207,15 @@ function engineResolution(
   const merged = journalFlag ? { ...response, journalEntry: journalFlag } : response;
   return { response: merged, validation: { valid: true, violations: [] } };
 }
+
+// Journal-summary verb per combat outcome — the durable record's one-liner when
+// a fight is woven back into the chronicle as an engine-decided turn.
+const COMBAT_OUTCOME_SUMMARY: Record<CombatResult["outcome"], string> = {
+  victory: "Triumphed over",
+  defeat: "Was overcome by",
+  escape: "Escaped from",
+  stalemate: "Fought to a standstill with",
+};
 
 function loadProviderConfig(): ProviderConfig | null {
   try {
@@ -909,14 +916,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       if (!session) return;
       // The player's actual abilities and carried artifacts ride onto the
       // encounter so they can be invoked dynamically mid-fight (not only readied
-      // in preparation). Reagents are excluded — a potion ingredient is not a
-      // combat artifact.
+      // in preparation). The combat-artifact pool is exactly the carried Sealed
+      // Artifacts — the canon dangerous relics, each consumed (with a sanity
+      // backlash) when invoked — not ordinary loot or potion reagents.
       const { abilities } = sequenceAbilities(
         session.gameState.pathwayId,
         session.gameState.sequenceLevel,
       );
       const availableArtifacts = session.gameState.inventory.filter(
-        (item) => !isReagentCategory(item.category),
+        (item) => item.category === "sealed-artifact",
       );
       const encounter = createEncounter({
         id: crypto.randomUUID(),
@@ -945,15 +953,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   );
 
   const handleCombatResult = useCallback(
-    (result: CombatResult) => {
+    (result: CombatResult, narratedScene?: string) => {
       if (!session || !combat) return;
-      const gameState = applyCombatResult(session.gameState, result);
-      // Record the fight so the narrator remembers it next turn.
-      const turn = buildTurnRecord(session.turnCount, `Combat: ${combat.enemy.name}`, {
-        narrative: result.narrativeSummary,
-      });
-      const memory = addTurn(session.memory, turn);
-      let next: GameSession = { ...session, gameState, memory, updatedAt: Date.now() };
+      const enemyName = combat.enemy.name;
+      let next: GameSession = {
+        ...session,
+        gameState: applyCombatResult(session.gameState, result),
+        updatedAt: Date.now(),
+      };
 
       // A hunt (issue #84) that ended in victory yields the Beyonder
       // Characteristic it was after — the engine grants it plus spoils, and
@@ -978,7 +985,29 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         next = clearHunt(next, huntTarget);
       }
 
-      updateSession(next);
+      // Weave the fight back into the MAIN story: its prose (the narrator's, or
+      // the engine's deterministic summary when no provider is configured)
+      // becomes the current scene AND a memory turn record — the same
+      // ENGINE_RESOLUTION path advancement takes — so the chronicle reads
+      // continuously and the next turn's narrator knows the fight happened
+      // instead of resuming the stale pre-combat scene. No consequences-phase
+      // scene art flag: combat already illustrated its own resolution screen.
+      const scene = narratedScene ?? result.narrativeSummary;
+      appendJournalEntries(session.id, [
+        buildJournalEntry(next.gameState, next.turnCount, {
+          eventType: "combat",
+          summary: `${COMBAT_OUTCOME_SUMMARY[result.outcome]} ${enemyName}.`,
+          narrative: scene,
+        }),
+      ]);
+      const playerAction = `I faced ${enemyName} in combat; it ended in ${result.outcome}.`;
+      updateSession(
+        transition(next, {
+          type: "ENGINE_RESOLUTION",
+          result: engineResolution({ narrative: scene }),
+          playerAction,
+        }),
+      );
       clearCombatFromStorage(session.id);
       setCombat(null);
     },
@@ -1719,6 +1748,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           />
         ) : (
           <>
+            {/* The running chronicle: recent story/combat/advancement beats from
+                memory, woven above the live scene so the turn reads continuously
+                (a fight or a climb is now a beat in this transcript, not a
+                disconnected side-screen). Renders nothing on the opening scene. */}
+            {(session.phase === "situation" ||
+              session.phase === "choices" ||
+              session.phase === "consequences") && (
+              <StoryChronicle memory={session.memory} />
+            )}
             {/* Phase Content */}
             {session.phase === "idle" && <IdlePhase onStart={handleStartSituation} />}
             {session.phase === "situation" && <SituationPhase />}

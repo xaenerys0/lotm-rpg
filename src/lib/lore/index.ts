@@ -42,6 +42,18 @@ export {
 } from "./retrieval";
 export { cityNarrationDirective } from "./narration";
 export {
+  GRADE_POWER_BAND,
+  SEALED_ARTIFACTS,
+  getSealedArtifact,
+  sealedArtifactsForGrade,
+  sealedArtifactsForPathway,
+  mintArtifactItem,
+  sealedArtifactNumberFromItemName,
+  gradeForArtifactItem,
+  type ArtifactGrade,
+  type SealedArtifact,
+} from "./sealed-artifacts";
+export {
   selectStartScenario,
   selectStartScenarioForLocation,
   startScenariosForEpoch,

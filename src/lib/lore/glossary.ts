@@ -341,6 +341,14 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     revealAtSequence: 7,
   },
   {
+    slug: "sealed-artifact-grades",
+    term: "Sealed Artifact Grades",
+    category: "Mechanics",
+    definition:
+      "The churches grade a sealed artifact by danger, naming it with its grade and a number (0-08, 2-049, 3-0782). Grade 0 rivals an Angel and rests only in a cathedral basement; Grade 1 a Saint; Grade 2 a mid-Sequence Beyonder; Grade 3 a low one, and the most freely handled. Whatever the grade, the drawback is the price — and it seldom spares the one who wields it.",
+    revealAtSequence: 6,
+  },
+  {
     slug: "cataclysm",
     term: "The Cataclysm",
     category: "History",

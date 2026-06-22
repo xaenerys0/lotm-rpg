@@ -16,6 +16,7 @@ import { CloudHydrationGate } from "@/components/game/cloud-hydration-gate";
 import { MobileNav } from "@/components/game/mobile-nav";
 import { GameLoop } from "@/components/game/game-loop";
 import { CombatEncounterView } from "@/components/game/combat-encounter";
+import { StoryChronicle } from "@/components/game/story-chronicle";
 import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
 import MapPage from "@/app/(game)/map/page";
@@ -337,6 +338,15 @@ describe("accessibility — combat", () => {
         description: "A bound trinket.",
         category: "supplementary-ingredient",
       },
+      // A real Sealed Artifact + an ordinary belonging so the preparation form
+      // renders BOTH the (artifact-only) sealed-artifacts picker and the
+      // ritual-materials picker for the axe pass.
+      {
+        name: "Sealed Artifact 3-0782 — Mutated Sun Sacred Emblem",
+        description: "A purifying badge with a Sun-worship drawback.",
+        category: "sealed-artifact",
+      },
+      { name: "Tarnished Locket", description: "A bit of loot.", category: "mundane" },
     ],
   };
   const abilities = ["Spirit Vision", "Divination"];
@@ -444,6 +454,41 @@ describe("accessibility — combat", () => {
   });
 });
 
+describe("accessibility — story chronicle", () => {
+  it("renders a mixed story/combat/ascension transcript with no violations", async () => {
+    const turn = (turnNumber: number, playerAction: string, narrative: string) => ({
+      turnNumber,
+      playerAction,
+      aiResponse: { narrative },
+      timestamp: 1000 + turnNumber,
+    });
+    const memory = {
+      immediateTurns: [
+        turn(1, "Examine the locked door", "The brass handle is cold under your palm."),
+        turn(
+          2,
+          "I faced a lurking Beyonder in combat; it ended in victory.",
+          "You leave the wraith dispersing into the fog.",
+        ),
+        turn(
+          3,
+          "I drink the Sequence 8 potion and undergo the advancement.",
+          "The role settles into your bones; you are a Clown now.",
+        ),
+      ],
+      recentSummaries: [],
+      sessionFacts: [],
+      runningSummary: "You arrived in Tingen and began to walk the Fool's path.",
+    };
+    await expectNoAxeViolations(<StoryChronicle memory={memory} />);
+  });
+
+  it("renders nothing before any beats exist", async () => {
+    const memory = { immediateTurns: [], recentSummaries: [], sessionFacts: [] };
+    await expectNoAxeViolations(<StoryChronicle memory={memory} />);
+  });
+});
+
 describe("accessibility — manage characters", () => {
   it("manage view (and delete confirmation) has no violations", async () => {
     const session = createSession(
@@ -516,6 +561,12 @@ describe("accessibility — stub pages", () => {
           name: "Brass Key",
           description: "A small tarnished key.",
           category: "mundane",
+        },
+        {
+          name: "Sealed Artifact 2-049 — Antigonus Family Puppet",
+          description:
+            "A jointed clown puppet that slows everyone nearby. (Grade 2. Drawback: it spares no one, the wielder included.)",
+          category: "sealed-artifact",
         },
       ],
     };

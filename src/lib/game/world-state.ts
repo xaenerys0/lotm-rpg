@@ -5,7 +5,8 @@ import type { ActingEvaluation, StateChange } from "@/lib/ai";
 import { addSessionFact, addTurn, buildTurnRecord } from "@/lib/ai";
 import { applyDigestionProgress, createDigestionState } from "./digestion";
 import { tickInjuries } from "./combat";
-import { isReagentCategory } from "./inventory";
+import { hasItem, isReagentCategory } from "./inventory";
+import { getSealedArtifact, mintArtifactItem } from "@/lib/lore";
 import { adjustFunds, FUNDS_DISCOVERED_CAP } from "./marketplace";
 import { clamp } from "./math";
 import { previewSanityImpact } from "./sanity";
@@ -230,13 +231,25 @@ export function gateLocationChange({
 }
 
 /**
+ * Whether a discovered item's category is engine/church-gated and so may NOT be
+ * freely minted by AI narration: the advancement-critical reagents
+ * (`isReagentCategory`) AND Sealed Artifacts (church-catalogued, locked away —
+ * earned through the story via the trusted engine path `grantSealedArtifact` or
+ * combat spoils, never simply "found" in a scene). Both are stripped from
+ * discovery and turned into story leads instead. Pure.
+ */
+function isDiscoveryBlockedCategory(category: Item["category"]): boolean {
+  return isReagentCategory(category) || category === "sealed-artifact";
+}
+
+/**
  * Split AI-discovered items into the loot the player may actually carry
  * (`mundane` belongings and the narrator-grantable `uniqueness` artifact) and
- * the advancement-critical reagents that must come through the framework. The
+ * the engine/church-gated items that must come through the framework. The
  * reagents (`isReagentCategory`) are acquired ONLY via potion-preparation
- * (buy/hunt), combat spoils, or echoes — AI narration may not mint them, so they
- * are stripped here and turned into a story lead (`discoveredItemLeadFact`).
- * Pure.
+ * (buy/hunt), combat spoils, or echoes; Sealed Artifacts only via the engine
+ * grant or combat spoils — AI narration may mint neither, so they are stripped
+ * here and turned into a story lead (`discoveredItemLeadFact`). Pure.
  */
 export function partitionDiscoveredItems(items: Item[]): {
   carried: Item[];
@@ -245,7 +258,7 @@ export function partitionDiscoveredItems(items: Item[]): {
   const carried: Item[] = [];
   const blocked: Item[] = [];
   for (const item of items) {
-    (isReagentCategory(item.category) ? blocked : carried).push(item);
+    (isDiscoveryBlockedCategory(item.category) ? blocked : carried).push(item);
   }
   return { carried, blocked };
 }
@@ -258,11 +271,13 @@ export function partitionDiscoveredItems(items: Item[]): {
  */
 export function discoveredItemLeadFact(item: Item, turnNumber: number): SessionFact {
   const description =
-    item.category === "potion-formula"
-      ? `A lead surfaced toward the formula "${item.name}" — it must still be obtained through the proper channels for the next potion.`
-      : item.category === "main-ingredient"
-        ? `Word of the ${item.name} Beyonder Characteristic surfaced — it must still be hunted or bought for the next potion.`
-        : `Learned where ${item.name} might be acquired for the next potion.`;
+    item.category === "sealed-artifact"
+      ? `Word of the ${item.name} surfaced — such a thing is catalogued and locked away by the churches; it can only be earned through the story, never simply found.`
+      : item.category === "potion-formula"
+        ? `A lead surfaced toward the formula "${item.name}" — it must still be obtained through the proper channels for the next potion.`
+        : item.category === "main-ingredient"
+          ? `Word of the ${item.name} Beyonder Characteristic surfaced — it must still be hunted or bought for the next potion.`
+          : `Learned where ${item.name} might be acquired for the next potion.`;
   return { type: "quest-progress", description, turnNumber };
 }
 
@@ -435,6 +450,23 @@ export function applySanityImpact(state: GameState, impact: number): GameState {
 
 export function addDiscoveredItems(state: GameState, items: Item[]): GameState {
   return { ...state, inventory: [...state.inventory, ...items] };
+}
+
+/**
+ * The trusted engine path by which a character legitimately acquires a Sealed
+ * Artifact (a quest reward, a narrated church grant, a dev affordance) — looks
+ * up the corpus catalogue by code, mints the carried `Item`, and appends it.
+ * Sealed Artifacts are church-gated and so NEVER reach inventory through AI
+ * discovery (`partitionDiscoveredItems` blocks them); this is the sanctioned
+ * alternative, mirroring how combat spoils (`Enemy.loot`) deliver one. A no-op
+ * for an unknown code or one already carried (artifacts are singular). Pure.
+ */
+export function grantSealedArtifact(state: GameState, artifactNumber: string): GameState {
+  const artifact = getSealedArtifact(artifactNumber);
+  if (!artifact) return state;
+  const item = mintArtifactItem(artifact);
+  if (hasItem(state.inventory, item.name)) return state;
+  return { ...state, inventory: [...state.inventory, item] };
 }
 
 /**

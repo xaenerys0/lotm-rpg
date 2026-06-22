@@ -18,6 +18,7 @@ import type {
   TerrainAdvantage,
 } from "@/lib/types/combat";
 import { getGroupForPathway } from "@/lib/rules";
+import { gradeForArtifactItem, type ArtifactGrade } from "@/lib/lore";
 import { sanityDelta } from "./sanity";
 import { clamp } from "./math";
 import { removeItemsByName } from "./inventory";
@@ -1134,6 +1135,44 @@ function injuriesFor(
   return severities.map((severity, index) => makeInjury(id, index, severity, enemy.name));
 }
 
+/** Sanity backlash per consumed Sealed Artifact, by danger grade (deeper = worse). */
+const ARTIFACT_BACKLASH_BY_GRADE: Record<ArtifactGrade, number> = {
+  0: -18,
+  1: -13,
+  2: -9,
+  3: -6,
+};
+/** A sealed artifact not in the catalogue still bites (defensive default). */
+const ARTIFACT_BACKLASH_UNGRADED = -6;
+/** Above this rolled factor, an artifact lurches — its backlash is amplified. */
+export const ARTIFACT_VOLATILE_THRESHOLD = 0.8;
+const ARTIFACT_VOLATILE_MULTIPLIER = 1.5;
+
+/**
+ * The sanity backlash from invoking Sealed Artifacts mid-fight — the canon
+ * "loss of control" cost that makes one a high-power, high-RISK play rather than
+ * a free buff. Sums a grade-scaled drain per consumed artifact (a Grade 0
+ * Angel-tier relic costs far more than a Grade 3) and amplifies it when the
+ * encounter's single rolled `randomFactor` says the artifact lurches.
+ * Deterministic under that injected factor, so a serialized fight resolves
+ * identically. Non-artifact items contribute nothing. Returns ≤ 0.
+ */
+export function artifactBacklash(consumed: Item[], randomFactor: number): number {
+  let total = 0;
+  for (const item of consumed) {
+    if (item.category !== "sealed-artifact") continue;
+    const grade = gradeForArtifactItem(item);
+    total +=
+      grade === undefined
+        ? ARTIFACT_BACKLASH_UNGRADED
+        : ARTIFACT_BACKLASH_BY_GRADE[grade];
+  }
+  if (total === 0) return 0;
+  return randomFactor >= ARTIFACT_VOLATILE_THRESHOLD
+    ? Math.round(total * ARTIFACT_VOLATILE_MULTIPLIER)
+    : total;
+}
+
 function combatSanityImpact(encounter: CombatEncounter, outcome: CombatOutcome): number {
   const horror = sanityDelta({
     type: "horror-encounter",
@@ -1181,11 +1220,13 @@ export function computeConsequences(
 
   const ritualMaterials = encounter.preparation?.ritualMaterials ?? [];
   const sealedArtifacts = encounter.preparation?.sealedArtifacts ?? [];
-  const itemsLost: Item[] = [
-    ...ritualMaterials,
+  // Every artifact actually spent this fight (readied-and-used + grabbed
+  // mid-fight) — the slice that incurs the sanity backlash below.
+  const consumedArtifacts: Item[] = [
     ...sealedArtifacts.slice(0, consumedSealed),
     ...dynamicArtifactItems,
   ];
+  const itemsLost: Item[] = [...ritualMaterials, ...consumedArtifacts];
 
   const itemsGained: Item[] = outcome === "victory" ? (encounter.enemy.loot ?? []) : [];
 
@@ -1205,7 +1246,9 @@ export function computeConsequences(
   return {
     outcome,
     injuries: injuriesFor(encounter, outcome, finalAdvantage),
-    sanityImpact: combatSanityImpact(encounter, outcome),
+    sanityImpact:
+      combatSanityImpact(encounter, outcome) +
+      artifactBacklash(consumedArtifacts, encounter.randomFactor),
     itemsGained,
     itemsLost,
     characteristicsDropped,

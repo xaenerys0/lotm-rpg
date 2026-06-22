@@ -1,0 +1,137 @@
+"use client";
+
+import type { MemoryState, TurnRecord } from "@/lib/ai";
+
+// ─── The Chronicle ───────────────────────────────────────────────────
+//
+// A running, illuminated transcript of the story so far — the recent turns the
+// memory layer already keeps (the same `immediateTurns` the narrator reads),
+// rendered as a continuous chat-like chronicle above the live scene. Combat and
+// advancement are engine-decided turns routed through the normal loop, so they
+// land in this same transcript as story beats rather than vanishing into a
+// disconnected side-screen. Past beats recede; the live scene below stays
+// prominent. Derived entirely from persisted memory — no new save state.
+
+type BeatKind = "story" | "combat" | "ascension";
+
+interface ChronicleBeat {
+  turnNumber: number;
+  /** The compact "what you did" line that opened this beat. */
+  action: string;
+  /** The narrator's prose for the beat. */
+  prose: string;
+  kind: BeatKind;
+}
+
+// The exact, distinctive fragments the engine builds into an engine-decided
+// turn's action text — matched precisely so an ordinary story action that merely
+// mentions a verb ("I ascend the staircase", "in combat training") is NOT
+// mis-tinted. Keep in sync with the action strings in `game-loop.tsx`
+// (`handleCombatResult`, `handleAdvancement`, `handleApotheosis`,
+// `handlePillarAscension`). A structured `TurnRecord.kind` would remove the
+// coupling entirely — a worthwhile follow-up if these grow.
+const COMBAT_ACTION_MARK = "in combat; it ended in";
+const ASCENSION_ACTION_MARKS = [
+  "undergo the advancement", // sequence advancement
+  "ascend to sequence 0", // apotheosis
+  "ascend above the sequences", // pillar
+];
+
+/**
+ * Classify a past turn for styling, from the engine-controlled action text.
+ * Combat and advancement/apotheosis/pillar turns carry deterministic phrasings;
+ * everything else reads as ordinary story.
+ */
+function classifyBeat(action: string): BeatKind {
+  const a = action.toLowerCase();
+  if (a.includes(COMBAT_ACTION_MARK)) return "combat";
+  if (ASCENSION_ACTION_MARKS.some((mark) => a.includes(mark))) return "ascension";
+  return "story";
+}
+
+function toBeat(turn: TurnRecord): ChronicleBeat | null {
+  const prose = turn.aiResponse.narrative?.trim();
+  if (!prose) return null;
+  return {
+    turnNumber: turn.turnNumber,
+    action: turn.playerAction.trim(),
+    prose,
+    kind: classifyBeat(turn.playerAction),
+  };
+}
+
+const KIND_RULE: Record<BeatKind, string> = {
+  story: "border-amber/40",
+  combat: "border-crimson/50",
+  ascension: "border-occult/60",
+};
+
+const KIND_GLYPH: Record<BeatKind, string> = {
+  story: "❦",
+  combat: "⚔",
+  ascension: "✦",
+};
+
+const KIND_LABEL: Record<BeatKind, string> = {
+  story: "",
+  combat: "Encounter",
+  ascension: "Ascension",
+};
+
+export function StoryChronicle({ memory }: { memory: MemoryState }) {
+  const beats = memory.immediateTurns
+    .map(toBeat)
+    .filter((b): b is ChronicleBeat => b !== null);
+  const summary = memory.runningSummary?.trim();
+
+  // Nothing to chronicle yet (the opening scene) — render nothing.
+  if (beats.length === 0 && !summary) return null;
+
+  return (
+    <section aria-label="The chronicle so far" className="mb-8">
+      <div className="mb-4 flex items-center gap-3" aria-hidden="true">
+        <span className="font-serif text-[0.7rem] tracking-[0.3em] text-amber uppercase">
+          The Chronicle
+        </span>
+        <span className="h-px flex-1 bg-gradient-to-r from-amber/40 to-transparent" />
+      </div>
+
+      {summary && (
+        <details className="group mb-5 rounded-lg border border-border bg-surface/70 p-4">
+          <summary className="cursor-pointer list-none font-serif text-xs tracking-[0.18em] text-copper uppercase marker:content-none">
+            <span aria-hidden="true" className="mr-2 text-copper">
+              ☙
+            </span>
+            The story so far
+          </summary>
+          <p className="mt-3 font-serif text-sm leading-relaxed text-muted">{summary}</p>
+        </details>
+      )}
+
+      <ol className="space-y-5">
+        {beats.map((beat) => (
+          <li key={beat.turnNumber} className={`border-l-2 ${KIND_RULE[beat.kind]} pl-4`}>
+            <p className="mb-1.5 flex items-baseline gap-2">
+              <span aria-hidden="true" className="text-copper">
+                {KIND_GLYPH[beat.kind]}
+              </span>
+              {KIND_LABEL[beat.kind] && (
+                <span className="text-[0.65rem] font-semibold tracking-[0.2em] text-copper uppercase">
+                  {KIND_LABEL[beat.kind]}
+                </span>
+              )}
+              <span className="font-serif text-xs italic text-muted">{beat.action}</span>
+            </p>
+            <p className="font-serif text-sm leading-[1.8] text-muted">{beat.prose}</p>
+          </li>
+        ))}
+      </ol>
+
+      <div className="mt-6 flex items-center gap-3" aria-hidden="true">
+        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-amber/30 to-transparent" />
+        <span className="text-amber/60">◆</span>
+        <span className="h-px flex-1 bg-gradient-to-r from-transparent via-amber/30 to-transparent" />
+      </div>
+    </section>
+  );
+}

@@ -80,6 +80,17 @@ describe("glossaryForSequence (progressive disclosure)", () => {
     expect(atFour).toContain("sefirah");
   });
 
+  it("reveals the Sealed Artifact grade ladder to a practitioner (Seq 6), not a novice", () => {
+    expect(getGlossaryTerm("sealed-artifact-grades")?.revealAtSequence).toBe(6);
+    expect(glossaryForSequence(9).map((t) => t.slug)).not.toContain(
+      "sealed-artifact-grades",
+    );
+    const atSix = glossaryForSequence(6).map((t) => t.slug);
+    expect(atSix).toContain("sealed-artifact-grades");
+    // It is universal world-building, not epoch-gated.
+    expect(getGlossaryTerm("sealed-artifact-grades")?.epoch).toBeUndefined();
+  });
+
   it("unlocks monotonically as the player advances", () => {
     let previous = 0;
     for (let level = 9; level >= 1; level--) {
