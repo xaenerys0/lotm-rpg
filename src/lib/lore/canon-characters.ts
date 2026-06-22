@@ -20,6 +20,8 @@
 // so he is neither low-Sequence at his introduction in an ordinary sense nor a
 // reachable mainland start.)
 //
+import type { AccessFlag } from "@/lib/ai";
+
 // CANON: every fact below (pathway, starting sequence, introduction chapter,
 // family/relationships, residence) is verified against `corpus/` — the LOTM wiki
 // dump and novel EPUB — NOT memory. See the repo-root CLAUDE.md "Canon & Source
@@ -46,6 +48,13 @@ export interface CanonCharacterPreset {
   startLocation: string;
   /** Starting epoch (the Fifth for every current roster member). */
   epoch: number;
+  /**
+   * Capability flags the character holds from the start (issue #130) — only for
+   * a figure who BEGINS inside an access-gated continent (e.g. Derrick Berg, a
+   * City-of-Silver native, holds the dream-world passage + his city's awareness
+   * flag). Absent for an ordinary mainland start. Seeded onto `GameState`.
+   */
+  accessFlags?: AccessFlag[];
   /**
    * The shared-timeline position to seed (issue #63 RAG gate): the chapter at
    * which this character is INTRODUCED, so retrieval exposes only past/present
@@ -200,6 +209,92 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
       "You are a Sequence 7 Detective of the White Tower pathway, a famous Backlund private detective who styles himself 'Mr. Eye of Wisdom.'",
       "You secretly believe in the Church of the God of Knowledge and Wisdom, keeping a cover as an Evernight worshipper at home in Loen.",
       "You keep a wary professional friendship with the detective Sherlock Moriarty.",
+    ],
+  },
+  {
+    id: "derrick-berg",
+    displayName: "Derrick Berg",
+    aliases: ["Derrick", "The Sun"],
+    pathwayId: 3, // Sun
+    startSequence: 9, // Bard
+    startLocation: "Silver City",
+    epoch: 5,
+    canonPosition: 157, // Becomes a Bard (his Beyonder genesis) via Mr. Fool.
+    accessFlags: ["dream-world-passage", "silver-city-passage"],
+    background: `You are Derrick Berg, a young man born and raised in the City of Silver — one of the last surviving cities of the Forsaken Land of the Gods, a sealed continent walled off from the wider world. Devout, earnest, and uncommonly strong of body, you grew up among the defenders of the City, raised in the faith of the abandoned that its people have kept through long ages of isolation. Your ties are to your family and to the brotherhood of the City's defenders, and to the god your people still pray to in a land the gods seem to have left behind. Everything changed when a passage opened to you through the Dream World — a way out of the sealed continent — and a mysterious benefactor known only as Mr. Fool set a Sun-pathway potion before you. You have just become a Sequence 9 Bard, the first rung of the Sun pathway, and taken your place in the strange gathering "above the gray fog" as a member of the secret Tarot Club, where you are called "The Sun." Sincere to a fault and physically formidable, you are a sheltered believer stepping for the first time into a world vaster and more dangerous than the City ever taught you — without losing the openhearted decency it raised in you.`,
+    openingRecap: `The lightning-wracked sky of the City of Silver still hangs over you, but a door has opened that no one in your sheltered city has walked through in lifetimes. The Sun-potion's warmth settles in your chest, the Tarot Club's gathering above the gray fog still ringing in your memory, as you take your first steps as The Sun — a defender of the abandoned, suddenly part of something far larger.`,
+    earlySalienceFacts: [
+      "You are a Sequence 9 Bard of the Sun pathway, newly made a Beyonder by a potion from Mr. Fool.",
+      "You are a native defender of the City of Silver in the sealed Forsaken Land, devout in the faith of the abandoned.",
+      "In the secret Tarot Club, gathered above the gray fog, your code name is 'The Sun.'",
+    ],
+  },
+  {
+    id: "fors-wall",
+    displayName: "Fors Wall",
+    aliases: ["Fors", "The Magician", "Margaret Taylor"],
+    pathwayId: 7, // Door
+    startSequence: 9, // Apprentice
+    startLocation: "Backlund",
+    epoch: 5,
+    canonPosition: 107,
+    background: `You are Fors Wall, a spirited, ambitious, sometimes scatterbrained young woman who scrapes a living in Backlund as a writer and a private tutor of the occult. Behind that ordinary face you are a Beyonder of the Door pathway, trained as an outside disciple of the ancient Abraham line — the house that holds the full Door formula and has, in this age, turned its faith to the Fool. You are no blood of theirs: your father was a minor military officer, and you came to the Door through the teaching of an Abraham mentor rather than by birth. At the first rung of your path, a Sequence 9 Apprentice, your Door artistry — drawing portals, sending messages and small objects across distance — is still slight, but it already makes you quietly useful to the secret circle you have fallen in with: the Tarot Club, gathered above the gray fog, where you hold the card of "The Magician." You keep the faith of the Church of the Fool, and you move about Backlund under cover names like Margaret Taylor. Braver and more resourceful than your chaotic surface suggests, you are an eccentric authoress to your neighbours and a budding sorceress to the few who know the truth.`,
+    openingRecap: `Backlund's smog and your unpaid bills press in as ever, but your head is full of portals and possibilities. The Door's first secrets are yours now, the Tarot Club's gathering still glittering in your memory, as you set out — an aspiring authoress, an occult tutor, and the Club's newest Magician — to make your slight new powers count.`,
+    earlySalienceFacts: [
+      "You are a Sequence 9 Apprentice of the Door pathway, an outside disciple of the Abraham line.",
+      "You scrape a living in Backlund as a writer and occult tutor, under cover names like Margaret Taylor.",
+      "In the secret Tarot Club you hold the card of 'The Magician,' and you keep the faith of the Church of the Fool.",
+    ],
+  },
+  {
+    id: "xio-derecha",
+    displayName: "Xio Derecha",
+    aliases: ["Xio", "Judgment"],
+    pathwayId: 12, // Justiciar
+    startSequence: 9, // Arbiter
+    startLocation: "Backlund",
+    epoch: 5,
+    canonPosition: 112,
+    background: `You are Xio Derecha, a young Beyonder of the Justiciar pathway making your way in Backlund, capital of the Loen Kingdom. Very short — barely over five feet — with soft, youthful features, messy shoulder-length blond hair, and sun-darkened skin, you carry nonetheless an unmistakable dignity and a quiet, convincing charm. You walk the Justiciar's road of order, law, and judgment at its first rung, a Sequence 9 Arbiter, with an earnest devotion to fairness that runs deeper than your unassuming look suggests. Your closest tie is your friendship with the eccentric authoress Fors Wall, and through that circle you have come into the secret Tarot Club, gathered above the gray fog, where you hold the code name "Judgment." Idealistic and upright, you mean to use the order-keeping gifts of your pathway to set wrong things right — a small, sun-browned figure with a god's instinct for the scales, finding her footing in the capital's hidden Beyonder world.`,
+    openingRecap: `Backlund stretches out before you, vast and unfair and full of things that need setting right. The Justiciar's first powers are settling into you, your friend Fors Wall not far off and the Tarot Club's gathering fresh in your mind, as you step out — small, sun-browned, and quietly determined — to weigh the capital's wrongs on your own scales.`,
+    earlySalienceFacts: [
+      "You are a Sequence 9 Arbiter of the Justiciar pathway, devoted to order, law, and judgment.",
+      "Your closest friend is the authoress and Door-Beyonder Fors Wall.",
+      "In the secret Tarot Club, gathered above the gray fog, your code name is 'Judgment.'",
+    ],
+  },
+  {
+    id: "trissy",
+    displayName: "Trissy",
+    aliases: ["Tris", "Trissy Cheek"],
+    pathwayId: 15, // Demoness
+    startSequence: 7, // Trissy emerges from Tris on reaching Sequence 7
+    startLocation: "Tingen City",
+    epoch: 5,
+    canonPosition: 122,
+    background: `You are Trissy — once a man named Tris, a drifter who found a place in the Theosophy Order and walked the strange, dangerous road of the Demoness pathway. Tris was a round-faced, shy young man, happiest tucked in a corner, whom only those who knew him well discovered to be a wonderful conversationalist. Upon reaching Sequence 7, the Demoness pathway worked its transformation, and Tris became Trissy: a gorgeous young woman of perhaps eighteen or nineteen, with a round face, slender eyes, and a gentle, refined temperament, genuinely sweet beneath the new beauty. You are a Demoness Beyonder now, your gifts those of charm, allure, and the subtler arts your pathway grants, and you move through the underworld and the hidden corners of Loen where Beyonders quietly trade in secrets and favours. The change of name and shape is no disguise but a truth your path made of you — and you carry it with a poised, unhurried calm, a person remade by the very power you chose to chase.`,
+    openingRecap: `The transformation is still new in your skin — Tris is behind you now, and Trissy looks back from every dark window. You move through the hidden markets and back rooms where Beyonders deal, a freshly-remade Demoness of the seventh Sequence, learning what your new shape and your pathway's gifts can do.`,
+    earlySalienceFacts: [
+      "You are a Sequence 7 Beyonder of the Demoness pathway, gifted in charm and allure.",
+      "You were once a man named Tris, a drifter of the Theosophy Order; the Demoness path remade you as Trissy on reaching Sequence 7.",
+      "You move through the Beyonder underworld of Loen, where secrets and favours are traded.",
+    ],
+  },
+  {
+    id: "emlyn-white",
+    displayName: "Emlyn White",
+    aliases: ["Emlyn", "The Moon", "Bai Ailin"],
+    pathwayId: 17, // Moon
+    startSequence: 9, // Apothecary
+    startLocation: "Backlund",
+    epoch: 5,
+    canonPosition: 316,
+    background: `You are Emlyn White — once known as Bai Ailin — a young Sanguine who has fallen into the keeping of the Harvest Church on Rose Street in Backlund, the Church of the Earth Mother's house in the capital. Taken in by the towering ex-pirate bishop Father Utravsky — who confiscated your Master Key and gave you his own blood, and whom you first despised as a "dirty old man" before coming, grudgingly, to respect — you have become a believer of the Earth Mother and a Beyonder of the Moon pathway, a Sequence 9 Apothecary at the first rung of your road, with a grounding in herbs and remedies. A Sanguine among the life-faithful, you stand as a quiet bridge between Backlund's Sanguines and the Church that sheltered you. You have also fallen in with a stranger circle still — the secret Tarot Club, gathered above the gray fog, where you hold the card of "The Moon" — and befriended a Backlund detective named Sherlock Moriarty. Wary, proud, and more softhearted than you let on, you are a lost young Sanguine finding, against your own expectations, something like a place to belong.`,
+    openingRecap: `Rose Street's Harvest Church has become an unlikely refuge, Father Utravsky's blood and the Earth Mother's faith stirring something new in you. A fresh Apothecary of the Moon and the Tarot Club's quiet "Moon," you move through Backlund's underside — a Sanguine learning, warily, to trust the people who took you in.`,
+    earlySalienceFacts: [
+      "You are a Sequence 9 Apothecary of the Moon pathway, a Sanguine taken in by the Harvest Church of the Earth Mother in Backlund.",
+      "Father Utravsky, the ex-pirate bishop, sheltered you and gave you his blood; you grudgingly respect him.",
+      "In the secret Tarot Club you hold the card of 'The Moon,' and you have befriended the detective Sherlock Moriarty.",
     ],
   },
 ];

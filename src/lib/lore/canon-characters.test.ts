@@ -50,32 +50,51 @@ describe("canon-characters data integrity", () => {
     }
   });
 
-  it("each preset id matches an existing canonical NPC lore slug stem", () => {
-    const slugs = new Set(NPC_LORE.map((e) => e.slug));
+  it("uses a dossier-listed name for any preset that HAS a canonical NPC dossier", () => {
+    // Not every canon figure has a dedicated `npcs.ts` dossier (Trissy, Xio do
+    // not); a dossier is not required for takeover (suppression works by name).
+    // But where one exists, the preset's display name must be one it lists.
     for (const preset of CANON_PLAYABLE_CHARACTERS) {
-      expect(slugs.has(`npc-${preset.id}`)).toBe(true);
+      const entry = NPC_LORE.find((e) => e.slug === `npc-${preset.id}`);
+      if (!entry) continue;
+      expect(entry.npcs).toContain(preset.displayName);
     }
   });
 
-  it("seeds the documented roster across pathways beyond the original nine", () => {
+  it("seeds the documented roster across many pathways", () => {
     const ids = CANON_PLAYABLE_CHARACTERS.map((p) => p.id).sort();
     expect(ids).toEqual(
       [
         "audrey-hall",
         "daly-simone",
+        "derrick-berg",
         "dunn-smith",
+        "emlyn-white",
+        "fors-wall",
         "isengard-stanton",
         "klein-moretti",
         "leonard-mitchell",
         "old-neil",
+        "trissy",
+        "xio-derecha",
       ].sort(),
     );
   });
 
-  it("covers pathways outside the original 1-9 range (Hermit, White Tower)", () => {
+  it("spans pathways well beyond the original 1-9 range", () => {
     const pathwayIds = new Set(CANON_PLAYABLE_CHARACTERS.map((p) => p.pathwayId));
-    expect(pathwayIds.has(18)).toBe(true); // Hermit — Old Neil
-    expect(pathwayIds.has(10)).toBe(true); // White Tower — Isengard Stanton
+    // Sun(3), Door(7), White Tower(10), Justiciar(12), Demoness(15), Moon(17),
+    // Hermit(18) — none of these are in the original "ids 1-9" assumption.
+    for (const id of [3, 7, 10, 12, 15, 17, 18]) {
+      expect(pathwayIds.has(id)).toBe(true);
+    }
+  });
+
+  it("seeds origin access flags for a character native to a sealed continent", () => {
+    const derrick = getCanonCharacter("derrick-berg")!;
+    expect(derrick.accessFlags).toEqual(["dream-world-passage", "silver-city-passage"]);
+    // A mainland figure carries none.
+    expect(getCanonCharacter("klein-moretti")!.accessFlags).toBeUndefined();
   });
 });
 

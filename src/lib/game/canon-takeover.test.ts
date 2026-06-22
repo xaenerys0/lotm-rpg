@@ -13,6 +13,7 @@ import { createDigestionState } from "./digestion";
 
 const klein = getCanonCharacter("klein-moretti")!;
 const dunn = getCanonCharacter("dunn-smith")!;
+const derrick = getCanonCharacter("derrick-berg")!;
 
 describe("createCanonCharacterSession", () => {
   it("applies the canon preset (pathway, sequence, location, currentCity, id)", () => {
@@ -50,6 +51,24 @@ describe("createCanonCharacterSession", () => {
     const session = createCanonCharacterSession(klein, createMemoryState());
     const facts = session.memory.sessionFacts.map((f) => f.description);
     expect(facts.some((d) => d.includes("Sequence 9 Seer"))).toBe(true);
+  });
+
+  it("seeds origin access flags + the sealed-continent start for a Forsaken native", () => {
+    const session = createCanonCharacterSession(derrick, createMemoryState());
+    expect(session.gameState.location).toBe("Silver City");
+    expect(session.gameState.currentCity).toBe("silver-city");
+    expect(session.gameState.accessFlags).toEqual([
+      "dream-world-passage",
+      "silver-city-passage",
+    ]);
+    expect(session.gameState.sequenceLevel).toBe(9);
+    expect(session.gameState.pathwayId).toBe(3); // Sun
+  });
+
+  it("leaves accessFlags unset for a mainland character", () => {
+    expect(
+      createCanonCharacterSession(klein, createMemoryState()).gameState.accessFlags,
+    ).toBeUndefined();
   });
 
   it("honors an explicit start scenario location when one is passed", () => {

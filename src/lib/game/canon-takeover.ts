@@ -63,6 +63,10 @@ export function createCanonCharacterSession(
     sequenceLevel: preset.startSequence,
     location,
     ...(currentCity ? { currentCity } : {}),
+    // A figure who BEGINS in an access-gated continent (e.g. Derrick Berg in the
+    // City of Silver) holds their capability flags from the start, so the map +
+    // travel gates treat their home as reachable. Absent for a mainland start.
+    ...(preset.accessFlags ? { accessFlags: preset.accessFlags } : {}),
     // Re-seed digestion for the canon START sequence (the generic builder seeds
     // it for Seq 9; a non-9 canon start — Dunn/Daly at Seq 7 — needs the match).
     digestion: createDigestionState(preset.pathwayId, preset.startSequence),
