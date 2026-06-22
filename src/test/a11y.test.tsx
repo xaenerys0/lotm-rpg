@@ -483,6 +483,32 @@ describe("accessibility — story chronicle", () => {
     await expectNoAxeViolations(<StoryChronicle memory={memory} />);
   });
 
+  it("styles beats from the structured turn kind when present (issue #171)", async () => {
+    const memory = {
+      immediateTurns: [
+        {
+          turnNumber: 1,
+          // Action text that the string classifier would NOT flag — the
+          // structured `kind` drives the styling instead.
+          playerAction: "I confront the figure",
+          aiResponse: { narrative: "Steel meets shadow." },
+          timestamp: 1001,
+          kind: "combat" as const,
+        },
+        {
+          turnNumber: 2,
+          playerAction: "I take up the mantle",
+          aiResponse: { narrative: "The power settles into you." },
+          timestamp: 1002,
+          kind: "advancement" as const,
+        },
+      ],
+      recentSummaries: [],
+      sessionFacts: [],
+    };
+    await expectNoAxeViolations(<StoryChronicle memory={memory} />);
+  });
+
   it("renders nothing before any beats exist", async () => {
     const memory = { immediateTurns: [], recentSummaries: [], sessionFacts: [] };
     await expectNoAxeViolations(<StoryChronicle memory={memory} />);

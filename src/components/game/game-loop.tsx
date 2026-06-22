@@ -711,6 +711,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             { eventType: "advancement", summary: apotheosisSummary },
           ),
           playerAction: `I seize the throne and ascend to Sequence 0, becoming ${result.honorific}, a True God of the pathway.`,
+          kind: "advancement",
         }),
       );
       endingInFlight.current = false;
@@ -754,6 +755,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             { eventType: "advancement", summary: pillarSummary },
           ),
           playerAction: `I integrate my family's godhoods and ascend above the sequences, becoming ${result.pillarName}, a Pillar of the universe.`,
+          kind: "advancement",
         }),
       );
       endingInFlight.current = false;
@@ -865,6 +867,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             type: "ENGINE_RESOLUTION",
             result: resolution,
             playerAction,
+            kind: "advancement",
           }),
         );
         setAdvancing(false);
@@ -1006,6 +1009,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           type: "ENGINE_RESOLUTION",
           result: engineResolution({ narrative: scene }),
           playerAction,
+          kind: "combat",
         }),
       );
       clearCombatFromStorage(session.id);
@@ -1439,6 +1443,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         session.gameState.epoch,
         resolveTrackedNpcState(session.trackedNpcState),
         preferences.movementGateEnabled,
+        session.pendingTurnKind ?? undefined,
       );
       const { gameState, memory } = result;
       // Acting-method discovery (issue #95): the moment the player earns the

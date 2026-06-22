@@ -504,6 +504,7 @@ export function applyResolution(
   epoch: number | undefined,
   trackedNpcState: TrackedNpcState,
   movementGateEnabled: boolean,
+  turnKind?: import("@/lib/ai").TurnKind,
 ): {
   gameState: GameState;
   memory: MemoryState;
@@ -588,7 +589,13 @@ export function applyResolution(
   // items, so the memory fact extractor and recent-summary bullet never report a
   // blocked reagent as "discovered". The blocked items become lead facts instead.
   const sanitizedResponse = { ...response, itemsDiscovered: carried };
-  const turn = buildTurnRecord(turnCount, playerAction, sanitizedResponse);
+  const turn = buildTurnRecord(
+    turnCount,
+    playerAction,
+    sanitizedResponse,
+    undefined,
+    turnKind,
+  );
   let updatedMemory = addTurn(memory, turn);
   // Movement-gate narration (issue #101): a refused cross-city teleport, or an
   // against-the-will relocation, is recorded so the narrator weaves it in.

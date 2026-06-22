@@ -87,6 +87,7 @@ export function transition(
         currentNarrative: action.result.response.narrative,
         selectedChoiceId: null,
         pendingPlayerAction: action.playerAction,
+        pendingTurnKind: action.kind ?? null,
         updatedAt: now,
       };
     }
@@ -105,6 +106,7 @@ export function transition(
         lastResolution: null,
         activePillar: null,
         pendingPlayerAction: null,
+        pendingTurnKind: null,
         updatedAt: now,
       };
     }

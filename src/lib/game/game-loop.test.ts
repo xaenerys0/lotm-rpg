@@ -114,6 +114,7 @@ function applyRes(
   epoch: number | undefined = undefined,
   trackedNpcState = emptyTrackedNpcState(),
   movementGateEnabled = true,
+  turnKind: import("@/lib/ai").TurnKind | undefined = undefined,
 ): ReturnType<typeof applyResolution> {
   return applyResolution(
     state,
@@ -125,6 +126,7 @@ function applyRes(
     epoch,
     trackedNpcState,
     movementGateEnabled,
+    turnKind,
   );
 }
 
@@ -409,6 +411,31 @@ describe("transition", () => {
       expect(next.updatedAt).toBe(NOW);
     });
 
+    it("carries the structured turn kind, defaulting to null when absent (issue #171)", () => {
+      const session = makeSession({ phase: "choices", selectedChoiceId: "c1" });
+      const withKind = transition(
+        session,
+        {
+          type: "ENGINE_RESOLUTION",
+          result: makeValidatedResponse(),
+          playerAction: "I fought",
+          kind: "combat",
+        },
+        NOW,
+      );
+      expect(withKind.pendingTurnKind).toBe("combat");
+      const withoutKind = transition(
+        session,
+        {
+          type: "ENGINE_RESOLUTION",
+          result: makeValidatedResponse(),
+          playerAction: "I drink and advance.",
+        },
+        NOW,
+      );
+      expect(withoutKind.pendingTurnKind).toBeNull();
+    });
+
     it("throws from situation phase", () => {
       const session = makeSession({ phase: "situation" });
       expect(() =>
@@ -444,6 +471,7 @@ describe("transition", () => {
       expect(next.lastResolution).toBeNull();
       expect(next.activePillar).toBeNull();
       expect(next.pendingPlayerAction).toBeNull();
+      expect(next.pendingTurnKind).toBeNull();
       expect(next.updatedAt).toBe(NOW);
     });
 
@@ -1814,6 +1842,24 @@ describe("applyResolution", () => {
     expect(newMemory.immediateTurns).toHaveLength(1);
     expect(newMemory.immediateTurns[0].turnNumber).toBe(0);
     expect(newMemory.immediateTurns[0].playerAction).toBe("Look around");
+    // A story turn carries no engine-turn kind.
+    expect("kind" in newMemory.immediateTurns[0]).toBe(false);
+  });
+
+  it("stamps the engine-turn kind onto the committed record (issue #171)", () => {
+    const { memory: newMemory } = applyRes(
+      makeGameState(),
+      createMemoryState(),
+      makeValidatedResponse(),
+      0,
+      "I fought a wraith in combat",
+      createActingMethodState(),
+      undefined,
+      emptyTrackedNpcState(),
+      true,
+      "combat",
+    );
+    expect(newMemory.immediateTurns[0].kind).toBe("combat");
   });
 
   it("applies all changes together", () => {

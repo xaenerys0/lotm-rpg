@@ -16,6 +16,7 @@ export type {
   Continent,
   AccessFlag,
   TurnRecord,
+  TurnKind,
   BulletSummary,
   SessionFact,
   MemoryState,

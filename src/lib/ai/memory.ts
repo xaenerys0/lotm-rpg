@@ -3,6 +3,7 @@ import type {
   BulletSummary,
   MemoryState,
   SessionFact,
+  TurnKind,
   TurnRecord,
 } from "./types";
 
@@ -240,6 +241,7 @@ export function buildTurnRecord(
   playerAction: string,
   aiResponse: AIResponse,
   retrievedChunkIds?: string[],
+  kind?: TurnKind,
 ): TurnRecord {
   return {
     turnNumber,
@@ -249,5 +251,7 @@ export function buildTurnRecord(
     // Recorded for retrieval determinism/debuggability (issue #63); omitted
     // entirely on turns that performed no retrieval.
     ...(retrievedChunkIds !== undefined ? { retrievedChunkIds } : {}),
+    // The structured engine-turn kind (issue #171); absent for story turns.
+    ...(kind !== undefined ? { kind } : {}),
   };
 }

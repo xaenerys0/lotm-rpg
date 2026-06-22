@@ -110,6 +110,15 @@ export interface GameSession {
    */
   pendingPlayerAction?: string | null;
   /**
+   * Transient structured kind for that same engine-decided turn (issue #171),
+   * carried alongside `pendingPlayerAction` so the committed turn record is
+   * stamped `combat`/`advancement` and the chronicle styles it without sniffing
+   * the action string. Cleared on `APPLY_CONSEQUENCES`. Rides the deserialize
+   * `...s` spread; a rare mid-`consequences` reload that loses it falls back to
+   * the chronicle's string classifier.
+   */
+  pendingTurnKind?: import("@/lib/ai").TurnKind | null;
+  /**
    * Permadeath marker (issue #12). Set once, never cleared: the session is
    * preserved as a historical record (inventory, memory, journal stay
    * readable) but play cannot continue.
@@ -130,7 +139,12 @@ export type GameLoopAction =
   | { type: "SITUATION_READY"; narrative: string; choices: Choice[] }
   | { type: "SELECT_CHOICE"; choiceId: string }
   | { type: "RESOLUTION_READY"; result: ValidatedAIResponse }
-  | { type: "ENGINE_RESOLUTION"; result: ValidatedAIResponse; playerAction: string }
+  | {
+      type: "ENGINE_RESOLUTION";
+      result: ValidatedAIResponse;
+      playerAction: string;
+      kind?: import("@/lib/ai").TurnKind;
+    }
   | { type: "APPLY_CONSEQUENCES" }
   | { type: "ERROR"; message: string; errorCode?: AIErrorCode | "CONFIG_MISSING" }
   | { type: "RETRY" };

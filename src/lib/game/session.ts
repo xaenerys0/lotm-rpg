@@ -447,6 +447,17 @@ export function isValidSessionShape(obj: unknown): boolean {
     return false;
   }
 
+  // The matching transient engine-turn kind (issue #171) is optional but, when
+  // present, must be one of the known kinds or null. Rides the `...s` spread.
+  if (
+    s.pendingTurnKind !== undefined &&
+    s.pendingTurnKind !== null &&
+    s.pendingTurnKind !== "combat" &&
+    s.pendingTurnKind !== "advancement"
+  ) {
+    return false;
+  }
+
   // The permadeath marker (issue #12) is optional but strict when present.
   if (s.ended !== undefined) {
     if (typeof s.ended !== "object" || s.ended === null) return false;

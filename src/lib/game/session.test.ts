@@ -229,3 +229,30 @@ describe("canonCharacterId persistence + shape validation", () => {
     expect(isValidSessionShape(empty)).toBe(false);
   });
 });
+
+describe("pendingTurnKind persistence + shape validation (issue #171)", () => {
+  function kindSession(kind: unknown) {
+    const s = createSession(
+      createDefaultGameState(1),
+      "kind-1",
+      1000,
+    ) as unknown as Record<string, unknown>;
+    s.pendingTurnKind = kind;
+    return s;
+  }
+
+  it("accepts a known kind, null, or an absent field, and round-trips it", () => {
+    expect(isValidSessionShape(kindSession("combat"))).toBe(true);
+    expect(isValidSessionShape(kindSession("advancement"))).toBe(true);
+    expect(isValidSessionShape(kindSession(null))).toBe(true);
+    const plain = createSession(createDefaultGameState(1), "plain-2", 1000);
+    expect(isValidSessionShape(plain)).toBe(true);
+    const restored = deserializeSession(serializeSession(kindSession("combat") as never));
+    expect(restored?.pendingTurnKind).toBe("combat");
+  });
+
+  it("rejects an unknown kind value", () => {
+    expect(isValidSessionShape(kindSession("nonsense"))).toBe(false);
+    expect(isValidSessionShape(kindSession(7))).toBe(false);
+  });
+});
