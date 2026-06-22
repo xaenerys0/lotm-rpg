@@ -228,6 +228,23 @@ describe("canonCharacterId persistence + shape validation", () => {
     empty.gameState.canonCharacterId = "";
     expect(isValidSessionShape(empty)).toBe(false);
   });
+
+  it("round-trips canonPersonality and rejects a malformed value", () => {
+    const gs = createDefaultGameState(1);
+    gs.canonCharacterId = "klein-moretti";
+    gs.canonPersonality = "Cautious, cunning, secretive.";
+    const session = createSession(gs, "canon-p", 1000);
+    const restored = deserializeSession(serializeSession(session));
+    expect(restored?.gameState.canonPersonality).toBe("Cautious, cunning, secretive.");
+    // Absent is valid; non-string / empty is rejected.
+    expect(isValidSessionShape(session)).toBe(true);
+    const bad = createSession(gs, "canon-p2", 1000);
+    (bad.gameState as unknown as Record<string, unknown>).canonPersonality = 7;
+    expect(isValidSessionShape(bad)).toBe(false);
+    const empty = createSession(gs, "canon-p3", 1000);
+    empty.gameState.canonPersonality = "";
+    expect(isValidSessionShape(empty)).toBe(false);
+  });
 });
 
 describe("pendingTurnKind persistence + shape validation (issue #171)", () => {

@@ -5,6 +5,7 @@ export {
   CANON_PLAYABLE_CHARACTERS,
   getCanonCharacter,
   matchCanonCharacter,
+  matchCanonCharacterByName,
   normalizeCanonName,
   type CanonCharacterPreset,
 } from "./canon-characters";

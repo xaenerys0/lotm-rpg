@@ -679,7 +679,12 @@ export type StartSelection =
   | { kind: "custom"; circle: CustomStartCircle }
   // An access-gated ORIGIN start scenario chosen behind the "choose an origin"
   // affordance (issue #132) — resolved by id, it seeds the continent's flag.
-  | { kind: "origin-scenario"; scenarioId: string };
+  | { kind: "origin-scenario"; scenarioId: string }
+  // A canon-character TAKEOVER opened via the guided canon prologue: the matched
+  // preset id drives `createCanonCharacterSession` (pathway/sequence/location +
+  // durable backstory). The prologue-derived memory + recap ride the existing
+  // `onComplete` `initialMemory`/`prologueRecap` params, so no new param is needed.
+  | { kind: "canon-takeover"; canonCharacterId: string };
 
 /**
  * Bounds so a free-text circle can't bloat the durable prompt budget. Exported

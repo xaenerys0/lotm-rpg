@@ -140,6 +140,8 @@ export {
 export {
   generatePrologueScene,
   generatePrologueFinale,
+  generateCanonPrologueScene,
+  generateCanonPrologueFinale,
   MIN_PROLOGUE_SCENES,
   MAX_PROLOGUE_SCENES,
   PROLOGUE_MIN_CHOICES,
@@ -153,4 +155,8 @@ export {
   type AIPrologueChoice,
   type AIPrologueResponse,
   type AIPrologueFinale,
+  type CanonPrologueChoice,
+  type CanonPrologueScene,
+  type CanonPrologueFinale,
+  type CanonPrologueContext,
 } from "./prologue-client";

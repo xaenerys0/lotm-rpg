@@ -40,17 +40,24 @@ export function createCanonCharacterSession(
   initialMemory: MemoryState,
   startScenario?: StartScenario,
   options: CreateSessionOptions = {},
+  prologueRecapOverride?: string,
 ): GameSession {
   // `background` (who they are / relationships) and `openingRecap` (the "how you
   // arrive at the story's start" bridge) are DISTINCT durable slots — never the
-  // same string duplicated into both.
+  // same string duplicated into both. When the player lived through the GUIDED
+  // canon prologue, its recap REPLACES the static `openingRecap` (richer, same
+  // durable `prologueRecap` channel); otherwise the static `openingRecap` stands.
+  const recap =
+    prologueRecapOverride && prologueRecapOverride.trim().length > 0
+      ? prologueRecapOverride
+      : preset.openingRecap;
   const base = createDefaultGameState(
     preset.pathwayId,
     undefined,
     preset.displayName,
     preset.background,
     preset.epoch,
-    preset.openingRecap,
+    recap,
     startScenario,
   );
 
@@ -71,6 +78,9 @@ export function createCanonCharacterSession(
     // it for Seq 9; a non-9 canon start — Dunn/Daly at Seq 7 — needs the match).
     digestion: createDigestionState(preset.pathwayId, preset.startSequence),
     canonCharacterId: preset.id,
+    // Seed the figure's canon disposition so the narrator biases the choices it
+    // presents toward what this character would do (the player stays free).
+    canonPersonality: preset.personalityTraits,
   };
 
   // Turn-0 salience only — allowed to age out, NOT the durable home for the

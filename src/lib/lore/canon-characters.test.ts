@@ -4,6 +4,7 @@ import {
   CANON_PLAYABLE_CHARACTERS,
   getCanonCharacter,
   matchCanonCharacter,
+  matchCanonCharacterByName,
   normalizeCanonName,
 } from "./canon-characters";
 import { NPC_LORE } from "./npcs";
@@ -135,8 +136,46 @@ describe("matchCanonCharacter", () => {
 
   it("disambiguates two characters that share a pathway by name", () => {
     // Leonard and Dunn are both Darkness (id 5) but at different sequences.
-    expect(matchCanonCharacter("Leonard Mitchell", 5)?.startSequence).toBe(9);
+    // Corpus: Leonard introduces himself as "Sequence 8's Midnight Poet";
+    // Dunn is a Sequence 7 Nightmare.
+    expect(matchCanonCharacter("Leonard Mitchell", 5)?.startSequence).toBe(8);
     expect(matchCanonCharacter("Dunn Smith", 5)?.startSequence).toBe(7);
+  });
+});
+
+describe("matchCanonCharacterByName (name-only, pre-pathway takeover detection)", () => {
+  it("matches a display name regardless of pathway", () => {
+    expect(matchCanonCharacterByName("Leonard Mitchell")?.id).toBe("leonard-mitchell");
+    expect(matchCanonCharacterByName("Audrey Hall")?.id).toBe("audrey-hall");
+  });
+
+  it("matches an alias, case- and whitespace-insensitively", () => {
+    expect(matchCanonCharacterByName("  mr.  fool ")?.id).toBe("klein-moretti");
+    expect(matchCanonCharacterByName("Tris")?.id).toBe("trissy");
+  });
+
+  it("returns null for an unknown, blank, or missing name", () => {
+    expect(matchCanonCharacterByName("Nobody Atall")).toBeNull();
+    expect(matchCanonCharacterByName("   ")).toBeNull();
+    expect(matchCanonCharacterByName(undefined)).toBeNull();
+  });
+});
+
+describe("becomesOnScreen + personalityTraits (issue follow-up)", () => {
+  it("every preset carries a non-empty personality and a boolean becomesOnScreen", () => {
+    for (const preset of CANON_PLAYABLE_CHARACTERS) {
+      expect(typeof preset.becomesOnScreen).toBe("boolean");
+      expect(preset.personalityTraits.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it("marks only the corpus-verified become-on-screen figures", () => {
+    const onScreen = CANON_PLAYABLE_CHARACTERS.filter((p) => p.becomesOnScreen)
+      .map((p) => p.id)
+      .sort();
+    // Klein (Seer), Audrey (Spectator), Derrick (Bard) drink their first potion
+    // on-screen at their introduction; everyone else is already a Beyonder.
+    expect(onScreen).toEqual(["audrey-hall", "derrick-berg", "klein-moretti"]);
   });
 });
 

@@ -289,6 +289,15 @@ export interface GameState {
    */
   canonCharacterId?: string;
   /**
+   * For a canon-character takeover, the figure's corpus-grounded personality —
+   * seeded from the preset's `personalityTraits` at creation. Rules-engine-only
+   * (NEVER AI-mutable); pinned into the never-trimmed game-state layer and used
+   * by `buildGameStatePrompt` to bias the choices the narrator presents toward
+   * what the character would canonically do (the player stays free to act against
+   * type). Absent on every ordinary save; preserved on the `...gs` spread.
+   */
+  canonPersonality?: string;
+  /**
    * A compact, durable recap of the AI prologue (the life the character led and
    * the encounter that made them a Beyonder). The prologue runs on a separate
    * prompt the story narrator never sees, so this is pinned into the

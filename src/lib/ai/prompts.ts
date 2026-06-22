@@ -260,9 +260,14 @@ export function buildGameStatePrompt(gameState: GameState): PromptLayer {
   // Guard against the residual third-person gap — the narrator must never write
   // them as a separate present character.
   if (gameState.canonCharacterId && gameState.characterName) {
-    parts.push(
-      `## You Are This Character\nThe player character IS ${gameState.characterName} — the canonical figure, not a lookalike. Never portray ${gameState.characterName} as a separate present character, NPC, or third party; they are the protagonist you are narrating for.`,
-    );
+    let directive = `## You Are This Character\nThe player character IS ${gameState.characterName} — the canonical figure, not a lookalike. Never portray ${gameState.characterName} as a separate present character, NPC, or third party; they are the protagonist you are narrating for.`;
+    // Bias the PRESENTED choices toward what this figure would canonically do
+    // (personality-aligned suggestions) — the player remains free to act against
+    // type, and you must never force an in-character action.
+    if (gameState.canonPersonality) {
+      directive += `\n${gameState.characterName} is, in canon: ${gameState.canonPersonality} Shape the choices you OFFER so they reflect how ${gameState.characterName} would characteristically think and act — but the player is always free to choose against type, and you must never force an in-character action or remove the option to act differently.`;
+    }
+    parts.push(directive);
   }
 
   return { role: "user", content: parts.join("\n\n") };

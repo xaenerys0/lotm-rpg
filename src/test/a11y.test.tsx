@@ -164,6 +164,23 @@ describe("accessibility — character creation", () => {
     screen.getByRole("button", { name: /Born in the City of Silver/i });
     await expectNoAxeViolationsInContainer(container);
   });
+
+  it("the canon-takeover affordance (issue #92) has no violations", async () => {
+    // A configured provider enables the AI-prologue path; typing a canon name in
+    // character-setup surfaces the opt-in "Take over {name}'s story" card.
+    localStorage.setItem(PROVIDER_CONFIG_KEY, JSON.stringify({ providerId: "ollama" }));
+    const { container } = render(
+      <CharacterCreation onComplete={vi.fn()} onBack={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Begin the Prologue/i }));
+    fireEvent.change(screen.getByLabelText(/Character Name/i), {
+      target: { value: "Klein Moretti" },
+    });
+    // The affordance and its action button render for a matched canon figure.
+    screen.getByText(/Take over Klein Moretti/i);
+    screen.getByRole("button", { name: /Become Klein Moretti/i });
+    await expectNoAxeViolationsInContainer(container);
+  });
 });
 
 describe("accessibility — game loop", () => {

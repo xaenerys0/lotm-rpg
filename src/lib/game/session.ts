@@ -370,6 +370,14 @@ export function isValidSessionShape(obj: unknown): boolean {
   ) {
     return false;
   }
+  // Canon-takeover personality (rides the `...gs` spread, no seeding) — optional,
+  // but a non-empty string when present, exactly like canonCharacterId.
+  if (
+    gs.canonPersonality !== undefined &&
+    (typeof gs.canonPersonality !== "string" || gs.canonPersonality.length === 0)
+  ) {
+    return false;
+  }
 
   // RAG fields (issue #63) are optional (older sessions predate them) but
   // must be valid when present: a finite positive position, and a model id on

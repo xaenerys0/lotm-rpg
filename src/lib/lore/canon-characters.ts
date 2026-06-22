@@ -15,10 +15,12 @@
 // are pathway-agnostic). Each preset's `startSequence`/`startLocation`/
 // `canonPosition` reflect WHERE AND WHEN that character is introduced — not the
 // literal first chapter — so taking them over begins their story as the novel
-// began it for them. (Derrick Berg — Sun — is deliberately excluded: he only
-// becomes a Beyonder deep into Book 1, inside the access-gated City of Silver,
-// so he is neither low-Sequence at his introduction in an ordinary sense nor a
-// reachable mainland start.)
+// began it for them. `becomesOnScreen` marks the figures whose introduction IS
+// their becoming (Klein/Audrey/Derrick drink their first potion on-screen) — the
+// guided takeover prologue ends on the potion for them, and runs only up to the
+// first appearance (no potion) for those already established as Beyonders.
+// `personalityTraits` is the corpus-grounded disposition used to bias the
+// choices the narrator presents toward what the figure would canonically do.
 //
 import type { AccessFlag } from "@/lib/ai";
 
@@ -44,6 +46,23 @@ export interface CanonCharacterPreset {
   pathwayId: number;
   /** Canon Sequence at the character's INTRODUCTION (7-9). */
   startSequence: number;
+  /**
+   * Whether the character's NOVEL INTRODUCTION *is* their becoming — i.e. they
+   * drink their first/becoming potion on-screen at the point the story meets
+   * them (Klein's Seer potion, Audrey's Spectator, Derrick's Bard). `true` →
+   * the guided takeover prologue ENDS WITH THE POTION; `false` → they are an
+   * already-established Beyonder when introduced, so the prologue runs up to
+   * their first appearance and hands off WITHOUT a potion scene. Corpus-verified.
+   */
+  becomesOnScreen: boolean;
+  /**
+   * Concise, corpus-grounded description of the character's disposition and
+   * characteristic tendencies — used to BIAS the choices the narrator presents
+   * (in both the guided prologue and normal play) toward what this figure would
+   * likely do in the novel. The player is always free to act against type; this
+   * never forces an action. Seeded onto `GameState.canonPersonality` at takeover.
+   */
+  personalityTraits: string;
   /** Canon starting location string (leading word resolves to the city). */
   startLocation: string;
   /** Starting epoch (the Fifth for every current roster member). */
@@ -98,6 +117,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Klein", "Mr. Fool", "The Fool"],
     pathwayId: 1, // Fool
     startSequence: 9, // Seer
+    becomesOnScreen: true, // The story opens on his Seer-potion becoming.
+    personalityTraits:
+      "Cautious, cunning, and quietly fearful — he guards his transmigration secret above all and trusts almost no one with it. Polite, gentlemanly, and good-natured, fundamentally just and willing to do what is right at personal cost, yet pragmatic and self-preserving: he favours planning, divination, information-gathering, and a careful retreat over reckless confrontation. Fiercely protective of his siblings Benson and Melissa.",
     startLocation: "Tingen City",
     epoch: 5,
     canonPosition: 1, // The protagonist — the story opens on him.
@@ -115,6 +137,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Dunn", "Captain Dunn Smith", "Captain Dunn"],
     pathwayId: 5, // Darkness
     startSequence: 7, // Nightmare
+    becomesOnScreen: false, // A long-established Sequence 7 captain when introduced.
+    personalityTraits:
+      "Outwardly drowsy, mild-mannered, and famously forgetful — easygoing to the point of seeming lazy, and the source of much gentle humour. Beneath it he is kind, responsible, and silently protective of every member of his team, carrying the captain's weight without complaint. When real danger appears the laziness falls away and he becomes decisive, reliable, and unhesitating.",
     startLocation: "Tingen City",
     epoch: 5,
     canonPosition: 12, // Introduced as Klein joins the Nighthawks.
@@ -132,6 +157,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Daly", "Ma'am Daly"],
     pathwayId: 4, // Death
     startSequence: 7, // Spirit Medium
+    becomesOnScreen: false, // Already a Sequence 7 Spirit Medium, seconded to the team.
+    personalityTraits:
+      "Composed, professional, and quietly formidable — a clinical detachment that reads as coldness to those who do not know the cost of communing with the dead, but is discipline, not indifference. Keeps a measured distance from colleagues while being the surest hand they have; precise, capable, and unflinching where a case turns on the murdered, the haunted, or the unquiet dead.",
     startLocation: "Tingen City",
     epoch: 5,
     canonPosition: 14, // Introduced shortly after Klein joins the team.
@@ -148,14 +176,17 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     displayName: "Leonard Mitchell",
     aliases: ["Leonard", "Mr. Poet", "The Star"],
     pathwayId: 5, // Darkness
-    startSequence: 9, // Sleepless
+    startSequence: 8, // Midnight Poet (corpus: "Leonard Mitchell. Sequence 8's Midnight Poet.")
+    becomesOnScreen: false, // Already a Sequence 8 Midnight Poet when he meets Klein.
+    personalityTraits:
+      "Relaxed, frivolous, and rule-averse — a charming poet forever composing verse, prone to putting his feet on the desk and dodging church. Beneath the easy banter he is observant, empathetic, and braver than he seems, genuinely caring for the ordinary people of Tingen, and notably sharp at deduction. He partners readily and reads people quickly. The Error-pathway symbiote Pallez stirs beneath his thoughts, a quiet weight he never wholly forgets.",
     startLocation: "Tingen City",
     epoch: 5,
     canonPosition: 17, // Introduced as a member of the Tingen team.
-    background: `You are Leonard Mitchell, the youngest of the Tingen Nighthawks and the team's resident poet — handsome, easygoing, and forever composing verse in your head, even in the middle of a fight. A Sequence 9 Sleepless of the Darkness pathway, you need little rest and see well in the dark, and you throw yourself into the order's work with a genuine, unaffected care for the ordinary people of Tingen who will never learn how close the horrors come. You serve under Captain Dunn Smith alongside the artificer Old Neil and the seconded Spirit Medium Daly Simone, and you have quickly fallen into an easy partnership with the team's newest recruit, Klein Moretti. You carry one secret heavier than your charming manner lets on: lodged within you is Pallez Zoroast, a powerful entity of the Error pathway who lives as a symbiote in your body, lending you guidance and uncanny strength — and a danger you can never quite forget, for the Angel's own purposes are not always your own. Beneath the poetry and the good looks you are observant, empathetic, and braver than you seem, a young man who chose this dangerous, hidden vocation because someone has to stand between Tingen and the dark.`,
-    openingRecap: `A new case, a half-finished verse, and the easy company of the Nighthawks — this is the life you have made in Tingen. You shoulder your gear with a poet's grin and a Sleepless's tireless calm, the quiet presence of Pallez stirring somewhere beneath your thoughts, and step out into another night's work against the dark.`,
+    background: `You are Leonard Mitchell, one of the younger Tingen Nighthawks and the team's resident poet — handsome, easygoing, and forever composing verse in your head, even in the middle of a fight. A Sequence 8 Midnight Poet of the Darkness pathway, you need little rest and see well in the dark, and you throw yourself into the order's work with a genuine, unaffected care for the ordinary people of Tingen who will never learn how close the horrors come. You serve under Captain Dunn Smith alongside the artificer Old Neil and the seconded Spirit Medium Daly Simone, and you have quickly fallen into an easy partnership with the team's newest recruit, Klein Moretti. You carry one secret heavier than your charming manner lets on: lodged within you is Pallez Zoroast, a powerful entity of the Error pathway who lives as a symbiote in your body, lending you guidance and uncanny strength — and a danger you can never quite forget, for the Angel's own purposes are not always your own. Beneath the poetry and the good looks you are observant, empathetic, and braver than you seem, a young man who chose this dangerous, hidden vocation because someone has to stand between Tingen and the dark.`,
+    openingRecap: `A new case, a half-finished verse, and the easy company of the Nighthawks — this is the life you have made in Tingen. You shoulder your gear with a poet's grin and a Midnight Poet's tireless calm, the quiet presence of Pallez stirring somewhere beneath your thoughts, and step out into another night's work against the dark.`,
     earlySalienceFacts: [
-      "You are a Sequence 9 Sleepless of the Darkness pathway, the youngest of the Tingen Nighthawks.",
+      "You are a Sequence 8 Midnight Poet of the Darkness pathway, one of the younger Tingen Nighthawks.",
       "You serve under Captain Dunn Smith beside Old Neil, Daly Simone, and the new recruit Klein Moretti.",
       "Your secret: the Error-pathway entity Pallez Zoroast lives within you as a symbiote — both ally and danger.",
     ],
@@ -166,6 +197,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Audrey", "Miss Justice", "Justice"],
     pathwayId: 2, // Visionary
     startSequence: 9, // Spectator
+    becomesOnScreen: true, // Her introduction centres on gaining the Spectator potion.
+    personalityTraits:
+      "Idealistic, compassionate, and dazzlingly charming — eager to use her gifts for genuine good rather than mere advantage, and quietly weary of being only a society ornament. Intelligent and quick-witted, though sheltered by her upbringing; braver and more curious than a noblewoman should be. Warm toward the suffering of the poor, devoted to her dog Susie, and absolutely determined to keep her Beyonder life secret from her family.",
     startLocation: "Backlund",
     epoch: 5,
     canonPosition: 41, // Introduced when she gains the Spectator potion in Backlund.
@@ -183,6 +217,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Neil"],
     pathwayId: 18, // Hermit
     startSequence: 9, // Mystery Pryer
+    becomesOnScreen: false, // The team's long-established Sequence 9 artificer.
+    personalityTraits:
+      "Warm, grandfatherly, and humorous, with a great fund of patience for teaching — generous with the lore he has spent a lifetime gathering. Cautious and meticulous with artifacts and rituals, valuing knowledge and care over force. Known to be petty and stingy about money — insisting on reimbursement for the smallest expense — yet fundamentally kind, rarely losing his temper, and careful never to do harm.",
     startLocation: "Tingen City",
     epoch: 5,
     canonPosition: 19, // Introduced among the Tingen team early in Book 1.
@@ -200,6 +237,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Isengard", "Mr. Eye of Wisdom"],
     pathwayId: 10, // White Tower
     startSequence: 7, // Detective
+    becomesOnScreen: false, // An established Sequence 7 detective when introduced.
+    personalityTraits:
+      "Rational, methodical, and quietly brilliant at deduction — happiest with a pipe and an unlit fireplace while the facts arrange themselves. Devout in his own reserved way toward the God of Knowledge and Wisdom, though he keeps a careful cover. Observant, patient, and measured, prizing reason above birth or wealth, and slow to show his hand.",
     startLocation: "Backlund",
     epoch: 5,
     canonPosition: 157, // Introduced as the Backlund detective in Book 1.
@@ -217,6 +257,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Derrick", "The Sun"],
     pathwayId: 3, // Sun
     startSequence: 9, // Bard
+    becomesOnScreen: true, // Becomes a Bard on-screen via Mr. Fool and the Gray Fog.
+    personalityTraits:
+      "Naive, honest, and earnest to a fault — sincere, openhearted, and devout, always striving to do the right thing. Not cunning, and easily taken advantage of: he leaks valuable information for free and is poorly equipped for political or social maneuvering. Carries the Sun's vigour even in one so young, and a sheltered believer's hope of leading his people out of the dark.",
     startLocation: "Silver City",
     epoch: 5,
     canonPosition: 157, // Becomes a Bard (his Beyonder genesis) via Mr. Fool.
@@ -235,6 +278,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Fors", "The Magician", "Margaret Taylor"],
     pathwayId: 7, // Door
     startSequence: 9, // Apprentice
+    becomesOnScreen: false, // Already a Door Apprentice and Tarot Club member when introduced.
+    personalityTraits:
+      "Lazy, easygoing, and prone to procrastination — happy to put off her writing to enjoy herself, and more apt to react than to take the lead. Not especially adept socially, but honest and genuinely helpful (she will guard what is entrusted to her without skimming it). Spirited, a touch scatterbrained, fond of smoking and drinking, and quietly ambitious about advancing her path.",
     startLocation: "Backlund",
     epoch: 5,
     canonPosition: 107,
@@ -252,6 +298,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Xio", "Judgment"],
     pathwayId: 12, // Justiciar
     startSequence: 9, // Arbiter
+    becomesOnScreen: false, // Has been an Arbiter for over a year when introduced.
+    personalityTraits:
+      "Upright, with a fierce sense of justice — she busies herself administering fairness and, when words will not serve, is willing to enforce it physically. Loyal to her friends past any cost, especially Fors Wall, for whose sake she joined the Tarot Club. Sometimes mocked as brainless, but no fool: she has a near-animal intuition for danger and is not truly reckless.",
     startLocation: "Backlund",
     epoch: 5,
     canonPosition: 112,
@@ -268,7 +317,10 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     displayName: "Trissy",
     aliases: ["Tris", "Trissy Cheek"],
     pathwayId: 15, // Demoness
-    startSequence: 7, // Trissy emerges from Tris on reaching Sequence 7
+    startSequence: 7, // Witch — Trissy emerges from Tris on reaching Sequence 7
+    becomesOnScreen: false, // Already remade into Trissy (Seq 7) when introduced.
+    personalityTraits:
+      "Poised, gentle, and unhurried — genuinely sweet and refined beneath the new beauty, soft-spoken and a surprisingly fine conversationalist to those who reach her. Carries her remade self with a calm, settled composure rather than performance, while moving warily through the Beyonder underworld where secrets and favours are traded.",
     startLocation: "Tingen City",
     epoch: 5,
     canonPosition: 122,
@@ -286,6 +338,9 @@ export const CANON_PLAYABLE_CHARACTERS: CanonCharacterPreset[] = [
     aliases: ["Emlyn", "The Moon", "Bai Ailin"],
     pathwayId: 17, // Moon
     startSequence: 7, // Vampire — a Sanguine is BORN at Sequence 7 (corpus)
+    becomesOnScreen: false, // Born a Sanguine (Seq 7); never drinks a becoming potion.
+    personalityTraits:
+      "Proud and prickly, raised to believe himself the Sanguines' chosen saviour and inclined to act the part — but more softhearted than he lets on. Rich and indulgent (he spends ridiculous sums on his beloved doll collection), something of a homebody who would rather tend his dolls than venture out, and slow to trust the people who caught him.",
     startLocation: "Backlund",
     epoch: 5,
     canonPosition: 316,
@@ -327,4 +382,26 @@ export function matchCanonCharacter(
 /** O(1) lookup by id (used by world-state for doppelganger suppression). */
 export function getCanonCharacter(id: string): CanonCharacterPreset | null {
   return CANON_BY_ID.get(id) ?? null;
+}
+
+/**
+ * Match a player's chosen NAME alone (display name or any alias, normalized)
+ * against the canon roster — used by character creation to detect a takeover
+ * BEFORE a pathway is chosen, so the guided canon prologue can lock the
+ * character's fixed pathway/sequence. Returns the first preset whose name
+ * matches; `null` for a blank/unmatched name. (The stricter
+ * `matchCanonCharacter` still requires BOTH name AND pathway for the
+ * end-of-creation takeover path.)
+ */
+export function matchCanonCharacterByName(
+  name: string | undefined,
+): CanonCharacterPreset | null {
+  if (!name) return null;
+  const normalized = normalizeCanonName(name);
+  if (!normalized) return null;
+  for (const preset of CANON_PLAYABLE_CHARACTERS) {
+    const names = [preset.displayName, ...preset.aliases].map(normalizeCanonName);
+    if (names.includes(normalized)) return preset;
+  }
+  return null;
 }

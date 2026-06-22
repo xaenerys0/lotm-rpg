@@ -80,6 +80,9 @@ import {
 import {
   generatePrologueScene,
   generatePrologueFinale,
+  generateCanonPrologueScene,
+  generateCanonPrologueFinale,
+  type CanonPrologueContext,
   MIN_PROLOGUE_SCENES,
   MAX_PROLOGUE_SCENES,
   PROLOGUE_MIN_CHOICES,
@@ -5197,5 +5200,138 @@ describe("generatePrologueFinale", () => {
     await expect(
       generatePrologueFinale(makeProviderConfig(), "Klein", "", makeHistory(), [1]),
     ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+});
+
+// ── Canon-character takeover prologue (issue #92) ──
+
+describe("generateCanonPrologueScene / generateCanonPrologueFinale", () => {
+  beforeEach(() => vi.restoreAllMocks());
+  afterEach(() => vi.restoreAllMocks());
+
+  function ctx(overrides?: Partial<CanonPrologueContext>): CanonPrologueContext {
+    return {
+      characterName: "Klein Moretti",
+      background: "A history graduate carrying a borrowed life.",
+      pathwayName: "Fool",
+      personality: "Cautious, cunning, and secretive; protective of his siblings.",
+      becomesOnScreen: true,
+      epoch: 5,
+      ...overrides,
+    };
+  }
+
+  function mockFetch(content: string): ReturnType<typeof vi.spyOn> {
+    return vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 80, completion_tokens: 40, total_tokens: 120 },
+          }),
+        ),
+    } as Response);
+  }
+
+  const sceneJson = JSON.stringify({
+    narrative: "The grey fog still rings in your bones as Tingen wakes around you.",
+    choices: [
+      { id: "a", text: "Guard your secret and say nothing." },
+      { id: "b", text: "Test the new sight at the edge of your vision." },
+      { id: "c", text: "Check on Benson and Melissa first." },
+    ],
+    readyToConclude: false,
+  });
+
+  it("parses a canon scene's plain choices (no affinities)", async () => {
+    mockFetch(sceneJson);
+    const scene = await generateCanonPrologueScene(ctx(), makeProviderConfig(), []);
+    expect(scene.narrative).toContain("grey fog");
+    expect(scene.choices).toHaveLength(3);
+    expect(scene.choices[0]).toEqual({
+      id: "a",
+      text: "Guard your secret and say nothing.",
+    });
+    expect(scene.readyToConclude).toBe(false);
+  });
+
+  it("seeds the system prompt with the character, fixed pathway, and personality", async () => {
+    const spy = mockFetch(sceneJson);
+    await generateCanonPrologueScene(ctx(), makeProviderConfig(), []);
+    const body = JSON.parse((spy.mock.calls[0]![1] as RequestInit).body as string);
+    const system = body.messages[0].content as string;
+    expect(system).toContain("Klein Moretti");
+    expect(system).toContain("Cautious, cunning, and secretive");
+    expect(system).toMatch(/BECOMES a Beyonder/); // on-screen framing
+  });
+
+  it("frames an already-Beyonder figure with NO becoming-potion scene", async () => {
+    const spy = mockFetch(sceneJson);
+    await generateCanonPrologueScene(
+      ctx({
+        characterName: "Dunn Smith",
+        pathwayName: "Darkness",
+        becomesOnScreen: false,
+      }),
+      makeProviderConfig(),
+      [],
+    );
+    const body = JSON.parse((spy.mock.calls[0]![1] as RequestInit).body as string);
+    const system = body.messages[0].content as string;
+    expect(system).toContain("established Beyonder");
+    expect(system).toContain("NO becoming-potion scene");
+  });
+
+  it("backfills empty/duplicate choice ids so React keys stay unique", async () => {
+    mockFetch(
+      JSON.stringify({
+        narrative: "A scene.",
+        choices: [
+          { id: "", text: "First." },
+          { id: "", text: "Second." },
+        ],
+        readyToConclude: true,
+      }),
+    );
+    const scene = await generateCanonPrologueScene(ctx(), makeProviderConfig(), []);
+    const ids = scene.choices.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.every((id) => id.length > 0)).toBe(true);
+  });
+
+  it("throws MALFORMED_OUTPUT when a scene has no usable choices", async () => {
+    mockFetch(JSON.stringify({ narrative: "A scene.", choices: [] }));
+    await expect(
+      generateCanonPrologueScene(ctx(), makeProviderConfig(), []),
+    ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("generates a becoming finale (choice-less) for an on-screen figure", async () => {
+    const spy = mockFetch(
+      JSON.stringify({
+        narrative: "The Seer potion is the colour of dark water. You drink.",
+      }),
+    );
+    const finale = await generateCanonPrologueFinale(ctx(), makeProviderConfig(), []);
+    expect(finale.narrative).toContain("You drink");
+    const body = JSON.parse((spy.mock.calls[0]![1] as RequestInit).body as string);
+    expect(body.messages[0].content).toContain("the becoming");
+  });
+
+  it("generates an arrival finale (no potion) for an already-Beyonder figure", async () => {
+    const spy = mockFetch(
+      JSON.stringify({ narrative: "You step into the Nighthawks' office." }),
+    );
+    await generateCanonPrologueFinale(
+      ctx({ characterName: "Dunn Smith", becomesOnScreen: false }),
+      makeProviderConfig(),
+      [],
+    );
+    const body = JSON.parse((spy.mock.calls[0]![1] as RequestInit).body as string);
+    expect(body.messages[0].content).toContain("the hand-off");
+    expect(body.messages[0].content).toContain("Do NOT depict any becoming or potion");
   });
 });
