@@ -12,11 +12,11 @@ import type { MemoryState, TurnRecord } from "@/lib/ai";
 // disconnected side-screen. Past beats recede; the live scene below stays
 // prominent. Derived entirely from persisted memory — no new save state.
 //
-// Layout: the durable "story so far" summary sits at the top (collapsible,
-// closed by default), and the running "Chronicle" transcript of recent beats
-// sits below it in its own collapsible disclosure (open by default, so the turn
-// still reads as a continuous chat — the player can fold it away to keep only
-// the live scene in view). Both are native <details>/<summary>, no client JS.
+// Layout: the durable "story so far" summary sits at the top, and the running
+// "Chronicle" transcript of recent beats sits below it in its own disclosure.
+// Both are collapsible and closed by default, so the live scene stays the focus
+// — the player unfolds either to read the recap or the turn-by-turn chat. Both
+// are native <details>/<summary>, no client JS.
 
 type BeatKind = "story" | "combat" | "ascension";
 
@@ -122,10 +122,10 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
       )}
 
       {/* The Chronicle — the running transcript of recent beats, at the bottom and
-          collapsible. Open by default so the turn still reads as a continuous chat;
-          the player can fold it away when the live scene is all they want. */}
+          collapsible. Closed by default so the live scene stays the focus; the
+          player can unfold it to read the turn as a continuous chat. */}
       {beats.length > 0 && (
-        <details open className="group">
+        <details className="group">
           <summary className="mb-4 flex cursor-pointer list-none items-center gap-3 marker:content-none">
             <span className="font-serif text-[0.7rem] tracking-[0.3em] text-amber uppercase">
               The Chronicle
