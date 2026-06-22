@@ -4,6 +4,7 @@ import {
   applyWorldStateChanges,
   applySanityImpact,
   addDiscoveredItems,
+  grantSealedArtifact,
   partitionDiscoveredItems,
   discoveredItemLeadFact,
   applyDigestion,
@@ -30,7 +31,7 @@ import {
   isValidDigestionShape,
   isValidInjuriesShape,
 } from "./session";
-import { selectStartScenario } from "@/lib/lore";
+import { selectStartScenario, getSealedArtifact, mintArtifactItem } from "@/lib/lore";
 import { VALID_TRANSITIONS, PILLAR_INSTRUCTION_MAP, CHOICE_PILLAR_MAP } from "./types";
 import type { GameSession, GamePhase, GameplayPillar } from "./types";
 import type {
@@ -1504,6 +1505,13 @@ describe("partitionDiscoveredItems", () => {
     expect(carried).toEqual([mundane]);
     expect(blocked).toEqual([formula]);
   });
+
+  it("blocks a Sealed Artifact (church-gated — never AI-minted into inventory)", () => {
+    const artifact = mintArtifactItem(getSealedArtifact("0-08")!);
+    const { carried, blocked } = partitionDiscoveredItems([mundane, artifact]);
+    expect(carried).toEqual([mundane]);
+    expect(blocked).toEqual([artifact]);
+  });
 });
 
 describe("discoveredItemLeadFact", () => {
@@ -1533,6 +1541,50 @@ describe("discoveredItemLeadFact", () => {
       0,
     );
     expect(fact.description).toContain("Rabies Virus");
+  });
+
+  it("phrases a Sealed Artifact lead as church-locked, earned-not-found", () => {
+    const fact = discoveredItemLeadFact(
+      {
+        name: "Sealed Artifact 2-049 — Antigonus Family Puppet",
+        description: "d",
+        category: "sealed-artifact",
+      },
+      4,
+    );
+    expect(fact.type).toBe("quest-progress");
+    expect(fact.description).toContain("Antigonus Family Puppet");
+    expect(fact.description.toLowerCase()).toContain("churches");
+  });
+});
+
+// ─── grantSealedArtifact ───────────────────────────────────────────
+
+describe("grantSealedArtifact", () => {
+  it("mints the catalogue artifact and appends it to inventory", () => {
+    const state = makeGameState({ inventory: [] });
+    const next = grantSealedArtifact(state, "0-08");
+    expect(next.inventory).toHaveLength(1);
+    expect(next.inventory[0].category).toBe("sealed-artifact");
+    expect(next.inventory[0].name).toContain("Quill of Alzuhod");
+  });
+
+  it("is a no-op for an unknown code", () => {
+    const state = makeGameState({ inventory: [] });
+    expect(grantSealedArtifact(state, "9-999")).toBe(state);
+  });
+
+  it("does not grant the same artifact twice (artifacts are singular)", () => {
+    const state = makeGameState({ inventory: [] });
+    const once = grantSealedArtifact(state, "0-08");
+    const twice = grantSealedArtifact(once, "0-08");
+    expect(twice.inventory).toHaveLength(1);
+  });
+
+  it("does not mutate the input state", () => {
+    const state = makeGameState({ inventory: [] });
+    grantSealedArtifact(state, "0-08");
+    expect(state.inventory).toEqual([]);
   });
 });
 

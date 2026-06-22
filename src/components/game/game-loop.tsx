@@ -21,7 +21,6 @@ import {
   createEncounter,
   deriveEncounterEnemy,
   isValidEncounterShape,
-  isReagentCategory,
   digestionFeedback,
   classifySanityTier,
   isLossOfControl,
@@ -909,14 +908,15 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       if (!session) return;
       // The player's actual abilities and carried artifacts ride onto the
       // encounter so they can be invoked dynamically mid-fight (not only readied
-      // in preparation). Reagents are excluded — a potion ingredient is not a
-      // combat artifact.
+      // in preparation). The combat-artifact pool is exactly the carried Sealed
+      // Artifacts — the canon dangerous relics, each consumed (with a sanity
+      // backlash) when invoked — not ordinary loot or potion reagents.
       const { abilities } = sequenceAbilities(
         session.gameState.pathwayId,
         session.gameState.sequenceLevel,
       );
       const availableArtifacts = session.gameState.inventory.filter(
-        (item) => !isReagentCategory(item.category),
+        (item) => item.category === "sealed-artifact",
       );
       const encounter = createEncounter({
         id: crypto.randomUUID(),

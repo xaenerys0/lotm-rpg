@@ -104,6 +104,27 @@ describe("validateListing", () => {
       /not a tradable kind/,
     );
   });
+
+  it("refuses a Sealed Artifact on the player market (church-gated)", () => {
+    const withArtifact = state({
+      inventory: [
+        {
+          name: "Sealed Artifact 0-08 — Quill of Alzuhod",
+          description: "dangerous",
+          category: "sealed-artifact",
+        },
+      ],
+    });
+    expect(
+      validateListing(withArtifact, "Sealed Artifact 0-08 — Quill of Alzuhod", 10).reason,
+    ).toMatch(/not a tradable kind/);
+    // And it has a (zero) price band so the exhaustive Record stays total.
+    expect(PRICE_GUIDANCE["sealed-artifact"]).toEqual({
+      min: 0,
+      suggested: 0,
+      max: 0,
+    });
+  });
 });
 
 describe("vendorSaleValue / sellItemToVendor", () => {
@@ -131,6 +152,9 @@ describe("vendorSaleValue / sellItemToVendor", () => {
     expect(vendorSaleValue({ name: "x", description: "", category: "uniqueness" })).toBe(
       0,
     );
+    expect(
+      vendorSaleValue({ name: "x", description: "", category: "sealed-artifact" }),
+    ).toBe(0);
   });
 
   it("fences a mundane item: removes it and credits the proceeds", () => {
@@ -145,6 +169,25 @@ describe("vendorSaleValue / sellItemToVendor", () => {
     expect(sellItemToVendor(loot(), "Night Vanilla").ok).toBe(false);
     expect(sellItemToVendor(loot(), "Fool Uniqueness").reason).toMatch(/no fence/i);
     expect(sellItemToVendor(loot(), "Phantom").reason).toMatch(/not carrying/i);
+  });
+
+  it("refuses to fence a Sealed Artifact", () => {
+    const withArtifact = state({
+      funds: 50,
+      inventory: [
+        {
+          name: "Sealed Artifact 0-08 — Quill of Alzuhod",
+          description: "dangerous",
+          category: "sealed-artifact",
+        },
+      ],
+    });
+    const result = sellItemToVendor(
+      withArtifact,
+      "Sealed Artifact 0-08 — Quill of Alzuhod",
+    );
+    expect(result.ok).toBe(false);
+    expect(result.reason).toMatch(/no fence/i);
   });
 });
 

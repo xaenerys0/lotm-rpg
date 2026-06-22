@@ -30,7 +30,8 @@ export interface Item {
     | "supplementary-ingredient"
     | "potion-formula"
     | "mundane"
-    | "uniqueness";
+    | "uniqueness"
+    | "sealed-artifact";
 }
 
 export interface Ritual {

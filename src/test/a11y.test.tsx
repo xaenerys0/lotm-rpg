@@ -517,6 +517,12 @@ describe("accessibility — stub pages", () => {
           description: "A small tarnished key.",
           category: "mundane",
         },
+        {
+          name: "Sealed Artifact 2-049 — Antigonus Family Puppet",
+          description:
+            "A jointed clown puppet that slows everyone nearby. (Grade 2. Drawback: it spares no one, the wielder included.)",
+          category: "sealed-artifact",
+        },
       ],
     };
     const session = {

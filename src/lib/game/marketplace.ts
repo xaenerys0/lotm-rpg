@@ -59,6 +59,10 @@ export const PRICE_GUIDANCE: Record<
   // The singular pathway Uniqueness is never sold by any channel; this band
   // exists only to keep `PRICE_GUIDANCE[item.category]` total over the Item union.
   uniqueness: { min: 0, suggested: 0, max: 0 },
+  // Sealed Artifacts are church-catalogued and locked away — never circulated on
+  // the open market or fenced. Like `uniqueness`, the zero band exists only to
+  // keep the Record total over the Item union (`validateListing` refuses them).
+  "sealed-artifact": { min: 0, suggested: 0, max: 0 },
 };
 
 /**
