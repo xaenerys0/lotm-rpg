@@ -1,29 +1,16 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
-import { DEFAULT_PREFERENCES, type GamePreferences } from "@/lib/game";
-import { noopSubscribe } from "@/lib/react";
-import {
-  applyContrastPreference,
-  loadPreferences,
-  savePreferences,
-} from "./preferences-store";
+import { useCallback, useState } from "react";
+import type { GamePreferences } from "@/lib/game";
+import type { NarrativeVerbosity } from "@/lib/ai";
+import { applyContrastPreference, savePreferences } from "./preferences-store";
+import { useStoredPreferences } from "./use-stored-preferences";
 
 // Display preferences (issues #9, #13): the sanity-meter toggle and the
 // high-contrast mode. One component so Settings shows them as one group.
 
 export function SanityPreferences() {
-  const cacheRef = useRef<GamePreferences | null>(null);
-  const initial = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (cacheRef.current === null) {
-        cacheRef.current = loadPreferences();
-      }
-      return cacheRef.current;
-    },
-    () => DEFAULT_PREFERENCES,
-  );
+  const initial = useStoredPreferences();
 
   // Derive from the reactive store snapshot until a toggle overrides it.
   // `useState(initial)` would freeze on the server fallback (DEFAULT_PREFERENCES)
@@ -42,8 +29,20 @@ export function SanityPreferences() {
     [prefs],
   );
 
+  // narrativeVerbosity is an enum, not a boolean — it needs its own setter
+  // (the generic `toggle` only flips booleans).
+  const setVerbosity = useCallback(
+    (value: NarrativeVerbosity) => {
+      const next = { ...prefs, narrativeVerbosity: value };
+      savePreferences(next);
+      setPrefsOverride(next);
+    },
+    [prefs],
+  );
+
   return (
     <div className="space-y-4">
+      <VerbosityControl value={prefs.narrativeVerbosity} onSelect={setVerbosity} />
       <PreferenceToggle
         label="Show sanity meter"
         description="By default your sanity is hidden — you read your state from the world itself, as it distorts around you. Reveal the numeric meter for strategic management."
@@ -74,6 +73,58 @@ export function SanityPreferences() {
         checked={prefs.highContrast}
         onToggle={() => toggle("highContrast")}
       />
+    </div>
+  );
+}
+
+const VERBOSITY_OPTIONS: { value: NarrativeVerbosity; label: string }[] = [
+  { value: "concise", label: "Concise" },
+  { value: "standard", label: "Standard" },
+  { value: "rich", label: "Rich" },
+];
+
+function VerbosityControl({
+  value,
+  onSelect,
+}: {
+  value: NarrativeVerbosity;
+  onSelect: (value: NarrativeVerbosity) => void;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-surface p-5">
+      <p id="verbosity-label" className="text-sm font-medium text-foreground">
+        Narration length
+      </p>
+      <p className="mt-1.5 text-xs leading-relaxed text-muted">
+        How much the narrator writes each turn. <strong>Concise</strong> keeps scenes
+        short and tight; <strong>Rich</strong> draws them out with more atmosphere. Shapes
+        the AI&rsquo;s prose only — it changes no game mechanics.
+      </p>
+      <div
+        role="radiogroup"
+        aria-labelledby="verbosity-label"
+        className="mt-3 flex gap-2"
+      >
+        {VERBOSITY_OPTIONS.map((option) => {
+          const selected = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onSelect(option.value)}
+              className={`min-h-[24px] flex-1 rounded-lg border px-3 py-2 text-sm transition-colors duration-200 ${
+                selected
+                  ? "border-amber/60 bg-amber/20 text-foreground"
+                  : "border-border bg-surface text-muted hover:border-amber/30"
+              }`}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

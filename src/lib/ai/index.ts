@@ -28,9 +28,16 @@ export type {
   ChatMessage,
   ProviderRequest,
   ProviderResponse,
+  NarrativeVerbosity,
 } from "./types";
 
-export { PROVIDER_MODELS, ACCESS_FLAGS, isAccessFlag } from "./types";
+export {
+  PROVIDER_MODELS,
+  ACCESS_FLAGS,
+  isAccessFlag,
+  NARRATIVE_VERBOSITY_VALUES,
+  isNarrativeVerbosity,
+} from "./types";
 
 export { AIError, type AIErrorCode, extractProviderMessage } from "./errors";
 
@@ -44,6 +51,9 @@ export {
   buildSanityDirective,
   buildDemigodDirective,
   DEMIGOD_SEQUENCE_THRESHOLD,
+  buildVerbosityDirective,
+  buildPacingDirective,
+  VERBOSITY_GUIDANCE,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,

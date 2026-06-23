@@ -16,6 +16,10 @@ describe("preferences", () => {
       expect(DEFAULT_PREFERENCES.sceneArtEnabled).toBe(false);
       expect(DEFAULT_PREFERENCES.movementGateEnabled).toBe(true);
     });
+
+    it("defaults narrative verbosity to standard (verbosity preset)", () => {
+      expect(DEFAULT_PREFERENCES.narrativeVerbosity).toBe("standard");
+    });
   });
 
   describe("isValidPreferencesShape", () => {
@@ -82,6 +86,30 @@ describe("preferences", () => {
         }),
       ).toBe(false);
     });
+
+    it("treats narrativeVerbosity as legacy-optional but enum-checked (verbosity preset)", () => {
+      // Absent on legacy payloads — still valid.
+      expect(isValidPreferencesShape({ sanityMeterVisible: true })).toBe(true);
+      // Each known value is accepted.
+      for (const value of ["concise", "standard", "rich"]) {
+        expect(
+          isValidPreferencesShape({
+            sanityMeterVisible: true,
+            narrativeVerbosity: value,
+          }),
+        ).toBe(true);
+      }
+      // An unknown string (or wrong type) is rejected — not just any string.
+      expect(
+        isValidPreferencesShape({
+          sanityMeterVisible: true,
+          narrativeVerbosity: "verbose",
+        }),
+      ).toBe(false);
+      expect(
+        isValidPreferencesShape({ sanityMeterVisible: true, narrativeVerbosity: 2 }),
+      ).toBe(false);
+    });
   });
 
   describe("mergePreferences", () => {
@@ -92,6 +120,7 @@ describe("preferences", () => {
         highContrast: false,
         sceneArtEnabled: false,
         movementGateEnabled: true,
+        narrativeVerbosity: "standard",
       });
       expect(
         mergePreferences({
@@ -106,7 +135,23 @@ describe("preferences", () => {
         highContrast: true,
         sceneArtEnabled: true,
         movementGateEnabled: false,
+        narrativeVerbosity: "standard",
       });
+    });
+
+    it("keeps a valid narrativeVerbosity and defaults an invalid one (verbosity preset)", () => {
+      expect(mergePreferences({}).narrativeVerbosity).toBe("standard");
+      expect(mergePreferences({ narrativeVerbosity: "concise" }).narrativeVerbosity).toBe(
+        "concise",
+      );
+      expect(mergePreferences({ narrativeVerbosity: "rich" }).narrativeVerbosity).toBe(
+        "rich",
+      );
+      expect(
+        mergePreferences({
+          narrativeVerbosity: "verbose" as unknown as "concise",
+        }).narrativeVerbosity,
+      ).toBe("standard");
     });
 
     it("defaults movementGateEnabled to true and accepts an explicit false (issue #101)", () => {
@@ -134,6 +179,7 @@ describe("preferences", () => {
         highContrast: true,
         sceneArtEnabled: true,
         movementGateEnabled: false,
+        narrativeVerbosity: "rich" as const,
       };
       expect(deserializePreferences(serializePreferences(prefs))).toEqual(prefs);
     });

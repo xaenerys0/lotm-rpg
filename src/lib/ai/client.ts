@@ -5,6 +5,7 @@ import type {
   GameState,
   InstructionType,
   ModelOption,
+  NarrativeVerbosity,
   ProviderConfig,
   ProviderResponse,
   ValidatedAIResponse,
@@ -122,6 +123,8 @@ export interface GenerateOptions {
   epochContext?: string | null;
   /** Per-city narration tone (issue #23), from `cityNarrationDirective`. */
   cityNarration?: string | null;
+  /** Player-chosen narration length (verbosity preset); absent/"standard" = baseline. */
+  verbosity?: NarrativeVerbosity;
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];
@@ -144,6 +147,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     recognitionContext: options.recognitionContext,
     epochContext: options.epochContext,
     cityNarration: options.cityNarration,
+    verbosity: options.verbosity,
     instruction: options.instruction,
     playerAction: options.playerAction,
     abilities: options.abilities,

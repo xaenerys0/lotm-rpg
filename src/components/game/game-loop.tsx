@@ -30,12 +30,10 @@ import {
   companionsPresentOnMove,
   markPursuer,
   previewSanityImpact,
-  DEFAULT_PREFERENCES,
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
   PROVIDER_CONFIG_KEY,
   IMAGE_PROVIDER_CONFIG_KEY,
-  type GamePreferences,
   type SanityTier,
   type LossOfControlSeverity,
   type CombatEncounter,
@@ -145,7 +143,7 @@ import {
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
-import { loadPreferences } from "./preferences-store";
+import { useStoredPreferences } from "./use-stored-preferences";
 import { pushWorldMemoryToCloud } from "./cloud-sync";
 import type {
   GameState,
@@ -474,17 +472,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const [session, setSession] = useState<GameSession | null>(initialSession);
   const generationRef = useRef(0);
 
-  const prefsCacheRef = useRef<GamePreferences | null>(null);
-  const preferences = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (prefsCacheRef.current === null) {
-        prefsCacheRef.current = loadPreferences();
-      }
-      return prefsCacheRef.current;
-    },
-    () => DEFAULT_PREFERENCES,
-  );
+  const preferences = useStoredPreferences();
 
   const configCacheRef = useRef<ProviderConfig | null | undefined>(undefined);
   const providerConfig = useSyncExternalStore(
@@ -643,6 +631,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             recognitionContext,
             epochContext,
             cityNarration,
+            verbosity: preferences.narrativeVerbosity,
             instruction: "narrative",
             playerAction: descentAction,
             abilities,
@@ -667,7 +656,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       setFacingFate(false);
       endingInFlight.current = false;
     },
-    [session, providerConfig, recordUsage, updateSession],
+    [session, providerConfig, recordUsage, updateSession, preferences.narrativeVerbosity],
   );
 
   const handlePermadeath = useCallback(async () => {
@@ -836,6 +825,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               recognitionContext,
               epochContext,
               cityNarration,
+              verbosity: preferences.narrativeVerbosity,
               instruction: "advancement",
               playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
                 result.ritual
@@ -910,6 +900,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     updateSession,
     concludeChronicle,
     handleSetback,
+    preferences.narrativeVerbosity,
   ]);
 
   const handleFullRestart = useCallback(() => {
@@ -1073,6 +1064,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             recognitionContext,
             epochContext,
             cityNarration,
+            verbosity: preferences.narrativeVerbosity,
             instruction: "advancement",
             playerAction: viaTrade
               ? `Narrate how I secured the closely-guarded formula for my next Sequence ${targetSeq} potion — through a trade, a contact, or my own effort. A short scene; I have NOT yet brewed or drunk it, only obtained the recipe so I can now gather its ingredients.`
@@ -1094,7 +1086,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         }),
       );
     },
-    [providerConfig, updateSession, recordUsage],
+    [providerConfig, updateSession, recordUsage, preferences.narrativeVerbosity],
   );
 
   // Potion preparation (issue #84). Buying a prerequisite spends funds; the
@@ -1323,6 +1315,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           recognitionContext,
           epochContext,
           cityNarration,
+          verbosity: preferences.narrativeVerbosity,
           instruction,
           playerAction,
           abilities,
@@ -1371,7 +1364,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         updateSession(errSession);
       }
     },
-    [updateSession, dispatchMissingConfig, recordUsage],
+    [updateSession, dispatchMissingConfig, recordUsage, preferences.narrativeVerbosity],
   );
 
   const resolveChoice = useCallback(
@@ -1416,6 +1409,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           recognitionContext,
           epochContext,
           cityNarration,
+          verbosity: preferences.narrativeVerbosity,
           instruction,
           playerAction: selectedChoice.text,
           abilities,
@@ -1442,7 +1436,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         updateSession(errSession);
       }
     },
-    [updateSession, dispatchMissingConfig, recordUsage],
+    [updateSession, dispatchMissingConfig, recordUsage, preferences.narrativeVerbosity],
   );
 
   useEffect(() => {
@@ -1906,6 +1900,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             sessionId={session.id}
             imageConfig={imageConfig}
             sceneArtEnabled={preferences.sceneArtEnabled}
+            // Combat inherits the verbosity preset (but never the pacing rule).
+            verbosity={preferences.narrativeVerbosity}
             // Persona / true-self / recognition contexts (shared with the normal
             // turn) so the fight is narrated as the face the player wears.
             {...personaPromptContexts(session)}

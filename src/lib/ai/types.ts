@@ -210,6 +210,28 @@ export type InstructionType =
   | "advancement"
   | "combat";
 
+/**
+ * Player-chosen narration length. "standard" is the baseline — it emits no
+ * directive (the assembler drops the layer), so existing saves are unchanged.
+ * "concise" and "rich" each add a `## Narration Length` system directive.
+ */
+export type NarrativeVerbosity = "concise" | "standard" | "rich";
+
+/** The allowed {@link NarrativeVerbosity} values — the single source of truth for validation. */
+export const NARRATIVE_VERBOSITY_VALUES: readonly NarrativeVerbosity[] = [
+  "concise",
+  "standard",
+  "rich",
+];
+
+/** True when `value` is a known {@link NarrativeVerbosity}. */
+export function isNarrativeVerbosity(value: unknown): value is NarrativeVerbosity {
+  return (
+    typeof value === "string" &&
+    (NARRATIVE_VERBOSITY_VALUES as readonly string[]).includes(value)
+  );
+}
+
 export interface DigestionState {
   /** Pathway of the potion currently being digested. */
   pathwayId: number;
@@ -457,6 +479,11 @@ export interface PromptInput {
    * specific tone — the assembler then drops the layer.
    */
   cityNarration?: string | null;
+  /**
+   * Player-chosen narration length (verbosity preset). Absent/"standard" emits
+   * no directive; "concise"/"rich" add a `## Narration Length` system layer.
+   */
+  verbosity?: NarrativeVerbosity;
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];

@@ -4,6 +4,7 @@ import type {
   InstructionType,
   LoreContext,
   MemoryState,
+  NarrativeVerbosity,
   PromptAssembly,
   PromptInput,
   PromptLayer,
@@ -306,6 +307,67 @@ export function buildInstructionPrompt(
   };
 }
 
+// Player-chosen narration length. "standard" is the baseline and adds nothing
+// (the assembler drops an empty-content layer, saving tokens — like
+// `buildSanityDirective` at the high tier). Length is governed HERE, by a soft
+// directive, never by lowering `MAX_OUTPUT_TOKENS` — that cap holds the whole
+// JSON (narrative + running summary + choices), so squeezing it would truncate
+// the object mid-write.
+//
+// This phrasing is the SINGLE source shared by the main turn (below) AND the
+// prologue (`prologueVerbosityLine` in `prologue-client.ts`), so the two
+// narration surfaces can never drift apart. "standard" has no entry — it is the
+// baseline that emits no guidance.
+export const VERBOSITY_GUIDANCE: Record<
+  Exclude<NarrativeVerbosity, "standard">,
+  string
+> = {
+  concise:
+    "Keep it tight — at most 1–2 short paragraphs (roughly 120 words). Lead with what actually changes, keep atmosphere to a line or two, and stop; do not pad or restate.",
+  rich: "Write fuller, more atmospheric prose — three to four paragraphs of vivid sensory and emotional texture — while still advancing only the current beat; never sprawl beyond this moment.",
+};
+
+/**
+ * Build the optional `## Narration Length` directive from the player's verbosity
+ * preset. Returns an empty-content layer for "standard"/absent (the assembler
+ * drops it); applies to every instruction, including combat.
+ */
+export function buildVerbosityDirective(verbosity?: NarrativeVerbosity): PromptLayer {
+  const guidance =
+    verbosity && verbosity !== "standard" ? VERBOSITY_GUIDANCE[verbosity] : undefined;
+  return {
+    role: "system",
+    content: guidance ? `## Narration Length\n${guidance}` : "",
+  };
+}
+
+/**
+ * Build the `## Pacing & Agency` directive that stops the narrator playing the
+ * character forward — advance ONE beat, stop at the next decision point, never
+ * resolve the player's pending choice. Engine-committed narration turns are
+ * EXEMPT (an empty-content layer, dropped): `combat` is a multi-exchange state
+ * machine (`@/lib/game/combat.ts`) that hands control back at each mechanical
+ * decision point, and `advancement` is a single engine-decided climactic beat
+ * routed through ENGINE_RESOLUTION (the engine already owns the outcome and the
+ * next turn resumes normal play) — neither is the narrator "playing the
+ * character forward", so the rule would be redundant or counterproductive.
+ */
+const PACING_EXEMPT_INSTRUCTIONS: readonly InstructionType[] = ["combat", "advancement"];
+
+export function buildPacingDirective(instruction: InstructionType): PromptLayer {
+  if (PACING_EXEMPT_INSTRUCTIONS.includes(instruction)) {
+    return { role: "system", content: "" };
+  }
+  return {
+    role: "system",
+    content: `## Pacing & Agency
+- Advance the story ONE beat, then STOP at the next decision point and hand control back to the player. A beat is a single action and its immediate consequence — not a whole scene or a chain of events.
+- NEVER decide, speak, or act for the player's character beyond the action they just took, and NEVER resolve the choice they are about to make. End on the cusp of their next decision, not past it.
+- Do not skip ahead through multiple actions, locations, conversations, or scene changes in one turn. Let the next thing happen only after the player chooses it.
+- You MAY briefly compress purely uneventful travel or downtime (a sentence or two of montage), but stop the moment anything consequential, any decision, any new person, or any new scene would begin.`,
+  };
+}
+
 export function assemblePrompt(input: PromptInput): PromptAssembly {
   const layers: PromptLayer[] = [];
 
@@ -379,6 +441,21 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
   const historyLayer = buildHistoryPrompt(input.memory);
   if (historyLayer.content) {
     layers.push(historyLayer);
+  }
+
+  // Narration length (player verbosity preset): applies to every turn including
+  // combat. Empty for "standard"/absent, so the layer is dropped.
+  const verbosityLayer = buildVerbosityDirective(input.verbosity);
+  if (verbosityLayer.content) {
+    layers.push(verbosityLayer);
+  }
+
+  // Pacing & agency: stop the narrator playing the character forward. Empty for
+  // combat (the engine's decision points already enforce beat-by-beat handoff),
+  // so the layer is dropped there.
+  const pacingLayer = buildPacingDirective(input.instruction);
+  if (pacingLayer.content) {
+    layers.push(pacingLayer);
   }
 
   const instructionLayer = buildInstructionPrompt(input.instruction, input.playerAction);

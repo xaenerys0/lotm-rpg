@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useState } from "react";
 
 import {
   persistSession as writeSession,
@@ -9,8 +9,7 @@ import {
   useHydrated,
   useSessionSummaries,
 } from "@/lib/react/session-store";
-import { noopSubscribe } from "@/lib/react";
-import { loadPreferences } from "./preferences-store";
+import { useStoredPreferences } from "./use-stored-preferences";
 import { getCumulativeAbilityGroups, getPathway, getSequence } from "@/lib/rules";
 import { classifySanityTier } from "@/lib/ai";
 import { getEpoch } from "@/lib/lore";
@@ -38,7 +37,6 @@ import {
   sequenceLabel,
   switchIdentity,
   transformationRiteFor,
-  DEFAULT_PREFERENCES,
   type DemeanorTrait,
   type GameSession,
   type IdentityCapability,
@@ -89,17 +87,7 @@ export function CharacterSheet() {
 
   // Display preferences (issue #95): the digestion-meter toggle gates whether
   // the numeric digestion is shown — but only once the method is discovered.
-  const prefsCacheRef = useRef<typeof DEFAULT_PREFERENCES | null>(null);
-  const preferences = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (prefsCacheRef.current === null) {
-        prefsCacheRef.current = loadPreferences();
-      }
-      return prefsCacheRef.current;
-    },
-    () => DEFAULT_PREFERENCES,
-  );
+  const preferences = useStoredPreferences();
 
   const persistSession = useCallback((next: GameSession) => {
     writeSession(next);
