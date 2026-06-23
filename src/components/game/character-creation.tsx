@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 import {
   POTION_HEADINGS,
   FIRST_POTION_NARRATIVE,
@@ -213,7 +220,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const [canonFinale, setCanonFinale] = useState<CanonPrologueFinale | null>(null);
   const [awaitingCanonFinale, setAwaitingCanonFinale] = useState(false);
   // The figure the typed name currently matches (the opt-in affordance source).
-  const nameMatch = matchCanonCharacterByName(characterName);
+  const nameMatch = useMemo(
+    () => matchCanonCharacterByName(characterName),
+    [characterName],
+  );
 
   // ── Draft Persistence ──
   // Save to localStorage whenever prologue-relevant state changes
@@ -391,7 +401,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       runPrologueRequest(async () => {
         setCanonScene(null);
         setCanonFinale(null);
-        if (!providerConfig) return;
+        // Defensive: the takeover entry points gate on a provider, so this is
+        // effectively unreachable — but throw (a retryable error) rather than
+        // returning into a blank, feedback-less canon-prologue step.
+        if (!providerConfig) throw new Error("Configure an AI provider in Settings.");
         setCanonScene(
           await generateCanonPrologueScene(
             buildCanonCtx(preset),
@@ -408,7 +421,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       runPrologueRequest(async () => {
         setCanonScene(null);
         setCanonFinale(null);
-        if (!providerConfig) return;
+        if (!providerConfig) throw new Error("Configure an AI provider in Settings.");
         setCanonFinale(
           await generateCanonPrologueFinale(
             buildCanonCtx(preset),
@@ -421,13 +434,15 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   );
 
   // Accept the takeover affordance: lock the figure's pathway + epoch and begin
-  // the canon-faithful prologue.
+  // the canon-faithful prologue. The canon flow reads `preset.epoch` directly
+  // (via buildCanonCtx / handleCanonComplete), so we deliberately do NOT
+  // overwrite the player's chosen `epoch` state here — otherwise backing out to
+  // an ordinary prologue would silently inherit the figure's Fifth-Epoch.
   const handleTakeOver = useCallback(
     (preset: CanonCharacterPreset) => {
       if (!providerConfig) return;
       setCanonPreset(preset);
       setSelectedPathwayId(preset.pathwayId);
-      setEpoch(preset.epoch);
       setCanonHistory([]);
       setCanonFinale(null);
       setAwaitingCanonFinale(false);

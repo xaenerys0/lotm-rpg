@@ -39,7 +39,14 @@ export function ensureUniqueChoiceIds<T extends { id: string }>(choices: T[]): T
   choices.forEach((choice, i) => {
     let id = choice.id.trim();
     if (id === "" || seen.has(id)) {
-      id = `choice-${i}`;
+      // Index-based fallback, bumped until unique — `choice-${i}` itself can
+      // collide with another choice's LITERAL id (e.g. a real "choice-1"), so
+      // re-check against `seen` instead of trusting the index alone.
+      let n = i;
+      do {
+        id = `choice-${n}`;
+        n++;
+      } while (seen.has(id));
     }
     seen.add(id);
     choice.id = id;

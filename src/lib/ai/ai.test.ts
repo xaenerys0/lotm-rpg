@@ -5309,6 +5309,24 @@ describe("generateCanonPrologueScene / generateCanonPrologueFinale", () => {
     ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
   });
 
+  it("keeps ids unique when the index fallback collides with a literal id", async () => {
+    // A real "choice-1" literal id + an empty-id choice at index 1: the naive
+    // `choice-${i}` backfill would re-produce "choice-1" and duplicate the key.
+    mockFetch(
+      JSON.stringify({
+        narrative: "A scene.",
+        choices: [
+          { id: "choice-1", text: "First." },
+          { id: "", text: "Second." },
+        ],
+        readyToConclude: true,
+      }),
+    );
+    const scene = await generateCanonPrologueScene(ctx(), makeProviderConfig(), []);
+    const ids = scene.choices.map((c) => c.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
   it("generates a becoming finale (choice-less) for an on-screen figure", async () => {
     const spy = mockFetch(
       JSON.stringify({
