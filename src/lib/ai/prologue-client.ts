@@ -569,3 +569,159 @@ export async function generatePrologueFinale(
   ensureUniqueChoiceIds(choices);
   return { narrative, choices, rawResponse: content };
 }
+
+// ───────────────────────────────────────────────────────────────────────────
+// Canon-character takeover prologue (canon-faithful, FIXED pathway)
+//
+// When the player takes over a KNOWN NOVEL FIGURE, the pathway/sequence are
+// already decided by the character, so there is NO affinity discovery — the
+// prologue instead dramatizes that figure's established story up to the moment
+// the novel introduces them, with choices LEANING toward how they would
+// characteristically act (the player stays free). All canon facts enter as
+// PLAIN STRINGS (name/background/pathwayName/personality), so this layer keeps
+// no dependency on the lore/rules engines (mirrors the rest of this file).
+// ───────────────────────────────────────────────────────────────────────────
+
+/** A plain narrative choice for the canon prologue (no affinity scoring). */
+export interface CanonPrologueChoice {
+  id: string;
+  text: string;
+}
+
+export interface CanonPrologueScene {
+  narrative: string;
+  choices: CanonPrologueChoice[];
+  readyToConclude: boolean; // advisory only; the UI enforces MIN/MAX
+  rawResponse: string;
+}
+
+export interface CanonPrologueFinale {
+  narrative: string;
+  rawResponse: string;
+}
+
+/** Inputs shared by the canon scene + finale generators. */
+export interface CanonPrologueContext {
+  characterName: string;
+  background: string;
+  /** The figure's canon pathway name (e.g. "Fool") — fixed, never discovered. */
+  pathwayName: string;
+  /** Corpus-grounded disposition used to lean the offered choices. */
+  personality: string;
+  /**
+   * Whether the figure's novel INTRODUCTION is their becoming — `true` ends the
+   * prologue on the potion; `false` ends at their first appearance (no potion).
+   */
+  becomesOnScreen: boolean;
+  epoch?: number;
+}
+
+function buildCanonPrologueSystemPrompt(ctx: CanonPrologueContext): string {
+  const s = resolvePrologueSetting(ctx.epoch);
+  const ending = ctx.becomesOnScreen
+    ? `${ctx.characterName} BECOMES a Beyonder at the moment the story introduces them. The prologue builds toward that becoming; the FINALE (written separately) will end on their potion. Do NOT depict the potion yet — stop the scenes just before it.`
+    : `${ctx.characterName} is ALREADY an established Beyonder of the ${ctx.pathwayName} pathway when the story introduces them. This prologue covers their life and circumstances leading UP TO their first appearance — there is NO becoming-potion scene at any point.`;
+  return `You are running an interactive, canon-faithful character-creation prologue for a Lord of the Mysteries text RPG. The player is TAKING OVER a known novel character and living through the lead-up to the moment the novel introduces them.
+
+SETTING: ${s.setting}
+
+THE CHARACTER — the player IS ${ctx.characterName}, a canonical figure (not an ordinary newcomer):
+${ctx.background}
+
+CANON PERSONALITY: ${ctx.personality}
+
+BECOMING: ${ending}
+
+YOUR TASK: Narrate an atmospheric, CANON-FAITHFUL prologue of a few scenes (typically ${MIN_PROLOGUE_SCENES}-8) that follows ${ctx.characterName}'s established story toward their first appearance. Stay true to the novel's events, relationships, places, and tone; invent only minor connective texture and NEVER contradict canon. Address the character by name and draw on the background above.
+
+CHOICE CONTRACT (every scene):
+• Present 3-4 choices for how ${ctx.characterName} acts in the moment.
+• LEAN the choices toward how ${ctx.characterName} would characteristically behave (see CANON PERSONALITY) — but always leave room for the player to play them differently. NEVER force a single in-character option.
+• Each choice is plain prose. Do NOT include affinities, scores, pathway labels, or game terms.
+
+READINESS: set "readyToConclude": true only once the story has reached the brink of their introduction (typically ${MIN_PROLOGUE_SCENES}-8 scenes). It is advisory — the system enforces the minimum and maximum and writes the finale itself.
+
+WRITING GUIDELINES:
+• ${s.atmosphere}
+• Each scene: 2-4 paragraphs, ending on tension or a decision.
+
+RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
+{"narrative":"...","choices":[{"id":"a","text":"..."},{"id":"b","text":"..."},{"id":"c","text":"..."}],"readyToConclude":false}`;
+}
+
+function buildCanonFinaleSystemPrompt(ctx: CanonPrologueContext): string {
+  const s = resolvePrologueSetting(ctx.epoch);
+  const task = ctx.becomesOnScreen
+    ? `Write the becoming: the moment ${ctx.characterName} drinks their first ${ctx.pathwayName}-pathway potion and crosses into the Beyonder world. Because ${ctx.characterName} is a canonical figure, you MAY name the potion as canon does. End the scene in the moments just after the change takes hold — on the threshold of their story proper.`
+    : `Write the hand-off: the moment ${ctx.characterName}'s prologue meets their first appearance in the story — already a Beyonder of the ${ctx.pathwayName} pathway. Do NOT depict any becoming or potion. End on the brink of the chronicle proper.`;
+  return `You are writing the FINALE of a canon-faithful Lord of the Mysteries takeover prologue. The player IS ${ctx.characterName}.
+
+SETTING: ${s.setting}
+
+${task}
+
+Write ONE evocative closing scene (2-4 paragraphs). Address the character by name, stay true to canon, and do NOT offer choices — end on the threshold.
+
+RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
+{"narrative":"..."}`;
+}
+
+function parseCanonChoices(raw: unknown): CanonPrologueChoice[] {
+  if (!Array.isArray(raw) || raw.length === 0) {
+    throw new AIError("MALFORMED_OUTPUT", "Canon prologue scene missing choices");
+  }
+  const choices: CanonPrologueChoice[] = [];
+  for (const item of raw) {
+    if (typeof item !== "object" || item === null) continue;
+    const c = item as Record<string, unknown>;
+    if (typeof c["text"] === "string" && c["text"].length > 0) {
+      const id = typeof c["id"] === "string" && c["id"].length > 0 ? c["id"] : "";
+      choices.push({ id, text: c["text"] });
+    }
+  }
+  if (choices.length === 0) {
+    throw new AIError("MALFORMED_OUTPUT", "Canon prologue scene has no usable choices");
+  }
+  // Reuse the shared id backfill so React keys stay unique (it only reads/writes
+  // `id`, so the plain {id,text} shape is compatible).
+  ensureUniqueChoiceIds(choices);
+  return choices;
+}
+
+export async function generateCanonPrologueScene(
+  ctx: CanonPrologueContext,
+  config: ProviderConfig,
+  history: PrologueTurn[],
+): Promise<CanonPrologueScene> {
+  const messages: ChatMessage[] = [
+    { role: "system", content: buildCanonPrologueSystemPrompt(ctx) },
+    {
+      role: "user",
+      content: `Begin the prologue for ${ctx.characterName}. Set the opening scene.`,
+    },
+    ...buildHistoryMessages(history),
+  ];
+  const { content, obj, narrative } = await executePrologueRequest(config, messages);
+  const choices = parseCanonChoices(obj["choices"]);
+  const readyToConclude =
+    typeof obj["readyToConclude"] === "boolean" ? obj["readyToConclude"] : false;
+  return { narrative, choices, readyToConclude, rawResponse: content };
+}
+
+export async function generateCanonPrologueFinale(
+  ctx: CanonPrologueContext,
+  config: ProviderConfig,
+  history: PrologueTurn[],
+): Promise<CanonPrologueFinale> {
+  const messages: ChatMessage[] = [
+    { role: "system", content: buildCanonFinaleSystemPrompt(ctx) },
+    {
+      role: "user",
+      content: `Begin the prologue for ${ctx.characterName}. Set the opening scene.`,
+    },
+    ...buildHistoryMessages(history),
+    { role: "user", content: "The prologue is complete. Write the finale scene now." },
+  ];
+  const { content, narrative } = await executePrologueRequest(config, messages);
+  return { narrative, rawResponse: content };
+}

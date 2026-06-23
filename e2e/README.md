@@ -53,7 +53,11 @@ The game pages (`/character`, `/journal`, …) are gated by a server-side
 Supabase session, so they can't be reached without a real backend. When one is
 configured, an extra `setup` project logs in once and saves the session
 (`storageState`), and `authenticated.spec.ts` verifies the gated pages render
-and fit the viewport while signed in.
+and fit the viewport while signed in. `canon-takeover-prologue.spec.ts` (issue
+#92) also runs in this tier: it route-intercepts the AI provider and drives the
+canon-character takeover — naming the character after a novel figure, accepting
+the takeover affordance, walking the canon-faithful guided prologue, and opening
+the chronicle.
 
 Enable it by exporting:
 

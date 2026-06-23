@@ -1,6 +1,13 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef, useSyncExternalStore } from "react";
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 import {
   POTION_HEADINGS,
   FIRST_POTION_NARRATIVE,
@@ -27,10 +34,12 @@ import {
   forsakenLandStartsForEpoch,
   forsakenLandArchetypesForEpoch,
   circleNpcSuggestions,
+  matchCanonCharacterByName,
   MAX_TIE_LENGTH,
   MAX_COMPANIONS,
   MAX_COMPANION_LENGTH,
   type StartSelection,
+  type CanonCharacterPreset,
 } from "@/lib/lore";
 import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
@@ -40,6 +49,8 @@ import { StepHeader, ChoiceCard } from "./creation-ui";
 import {
   generatePrologueScene,
   generatePrologueFinale,
+  generateCanonPrologueScene,
+  generateCanonPrologueFinale,
   MIN_PROLOGUE_SCENES,
   MAX_PROLOGUE_SCENES,
 } from "@/lib/ai";
@@ -49,6 +60,10 @@ import type {
   AIPrologueChoice,
   PrologueTurn,
   ProviderConfig,
+  CanonPrologueScene,
+  CanonPrologueFinale,
+  CanonPrologueChoice,
+  CanonPrologueContext,
 } from "@/lib/ai";
 
 // The player's freeform backstory limit (issue #92 — raised from 280 so a rich,
@@ -61,6 +76,7 @@ type CreationStep =
   | "mode-select"
   | "character-setup"
   | "ai-prologue"
+  | "canon-prologue"
   | "recommendation"
   | "character-sheet"
   | "first-potion";
@@ -192,6 +208,22 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const [awaitingFinale, setAwaitingFinale] = useState(savedDraft?.finale != null);
   const [prologueLoading, setPrologueLoading] = useState(false);
   const [prologueError, setPrologueError] = useState<string | null>(null);
+
+  // ── Canon-character takeover (issue #92) ──
+  // When the typed name matches a known novel figure, the player may take over
+  // that character: the pathway/sequence are fixed by the preset and a separate
+  // CANON-FAITHFUL guided prologue runs (no affinity discovery). State mirrors
+  // the AI-prologue shape but with the figure locked in.
+  const [canonPreset, setCanonPreset] = useState<CanonCharacterPreset | null>(null);
+  const [canonHistory, setCanonHistory] = useState<PrologueTurn[]>([]);
+  const [canonScene, setCanonScene] = useState<CanonPrologueScene | null>(null);
+  const [canonFinale, setCanonFinale] = useState<CanonPrologueFinale | null>(null);
+  const [awaitingCanonFinale, setAwaitingCanonFinale] = useState(false);
+  // The figure the typed name currently matches (the opt-in affordance source).
+  const nameMatch = useMemo(
+    () => matchCanonCharacterByName(characterName),
+    [characterName],
+  );
 
   // ── Draft Persistence ──
   // Save to localStorage whenever prologue-relevant state changes
@@ -347,6 +379,143 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     runPrologueScene,
     runFinale,
   ]);
+
+  // ── Canon-Character Takeover Handlers (issue #92) ──
+
+  // Build the fixed canon context the guided generators read (plain strings, so
+  // the AI layer stays lore-free). The pathway is locked by the preset.
+  const buildCanonCtx = useCallback(
+    (preset: CanonCharacterPreset): CanonPrologueContext => ({
+      characterName: preset.displayName,
+      background: preset.background,
+      pathwayName: ALL_PATHWAYS.find((p) => p.id === preset.pathwayId)?.name ?? "",
+      personality: preset.personalityTraits,
+      becomesOnScreen: preset.becomesOnScreen,
+      epoch: preset.epoch,
+    }),
+    [],
+  );
+
+  const runCanonScene = useCallback(
+    (preset: CanonCharacterPreset, history: PrologueTurn[]) =>
+      runPrologueRequest(async () => {
+        setCanonScene(null);
+        setCanonFinale(null);
+        // Defensive: the takeover entry points gate on a provider, so this is
+        // effectively unreachable — but throw (a retryable error) rather than
+        // returning into a blank, feedback-less canon-prologue step.
+        if (!providerConfig) throw new Error("Configure an AI provider in Settings.");
+        setCanonScene(
+          await generateCanonPrologueScene(
+            buildCanonCtx(preset),
+            providerConfig,
+            history,
+          ),
+        );
+      }),
+    [runPrologueRequest, providerConfig, buildCanonCtx],
+  );
+
+  const runCanonFinale = useCallback(
+    (preset: CanonCharacterPreset, history: PrologueTurn[]) =>
+      runPrologueRequest(async () => {
+        setCanonScene(null);
+        setCanonFinale(null);
+        if (!providerConfig) throw new Error("Configure an AI provider in Settings.");
+        setCanonFinale(
+          await generateCanonPrologueFinale(
+            buildCanonCtx(preset),
+            providerConfig,
+            history,
+          ),
+        );
+      }),
+    [runPrologueRequest, providerConfig, buildCanonCtx],
+  );
+
+  // Accept the takeover affordance: lock the figure's pathway + epoch and begin
+  // the canon-faithful prologue. The canon flow reads `preset.epoch` directly
+  // (via buildCanonCtx / handleCanonComplete), so we deliberately do NOT
+  // overwrite the player's chosen `epoch` state here — otherwise backing out to
+  // an ordinary prologue would silently inherit the figure's Fifth-Epoch.
+  const handleTakeOver = useCallback(
+    (preset: CanonCharacterPreset) => {
+      if (!providerConfig) return;
+      setCanonPreset(preset);
+      setSelectedPathwayId(preset.pathwayId);
+      setCanonHistory([]);
+      setCanonFinale(null);
+      setAwaitingCanonFinale(false);
+      setStep("canon-prologue");
+      void runCanonScene(preset, []);
+    },
+    [providerConfig, runCanonScene],
+  );
+
+  const handleCanonChoice = useCallback(
+    (choice: CanonPrologueChoice) => {
+      if (!canonScene || !canonPreset) return;
+      const turn: PrologueTurn = {
+        narrative: canonScene.narrative,
+        choices: [],
+        selectedChoiceText: choice.text,
+        selectedAffinities: {},
+        rawResponse: canonScene.rawResponse,
+      };
+      const newHistory = [...canonHistory, turn];
+      setCanonHistory(newHistory);
+      setCanonScene(null);
+      const concluding =
+        (newHistory.length >= MIN_PROLOGUE_SCENES && canonScene.readyToConclude) ||
+        newHistory.length >= MAX_PROLOGUE_SCENES;
+      setAwaitingCanonFinale(concluding);
+      if (concluding) {
+        void runCanonFinale(canonPreset, newHistory);
+      } else {
+        void runCanonScene(canonPreset, newHistory);
+      }
+    },
+    [canonScene, canonPreset, canonHistory, runCanonScene, runCanonFinale],
+  );
+
+  const handleRetryCanon = useCallback(() => {
+    if (!canonPreset) return;
+    const shouldConclude =
+      awaitingCanonFinale || canonHistory.length >= MAX_PROLOGUE_SCENES;
+    if (shouldConclude) {
+      void runCanonFinale(canonPreset, canonHistory);
+    } else {
+      void runCanonScene(canonPreset, canonHistory);
+    }
+  }, [canonPreset, awaitingCanonFinale, canonHistory, runCanonScene, runCanonFinale]);
+
+  // Finish the takeover: thread the canon-faithful prologue's memory + recap
+  // through the existing onComplete params, with the discriminated takeover start.
+  const handleCanonComplete = useCallback(() => {
+    if (!canonPreset) return;
+    const choiceTexts = canonHistory.map((t) => t.selectedChoiceText);
+    const memory = createAIPrologueMemory(
+      choiceTexts,
+      canonPreset.displayName,
+      canonPreset.background,
+    );
+    // The finale narrative carries the becoming (when on-screen) or the arrival,
+    // so it stands in for the recap's encounter; no separate potion line.
+    const recap = buildPrologueRecap({
+      choices: choiceTexts,
+      finaleNarrative: canonFinale?.narrative,
+    });
+    clearDraft();
+    onComplete(
+      canonPreset.pathwayId,
+      canonPreset.displayName,
+      canonPreset.background,
+      memory,
+      canonPreset.epoch,
+      recap,
+      { kind: "canon-takeover", canonCharacterId: canonPreset.id },
+    );
+  }, [canonPreset, canonHistory, canonFinale, onComplete]);
 
   // ── Manual Path Handlers ──
 
@@ -692,13 +861,36 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             </p>
           </div>
 
+          {/* Canon-character takeover affordance (issue #92): the typed name
+              matches a known novel figure. Opt in to live through THAT
+              character's canon-faithful prologue (their pathway is fixed). */}
+          {nameMatch && (
+            <div className="mb-6 rounded-xl border border-amber/40 bg-amber/5 p-4">
+              <p className="mb-1 font-serif text-base font-semibold text-amber">
+                Take over {nameMatch.displayName}&rsquo;s story?
+              </p>
+              <p className="mb-3 text-xs leading-relaxed text-muted">
+                That name belongs to a figure of the chronicles. Step into their life and
+                walk their own path to the Beyonder world — their pathway is already set
+                by who they are.
+              </p>
+              <button
+                type="button"
+                onClick={() => handleTakeOver(nameMatch)}
+                className="rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-gold"
+              >
+                Become {nameMatch.displayName}
+              </button>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleBeginAIPrologue}
             disabled={!characterName.trim()}
             className="w-full rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-30"
           >
-            Begin the Prologue
+            {nameMatch ? "Or begin an ordinary prologue" : "Begin the Prologue"}
           </button>
         </div>
       )}
@@ -899,6 +1091,115 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── CANON-CHARACTER TAKEOVER PROLOGUE (issue #92) ── */}
+      {step === "canon-prologue" && canonPreset && (
+        <div className="max-w-2xl animate-fade-in-up">
+          <div className="mb-6 flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setStep("character-setup")}
+              className="min-h-[24px] rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
+            >
+              <span aria-hidden="true">&larr;</span> Back
+            </button>
+            <span className="text-xs text-muted">
+              {canonPreset.displayName} &middot; Scene {canonHistory.length + 1}
+            </span>
+          </div>
+
+          {/* Loading */}
+          {prologueLoading && (
+            <div
+              role="status"
+              className="flex flex-col items-center justify-center py-20 text-center"
+            >
+              <div className="relative mb-6" aria-hidden="true">
+                <div className="h-12 w-12 rounded-full border border-amber/20 animate-ping absolute inset-0" />
+                <div className="h-12 w-12 rounded-full border border-amber/40 flex items-center justify-center">
+                  <div className="h-3 w-3 rounded-full bg-amber/60 animate-pulse" />
+                </div>
+              </div>
+              <p className="text-sm text-muted italic">The chronicle stirs&hellip;</p>
+            </div>
+          )}
+
+          {/* Error */}
+          {!prologueLoading && prologueError !== null && (
+            <div role="alert" className="py-10 text-center">
+              <p className="mb-2 text-sm text-crimson">{prologueError}</p>
+              <button
+                type="button"
+                onClick={handleRetryCanon}
+                className="mt-4 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {/* Scene */}
+          {!prologueLoading &&
+            prologueError === null &&
+            canonFinale === null &&
+            canonScene !== null && (
+              <div>
+                <div className="mb-8 rounded-xl border border-border bg-surface p-6">
+                  {canonScene.narrative.split("\n\n").map((para, i) => (
+                    <p
+                      key={i}
+                      className="mb-3 text-sm leading-relaxed text-foreground last:mb-0"
+                    >
+                      {para}
+                    </p>
+                  ))}
+                </div>
+                <div className="space-y-3">
+                  {canonScene.choices.map((choice) => (
+                    <button
+                      key={choice.id}
+                      type="button"
+                      onClick={() => handleCanonChoice(choice)}
+                      className="group w-full cursor-pointer rounded-xl border border-border bg-surface px-5 py-4 text-left text-sm leading-relaxed text-foreground transition-all duration-200 hover:-translate-y-0.5 hover:border-amber/40"
+                    >
+                      <span className="mr-2 text-amber" aria-hidden="true">
+                        ›
+                      </span>
+                      {choice.text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+          {/* Finale — the becoming (or arrival), then into the chronicle */}
+          {!prologueLoading && prologueError === null && canonFinale !== null && (
+            <div className="animate-fade-in-up">
+              <div className="mb-6 flex flex-col items-center gap-1.5" aria-hidden="true">
+                <div className="h-8 w-px bg-gradient-to-b from-transparent via-gold/40 to-gold/10" />
+                <div className="h-1 w-1 rounded-full bg-gold/40" />
+              </div>
+              <div className="parchment mb-8 space-y-4 rounded-xl px-6 py-5">
+                {canonFinale.narrative.split("\n\n").map((para, i) => (
+                  <p
+                    key={i}
+                    className="font-serif text-sm leading-[1.85] text-foreground/90"
+                  >
+                    {para}
+                  </p>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={handleCanonComplete}
+                className="w-full rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
+              >
+                Begin Your Chronicle
+              </button>
             </div>
           )}
         </div>

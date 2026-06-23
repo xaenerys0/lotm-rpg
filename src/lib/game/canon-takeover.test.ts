@@ -71,6 +71,34 @@ describe("createCanonCharacterSession", () => {
     ).toBeUndefined();
   });
 
+  it("seeds the figure's canon personality onto durable game state", () => {
+    const session = createCanonCharacterSession(klein, createMemoryState());
+    expect(session.gameState.canonPersonality).toBe(klein.personalityTraits);
+  });
+
+  it("pins a guided-prologue recap override into prologueRecap (replacing openingRecap)", () => {
+    const override = "You lived a tailored canon prologue and stand at the threshold.";
+    const session = createCanonCharacterSession(
+      klein,
+      createMemoryState(),
+      undefined,
+      {},
+      override,
+    );
+    expect(session.gameState.prologueRecap).toBe(override);
+    expect(session.gameState.prologueRecap).not.toBe(klein.openingRecap);
+  });
+
+  it("falls back to the static openingRecap when the override is blank/absent", () => {
+    expect(
+      createCanonCharacterSession(klein, createMemoryState(), undefined, {}, "  ")
+        .gameState.prologueRecap,
+    ).toBe(klein.openingRecap);
+    expect(
+      createCanonCharacterSession(klein, createMemoryState()).gameState.prologueRecap,
+    ).toBe(klein.openingRecap);
+  });
+
   it("honors an explicit start scenario location when one is passed", () => {
     const session = createCanonCharacterSession(klein, createMemoryState(), {
       id: "scn",
@@ -113,6 +141,23 @@ describe("buildGameStatePrompt self directive", () => {
     expect(buildGameStatePrompt(ordinary).content).not.toContain(
       "You Are This Character",
     );
+  });
+
+  it("biases presented choices toward the canon personality when present", () => {
+    const session = createCanonCharacterSession(klein, createMemoryState());
+    const prompt = buildGameStatePrompt(session.gameState).content;
+    // A distinctive fragment of Klein's seeded personality reaches the narrator.
+    expect(prompt).toContain("guards his transmigration secret");
+    expect(prompt).toContain("free to choose against type");
+  });
+
+  it("omits the personality bias when canonPersonality is absent", () => {
+    const session = createCanonCharacterSession(klein, createMemoryState());
+    const noPersona = { ...session.gameState };
+    delete noPersona.canonPersonality;
+    const prompt = buildGameStatePrompt(noPersona).content;
+    expect(prompt).toContain("You Are This Character"); // directive still present
+    expect(prompt).not.toContain("free to choose against type");
   });
 });
 

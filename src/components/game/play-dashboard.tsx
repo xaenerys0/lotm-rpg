@@ -36,6 +36,7 @@ import {
   getStartArchetype,
   buildCustomArchetype,
   matchCanonCharacter,
+  getCanonCharacter,
   type StartArchetype,
   type StartSelection,
 } from "@/lib/lore";
@@ -187,24 +188,40 @@ export function PlayDashboard() {
       prologueRecap: string,
       start: StartSelection,
     ) => {
-      // Canon-character takeover (issue #92): when the player named their
-      // character after a canonical figure AND chose that figure's pathway, they
-      // BECOME that character — a full canon preset (pathway, starting sequence,
-      // location, timeline position, and prefilled durable backstory) takes over.
-      // It supersedes the generic creation path entirely, while still layering
-      // the same world-continuity facts (legacies + echoes) a normal save gets.
-      // Gated on the chosen EPOCH matching the preset's: the canon figures are
-      // Fifth-Epoch novel characters, so a player who deliberately picked a
-      // different era (e.g. the Age of Chaos) is NOT silently forced into the
-      // Fifth — they get an ordinary character of their chosen epoch instead.
-      const canonPreset = matchCanonCharacter(characterName, pathwayId);
-      if (canonPreset && canonPreset.epoch === epoch) {
+      // Canon-character takeover (issue #92). Two entry points resolve to the
+      // SAME seeded save: the GUIDED canon prologue (`start.kind ===
+      // "canon-takeover"`, which also carries a canon-faithful prologue recap to
+      // pin), and the implicit end-of-creation match (the player typed a canon
+      // name AND that figure's pathway via the manual path). Either way a full
+      // canon preset (pathway, starting sequence, location, timeline position,
+      // prefilled durable backstory + personality) supersedes the generic path,
+      // while still layering the same world-continuity facts (legacies + echoes).
+      // The implicit path is gated on the chosen EPOCH matching the preset's so a
+      // player who deliberately picked a different era is not silently forced into
+      // the Fifth; the guided path locked the epoch from the preset already.
+      const canonPreset =
+        start.kind === "canon-takeover"
+          ? getCanonCharacter(start.canonCharacterId)
+          : (() => {
+              const m = matchCanonCharacter(characterName, pathwayId);
+              return m && m.epoch === epoch ? m : null;
+            })();
+      if (canonPreset) {
         const echoes = loadTimelineEchoes(epoch);
         const seededMemory = withLegacyFacts({
           ...initialMemory,
           sessionFacts: [...initialMemory.sessionFacts, ...echoes.facts],
         });
-        let canonSession = createCanonCharacterSession(canonPreset, seededMemory);
+        // The guided prologue supplies a canon-faithful recap to pin; the
+        // implicit manual-path match has none (the static openingRecap stands).
+        const recapOverride = start.kind === "canon-takeover" ? prologueRecap : undefined;
+        let canonSession = createCanonCharacterSession(
+          canonPreset,
+          seededMemory,
+          undefined,
+          {},
+          recapOverride,
+        );
         if (echoes.carried) {
           canonSession = {
             ...canonSession,
