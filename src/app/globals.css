@@ -363,6 +363,15 @@
 }
 
 @layer base {
+  /* Prevent horizontal overflow from expanding the layout viewport.
+     The fog-overlay pseudo-elements use position:fixed with inset:-20%, which
+     extends beyond the right viewport edge and can widen the layout viewport on
+     Android Chrome. overflow-x:clip stops this without affecting fixed
+     positioning (unlike overflow-x:hidden which creates a new stacking context). */
+  html {
+    overflow-x: clip;
+  }
+
   body {
     background:
       radial-gradient(
