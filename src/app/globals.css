@@ -337,6 +337,19 @@
   }
 }
 
+/* ─── iOS Safari auto-zoom prevention ──────────────────────────────────── */
+/* iOS Safari zooms in when a focused input/select/textarea has font-size
+   < 16px, and doesn't reliably reset the viewport afterward. Force 1rem on
+   touch viewports so the zoom never triggers. Written as unlayered CSS so it
+   overrides Tailwind's text-sm / text-xs utilities on these elements. */
+@media (max-width: 767px) {
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+}
+
 /* ─── Reduced motion (WCAG 2.2 — 2.2.2 / 2.3.3) ───────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
