@@ -4,19 +4,24 @@ import type { MemoryState, TurnRecord } from "@/lib/ai";
 
 // ─── The Chronicle ───────────────────────────────────────────────────
 //
-// A running, illuminated transcript of the story so far — the recent turns the
+// A running, illuminated ledger of the story so far — the recent turns the
 // memory layer already keeps (the same `immediateTurns` the narrator reads),
-// rendered as a continuous chat-like chronicle above the live scene. Combat and
+// rendered as a compact, scannable spine above the live scene. Combat and
 // advancement are engine-decided turns routed through the normal loop, so they
-// land in this same transcript as story beats rather than vanishing into a
+// land in this same ledger as story beats rather than vanishing into a
 // disconnected side-screen. Past beats recede; the live scene below stays
 // prominent. Derived entirely from persisted memory — no new save state.
 //
 // Layout: the durable "story so far" summary sits at the top, and the running
-// "Chronicle" transcript of recent beats sits below it in its own disclosure.
-// Both are collapsible and closed by default, so the live scene stays the focus
-// — the player unfolds either to read the recap or the turn-by-turn chat. Both
-// are native <details>/<summary>, no client JS.
+// "Chronicle" ledger of recent beats sits below it in its own disclosure. Both
+// are collapsible and closed by default, so the live scene stays the focus.
+//
+// Within the ledger, beats read NEWEST-FIRST (the player sees what they just
+// did without scrolling) and EACH beat is its OWN collapsible entry: collapsed,
+// a beat is a single spine row — turn number + kind glyph + the "what you did"
+// action line — so five turns no longer flood the screen with full prose. The
+// newest beat opens by default for instant continuity; older beats unfold on
+// demand. Everything is native <details>/<summary>, no client JS.
 
 type BeatKind = "story" | "combat" | "ascension";
 
@@ -124,14 +129,18 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
         </details>
       )}
 
-      {/* The Chronicle — the running transcript of recent beats, at the bottom and
-          collapsible. Closed by default so the live scene stays the focus; the
-          player can unfold it to read the turn as a continuous chat. */}
+      {/* The Chronicle — the running ledger of recent beats, at the bottom and
+          collapsible. Closed by default so the live scene stays the focus. When
+          unfolded it is a compact spine: newest beat first, each beat its own
+          collapsible entry so the prose no longer floods the screen. */}
       {beats.length > 0 && (
         <details className="group">
           <summary className="mb-4 flex cursor-pointer list-none items-center gap-3 marker:content-none">
             <span className="font-serif text-[0.7rem] tracking-[0.3em] text-amber uppercase">
               The Chronicle
+            </span>
+            <span className="text-[0.7rem] text-muted tabular-nums">
+              {beats.length} {beats.length === 1 ? "beat" : "beats"}
             </span>
             <span
               aria-hidden="true"
@@ -145,28 +154,43 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
             </span>
           </summary>
 
-          <ol className="space-y-5">
-            {beats.map((beat) => (
-              <li
-                key={beat.turnNumber}
-                className={`border-l-2 ${KIND_RULE[beat.kind]} pl-4`}
-              >
-                <p className="mb-1.5 flex items-baseline gap-2">
-                  <span aria-hidden="true" className="text-copper">
-                    {KIND_GLYPH[beat.kind]}
-                  </span>
-                  {KIND_LABEL[beat.kind] && (
-                    <span className="text-[0.65rem] font-semibold tracking-[0.2em] text-copper uppercase">
-                      {KIND_LABEL[beat.kind]}
+          {/* Newest-first: the player sees their latest beat without scrolling
+              past the whole history. The freshest beat (index 0) opens by
+              default; the rest stay collapsed to a single spine row each. */}
+          <ol className="space-y-2">
+            {[...beats].reverse().map((beat, index) => (
+              <li key={beat.turnNumber}>
+                <details
+                  open={index === 0}
+                  className={`group/beat border-l-2 ${KIND_RULE[beat.kind]} pl-3.5`}
+                >
+                  <summary className="flex cursor-pointer list-none items-baseline gap-2.5 py-1 marker:content-none">
+                    <span className="shrink-0 rounded-sm border border-border/70 bg-surface px-1.5 py-0.5 font-mono text-[0.65rem] tabular-nums text-copper">
+                      <span className="sr-only">Turn </span>
+                      {beat.turnNumber}
                     </span>
-                  )}
-                  <span className="font-serif text-xs italic text-muted">
-                    {beat.action}
-                  </span>
-                </p>
-                <p className="font-serif text-sm leading-[1.8] text-muted">
-                  {beat.prose}
-                </p>
+                    <span aria-hidden="true" className="shrink-0 text-copper">
+                      {KIND_GLYPH[beat.kind]}
+                    </span>
+                    {KIND_LABEL[beat.kind] && (
+                      <span className="shrink-0 text-[0.6rem] font-semibold tracking-[0.18em] text-copper uppercase">
+                        {KIND_LABEL[beat.kind]}
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1 truncate font-serif text-xs italic text-muted group-open/beat:whitespace-normal">
+                      {beat.action}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="shrink-0 text-copper transition-transform group-open/beat:rotate-90"
+                    >
+                      ▸
+                    </span>
+                  </summary>
+                  <p className="mt-1.5 mb-1 font-serif text-sm leading-[1.8] text-muted">
+                    {beat.prose}
+                  </p>
+                </details>
               </li>
             ))}
           </ol>
