@@ -232,7 +232,7 @@
 .fog-overlay::after {
   content: "";
   position: fixed;
-  inset: -20%;
+  inset: -20% 0; /* bleed vertically only — horizontal overflow expands the Android layout viewport */
   z-index: -1;
   pointer-events: none;
   background:
@@ -337,6 +337,19 @@
   }
 }
 
+/* ─── iOS Safari auto-zoom prevention ──────────────────────────────────── */
+/* iOS Safari zooms in when a focused input/select/textarea has font-size
+   < 16px, and doesn't reliably reset the viewport afterward. Force 1rem on
+   touch devices so the zoom never triggers. Written as unlayered CSS so it
+   overrides Tailwind's text-sm / text-xs utilities on these elements. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 1rem;
+  }
+}
+
 /* ─── Reduced motion (WCAG 2.2 — 2.2.2 / 2.3.3) ───────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -350,6 +363,13 @@
 }
 
 @layer base {
+  /* Defense against any element overflowing horizontally and expanding the
+     layout viewport on Android. clip (not hidden) avoids creating a new
+     stacking context that would break position:fixed descendants. */
+  html {
+    overflow-x: clip;
+  }
+
   body {
     background:
       radial-gradient(
