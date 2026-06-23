@@ -104,20 +104,23 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
     <section aria-label="The chronicle so far" className="mb-8">
       {/* The story so far — the durable summary, kept at the top and collapsible. */}
       {summary && (
-        <details className="group mb-5 rounded-lg border border-border bg-surface/70 p-4">
-          <summary className="cursor-pointer list-none font-serif text-xs tracking-[0.18em] text-copper uppercase marker:content-none">
-            <span aria-hidden="true" className="mr-2 text-copper">
-              ☙
+        <details className="group mb-5">
+          <summary className="mb-4 flex cursor-pointer list-none items-center gap-3 marker:content-none">
+            <span className="font-serif text-[0.7rem] tracking-[0.3em] text-amber uppercase">
+              The story so far
             </span>
-            The story so far
             <span
               aria-hidden="true"
-              className="ml-2 inline-block text-copper transition-transform group-open:rotate-90"
+              className="h-px flex-1 bg-gradient-to-r from-amber/40 to-transparent"
+            />
+            <span
+              aria-hidden="true"
+              className="inline-block text-amber transition-transform group-open:rotate-90"
             >
               ▸
             </span>
           </summary>
-          <p className="mt-3 font-serif text-sm leading-relaxed text-muted">{summary}</p>
+          <p className="font-serif text-sm leading-relaxed text-muted">{summary}</p>
         </details>
       )}
 
