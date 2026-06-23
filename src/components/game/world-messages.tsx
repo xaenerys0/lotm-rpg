@@ -146,7 +146,7 @@ export function WorldMessages({ location }: { location: string }) {
       ) : showForm ? (
         <form onSubmit={handlePlace} className="mt-3 space-y-2">
           <div className="flex flex-wrap items-end gap-2">
-            <div>
+            <div className="min-w-0">
               <label htmlFor="message-template" className="mb-1 block text-xs text-muted">
                 Leave a message
               </label>
@@ -157,7 +157,7 @@ export function WorldMessages({ location }: { location: string }) {
                   setTemplateId(e.target.value);
                   setFills({});
                 }}
-                className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+                className="max-w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               >
                 {MESSAGE_TEMPLATES.map((t) => (
                   <option key={t.id} value={t.id}>
@@ -167,7 +167,7 @@ export function WorldMessages({ location }: { location: string }) {
               </select>
             </div>
             {slots.map(([slot, options]) => (
-              <div key={slot}>
+              <div key={slot} className="min-w-0">
                 <label
                   htmlFor={`message-slot-${slot}`}
                   className="mb-1 block text-xs text-muted"
@@ -178,7 +178,7 @@ export function WorldMessages({ location }: { location: string }) {
                   id={`message-slot-${slot}`}
                   value={fills[slot] ?? ""}
                   onChange={(e) => setFills((f) => ({ ...f, [slot]: e.target.value }))}
-                  className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+                  className="max-w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 >
                   <option value="">choose…</option>
                   {options.map((option) => (

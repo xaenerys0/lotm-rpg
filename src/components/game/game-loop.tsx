@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
@@ -2260,6 +2261,7 @@ function ModeAssist({
   const [topic, setTopic] = useState("");
   const [clueA, setClueA] = useState("");
   const [clueB, setClueB] = useState("");
+  const clues = useMemo(() => gatherClues(gameState), [gameState]);
 
   if (mode === "ritual") {
     return (
@@ -2387,48 +2389,23 @@ function ModeAssist({
   }
 
   if (mode === "investigation") {
-    const clues = gatherClues(gameState);
     if (clues.length < 2) return null;
     return (
       <div className="mt-6 flex flex-wrap items-end gap-2 rounded-md border border-border/60 bg-surface/40 p-4">
-        <div className="min-w-0 flex-1">
-          <label htmlFor="clue-a" className="mb-1 block text-xs text-muted">
-            First clue
-          </label>
-          <select
-            id="clue-a"
-            value={clueA}
-            onChange={(e) => setClueA(e.target.value)}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
-          >
-            <option value="">choose…</option>
-            {clues.map((clue) => (
-              <option key={clue} value={clue}>
-                {clue}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="min-w-0 flex-1">
-          <label htmlFor="clue-b" className="mb-1 block text-xs text-muted">
-            Second clue
-          </label>
-          <select
-            id="clue-b"
-            value={clueB}
-            onChange={(e) => setClueB(e.target.value)}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
-          >
-            <option value="">choose…</option>
-            {clues
-              .filter((clue) => clue !== clueA)
-              .map((clue) => (
-                <option key={clue} value={clue}>
-                  {clue}
-                </option>
-              ))}
-          </select>
-        </div>
+        <ClueSelect
+          id="clue-a"
+          label="First clue"
+          value={clueA}
+          options={clues}
+          onChange={setClueA}
+        />
+        <ClueSelect
+          id="clue-b"
+          label="Second clue"
+          value={clueB}
+          options={clues.filter((c) => c !== clueA)}
+          onChange={setClueB}
+        />
         <button
           type="button"
           disabled={!clueA || !clueB}
@@ -2442,6 +2419,41 @@ function ModeAssist({
   }
 
   return null;
+}
+
+function ClueSelect({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="min-w-0 flex-1">
+      <label htmlFor={id} className="mb-1 block text-xs text-muted">
+        {label}
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+      >
+        <option value="">choose…</option>
+        {options.map((clue) => (
+          <option key={clue} value={clue}>
+            {clue}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 }
 
 // ─── Sub-Components ──────────────────────────────────────────────
