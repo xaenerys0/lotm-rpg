@@ -2,7 +2,23 @@ import { createAdapter } from "./providers";
 import { AIError } from "./errors";
 import { executeWithRetry } from "./client";
 import { ensureUniqueChoiceIds } from "./validation";
-import type { ProviderConfig, ChatMessage } from "./types";
+import type { ProviderConfig, ChatMessage, NarrativeVerbosity } from "./types";
+
+// Player verbosity preset → an optional scene-length line woven into the
+// prologue WRITING GUIDELINES. The prologue runs on its OWN system prompt (not
+// `assemblePrompt`), so the main `## Narration Length` directive never reaches
+// it; this is the prologue's equivalent. "standard"/absent keeps the existing
+// "2–4 paragraphs" baseline (returns ""). The PACING rule is deliberately NOT
+// applied to the prologue — it is its own structured multi-scene flow.
+function prologueVerbosityLine(verbosity?: NarrativeVerbosity): string {
+  if (verbosity === "concise") {
+    return "\n• Keep scenes SHORT and tight — 1–2 lean paragraphs; trim atmosphere and do not pad.";
+  }
+  if (verbosity === "rich") {
+    return "\n• Write fuller, richly atmospheric scenes — 3–4 vivid paragraphs of sensory and emotional texture.";
+  }
+  return "";
+}
 
 export const MIN_PROLOGUE_SCENES = 6; // AI may not conclude before this many scenes (typical 6–8)
 export const MAX_PROLOGUE_SCENES = 12; // forced conclusion safety cap
@@ -243,7 +259,10 @@ export function resolvePrologueSetting(epoch?: number): PrologueEpochSetting {
 }
 
 /** Build the epoch-aware scored-scene system prompt (Fifth-Epoch by default). */
-export function buildPrologueSystemPrompt(epoch?: number): string {
+export function buildPrologueSystemPrompt(
+  epoch?: number,
+  verbosity?: NarrativeVerbosity,
+): string {
   const s = resolvePrologueSetting(epoch);
   return `You are running an interactive character creation prologue for a Lord of the Mysteries text RPG.
 
@@ -277,7 +296,7 @@ READINESS:
 WRITING GUIDELINES:
 • ${s.atmosphere}
 • Address the character by name. Use the provided background naturally.
-• Each scene: 2–4 paragraphs, ends with dramatic tension.
+• Each scene: 2–4 paragraphs, ends with dramatic tension.${prologueVerbosityLine(verbosity)}
 
 RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
 {"narrative":"...","choices":[
@@ -292,7 +311,10 @@ RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
 export const PROLOGUE_SYSTEM_PROMPT = buildPrologueSystemPrompt(PROLOGUE_DEFAULT_EPOCH);
 
 /** Build the epoch-aware finale system prompt (Fifth-Epoch by default). */
-export function buildPrologueFinaleSystemPrompt(epoch?: number): string {
+export function buildPrologueFinaleSystemPrompt(
+  epoch?: number,
+  verbosity?: NarrativeVerbosity,
+): string {
   const s = resolvePrologueSetting(epoch);
   return `You are writing the FINALE scene of a Lord of the Mysteries character-creation prologue.
 
@@ -305,7 +327,7 @@ The player will be offered EXACTLY the candidate potions provided to you, one ch
 POTION CHOICES:
 • Provide one choice per requested candidate id, in the order given.
 • Describe each potion EVOCATIVELY (colour, scent, the feeling it stirs) — NEVER by its pathway or potion name. The character does not know what any of them are.
-• Each choice's \`affinities\` map must be exactly { "<that candidate id>": 1 }.
+• Each choice's \`affinities\` map must be exactly { "<that candidate id>": 1 }.${prologueVerbosityLine(verbosity)}
 
 RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
 {"narrative":"...","choices":[{"id":"p<id>","text":"...","affinities":{"<id>":1}}, ...]}`;
@@ -319,10 +341,11 @@ function buildBaseMessages(
   characterName: string,
   characterBackground: string,
   epoch?: number,
+  verbosity?: NarrativeVerbosity,
 ): ChatMessage[] {
   const setting = resolvePrologueSetting(epoch);
   return [
-    { role: "system", content: buildPrologueSystemPrompt(epoch) },
+    { role: "system", content: buildPrologueSystemPrompt(epoch, verbosity) },
     {
       role: "user",
       content: `Character name: ${characterName}\nBackground: ${characterBackground || setting.defaultBackground}\n\nBegin the prologue. Set the opening scene for this character.`,
@@ -463,9 +486,10 @@ export async function generatePrologueScene(
   characterBackground: string,
   history: PrologueTurn[],
   epoch?: number,
+  verbosity?: NarrativeVerbosity,
 ): Promise<AIPrologueResponse> {
   const messages: ChatMessage[] = [
-    ...buildBaseMessages(characterName, characterBackground, epoch),
+    ...buildBaseMessages(characterName, characterBackground, epoch, verbosity),
     ...buildHistoryMessages(history),
   ];
   const { content, obj, narrative } = await executePrologueRequest(config, messages);
@@ -521,6 +545,7 @@ export async function generatePrologueFinale(
   history: PrologueTurn[],
   candidatePathwayIds: number[],
   epoch?: number,
+  verbosity?: NarrativeVerbosity,
 ): Promise<AIPrologueFinale> {
   if (candidatePathwayIds.length === 0) {
     throw new AIError(
@@ -530,8 +555,8 @@ export async function generatePrologueFinale(
   }
 
   const messages: ChatMessage[] = [
-    { role: "system", content: buildPrologueFinaleSystemPrompt(epoch) },
-    ...buildBaseMessages(characterName, characterBackground, epoch).slice(1),
+    { role: "system", content: buildPrologueFinaleSystemPrompt(epoch, verbosity) },
+    ...buildBaseMessages(characterName, characterBackground, epoch, verbosity).slice(1),
     ...buildHistoryMessages(history),
     {
       role: "user",
@@ -614,6 +639,8 @@ export interface CanonPrologueContext {
    */
   becomesOnScreen: boolean;
   epoch?: number;
+  /** Player-chosen narration length (verbosity preset); absent/"standard" = baseline. */
+  verbosity?: NarrativeVerbosity;
 }
 
 function buildCanonPrologueSystemPrompt(ctx: CanonPrologueContext): string {
@@ -643,7 +670,7 @@ READINESS: set "readyToConclude": true only once the story has reached the brink
 
 WRITING GUIDELINES:
 • ${s.atmosphere}
-• Each scene: 2-4 paragraphs, ending on tension or a decision.
+• Each scene: 2-4 paragraphs, ending on tension or a decision.${prologueVerbosityLine(ctx.verbosity)}
 
 RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
 {"narrative":"...","choices":[{"id":"a","text":"..."},{"id":"b","text":"..."},{"id":"c","text":"..."}],"readyToConclude":false}`;
@@ -660,7 +687,7 @@ SETTING: ${s.setting}
 
 ${task}
 
-Write ONE evocative closing scene (2-4 paragraphs). Address the character by name, stay true to canon, and do NOT offer choices — end on the threshold.
+Write ONE evocative closing scene (2-4 paragraphs).${prologueVerbosityLine(ctx.verbosity)} Address the character by name, stay true to canon, and do NOT offer choices — end on the threshold.
 
 RESPONSE FORMAT — always valid JSON, never wrapped in markdown:
 {"narrative":"..."}`;

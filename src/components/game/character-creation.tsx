@@ -41,10 +41,15 @@ import {
   type StartSelection,
   type CanonCharacterPreset,
 } from "@/lib/lore";
-import type { PrologueDraft } from "@/lib/game";
+import {
+  DEFAULT_PREFERENCES,
+  type PrologueDraft,
+  type GamePreferences,
+} from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence, PATHWAY_GROUPS } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
+import { loadPreferences } from "./preferences-store";
 import { StepHeader, ChoiceCard } from "./creation-ui";
 import {
   generatePrologueScene,
@@ -128,6 +133,20 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       return configCacheRef.current ?? null;
     },
     () => null,
+  );
+
+  // Narration verbosity preset — read once from localStorage; threaded into the
+  // prologue generators (which run on their own system prompt, not assemblePrompt).
+  const prefsCacheRef = useRef<GamePreferences | null>(null);
+  const verbosity = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      if (prefsCacheRef.current === null) {
+        prefsCacheRef.current = loadPreferences();
+      }
+      return prefsCacheRef.current.narrativeVerbosity;
+    },
+    () => DEFAULT_PREFERENCES.narrativeVerbosity,
   );
 
   // Prologue draft — read once from localStorage (restored on refresh/navigation)
@@ -276,9 +295,11 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       runPrologueRequest(async () => {
         // Thread the chosen epoch so the becoming is narrated in the right era
         // (the prologue runs on its own system prompt, not `assemblePrompt`).
-        setCurrentScene(await generatePrologueScene(config, name, bg, history, epoch));
+        setCurrentScene(
+          await generatePrologueScene(config, name, bg, history, epoch, verbosity),
+        );
       }),
-    [runPrologueRequest, epoch],
+    [runPrologueRequest, epoch, verbosity],
   );
 
   // The finale is engine-decided: the cumulative affinity tally narrows the
@@ -291,10 +312,18 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
           tallyAffinities(history.map((t) => t.selectedAffinities)),
         );
         setFinale(
-          await generatePrologueFinale(config, name, bg, history, candidates, epoch),
+          await generatePrologueFinale(
+            config,
+            name,
+            bg,
+            history,
+            candidates,
+            epoch,
+            verbosity,
+          ),
         );
       }),
-    [runPrologueRequest, epoch],
+    [runPrologueRequest, epoch, verbosity],
   );
 
   const handleBeginAIPrologue = useCallback(() => {
@@ -392,8 +421,9 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       personality: preset.personalityTraits,
       becomesOnScreen: preset.becomesOnScreen,
       epoch: preset.epoch,
+      verbosity,
     }),
-    [],
+    [verbosity],
   );
 
   const runCanonScene = useCallback(

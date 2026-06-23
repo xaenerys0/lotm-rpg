@@ -36,6 +36,8 @@ import {
   selectRetrievedForBudget,
   buildSanityDirective,
   buildDemigodDirective,
+  buildVerbosityDirective,
+  buildPacingDirective,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,
@@ -2090,6 +2092,46 @@ describe("prompts", () => {
     });
   });
 
+  describe("buildVerbosityDirective", () => {
+    it("returns empty content for the standard baseline and when absent", () => {
+      expect(buildVerbosityDirective("standard").content).toBe("");
+      expect(buildVerbosityDirective(undefined).content).toBe("");
+    });
+
+    it("returns a tightening directive for concise", () => {
+      const layer = buildVerbosityDirective("concise");
+      expect(layer.role).toBe("system");
+      expect(layer.content).toContain("Narration Length");
+      expect(layer.content.toLowerCase()).toContain("tight");
+    });
+
+    it("returns a fuller directive for rich", () => {
+      const layer = buildVerbosityDirective("rich");
+      expect(layer.content).toContain("Narration Length");
+      expect(layer.content.toLowerCase()).toContain("atmospheric");
+    });
+  });
+
+  describe("buildPacingDirective", () => {
+    it("returns the pacing rule for every non-combat instruction", () => {
+      for (const instruction of [
+        "narrative",
+        "choices",
+        "evaluation",
+        "advancement",
+      ] as const) {
+        const layer = buildPacingDirective(instruction);
+        expect(layer.role).toBe("system");
+        expect(layer.content).toContain("Pacing & Agency");
+        expect(layer.content.toLowerCase()).toContain("one beat");
+      }
+    });
+
+    it("returns empty content for combat (the engine enforces beat-by-beat handoff)", () => {
+      expect(buildPacingDirective("combat").content).toBe("");
+    });
+  });
+
   describe("assemblePrompt", () => {
     it("includes the demigod directive at Seq 4 and omits it below", () => {
       const hasDemigod = (sequenceLevel: number) =>
@@ -2153,6 +2195,40 @@ describe("prompts", () => {
       expect(assembly.totalTokenEstimate).toBeGreaterThan(0);
     });
 
+    const hasLayer = (
+      overrides: Partial<Parameters<typeof assemblePrompt>[0]>,
+      marker: string,
+    ) =>
+      assemblePrompt({
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: { entries: [], totalTokens: 0 },
+        instruction: "narrative" as const,
+        playerAction: "I look around",
+        abilities: [],
+        actingRequirements: [],
+        ...overrides,
+      }).layers.some((l) => l.content.includes(marker));
+
+    it("includes the verbosity directive only for concise/rich (verbosity preset)", () => {
+      expect(hasLayer({ verbosity: "concise" }, "Narration Length")).toBe(true);
+      expect(hasLayer({ verbosity: "rich" }, "Narration Length")).toBe(true);
+      expect(hasLayer({ verbosity: "standard" }, "Narration Length")).toBe(false);
+      expect(hasLayer({}, "Narration Length")).toBe(false);
+    });
+
+    it("applies the verbosity directive in combat too", () => {
+      expect(
+        hasLayer({ verbosity: "concise", instruction: "combat" }, "Narration Length"),
+      ).toBe(true);
+    });
+
+    it("includes the pacing rule for non-combat turns and omits it in combat", () => {
+      expect(hasLayer({ instruction: "narrative" }, "Pacing & Agency")).toBe(true);
+      expect(hasLayer({ instruction: "advancement" }, "Pacing & Agency")).toBe(true);
+      expect(hasLayer({ instruction: "combat" }, "Pacing & Agency")).toBe(false);
+    });
+
     it("excludes empty lore context", () => {
       const input = {
         gameState: makeGameState(),
@@ -2164,8 +2240,10 @@ describe("prompts", () => {
         actingRequirements: [],
       };
       const assembly = assemblePrompt(input);
-      const systemLayers = assembly.layers.filter((l) => l.role === "system");
-      expect(systemLayers.length).toBe(1);
+      // No lore layer is emitted when the lore context is empty.
+      expect(assembly.layers.some((l) => l.content.includes("## Lore Context"))).toBe(
+        false,
+      );
     });
 
     it("includes history when present", () => {
@@ -5049,6 +5127,22 @@ describe("prologue epoch settings", () => {
     const finale = buildPrologueFinaleSystemPrompt(3);
     expect(finale).toContain("Cataclysm Epoch");
     expect(finale).toContain("threshold of becoming a Beyonder");
+  });
+
+  it("weaves the verbosity preset into the prologue prompts, baseline-silent (verbosity preset)", () => {
+    // Standard / absent leaves the existing "2–4 paragraphs" baseline untouched.
+    expect(buildPrologueSystemPrompt(undefined)).not.toContain("Keep scenes SHORT");
+    expect(buildPrologueSystemPrompt(undefined, "standard")).not.toContain(
+      "richly atmospheric",
+    );
+    // Concise / rich each add a scene-length line to the scene + finale prompts.
+    expect(buildPrologueSystemPrompt(undefined, "concise")).toContain(
+      "Keep scenes SHORT",
+    );
+    expect(buildPrologueSystemPrompt(undefined, "rich")).toContain("richly atmospheric");
+    expect(buildPrologueFinaleSystemPrompt(undefined, "concise")).toContain(
+      "Keep scenes SHORT",
+    );
   });
 });
 

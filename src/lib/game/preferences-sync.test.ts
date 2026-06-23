@@ -83,6 +83,25 @@ describe("fetchPreferences", () => {
     expect(result.dismissedHints).toEqual(["map"]);
   });
 
+  it("preserves a stored narrativeVerbosity and defaults an invalid one (verbosity preset)", async () => {
+    const ok = mockClient({
+      selectData: [
+        { preferences: { narrativeVerbosity: "concise" }, dismissed_hints: [] },
+      ],
+    });
+    expect((await fetchPreferences(ok.client)).preferences.narrativeVerbosity).toBe(
+      "concise",
+    );
+    const bad = mockClient({
+      selectData: [
+        { preferences: { narrativeVerbosity: "verbose" }, dismissed_hints: [] },
+      ],
+    });
+    expect((await fetchPreferences(bad.client)).preferences.narrativeVerbosity).toBe(
+      "standard",
+    );
+  });
+
   it("defaults a null preferences payload and a non-array hint list", async () => {
     const { client } = mockClient({
       selectData: [{ preferences: null, dismissed_hints: "oops" }],
@@ -114,6 +133,18 @@ describe("reconcilePreferences", () => {
     expect(merged.preferences.highContrast).toBe(false); // remote wins
     expect(merged.preferences.sceneArtEnabled).toBe(true);
     expect(merged.dismissedHints.sort()).toEqual(["journal", "map"]);
+  });
+
+  it("lets the cloud narrativeVerbosity win (verbosity preset)", () => {
+    const local = synced({
+      preferences: { ...DEFAULT_PREFERENCES, narrativeVerbosity: "rich" },
+    });
+    const remote = synced({
+      preferences: { ...DEFAULT_PREFERENCES, narrativeVerbosity: "concise" },
+    });
+    expect(reconcilePreferences(local, remote).preferences.narrativeVerbosity).toBe(
+      "concise",
+    );
   });
 
   it("de-duplicates hints dismissed on both devices", () => {

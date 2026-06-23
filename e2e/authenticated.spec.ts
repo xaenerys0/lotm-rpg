@@ -46,6 +46,33 @@ for (const route of GAME_ROUTES) {
   });
 }
 
+test("the settings narration-length control selects and persists a verbosity preset", async ({
+  page,
+}) => {
+  await page.goto("/settings");
+
+  const group = page.getByRole("radiogroup", { name: "Narration length" });
+  await expect(group).toBeVisible();
+
+  const standard = group.getByRole("radio", { name: "Standard" });
+  const concise = group.getByRole("radio", { name: "Concise" });
+  // Standard is the default.
+  await expect(standard).toHaveAttribute("aria-checked", "true");
+
+  // Selecting Concise checks it and unchecks Standard.
+  await concise.click();
+  await expect(concise).toHaveAttribute("aria-checked", "true");
+  await expect(standard).toHaveAttribute("aria-checked", "false");
+
+  // The choice persists across a reload (localStorage-backed).
+  await page.reload();
+  await expect(
+    page
+      .getByRole("radiogroup", { name: "Narration length" })
+      .getByRole("radio", { name: "Concise" }),
+  ).toHaveAttribute("aria-checked", "true");
+});
+
 test("the character sheet's delete control runs the two-step confirm", async ({
   page,
 }) => {

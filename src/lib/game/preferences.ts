@@ -4,10 +4,13 @@
  * The sanity-meter visibility toggle (hidden by default — the player reads
  * their state from CSS effects and unreliable narration) and the
  * high-contrast display mode (brightens text/borders, mutes the decorative
- * atmosphere).
+ * atmosphere). Plus `narrativeVerbosity` — the player's chosen narration
+ * length, the one preference that reaches the AI prompt (as a directive).
  *
  * Pure functions only — localStorage access lives in the React layer.
  */
+
+import { isNarrativeVerbosity, type NarrativeVerbosity } from "@/lib/ai";
 
 export interface GamePreferences {
   /** When true, the numeric sanity meter is shown; otherwise it is hidden. */
@@ -30,6 +33,12 @@ export interface GamePreferences {
    * you anywhere (the override the gate honours).
    */
   movementGateEnabled: boolean;
+  /**
+   * Player-chosen narration length. "standard" (default) is the baseline — it
+   * emits no prompt directive; "concise" tightens the narrative and "rich"
+   * makes it fuller. The one preference threaded into the AI `generate()` call.
+   */
+  narrativeVerbosity: NarrativeVerbosity;
 }
 
 export const DEFAULT_PREFERENCES: GamePreferences = {
@@ -38,6 +47,7 @@ export const DEFAULT_PREFERENCES: GamePreferences = {
   highContrast: false,
   sceneArtEnabled: false,
   movementGateEnabled: true,
+  narrativeVerbosity: "standard",
 };
 
 export function isValidPreferencesShape(obj: unknown): boolean {
@@ -57,6 +67,11 @@ export function isValidPreferencesShape(obj: unknown): boolean {
   }
   // movementGateEnabled (#101) was added later — older payloads omit it.
   if (p.movementGateEnabled !== undefined && typeof p.movementGateEnabled !== "boolean") {
+    return false;
+  }
+  // narrativeVerbosity (verbosity preset) was added later — older payloads omit
+  // it; when present it must be one of the known enum values.
+  if (p.narrativeVerbosity !== undefined && !isNarrativeVerbosity(p.narrativeVerbosity)) {
     return false;
   }
   return p.sceneArtEnabled === undefined || typeof p.sceneArtEnabled === "boolean";
@@ -85,6 +100,9 @@ export function mergePreferences(partial: Partial<GamePreferences>): GamePrefere
       typeof partial.movementGateEnabled === "boolean"
         ? partial.movementGateEnabled
         : DEFAULT_PREFERENCES.movementGateEnabled,
+    narrativeVerbosity: isNarrativeVerbosity(partial.narrativeVerbosity)
+      ? partial.narrativeVerbosity
+      : DEFAULT_PREFERENCES.narrativeVerbosity,
   };
 }
 

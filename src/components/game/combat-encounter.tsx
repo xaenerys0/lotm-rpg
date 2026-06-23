@@ -21,6 +21,7 @@ import type {
   GameState,
   ImageProviderConfig,
   LoreContext,
+  NarrativeVerbosity,
   ProviderConfig,
   SceneArtContext,
 } from "@/lib/ai";
@@ -87,6 +88,7 @@ export function CombatEncounterView({
   recognitionContext,
   epochContext,
   cityNarration,
+  verbosity,
   onUpdate,
   onApplyResult,
   onExit,
@@ -115,6 +117,9 @@ export function CombatEncounterView({
   /** Per-city narration tone (issue #23): one tone sentence for the current
    * place. Null for cities with no specific tone. */
   cityNarration?: string | null;
+  /** Player-chosen narration length (verbosity preset). Combat inherits the
+   * verbosity directive (but never the pacing rule). Absent/"standard" = baseline. */
+  verbosity?: NarrativeVerbosity;
   onUpdate: (next: CombatEncounter) => void;
   onApplyResult: (result: CombatResult, narratedScene?: string) => void;
   onExit: () => void;
@@ -158,6 +163,7 @@ export function CombatEncounterView({
       // Fifth-Epoch default (parity with the normal turn).
       epochContext,
       cityNarration,
+      verbosity,
       instruction: "combat",
       playerAction,
       abilities,
