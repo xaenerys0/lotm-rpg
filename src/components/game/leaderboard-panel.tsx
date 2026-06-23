@@ -43,7 +43,7 @@ export function LeaderboardPanel() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3 rounded-xl border border-border bg-surface p-5">
-        <div>
+        <div className="min-w-0">
           <label
             htmlFor="board-metric"
             className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
@@ -54,7 +54,7 @@ export function LeaderboardPanel() {
             id="board-metric"
             value={metric}
             onChange={(e) => setMetric(e.target.value as LeaderboardMetric)}
-            className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            className="max-w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           >
             {(Object.keys(METRIC_LABELS) as LeaderboardMetric[]).map((value) => (
               <option key={value} value={value}>
@@ -63,7 +63,7 @@ export function LeaderboardPanel() {
             ))}
           </select>
         </div>
-        <div>
+        <div className="min-w-0">
           <label
             htmlFor="board-pathway"
             className="mb-1.5 block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
@@ -76,7 +76,7 @@ export function LeaderboardPanel() {
             onChange={(e) =>
               setPathwayId(e.target.value ? Number(e.target.value) : undefined)
             }
-            className="rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            className="max-w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
           >
             <option value="">All pathways</option>
             {ALL_PATHWAYS.map((pathway) => (
