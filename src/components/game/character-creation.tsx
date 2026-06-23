@@ -41,15 +41,11 @@ import {
   type StartSelection,
   type CanonCharacterPreset,
 } from "@/lib/lore";
-import {
-  DEFAULT_PREFERENCES,
-  type PrologueDraft,
-  type GamePreferences,
-} from "@/lib/game";
+import type { PrologueDraft } from "@/lib/game";
 import type { MemoryState } from "@/lib/ai";
 import { ALL_PATHWAYS, getSequence, PATHWAY_GROUPS } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
-import { loadPreferences } from "./preferences-store";
+import { useStoredPreferences } from "./use-stored-preferences";
 import { StepHeader, ChoiceCard } from "./creation-ui";
 import {
   generatePrologueScene,
@@ -137,17 +133,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
 
   // Narration verbosity preset — read once from localStorage; threaded into the
   // prologue generators (which run on their own system prompt, not assemblePrompt).
-  const prefsCacheRef = useRef<GamePreferences | null>(null);
-  const verbosity = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (prefsCacheRef.current === null) {
-        prefsCacheRef.current = loadPreferences();
-      }
-      return prefsCacheRef.current.narrativeVerbosity;
-    },
-    () => DEFAULT_PREFERENCES.narrativeVerbosity,
-  );
+  const verbosity = useStoredPreferences().narrativeVerbosity;
 
   // Prologue draft — read once from localStorage (restored on refresh/navigation)
   const draftCacheRef = useRef<PrologueDraft | null | undefined>(undefined);

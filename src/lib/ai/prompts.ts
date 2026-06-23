@@ -313,10 +313,18 @@ export function buildInstructionPrompt(
 // directive, never by lowering `MAX_OUTPUT_TOKENS` — that cap holds the whole
 // JSON (narrative + running summary + choices), so squeezing it would truncate
 // the object mid-write.
-const VERBOSITY_DIRECTIVES: Partial<Record<NarrativeVerbosity, string>> = {
+//
+// This phrasing is the SINGLE source shared by the main turn (below) AND the
+// prologue (`prologueVerbosityLine` in `prologue-client.ts`), so the two
+// narration surfaces can never drift apart. "standard" has no entry — it is the
+// baseline that emits no guidance.
+export const VERBOSITY_GUIDANCE: Record<
+  Exclude<NarrativeVerbosity, "standard">,
+  string
+> = {
   concise:
-    "Keep the narrative tight — at most two short paragraphs (roughly 120 words). Lead with what actually changes, keep atmosphere to a line or two, and stop. Do not pad or restate.",
-  rich: "Write a fuller, more atmospheric narrative — vivid sensory and emotional texture — while still advancing only the current beat. Three to four paragraphs at most; never sprawl beyond this moment.",
+    "Keep it tight — at most 1–2 short paragraphs (roughly 120 words). Lead with what actually changes, keep atmosphere to a line or two, and stop; do not pad or restate.",
+  rich: "Write fuller, more atmospheric prose — three to four paragraphs of vivid sensory and emotional texture — while still advancing only the current beat; never sprawl beyond this moment.",
 };
 
 /**
@@ -325,24 +333,29 @@ const VERBOSITY_DIRECTIVES: Partial<Record<NarrativeVerbosity, string>> = {
  * drops it); applies to every instruction, including combat.
  */
 export function buildVerbosityDirective(verbosity?: NarrativeVerbosity): PromptLayer {
-  const directive = verbosity ? VERBOSITY_DIRECTIVES[verbosity] : undefined;
+  const guidance =
+    verbosity && verbosity !== "standard" ? VERBOSITY_GUIDANCE[verbosity] : undefined;
   return {
     role: "system",
-    content: directive ? `## Narration Length\n${directive}` : "",
+    content: guidance ? `## Narration Length\n${guidance}` : "",
   };
 }
 
 /**
  * Build the `## Pacing & Agency` directive that stops the narrator playing the
  * character forward — advance ONE beat, stop at the next decision point, never
- * resolve the player's pending choice. Combat is EXEMPT: the combat state
- * machine (`@/lib/game/combat.ts`) already hands control back at each mechanical
- * decision point, and the narrator only narrates a single committed exchange, so
- * the rule would be redundant there — it returns an empty-content layer (dropped)
- * for the "combat" instruction.
+ * resolve the player's pending choice. Engine-committed narration turns are
+ * EXEMPT (an empty-content layer, dropped): `combat` is a multi-exchange state
+ * machine (`@/lib/game/combat.ts`) that hands control back at each mechanical
+ * decision point, and `advancement` is a single engine-decided climactic beat
+ * routed through ENGINE_RESOLUTION (the engine already owns the outcome and the
+ * next turn resumes normal play) — neither is the narrator "playing the
+ * character forward", so the rule would be redundant or counterproductive.
  */
+const PACING_EXEMPT_INSTRUCTIONS: readonly InstructionType[] = ["combat", "advancement"];
+
 export function buildPacingDirective(instruction: InstructionType): PromptLayer {
-  if (instruction === "combat") {
+  if (PACING_EXEMPT_INSTRUCTIONS.includes(instruction)) {
     return { role: "system", content: "" };
   }
   return {

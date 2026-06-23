@@ -53,6 +53,7 @@ export {
   DEMIGOD_SEQUENCE_THRESHOLD,
   buildVerbosityDirective,
   buildPacingDirective,
+  VERBOSITY_GUIDANCE,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,

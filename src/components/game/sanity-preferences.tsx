@@ -1,30 +1,16 @@
 "use client";
 
-import { useCallback, useRef, useState, useSyncExternalStore } from "react";
-import { DEFAULT_PREFERENCES, type GamePreferences } from "@/lib/game";
+import { useCallback, useState } from "react";
+import type { GamePreferences } from "@/lib/game";
 import type { NarrativeVerbosity } from "@/lib/ai";
-import { noopSubscribe } from "@/lib/react";
-import {
-  applyContrastPreference,
-  loadPreferences,
-  savePreferences,
-} from "./preferences-store";
+import { applyContrastPreference, savePreferences } from "./preferences-store";
+import { useStoredPreferences } from "./use-stored-preferences";
 
 // Display preferences (issues #9, #13): the sanity-meter toggle and the
 // high-contrast mode. One component so Settings shows them as one group.
 
 export function SanityPreferences() {
-  const cacheRef = useRef<GamePreferences | null>(null);
-  const initial = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (cacheRef.current === null) {
-        cacheRef.current = loadPreferences();
-      }
-      return cacheRef.current;
-    },
-    () => DEFAULT_PREFERENCES,
-  );
+  const initial = useStoredPreferences();
 
   // Derive from the reactive store snapshot until a toggle overrides it.
   // `useState(initial)` would freeze on the server fallback (DEFAULT_PREFERENCES)

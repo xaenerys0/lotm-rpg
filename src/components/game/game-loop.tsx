@@ -30,12 +30,10 @@ import {
   companionsPresentOnMove,
   markPursuer,
   previewSanityImpact,
-  DEFAULT_PREFERENCES,
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
   PROVIDER_CONFIG_KEY,
   IMAGE_PROVIDER_CONFIG_KEY,
-  type GamePreferences,
   type SanityTier,
   type LossOfControlSeverity,
   type CombatEncounter,
@@ -145,7 +143,7 @@ import {
 } from "@/lib/game";
 import { SanityEffects } from "./sanity-effects";
 import { CombatEncounterView } from "./combat-encounter";
-import { loadPreferences } from "./preferences-store";
+import { useStoredPreferences } from "./use-stored-preferences";
 import { pushWorldMemoryToCloud } from "./cloud-sync";
 import type {
   GameState,
@@ -474,17 +472,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const [session, setSession] = useState<GameSession | null>(initialSession);
   const generationRef = useRef(0);
 
-  const prefsCacheRef = useRef<GamePreferences | null>(null);
-  const preferences = useSyncExternalStore(
-    noopSubscribe,
-    () => {
-      if (prefsCacheRef.current === null) {
-        prefsCacheRef.current = loadPreferences();
-      }
-      return prefsCacheRef.current;
-    },
-    () => DEFAULT_PREFERENCES,
-  );
+  const preferences = useStoredPreferences();
 
   const configCacheRef = useRef<ProviderConfig | null | undefined>(undefined);
   const providerConfig = useSyncExternalStore(

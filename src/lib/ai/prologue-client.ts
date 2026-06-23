@@ -2,20 +2,20 @@ import { createAdapter } from "./providers";
 import { AIError } from "./errors";
 import { executeWithRetry } from "./client";
 import { ensureUniqueChoiceIds } from "./validation";
+import { VERBOSITY_GUIDANCE } from "./prompts";
 import type { ProviderConfig, ChatMessage, NarrativeVerbosity } from "./types";
 
 // Player verbosity preset → an optional scene-length line woven into the
 // prologue WRITING GUIDELINES. The prologue runs on its OWN system prompt (not
 // `assemblePrompt`), so the main `## Narration Length` directive never reaches
-// it; this is the prologue's equivalent. "standard"/absent keeps the existing
-// "2–4 paragraphs" baseline (returns ""). The PACING rule is deliberately NOT
-// applied to the prologue — it is its own structured multi-scene flow.
+// it; this is the prologue's equivalent. It reuses the SAME `VERBOSITY_GUIDANCE`
+// phrasing as the main turn (single source — they can't drift). "standard"/
+// absent keeps the existing "2–4 paragraphs" baseline (returns ""). The PACING
+// rule is deliberately NOT applied to the prologue — it is its own structured
+// multi-scene flow.
 function prologueVerbosityLine(verbosity?: NarrativeVerbosity): string {
-  if (verbosity === "concise") {
-    return "\n• Keep scenes SHORT and tight — 1–2 lean paragraphs; trim atmosphere and do not pad.";
-  }
-  if (verbosity === "rich") {
-    return "\n• Write fuller, richly atmospheric scenes — 3–4 vivid paragraphs of sensory and emotional texture.";
+  if (verbosity === "concise" || verbosity === "rich") {
+    return `\n• ${VERBOSITY_GUIDANCE[verbosity]}`;
   }
   return "";
 }

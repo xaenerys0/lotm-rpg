@@ -38,6 +38,7 @@ import {
   buildDemigodDirective,
   buildVerbosityDirective,
   buildPacingDirective,
+  VERBOSITY_GUIDANCE,
   buildGameStatePrompt,
   buildHistoryPrompt,
   buildInstructionPrompt,
@@ -2113,13 +2114,8 @@ describe("prompts", () => {
   });
 
   describe("buildPacingDirective", () => {
-    it("returns the pacing rule for every non-combat instruction", () => {
-      for (const instruction of [
-        "narrative",
-        "choices",
-        "evaluation",
-        "advancement",
-      ] as const) {
+    it("returns the pacing rule for the player-driven instructions", () => {
+      for (const instruction of ["narrative", "choices", "evaluation"] as const) {
         const layer = buildPacingDirective(instruction);
         expect(layer.role).toBe("system");
         expect(layer.content).toContain("Pacing & Agency");
@@ -2127,8 +2123,12 @@ describe("prompts", () => {
       }
     });
 
-    it("returns empty content for combat (the engine enforces beat-by-beat handoff)", () => {
+    it("returns empty content for engine-committed turns (combat and advancement)", () => {
+      // Combat is a multi-exchange state machine; advancement is a single
+      // engine-decided climactic beat — neither is the narrator playing the
+      // character forward, so both are exempt from the pacing rule.
       expect(buildPacingDirective("combat").content).toBe("");
+      expect(buildPacingDirective("advancement").content).toBe("");
     });
   });
 
@@ -2223,10 +2223,11 @@ describe("prompts", () => {
       ).toBe(true);
     });
 
-    it("includes the pacing rule for non-combat turns and omits it in combat", () => {
+    it("includes the pacing rule for player-driven turns and omits it for engine-committed ones", () => {
       expect(hasLayer({ instruction: "narrative" }, "Pacing & Agency")).toBe(true);
-      expect(hasLayer({ instruction: "advancement" }, "Pacing & Agency")).toBe(true);
+      expect(hasLayer({ instruction: "choices" }, "Pacing & Agency")).toBe(true);
       expect(hasLayer({ instruction: "combat" }, "Pacing & Agency")).toBe(false);
+      expect(hasLayer({ instruction: "advancement" }, "Pacing & Agency")).toBe(false);
     });
 
     it("excludes empty lore context", () => {
@@ -5131,18 +5132,35 @@ describe("prologue epoch settings", () => {
 
   it("weaves the verbosity preset into the prologue prompts, baseline-silent (verbosity preset)", () => {
     // Standard / absent leaves the existing "2–4 paragraphs" baseline untouched.
-    expect(buildPrologueSystemPrompt(undefined)).not.toContain("Keep scenes SHORT");
+    expect(buildPrologueSystemPrompt(undefined)).not.toContain(
+      VERBOSITY_GUIDANCE.concise,
+    );
     expect(buildPrologueSystemPrompt(undefined, "standard")).not.toContain(
-      "richly atmospheric",
+      VERBOSITY_GUIDANCE.rich,
     );
     // Concise / rich each add a scene-length line to the scene + finale prompts.
     expect(buildPrologueSystemPrompt(undefined, "concise")).toContain(
-      "Keep scenes SHORT",
+      VERBOSITY_GUIDANCE.concise,
     );
-    expect(buildPrologueSystemPrompt(undefined, "rich")).toContain("richly atmospheric");
+    expect(buildPrologueSystemPrompt(undefined, "rich")).toContain(
+      VERBOSITY_GUIDANCE.rich,
+    );
     expect(buildPrologueFinaleSystemPrompt(undefined, "concise")).toContain(
-      "Keep scenes SHORT",
+      VERBOSITY_GUIDANCE.concise,
     );
+  });
+
+  it("shares ONE verbosity phrasing across the main turn and the prologue (no drift)", () => {
+    // Single-source guarantee: the same VERBOSITY_GUIDANCE string appears in both
+    // the main-turn directive and the prologue prompts for each preset, so an
+    // edit to one can never silently diverge from the other.
+    for (const v of ["concise", "rich"] as const) {
+      expect(buildVerbosityDirective(v).content).toContain(VERBOSITY_GUIDANCE[v]);
+      expect(buildPrologueSystemPrompt(undefined, v)).toContain(VERBOSITY_GUIDANCE[v]);
+      expect(buildPrologueFinaleSystemPrompt(undefined, v)).toContain(
+        VERBOSITY_GUIDANCE[v],
+      );
+    }
   });
 });
 
