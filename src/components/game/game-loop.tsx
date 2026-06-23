@@ -2340,7 +2340,7 @@ function ModeAssist({
   if (mode === "dialogue" && gameState.npcsPresent.length > 0) {
     return (
       <div className="mt-6 flex flex-wrap items-end gap-2 rounded-md border border-border/60 bg-surface/40 p-4">
-        <div>
+        <div className="min-w-0">
           <label htmlFor="dialogue-npc" className="mb-1 block text-xs text-muted">
             Speak with
           </label>
@@ -2348,7 +2348,7 @@ function ModeAssist({
             id="dialogue-npc"
             value={npc}
             onChange={(e) => setNpc(e.target.value)}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            className="max-w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
           >
             <option value="">choose…</option>
             {gameState.npcsPresent.map((name) => (
@@ -2391,7 +2391,7 @@ function ModeAssist({
     if (clues.length < 2) return null;
     return (
       <div className="mt-6 flex flex-wrap items-end gap-2 rounded-md border border-border/60 bg-surface/40 p-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <label htmlFor="clue-a" className="mb-1 block text-xs text-muted">
             First clue
           </label>
@@ -2399,7 +2399,7 @@ function ModeAssist({
             id="clue-a"
             value={clueA}
             onChange={(e) => setClueA(e.target.value)}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
           >
             <option value="">choose…</option>
             {clues.map((clue) => (
@@ -2409,7 +2409,7 @@ function ModeAssist({
             ))}
           </select>
         </div>
-        <div>
+        <div className="min-w-0 flex-1">
           <label htmlFor="clue-b" className="mb-1 block text-xs text-muted">
             Second clue
           </label>
@@ -2417,7 +2417,7 @@ function ModeAssist({
             id="clue-b"
             value={clueB}
             onChange={(e) => setClueB(e.target.value)}
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:border-amber/50 focus:outline-none"
           >
             <option value="">choose…</option>
             {clues
