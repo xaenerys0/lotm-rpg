@@ -19,12 +19,15 @@ import {
   HORROR_TAG_GAP,
   SANITY_EVENT_TAGS,
   SANITY_DESCRIPTORS,
+  SANITY_DRAIN_INROLE_RELIEF,
   sanityPercent,
   classifySanityTier,
   sanityEffects,
   sanityDescriptor,
   sanityDelta,
   sanityDeltaForTags,
+  inRoleDrainMultiplier,
+  previewSanityImpact,
   isLossOfControl,
   evaluateLossOfControl,
   type SanityTier,
@@ -279,6 +282,59 @@ describe("sanity", () => {
         ["ability-use", "horror-encounter", "human-connection", "rest", "routine"].sort(),
       );
       expect(HORROR_TAG_GAP).toBe(1);
+    });
+  });
+
+  describe("in-role drain dampening (acting alignment)", () => {
+    it("gives no relief at or below neutral acting, or with no score", () => {
+      expect(inRoleDrainMultiplier(undefined)).toBe(1);
+      expect(inRoleDrainMultiplier(0.5)).toBe(1);
+      expect(inRoleDrainMultiplier(0.2)).toBe(1);
+      expect(inRoleDrainMultiplier(0)).toBe(1);
+    });
+
+    it("scales drains down as acting rises from neutral to fully in-role", () => {
+      expect(inRoleDrainMultiplier(1)).toBeCloseTo(1 - SANITY_DRAIN_INROLE_RELIEF);
+      // Halfway in-role (0.75) gets half the relief.
+      expect(inRoleDrainMultiplier(0.75)).toBeCloseTo(1 - SANITY_DRAIN_INROLE_RELIEF / 2);
+      // Monotonic: more in-role → smaller multiplier.
+      expect(inRoleDrainMultiplier(1)).toBeLessThan(inRoleDrainMultiplier(0.75));
+    });
+
+    it("clamps an out-of-range alignment before scaling", () => {
+      expect(inRoleDrainMultiplier(2)).toBe(inRoleDrainMultiplier(1));
+      expect(inRoleDrainMultiplier(-1)).toBe(1);
+    });
+
+    it("dampens horror/ability drains for an in-role turn but never recoveries", () => {
+      const baseHorror = sanityDeltaForTags(["horror-encounter"], 9);
+      const dampened = sanityDeltaForTags(["horror-encounter"], 9, 1);
+      expect(dampened).toBe(Math.round(baseHorror * inRoleDrainMultiplier(1)));
+      expect(dampened).toBeGreaterThan(baseHorror); // less negative
+      // Neutral acting leaves the drain untouched.
+      expect(sanityDeltaForTags(["horror-encounter"], 9, 0.5)).toBe(baseHorror);
+      // Recovery tags are never dampened.
+      expect(sanityDeltaForTags(["routine"], 9, 1)).toBe(
+        sanityDelta({ type: "routine" }),
+      );
+    });
+
+    it("dampens only the drain half of a mixed turn", () => {
+      const baseHorror = sanityDeltaForTags(["horror-encounter"], 9);
+      const routine = sanityDelta({ type: "routine" });
+      const mixed = sanityDeltaForTags(["horror-encounter", "routine"], 9, 1);
+      expect(mixed).toBe(routine + Math.round(baseHorror * inRoleDrainMultiplier(1)));
+    });
+
+    it("flows the alignment through previewSanityImpact (preview == applied)", () => {
+      const raw = previewSanityImpact(["horror-encounter"], -2, 9);
+      const inRole = previewSanityImpact(["horror-encounter"], -2, 9, 1);
+      expect(raw.tagDelta).toBe(sanityDeltaForTags(["horror-encounter"], 9));
+      expect(inRole.tagDelta).toBe(sanityDeltaForTags(["horror-encounter"], 9, 1));
+      // Residual is the AI's nuance and is NOT dampened.
+      expect(inRole.residual).toBe(-2);
+      expect(inRole.total).toBe(inRole.tagDelta - 2);
+      expect(inRole.total).toBeGreaterThan(raw.total);
     });
   });
 

@@ -3586,6 +3586,7 @@ function ConsequencesPhase({
     response.sanityEventTags,
     response.sanityImpact,
     session.gameState.sequenceLevel,
+    response.actingEvaluation?.alignment,
   ).total;
   const hasSanityImpact = sanityTotal !== 0;
   const hasActingEval = response.actingEvaluation !== undefined;

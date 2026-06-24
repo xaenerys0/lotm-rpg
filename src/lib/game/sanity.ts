@@ -206,6 +206,31 @@ export const HORROR_TAG_GAP = 1;
 export const SANITY_RESIDUAL_CAP = 5;
 
 /**
+ * Acting in accordance with your role is the canonical sanity defense in LOTM
+ * (the Acting Method): a Beyonder fully inhabiting their nature is *steadied*,
+ * not frayed, by the dark work that nature entails. So the engine scales the
+ * DRAIN tags (`horror-encounter`/`ability-use`) down by the turn's acting
+ * `alignment` — at full in-role acting (1.0) a drain is reduced by this
+ * fraction; neutral/contrary acting (≤0.5) or an absent score leaves drains at
+ * full. Recovery tags are never dampened. This keeps a squarely-in-role turn (a
+ * Corpse Collector among the dead, a creature of the night slipping through the
+ * dark) from bleeding sanity even when the narrator over-tags the moment.
+ */
+export const SANITY_DRAIN_INROLE_RELIEF = 0.75;
+
+/**
+ * The drain multiplier for a turn's acting `alignment` (0-1): 1.0 (no relief)
+ * for neutral/contrary acting or an absent score, falling linearly to
+ * `1 - SANITY_DRAIN_INROLE_RELIEF` as alignment rises from 0.5 to 1.0. Pure.
+ */
+export function inRoleDrainMultiplier(alignment: number | undefined): number {
+  if (alignment === undefined) return 1;
+  const a = clamp(alignment, 0, 1);
+  const inRole = Math.max(0, (a - 0.5) / 0.5);
+  return 1 - SANITY_DRAIN_INROLE_RELIEF * inRole;
+}
+
+/**
  * Narrow a loosely-typed AI `sanityEventTags` array to the known set. The AI
  * boundary already normalizes, but the engine never trusts it. Pure.
  */
@@ -227,17 +252,19 @@ export interface SanityBreakdown {
 
 /**
  * The single source of truth for hybrid per-turn sanity (issue #95): engine-owned
- * tag magnitudes (against the player's Sequence) plus the AI's clamped residual.
- * `applyResolution` commits this on Continue; the consequences panel previews it —
- * both call this one helper so the previewed and applied numbers can never drift.
- * Pure.
+ * tag magnitudes (against the player's Sequence, drains dampened by the turn's
+ * acting `alignment`) plus the AI's clamped residual. `applyResolution` commits
+ * this on Continue; the consequences panel previews it — both call this one
+ * helper (with the same `alignment`) so the previewed and applied numbers can
+ * never drift. Pure.
  */
 export function previewSanityImpact(
   tags: readonly string[] | undefined,
   sanityImpact: number | undefined,
   playerSequence: number,
+  alignment?: number,
 ): SanityBreakdown {
-  const tagDelta = sanityDeltaForTags(knownSanityTags(tags), playerSequence);
+  const tagDelta = sanityDeltaForTags(knownSanityTags(tags), playerSequence, alignment);
   const residual = clamp(sanityImpact ?? 0, -SANITY_RESIDUAL_CAP, SANITY_RESIDUAL_CAP);
   return { tagDelta, residual, total: tagDelta + residual };
 }
@@ -248,37 +275,46 @@ export function previewSanityImpact(
  * `ability-use` costs more at higher Sequences, and `horror-encounter` is
  * modeled as a horror one rung above the player (`HORROR_TAG_GAP`). The flat
  * recovery tags (`rest`/`human-connection`/`routine`) ignore the sequence.
- * Pure — an empty tag list yields 0.
+ *
+ * The optional `alignment` (the turn's acting score, 0-1) dampens the DRAIN
+ * total via `inRoleDrainMultiplier` — in-role acting steadies the Beyonder
+ * against the dark work of their own nature (the Acting Method). Recoveries are
+ * never dampened. Pure — an empty tag list yields 0.
  */
 export function sanityDeltaForTags(
   tags: readonly SanityEventTag[],
   playerSequence: number,
+  alignment?: number,
 ): number {
-  let total = 0;
+  let recovery = 0;
+  let drain = 0;
   for (const tag of tags) {
+    let delta = 0;
     switch (tag) {
       case "ability-use":
-        total += sanityDelta({ type: "ability-use", sequenceLevel: playerSequence });
+        delta = sanityDelta({ type: "ability-use", sequenceLevel: playerSequence });
         break;
       case "horror-encounter":
-        total += sanityDelta({
+        delta = sanityDelta({
           type: "horror-encounter",
           playerSequence,
           horrorSequence: playerSequence - HORROR_TAG_GAP,
         });
         break;
       case "rest":
-        total += sanityDelta({ type: "rest" });
+        delta = sanityDelta({ type: "rest" });
         break;
       case "human-connection":
-        total += sanityDelta({ type: "human-connection" });
+        delta = sanityDelta({ type: "human-connection" });
         break;
       case "routine":
-        total += sanityDelta({ type: "routine" });
+        delta = sanityDelta({ type: "routine" });
         break;
     }
+    if (delta < 0) drain += delta;
+    else recovery += delta;
   }
-  return total;
+  return recovery + Math.round(drain * inRoleDrainMultiplier(alignment));
 }
 
 // ─── Loss of Control ─────────────────────────────────────────────────

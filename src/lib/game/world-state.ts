@@ -525,6 +525,7 @@ export function applyResolution(
     response.sanityEventTags,
     response.sanityImpact,
     gameState.sequenceLevel,
+    response.actingEvaluation?.alignment,
   );
   if (sanity.total !== 0) {
     updated = applySanityImpact(updated, sanity.total);
