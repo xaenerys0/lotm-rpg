@@ -11,7 +11,6 @@ import {
 } from "@/lib/react/session-store";
 import { useStoredPreferences } from "./use-stored-preferences";
 import { getCumulativeAbilityGroups, getPathway, getSequence } from "@/lib/rules";
-import { classifySanityTier } from "@/lib/ai";
 import { getEpoch } from "@/lib/lore";
 import {
   isUndeletableCharacter,
@@ -33,7 +32,7 @@ import {
   resolveProfileState,
   resolveTrackedNpcState,
   shakeOff,
-  SANITY_DESCRIPTORS,
+  sanityDescriptor,
   sequenceClassificationFor,
   sequenceLabel,
   switchIdentity,
@@ -51,8 +50,8 @@ import { purgeCharacter } from "./character-actions";
 
 // Character sheet panel (issue #13): identity, abilities & acting
 // requirements, condition, and the inventory. Sanity is shown as an in-world
-// descriptor — never a number — preserving the hidden-meter design. The
-// descriptor map is the canonical `SANITY_DESCRIPTORS` from `@/lib/game`.
+// descriptor — never a number — preserving the hidden-meter design, via the
+// canonical `sanityDescriptor` from `@/lib/game`.
 
 const ITEM_CATEGORY_LABELS: Record<Item["category"], string> = {
   "main-ingredient": "Main Ingredients",
@@ -120,7 +119,6 @@ export function CharacterSheet() {
   // current one) is retained, with earlier powers enhanced by advancement.
   const abilityGroups = getCumulativeAbilityGroups(state.pathwayId, state.sequenceLevel);
   const epoch = getEpoch(state.epoch);
-  const tier = classifySanityTier(state.sanity, state.maxSanity);
   // Acting-method discovery (issue #95): pre-discovery the digestion mechanic is
   // not leaked numerically (or by name); the numeric value is gated the same way
   // as the status-bar meter (discovered AND the meter opted on).
@@ -284,7 +282,7 @@ export function CharacterSheet() {
                 Mind
               </dt>
               <dd className="mt-0.5 font-serif italic text-foreground">
-                {SANITY_DESCRIPTORS[tier]}
+                {sanityDescriptor(state.sanity, state.maxSanity)}
               </dd>
             </div>
             <div>
