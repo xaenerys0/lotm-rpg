@@ -123,6 +123,20 @@ export const ROUTINE_RECOVERY = 4;
 export const ACTING_NEGLECT_DECAY = 3;
 
 /**
+ * The shared "in-role acting intensity" ramp: 0 at neutral/contrary acting
+ * (alignment ≤ 0.5) or an absent score, rising linearly to 1 at full in-role
+ * acting (1.0). The single primitive behind every alignment-keyed sanity
+ * effect — the `acting-success` recovery, the drain dampening
+ * (`inRoleDrainMultiplier`), and the per-turn recovery (`inRoleRecovery`) — so
+ * the neutral threshold and ramp shape live in exactly one place. Pure.
+ */
+function inRoleRamp(alignment: number | undefined): number {
+  if (alignment === undefined) return 0;
+  const a = clamp(alignment, 0, 1);
+  return Math.max(0, (a - 0.5) / 0.5);
+}
+
+/**
  * The sanity delta for a gameplay event. Negative values drain sanity, positive
  * values recover it. The caller applies the delta via `applySanityImpact`,
  * which clamps to [0, maxSanity].
@@ -147,14 +161,10 @@ export function sanityDelta(event: SanityEvent): number {
       return -ADVANCEMENT_DRAIN;
     case "outer-deity":
       return -OUTER_DEITY_DRAIN;
-    case "acting-success": {
+    case "acting-success":
       // Scale recovery from neutral (0.5) up to full (1.0); below neutral the
       // acting did not succeed and yields no recovery.
-      const a = clamp(event.alignment, 0, 1);
-      if (a < 0.5) return 0;
-      const t = (a - 0.5) / 0.5;
-      return Math.round(t * ACTING_SUCCESS_RECOVERY);
-    }
+      return Math.round(inRoleRamp(event.alignment) * ACTING_SUCCESS_RECOVERY);
     case "rest":
       return REST_RECOVERY;
     case "human-connection":
@@ -224,10 +234,28 @@ export const SANITY_DRAIN_INROLE_RELIEF = 0.75;
  * `1 - SANITY_DRAIN_INROLE_RELIEF` as alignment rises from 0.5 to 1.0. Pure.
  */
 export function inRoleDrainMultiplier(alignment: number | undefined): number {
-  if (alignment === undefined) return 1;
-  const a = clamp(alignment, 0, 1);
-  const inRole = Math.max(0, (a - 0.5) / 0.5);
-  return 1 - SANITY_DRAIN_INROLE_RELIEF * inRole;
+  return 1 - SANITY_DRAIN_INROLE_RELIEF * inRoleRamp(alignment);
+}
+
+/**
+ * In-role acting also actively RESTORES sanity (the Acting Method deepens
+ * stability), not merely softening drains. A *gentle* per-turn recovery scaled
+ * from 0 at neutral acting (≤0.5) up to this cap at full in-role acting (1.0) —
+ * kept well below a deliberate rest (`REST_RECOVERY`, 8) so it is a slow upward
+ * drift for staying in character, never a free full heal each turn. This is the
+ * single tuning knob for that drift. (Counterweights the otherwise one-way
+ * downward ratchet — drains fire on vivid triggers, explicit recovery tags
+ * don't — so a Beyonder who lives their role gradually steadies.)
+ */
+export const IN_ROLE_RECOVERY_MAX = 4;
+
+/**
+ * The per-turn in-role sanity recovery for a turn's acting `alignment` (0-1): 0
+ * for neutral/contrary acting or an absent score, rising linearly to
+ * `IN_ROLE_RECOVERY_MAX` as alignment climbs from 0.5 to 1.0. Pure.
+ */
+export function inRoleRecovery(alignment: number | undefined): number {
+  return Math.round(inRoleRamp(alignment) * IN_ROLE_RECOVERY_MAX);
 }
 
 /**
@@ -242,21 +270,27 @@ export function knownSanityTags(tags: readonly string[] | undefined): SanityEven
 }
 
 export interface SanityBreakdown {
-  /** Engine-scored magnitude of the tagged events. */
+  /** Engine-scored magnitude of the tagged events (drains dampened by alignment). */
   tagDelta: number;
-  /** The AI's residual free-form nuance, clamped to ±`SANITY_RESIDUAL_CAP`. */
+  /** In-role acting-success recovery from the turn's alignment (≥ 0). */
+  actingRecovery: number;
+  /**
+   * The AI's residual free-form nuance, clamped to ±`SANITY_RESIDUAL_CAP`; a
+   * negative residual is alignment-dampened like a drain, a positive one is not.
+   */
   residual: number;
-  /** `tagDelta + residual` — the sanity delta actually applied this turn. */
+  /** `tagDelta + actingRecovery + residual` — the sanity delta actually applied. */
   total: number;
 }
 
 /**
  * The single source of truth for hybrid per-turn sanity (issue #95): engine-owned
  * tag magnitudes (against the player's Sequence, drains dampened by the turn's
- * acting `alignment`) plus the AI's clamped residual. `applyResolution` commits
- * this on Continue; the consequences panel previews it — both call this one
- * helper (with the same `alignment`) so the previewed and applied numbers can
- * never drift. Pure.
+ * acting `alignment`), the in-role acting-success recovery the same alignment
+ * earns, plus the AI's clamped residual (negatives alignment-dampened too).
+ * `applyResolution` commits this on Continue; the consequences panel previews it
+ * — both call this one helper (with the same `alignment`) so the previewed and
+ * applied numbers can never drift. Pure.
  */
 export function previewSanityImpact(
   tags: readonly string[] | undefined,
@@ -265,8 +299,21 @@ export function previewSanityImpact(
   alignment?: number,
 ): SanityBreakdown {
   const tagDelta = sanityDeltaForTags(knownSanityTags(tags), playerSequence, alignment);
-  const residual = clamp(sanityImpact ?? 0, -SANITY_RESIDUAL_CAP, SANITY_RESIDUAL_CAP);
-  return { tagDelta, residual, total: tagDelta + residual };
+  const actingRecovery = inRoleRecovery(alignment);
+  const rawResidual = clamp(sanityImpact ?? 0, -SANITY_RESIDUAL_CAP, SANITY_RESIDUAL_CAP);
+  // A negative residual is a small drain nuance — dampen it like any drain on an
+  // in-role turn; a positive (soothing) residual lands in full. `|| 0` normalises
+  // the `-0` that `Math.round` yields for a small dampened negative (e.g. -0.25).
+  const residual =
+    rawResidual < 0
+      ? Math.round(rawResidual * inRoleDrainMultiplier(alignment)) || 0
+      : rawResidual;
+  return {
+    tagDelta,
+    actingRecovery,
+    residual,
+    total: tagDelta + actingRecovery + residual,
+  };
 }
 
 /**

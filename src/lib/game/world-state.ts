@@ -9,7 +9,7 @@ import { hasItem, isReagentCategory } from "./inventory";
 import { getSealedArtifact, mintArtifactItem } from "@/lib/lore";
 import { adjustFunds, FUNDS_DISCOVERED_CAP } from "./marketplace";
 import { clamp } from "./math";
-import { previewSanityImpact } from "./sanity";
+import { previewSanityImpact, type SanityBreakdown } from "./sanity";
 import {
   evaluateActingDiscovery,
   type ActingDiscoveryTrigger,
@@ -509,7 +509,7 @@ export function applyResolution(
   gameState: GameState;
   memory: MemoryState;
   digestionDelta: number;
-  sanity: { tagDelta: number; residual: number; total: number };
+  sanity: SanityBreakdown;
   actingMethodState: ActingMethodState;
   discovery: { discoveredThisTurn: boolean; trigger: ActingDiscoveryTrigger | null };
 } {

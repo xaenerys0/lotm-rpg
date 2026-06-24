@@ -20,6 +20,7 @@ import {
   SANITY_EVENT_TAGS,
   SANITY_DESCRIPTORS,
   SANITY_DRAIN_INROLE_RELIEF,
+  IN_ROLE_RECOVERY_MAX,
   sanityPercent,
   classifySanityTier,
   sanityEffects,
@@ -27,6 +28,7 @@ import {
   sanityDelta,
   sanityDeltaForTags,
   inRoleDrainMultiplier,
+  inRoleRecovery,
   previewSanityImpact,
   isLossOfControl,
   evaluateLossOfControl,
@@ -326,15 +328,63 @@ describe("sanity", () => {
       expect(mixed).toBe(routine + Math.round(baseHorror * inRoleDrainMultiplier(1)));
     });
 
-    it("flows the alignment through previewSanityImpact (preview == applied)", () => {
-      const raw = previewSanityImpact(["horror-encounter"], -2, 9);
-      const inRole = previewSanityImpact(["horror-encounter"], -2, 9, 1);
-      expect(raw.tagDelta).toBe(sanityDeltaForTags(["horror-encounter"], 9));
+    it("flows alignment through previewSanityImpact: dampened drain + recovery + dampened residual", () => {
+      const raw = previewSanityImpact(["horror-encounter"], -4, 9);
+      expect(raw).toEqual({
+        tagDelta: -8,
+        actingRecovery: 0,
+        residual: -4,
+        total: -12,
+      });
+
+      const inRole = previewSanityImpact(["horror-encounter"], -4, 9, 1);
       expect(inRole.tagDelta).toBe(sanityDeltaForTags(["horror-encounter"], 9, 1));
-      // Residual is the AI's nuance and is NOT dampened.
-      expect(inRole.residual).toBe(-2);
-      expect(inRole.total).toBe(inRole.tagDelta - 2);
+      expect(inRole.actingRecovery).toBe(inRoleRecovery(1));
+      // A negative residual is dampened like a drain.
+      expect(inRole.residual).toBe(Math.round(-4 * inRoleDrainMultiplier(1)));
+      expect(inRole.total).toBe(
+        inRole.tagDelta + inRole.actingRecovery + inRole.residual,
+      );
+      // An in-role turn is far less punishing than the same turn played flat.
       expect(inRole.total).toBeGreaterThan(raw.total);
+    });
+
+    it("does not dampen a positive (soothing) residual", () => {
+      const inRole = previewSanityImpact([], 4, 9, 1);
+      expect(inRole.actingRecovery).toBe(inRoleRecovery(1));
+      expect(inRole.residual).toBe(4);
+      expect(inRole.total).toBe(inRoleRecovery(1) + 4);
+    });
+
+    it("normalises a fully-dampened small negative residual to +0 (never -0)", () => {
+      // -1 * 0.25 = -0.25 → Math.round → -0; the `|| 0` keeps the field +0.
+      const inRole = previewSanityImpact([], -1, 9, 1);
+      expect(Object.is(inRole.residual, -0)).toBe(false);
+      expect(inRole.residual).toBe(0);
+    });
+  });
+
+  describe("in-role recovery (acting alignment)", () => {
+    it("gives no recovery at or below neutral acting, or with no score", () => {
+      expect(inRoleRecovery(undefined)).toBe(0);
+      expect(inRoleRecovery(0.5)).toBe(0);
+      expect(inRoleRecovery(0.2)).toBe(0);
+      expect(inRoleRecovery(0)).toBe(0);
+    });
+
+    it("rises from 0 at neutral to the cap at full in-role acting", () => {
+      expect(inRoleRecovery(1)).toBe(IN_ROLE_RECOVERY_MAX);
+      expect(inRoleRecovery(0.75)).toBe(Math.round(IN_ROLE_RECOVERY_MAX / 2));
+      expect(inRoleRecovery(1)).toBeGreaterThan(inRoleRecovery(0.75));
+    });
+
+    it("clamps an out-of-range alignment", () => {
+      expect(inRoleRecovery(2)).toBe(IN_ROLE_RECOVERY_MAX);
+      expect(inRoleRecovery(-1)).toBe(0);
+    });
+
+    it("stays gentle — a single in-role turn heals less than a deliberate rest", () => {
+      expect(inRoleRecovery(1)).toBeLessThan(sanityDelta({ type: "rest" }));
     });
   });
 
