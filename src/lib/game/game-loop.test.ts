@@ -1626,7 +1626,12 @@ describe("applyResolution", () => {
 
     const { gameState, sanity } = applyRes(state, memory, result, 0, "Look around");
     expect(gameState.sanity).toBe(76);
-    expect(sanity).toEqual({ tagDelta: 0, residual: -4, total: -4 });
+    expect(sanity).toEqual({
+      tagDelta: 0,
+      actingRecovery: 0,
+      residual: -4,
+      total: -4,
+    });
   });
 
   it("clamps the residual sanity impact to ±5 (issue #95)", () => {
@@ -1672,9 +1677,31 @@ describe("applyResolution", () => {
     const memory = createMemoryState();
     const result = makeValidatedResponse({ sanityEventTags: ["ability-use"] });
     const { sanity } = applyRes(state, memory, result, 0, "Channel power");
-    // ability-use at Seq 5 = -(2 + 4*1.5) = -8.
+    // ability-use at Seq 5 = -(2 + 4*1.5) = -8 (no acting eval → no relief).
     expect(sanity.tagDelta).toBe(-8);
+    expect(sanity.actingRecovery).toBe(0);
     expect(sanity.total).toBe(-8);
+  });
+
+  it("credits in-role acting: dampens the drain and adds a recovery", () => {
+    const state = makeGameState({ sanity: 50, sequenceLevel: 5 });
+    const memory = createMemoryState();
+    const result = makeValidatedResponse({
+      sanityEventTags: ["ability-use"],
+      actingEvaluation: { alignment: 1, reasoning: "Fully in role" },
+    });
+    const { sanity, gameState } = applyRes(
+      state,
+      memory,
+      result,
+      0,
+      "Channel power, wholly in character",
+    );
+    // ability-use at Seq 5 = -8, dampened ×0.25 → -2; in-role recovery +4.
+    expect(sanity.tagDelta).toBe(-2);
+    expect(sanity.actingRecovery).toBe(4);
+    expect(sanity.total).toBe(2);
+    expect(gameState.sanity).toBe(52);
   });
 
   it("drops unknown sanity tags rather than scoring them", () => {

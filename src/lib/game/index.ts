@@ -659,6 +659,8 @@ export {
   sanityDeltaForTags,
   inRoleDrainMultiplier,
   SANITY_DRAIN_INROLE_RELIEF,
+  inRoleRecovery,
+  IN_ROLE_RECOVERY_MAX,
   knownSanityTags,
   previewSanityImpact,
   isLossOfControl,
