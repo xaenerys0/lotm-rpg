@@ -18,9 +18,11 @@ import {
   ACTING_NEGLECT_DECAY,
   HORROR_TAG_GAP,
   SANITY_EVENT_TAGS,
+  SANITY_DESCRIPTORS,
   sanityPercent,
   classifySanityTier,
   sanityEffects,
+  sanityDescriptor,
   sanityDelta,
   sanityDeltaForTags,
   isLossOfControl,
@@ -104,7 +106,6 @@ describe("sanity", () => {
       for (const tier of tiers) {
         expect(SANITY_EFFECTS[tier].tier).toBe(tier);
         expect(SANITY_EFFECTS[tier].className).toContain("sanity-fx-");
-        expect(SANITY_EFFECTS[tier].label.length).toBeGreaterThan(0);
       }
     });
 
@@ -118,21 +119,29 @@ describe("sanity", () => {
       );
       expect(SANITY_EFFECTS.critical.distortion).toBe(1);
     });
-
-    it("gates narrative degradations to the lower tiers", () => {
-      expect(SANITY_EFFECTS.high.unreliableNarration).toBe(false);
-      expect(SANITY_EFFECTS.medium.unreliableNarration).toBe(false);
-      expect(SANITY_EFFECTS.low.unreliableNarration).toBe(true);
-      expect(SANITY_EFFECTS.low.falseChoices).toBe(true);
-      expect(SANITY_EFFECTS.low.hallucinations).toBe(false);
-      expect(SANITY_EFFECTS.critical.hallucinations).toBe(true);
-    });
   });
 
   describe("sanityEffects", () => {
     it("returns the profile for the current sanity tier", () => {
       expect(sanityEffects(100, 100)).toBe(SANITY_EFFECTS.high);
       expect(sanityEffects(10, 100)).toBe(SANITY_EFFECTS.critical);
+    });
+  });
+
+  describe("SANITY_DESCRIPTORS / sanityDescriptor", () => {
+    const tiers: SanityTier[] = ["high", "medium", "low", "critical"];
+
+    it("defines a non-empty in-world descriptor for every tier", () => {
+      for (const tier of tiers) {
+        expect(SANITY_DESCRIPTORS[tier].length).toBeGreaterThan(0);
+      }
+    });
+
+    it("maps a sanity value to its tier descriptor", () => {
+      expect(sanityDescriptor(100, 100)).toBe(SANITY_DESCRIPTORS.high);
+      expect(sanityDescriptor(50, 100)).toBe(SANITY_DESCRIPTORS.medium);
+      expect(sanityDescriptor(20, 100)).toBe(SANITY_DESCRIPTORS.low);
+      expect(sanityDescriptor(5, 100)).toBe(SANITY_DESCRIPTORS.critical);
     });
   });
 

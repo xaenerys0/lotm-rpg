@@ -35,60 +35,53 @@ export interface SanityEffectProfile {
   tier: SanityTier;
   /** CSS class applied to the game surface to drive the visual distortion. */
   className: string;
-  /** In-world descriptor shown when the player reveals the (still-qualitative) state. */
-  label: string;
   /** Distortion intensity, 0 (none) to 1 (full corruption). Drives overlay opacity. */
   distortion: number;
-  /** Narration is unreliable at this tier (matches the AI directive). */
-  unreliableNarration: boolean;
-  /** Irrational / false choices may appear among the options. */
-  falseChoices: boolean;
-  /** Hallucinated scenes may be narrated as if real. */
-  hallucinations: boolean;
 }
 
 export const SANITY_EFFECTS: Record<SanityTier, SanityEffectProfile> = {
   high: {
     tier: "high",
     className: "sanity-fx-high",
-    label: "Composed",
     distortion: 0,
-    unreliableNarration: false,
-    falseChoices: false,
-    hallucinations: false,
   },
   medium: {
     tier: "medium",
     className: "sanity-fx-medium",
-    label: "Unsettled",
     distortion: 0.25,
-    unreliableNarration: false,
-    falseChoices: false,
-    hallucinations: false,
   },
   low: {
     tier: "low",
     className: "sanity-fx-low",
-    label: "Fraying",
     distortion: 0.6,
-    unreliableNarration: true,
-    falseChoices: true,
-    hallucinations: false,
   },
   critical: {
     tier: "critical",
     className: "sanity-fx-critical",
-    label: "Shattering",
     distortion: 1,
-    unreliableNarration: true,
-    falseChoices: true,
-    hallucinations: true,
   },
 };
 
 /** The UI-effect profile for a given sanity value. */
 export function sanityEffects(sanity: number, maxSanity: number): SanityEffectProfile {
   return SANITY_EFFECTS[classifySanityTier(sanity, maxSanity)];
+}
+
+/**
+ * The single in-world descriptor for each sanity tier, shown wherever sanity is
+ * surfaced qualitatively (the character sheet) — never a number, preserving the
+ * hidden-meter design. One canonical map so the wording can't drift across the UI.
+ */
+export const SANITY_DESCRIPTORS: Record<SanityTier, string> = {
+  high: "Steady — the world holds its shape.",
+  medium: "Frayed — small wrongnesses at the edge of sight.",
+  low: "Slipping — the fog has started whispering.",
+  critical: "Unraveling — very little of the world can be trusted.",
+};
+
+/** The in-world descriptor for a given sanity value. */
+export function sanityDescriptor(sanity: number, maxSanity: number): string {
+  return SANITY_DESCRIPTORS[classifySanityTier(sanity, maxSanity)];
 }
 
 // ─── Drain / Recovery / Decay Triggers ───────────────────────────────
