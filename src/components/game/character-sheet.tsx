@@ -33,6 +33,7 @@ import {
   resolveProfileState,
   resolveTrackedNpcState,
   shakeOff,
+  SANITY_DESCRIPTORS,
   sequenceClassificationFor,
   sequenceLabel,
   switchIdentity,
@@ -50,14 +51,8 @@ import { purgeCharacter } from "./character-actions";
 
 // Character sheet panel (issue #13): identity, abilities & acting
 // requirements, condition, and the inventory. Sanity is shown as an in-world
-// descriptor — never a number — preserving the hidden-meter design.
-
-const SANITY_DESCRIPTORS: Record<ReturnType<typeof classifySanityTier>, string> = {
-  high: "Steady — the world holds its shape.",
-  medium: "Frayed — small wrongnesses at the edge of sight.",
-  low: "Slipping — the fog has started whispering.",
-  critical: "Unraveling — very little of the world can be trusted.",
-};
+// descriptor — never a number — preserving the hidden-meter design. The
+// descriptor map is the canonical `SANITY_DESCRIPTORS` from `@/lib/game`.
 
 const ITEM_CATEGORY_LABELS: Record<Item["category"], string> = {
   "main-ingredient": "Main Ingredients",

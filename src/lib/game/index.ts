@@ -653,6 +653,8 @@ export {
   sanityPercent,
   classifySanityTier,
   sanityEffects,
+  SANITY_DESCRIPTORS,
+  sanityDescriptor,
   sanityDelta,
   sanityDeltaForTags,
   knownSanityTags,
