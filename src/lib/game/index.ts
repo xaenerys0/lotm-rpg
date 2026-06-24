@@ -657,6 +657,8 @@ export {
   sanityDescriptor,
   sanityDelta,
   sanityDeltaForTags,
+  inRoleDrainMultiplier,
+  SANITY_DRAIN_INROLE_RELIEF,
   knownSanityTags,
   previewSanityImpact,
   isLossOfControl,
