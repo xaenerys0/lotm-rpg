@@ -68,10 +68,15 @@ export interface StartArchetype {
   /** Fixed starting sequence — no player choice. Born-Beyonders only (e.g. Sanguines).
    * Mutually exclusive with minStartSequence. */
   startSequence?: number;
-  /** Floor for the player-selectable starting sequence (from this value up to 9).
-   * When set, character creation shows a sequence picker.
-   * Mutually exclusive with startSequence. */
+  /** Floor for the player-selectable starting sequence (from this value up to the
+   * ceiling — `maxStartSequence` or 9). When set, character creation shows a
+   * sequence picker. Mutually exclusive with startSequence. */
   minStartSequence?: number;
+  /** Ceiling (highest/weakest rung) of the player-selectable range — defaults to
+   * 9 when absent. Set BELOW 9 for a born-Beyonder who nonetheless may begin
+   * already advanced: a Sanguine is born at Seq 7 (never 8/9) but may start
+   * further along (down to `minStartSequence`). Requires minStartSequence. */
+  maxStartSequence?: number;
   /** Opening beat for Seq < 9 starts (used when minStartSequence is set and the
    * player picks a sequence below 9). Falls back to a generic template if absent. */
   openingBeatEstablished?: string;
@@ -596,7 +601,11 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
     openingBeat: `Blood-memory stirs as I keep to the shuttered Backlund townhouse of my own kind, where Emlyn White — the Sanguine the humans never suspect — holds our little court against the soot-yellow dark; I was born to this, and whatever shift just moved through our circle tonight, the secret must hold. ${SCENE_CUE}`,
     // Moon (id 17) — the Sanguines' ancestral path of the scarlet moon.
     pathwayAffinity: [17],
-    startSequence: 7,
+    // A Sanguine is BORN a Vampire at Seq 7 (never 8/9), but may begin already
+    // climbed — so the range is 7 (the born ceiling) down to 5, not a fixed rung.
+    minStartSequence: 5,
+    maxStartSequence: 7,
+    openingBeatEstablished: `Blood-memory runs deep and settled in me as I keep to the shuttered Backlund townhouse of my own kind, where Emlyn White — the Sanguine the humans never suspect — holds our little court against the soot-yellow dark; I was born to this and have lived it long, and whatever moves through our circle tonight, I have carried heavier secrets than this. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Emlyn White"],
       facts: [
@@ -671,6 +680,106 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
   },
 ] as const;
 
+// ── Orthodox-church & secret-organization archetypes (issue #183 follow-up) ──
+// Broader organization representation: begin embedded in a major faith's
+// Beyonder arm or a secret order that had no archetype yet — each tied to an
+// existing NPC and its existing organization lore entry. The Mandated Punishers
+// (Storms church) and the Machinery Hivemind (Steam church) are the orthodox
+// counterparts of the Tingen Nighthawks; the Psychology Alchemists (Visionary)
+// and the Rose School of Thought's Temperance refuge are secret circles. All
+// canon corpus-verified (see the repo-root CLAUDE.md "Canon & Source Material").
+const ORG_REPRESENTATION_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "tingen-psychology-alchemist",
+    label: "A junior of the Psychology Alchemists in Tingen",
+    epoch: 5,
+    location: "Tingen City",
+    relationship: "circle-member",
+    circleNpcs: ["Daxter Guderian"],
+    affiliationOrg: "psychology-alchemists-overview",
+    blurb:
+      "A new initiate of the Psychology Alchemists in Tingen, brought into the mind-scientists' circle by the nervous asylum doctor Daxter Guderian.",
+    openingBeat: `The strange potion still scalds my throat as I cross fog-dimmed Tingen toward the Greenhill Mental Asylum, where the doctor Daxter Guderian first whispered to me of the Psychology Alchemists — the secret circle that holds the mind has limitless wonders; whatever I have just become, I must keep it from the orthodox hunters and learn the order's formulas before the change undoes me. ${SCENE_CUE}`,
+    // Visionary (id 2) — the pathway of the mind the Psychology Alchemists hold.
+    pathwayAffinity: [2],
+    minStartSequence: 7,
+    openingBeatEstablished: `The fog-dimmed streets toward the Greenhill Mental Asylum are an old route by now as I go to meet Daxter Guderian, the nervous doctor who first brought me into the Psychology Alchemists — the last change settled long since, the order's talk of consciousness and contribution-points grown familiar, and I have learned to study the mind without ever letting it study me. ${SCENE_CUE}`,
+    seeds: {
+      trackedAllies: ["Daxter Guderian"],
+      society: { orgSlug: "psychology-alchemists-overview", role: "junior member" },
+      facts: [
+        "You are a junior member of the Psychology Alchemists in Tingen, a secret society of the Visionary pathway, brought into it by the asylum doctor Daxter Guderian, who knows your face and trades you the order's formulas.",
+      ],
+    },
+  },
+  {
+    id: "backlund-rose-temperance",
+    label: "A Temperance exile of the Rose School of Thought in Backlund",
+    epoch: 5,
+    location: "Backlund",
+    relationship: "circle-member",
+    circleNpcs: ["Sharron", "Maric"],
+    affiliationOrg: "rose-school-of-thought-overview",
+    blurb:
+      "One of the Temperance refugees of the shattered Rose School of Thought, sheltering in Backlund alongside the exiles Sharron and Maric under a mysterious patron's protection.",
+    openingBeat: `The change still aches under my skin as I keep to the Bravehearts Bar near the Backlund Bridge, where Sharron and Maric — fellow refugees of the Rose School's broken Temperance faction — watch the door against the kind we fled; we hold to restraint where our order turned to devouring desire, and whatever I have just become, the Indulgence hunters must never find us. ${SCENE_CUE}`,
+    // Chained (id 22) — the Rose School's core pathway; Temperance is its discipline.
+    pathwayAffinity: [22],
+    minStartSequence: 7,
+    openingBeatEstablished: `The riverside warmth of the Bravehearts Bar is a hard-won refuge by now as I take my seat near Sharron and Maric, fellow exiles of the Rose School's Temperance creed — the change long since settled into the discipline of restraint our order abandoned, and under our quiet patron's protection I have learned to carry both my power and my hunger without letting either rule me. ${SCENE_CUE}`,
+    seeds: {
+      trackedAllies: ["Sharron", "Maric"],
+      facts: [
+        "You are a Temperance exile of the Rose School of Thought, sheltering in Backlund alongside Sharron and Maric under the protection of the Tarot Club's 'The Fool'; you hold to the discipline of restraint while the Indulgence faction that broke your order hunts the like of you.",
+      ],
+    },
+  },
+  {
+    id: "bayam-storms-punisher",
+    label: "A junior Mandated Punisher of the storm-faith in Bayam",
+    epoch: 5,
+    location: "Bayam",
+    relationship: "subordinate",
+    circleNpcs: ["Jahn Kottman"],
+    affiliationOrg: "mandated-punishers-bayam",
+    blurb:
+      "The newest of the Mandated Punishers on the Sonia Sea — the Lord of Storms' Beyonder arm, ruling Bayam's hidden world from the Cathedral of Waves under the Sea King, Cardinal Jahn Kottman.",
+    openingBeat: `The strange draught still burns in me as the salt wind drives off the Sonia Sea and I report to the Cathedral of Waves in Bayam, where the Mandated Punishers answer for everything uncanny on the storm-faith's own water — I am the lowest of the Sea King Jahn Kottman's hunters, and whatever I have just become, the brothers who police heresy must never read it in me. ${SCENE_CUE}`,
+    // Tyrant (id 6) — the sea's own pathway, the Mandated Punishers' power.
+    pathwayAffinity: [6],
+    minStartSequence: 6,
+    openingBeatEstablished: `The Cathedral of Waves and the salt wind off the Sonia Sea are an old familiar watch by now as I take my orders among the Mandated Punishers — seasoned in the storm-faith's headlong way, the last change long since settled, and on Cardinal Jahn Kottman's own water I hunt heresy carrying a secret the order exists to find. ${SCENE_CUE}`,
+    seeds: {
+      society: { orgSlug: "mandated-punishers-bayam", role: "punisher" },
+      facts: [
+        "You serve as a junior Mandated Punisher of the Church of the Lord of Storms in Bayam, the storm-faith's Beyonder arm on the Sonia Sea, under the Sea King Cardinal Jahn Kottman, who rules the archipelago's hidden world from the Cathedral of Waves.",
+      ],
+    },
+  },
+  {
+    id: "trier-machinery-hivemind",
+    label: "A technician of the Machinery Hivemind in Trier",
+    epoch: 5,
+    location: "Trier",
+    relationship: "subordinate",
+    circleNpcs: ["Horamick Haydn"],
+    affiliationOrg: "steam-church-overview",
+    blurb:
+      "A junior of the Machinery Hivemind — the Church of Steam and Machinery's Beyonder arm — hunting supernatural contamination through Trier's foundries under Archbishop Horamick Haydn.",
+    openingBeat: `The strange draught still burns in me amid the hiss and clang of a Trier foundry, where the Machinery Hivemind keeps its watch for supernatural contamination — I am the newest technician sworn to the Church of Steam and Machinery under Archbishop Horamick Haydn, and whatever I have just become, the brothers who share one mind across the network must never sense the wrongness in mine. ${SCENE_CUE}`,
+    // Paragon (id 19) — the God of Steam's pathway, the Hivemind's power.
+    pathwayAffinity: [19],
+    minStartSequence: 7,
+    openingBeatEstablished: `The hiss and clang of the Trier foundries is the sound of my own routine now as I take my place among the Machinery Hivemind — the last change settled long before I earned the Church of Steam's trust, the shared network an old discipline, and under Archbishop Horamick Haydn I hunt contamination through the workshops while keeping the one contamination they cannot trace hidden in myself. ${SCENE_CUE}`,
+    seeds: {
+      society: { orgSlug: "steam-church-overview", role: "Hivemind technician" },
+      facts: [
+        "You serve as a junior technician of the Machinery Hivemind, the Beyonder arm of the Church of the God of Steam and Machinery, in Trier under Archbishop Horamick Haydn, who is also an emeritus professor at Backlund University.",
+      ],
+    },
+  },
+] as const;
+
 /** Every start archetype, all regions/epochs (append-only) — including gated
  * ORIGIN archetypes (so `getStartArchetype` resolves them by id). Default
  * selection filters origins out; `forsakenLandArchetypesForEpoch` filters in. */
@@ -685,6 +794,7 @@ export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...RORSTED_ARCHETYPES,
   ...SOUTHERN_ARCHETYPES,
   ...SECRET_SOCIETY_ARCHETYPES,
+  ...ORG_REPRESENTATION_ARCHETYPES,
 ];
 
 /**

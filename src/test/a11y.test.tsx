@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { expectNoAxeViolations, expectNoAxeViolationsInContainer } from "@/test/axe";
 
@@ -165,11 +165,11 @@ describe("accessibility — character creation", () => {
     await expectNoAxeViolationsInContainer(container);
   });
 
-  it("the per-archetype starting-sequence picker + badge have no violations", async () => {
+  it("the per-archetype starting-sequence picker has no violations", async () => {
     // Drive to the first-potion step and reveal the archetype cards, then select
-    // archetypes that carry sequence data so the new controls actually render:
-    // a range archetype (the <fieldset>/<legend> sequence picker of aria-pressed
-    // buttons) and a born-Beyonder archetype (the fixed-sequence badge).
+    // archetypes that carry sequence data so the picker (the <fieldset>/<legend>
+    // of aria-pressed buttons) actually renders — both a full-range archetype
+    // (9 → floor) and a born-but-climbable one whose ceiling caps below 9.
     const { container } = render(
       <CharacterCreation onComplete={vi.fn()} onBack={vi.fn()} />,
     );
@@ -181,16 +181,21 @@ describe("accessibility — character creation", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Continue$/ }));
     fireEvent.click(screen.getByRole("button", { name: /Within someone's circle/i }));
 
-    // A range archetype → the selectable sequence picker (9 → minStartSequence).
+    // A full-range archetype → the selectable sequence picker (9 → minStartSequence).
     fireEvent.click(
       screen.getByRole("button", { name: /attendant to Lady Audrey Hall/i }),
     );
+    screen.getByRole("button", { name: /Sequence 9/i });
     screen.getByRole("button", { name: /Sequence 7/i });
     await expectNoAxeViolationsInContainer(container);
 
-    // A born-Beyonder archetype (fixed startSequence) → the no-choice badge.
+    // A born-but-climbable archetype (Sanguine) → the picker is capped at the
+    // born ceiling (Seq 7), offering 7 → 5 but never the impossible Seq 8/9.
     fireEvent.click(screen.getByRole("button", { name: /A Sanguine in Emlyn White's/i }));
-    screen.getByText(/Born at Sequence 7/i);
+    screen.getByRole("button", { name: /Sequence 7/i });
+    screen.getByRole("button", { name: /Sequence 5/i });
+    expect(screen.queryByRole("button", { name: /Sequence 8/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Sequence 9/i })).toBeNull();
     await expectNoAxeViolationsInContainer(container);
   });
 

@@ -110,6 +110,25 @@ export const NPC_LORE: LoreEntry[] = [
     tags: ["antagonist", "nighthawks", "0-08-card", "darkness-pathway", "betrayal"],
     tokenCount: 245,
   },
+  {
+    slug: "npc-daxter-guderian",
+    title: "Daxter Guderian — The Asylum Doctor",
+    category: "npc",
+    content: `Daxter Guderian is a doctor of the Greenhill Mental Asylum in Tingen City, and behind that respectable face a Beyonder of the Visionary pathway and a member of the secret Psychology Alchemists — a Sequence 9 Spectator who was drawn into the order through the asylum, where troubled minds and quiet recruitment go hand in hand. He buys his advancement ingredients at the underground market beneath the Evil Dragon Bar, trading the Alchemists' contribution points for formulas, and keeps the loose, scholarly faith of an organisation that styles itself a circle of mind-scientists. Cautious by nature and easily frightened, he is no fanatic — a junior member who knows little of the powers above him and would rather study consciousness than die for it. When the bounty hunter Gehrman Sparrow leans on him he folds quickly, becoming an informant on the Visionary pathway and the Alchemists' Tingen presence; he later parts with a Telepathist formula. To the city he is only a slightly nervous alienist; to those who know the Beyonder world he is a thread leading into a far larger web.`,
+    epoch: 5,
+    city: "tingen",
+    npcs: ["Daxter Guderian"],
+    sequences: [9],
+    tags: [
+      "psychology-alchemists",
+      "visionary-pathway",
+      "tingen",
+      "informant",
+      "secret-organization",
+    ],
+    tokenCount: 230,
+    narratorOnly: true,
+  },
   // ── Forsaken Land of the Gods — City of Silver characters (issue #132) ──
   // City-keyed so they ride the same location-gating as the continent's lore;
   // each carries family/friends/affiliation relationship data for grounding.

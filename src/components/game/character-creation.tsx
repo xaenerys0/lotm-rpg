@@ -176,19 +176,6 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const archetypeId = startChoice.startsWith("archetype:")
     ? startChoice.slice("archetype:".length)
     : null;
-  // Sequence picker for archetypes that have minStartSequence set. Default 9;
-  // auto-resets to 9 whenever archetypeId changes (derived-state pattern — no
-  // effect needed: if forArchetype !== current archetypeId we derive 9 instead).
-  const [sequencePickerState, setSequencePickerState] = useState<{
-    forArchetype: string | null;
-    value: number;
-  }>({ forArchetype: null, value: 9 });
-  const selectedSequence =
-    sequencePickerState.forArchetype === archetypeId ? sequencePickerState.value : 9;
-  const setSelectedSequence = useCallback(
-    (seq: number) => setSequencePickerState({ forArchetype: archetypeId, value: seq }),
-    [archetypeId],
-  );
   // Resolve the selected archetype at component level so handlers can read it.
   const selectedArchetype = useMemo(() => {
     if (archetypeId === null) return null;
@@ -196,6 +183,25 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     const originArcs = forsakenLandArchetypesForEpoch(epoch);
     return [...arcs, ...originArcs].find((a) => a.id === archetypeId) ?? null;
   }, [archetypeId, epoch]);
+  // Sequence picker for archetypes that have minStartSequence set. The picker
+  // ceiling (highest/weakest selectable rung) defaults to 9, but a born-but-
+  // climbable archetype (the Sanguine) caps it lower (maxStartSequence). The
+  // unpicked default is the ceiling; it auto-resets whenever archetypeId changes
+  // (derived-state pattern — if forArchetype !== current archetypeId we derive
+  // the ceiling instead, so no effect is needed).
+  const [sequencePickerState, setSequencePickerState] = useState<{
+    forArchetype: string | null;
+    value: number;
+  }>({ forArchetype: null, value: 9 });
+  const sequenceCeiling = selectedArchetype?.maxStartSequence ?? 9;
+  const selectedSequence =
+    sequencePickerState.forArchetype === archetypeId
+      ? sequencePickerState.value
+      : sequenceCeiling;
+  const setSelectedSequence = useCallback(
+    (seq: number) => setSequencePickerState({ forArchetype: archetypeId, value: seq }),
+    [archetypeId],
+  );
   // Custom-circle form (the "Describe your own circle" path). Creativity is never
   // capped by the presets: any tie, and companions that may be canon OR invented.
   const [customTie, setCustomTie] = useState("");
@@ -1698,9 +1704,14 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                           </p>
                           <div className="grid gap-2">
                             {Array.from(
-                              { length: 9 - selectedArchetype.minStartSequence! + 1 },
+                              {
+                                length:
+                                  sequenceCeiling -
+                                  selectedArchetype.minStartSequence! +
+                                  1,
+                              },
                               (_, i) => {
-                                const seqLevel = 9 - i;
+                                const seqLevel = sequenceCeiling - i;
                                 const seqData =
                                   selectedPathwayId !== null
                                     ? getSequence(selectedPathwayId, seqLevel)
@@ -1721,7 +1732,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                                       Sequence {seqLevel}
                                       {seqData ? ` — ${seqData.name}` : ""}
                                     </span>
-                                    {seqLevel === 9 && (
+                                    {seqLevel === sequenceCeiling && (
                                       <span
                                         className="text-xs text-muted"
                                         aria-hidden="true"

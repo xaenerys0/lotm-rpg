@@ -63,18 +63,31 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     slug: "psychology-alchemists-overview",
     title: "Psychology Alchemists — Overview",
     category: "organization",
-    content: `The Psychology Alchemists are a semi-secret organization specializing in the Visionary pathway. They present themselves as a scholarly society dedicated to understanding the human mind through a blend of psychology, philosophy, and mystical practice. Their members include academics, doctors, and upper-class intellectuals who study mental phenomena, hypnosis, and the nature of consciousness. For aspiring Beyonders of the Visionary pathway, the Psychology Alchemists are one of the primary sources of potion formulas and advancement guidance outside the orthodox churches. However, the organization harbors a dark secret: it is a shadow subsidiary of the Twilight Hermit Order, controlled by the Angel of Imagination, Adam. Many rank-and-file members are unaware of this connection and genuinely believe in the organization's academic mission. The Psychology Alchemists operate through local chapters in major cities, including a presence in Tingen that becomes relevant when the narrative explores Audrey Hall's storyline and the broader conspiracy surrounding the Visionary pathway.`,
+    content: `The Psychology Alchemists are a secret society of the Visionary pathway that wears the face of a scholarly circle — enthusiasts who hold that the mind has limitless power and infinite wonders, studying consciousness, the subconscious, hypnosis, and the travel of dreams. Compared with the great Beyonder organisations their structure is loose, more a society of like-minded mind-scientists than a disciplined order: doctors, academics, and curious intellectuals drawn together across several nations. For a Visionary Beyonder outside the orthodox churches they are one of the chief sources of potion formulas and advancement guidance, traded for contribution points earned by study and service. Their cosmology likens a person's consciousness to an island, the subconscious to the sea beneath it, and the collective subconscious to the surrounding ocean. They keep to the shadows the orthodox churches would hunt, recruiting quietly — often through asylums and lecture-halls — and testing initiates before any true initiation; a junior member knows little beyond their own local circle and the formulas it can offer.`,
     epoch: 5,
-    npcs: ["Audrey Hall"],
+    npcs: ["Daxter Guderian"],
     sequences: [9, 8, 7, 6, 5],
     pathway: "visionary",
-    tags: [
-      "psychology-alchemists",
-      "visionary-pathway",
-      "secret-organization",
-      "twilight-hermit-order",
-    ],
-    tokenCount: 225,
+    tags: ["psychology-alchemists", "visionary-pathway", "secret-organization"],
+    tokenCount: 215,
+    narratorOnly: false,
+  },
+  {
+    // DEEP: the order's true masters. A cross-cutting Visionary-pathway secret —
+    // narrator-only, sequence-gated, and carrying NO pathway/city key so
+    // selectCuratedLore never injects it into a Visionary player's prompt (the
+    // aurora-order-true-nature / church-inner-secret pattern). The old
+    // `psychology-alchemists-overview` revealed this to every Visionary character.
+    slug: "psychology-alchemists-inner-secret",
+    title: "Psychology Alchemists — The Hand Behind the Mind",
+    category: "organization",
+    content: `The Psychology Alchemists believe themselves explorers of the mind; few among them know whose mind they truly serve. The seminar that founded the order stumbled upon relics left by Hermes, one of the ancient Mind Dragons, and through that inheritance the order long ago became a division of the Twilight Hermit Order, functioning under the will of the Angel of Imagination, Adam — a Sequence 1 Author of the Visionary pathway and a child of the Ancient Sun God. Its true seat is no earthly chapter but the Garden of Eden, a mystical city within the Sea of Collective Consciousness that can be reached wherever two minds are near. It is governed by councillors who wear personas named for the Seven Deadly Sins beneath a President, each presiding over a nation or great city, trading formulas for the contribution and the secrets of their initiates. The rank and file, studying consciousness in good faith, are the harvest and the instrument of powers they will never be told the names of.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [4],
+    tags: ["psychology-alchemists", "twilight-hermit-order", "adam", "secret", "spoiler"],
+    tokenCount: 230,
+    narratorOnly: true,
   },
   {
     slug: "aurora-order-overview",

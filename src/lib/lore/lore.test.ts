@@ -1275,6 +1275,24 @@ describe("Start archetypes data integrity", () => {
           `${a.id}: openingBeatEstablished requires minStartSequence`,
         ).toBeDefined();
       }
+      if (a.maxStartSequence !== undefined) {
+        expect(a.maxStartSequence, `${a.id}.maxStartSequence`).toBeGreaterThanOrEqual(1);
+        expect(a.maxStartSequence, `${a.id}.maxStartSequence`).toBeLessThanOrEqual(9);
+        // A ceiling only makes sense for a selectable range, and must sit at or
+        // above the floor (so the picker offers at least one rung).
+        expect(
+          a.minStartSequence,
+          `${a.id}: maxStartSequence requires minStartSequence`,
+        ).toBeDefined();
+        expect(
+          a.maxStartSequence,
+          `${a.id}: maxStartSequence must be >= minStartSequence`,
+        ).toBeGreaterThanOrEqual(a.minStartSequence!);
+        expect(
+          a.startSequence !== undefined && a.maxStartSequence !== undefined,
+          `${a.id}: startSequence and maxStartSequence must not coexist`,
+        ).toBe(false);
+      }
     }
   });
 });
