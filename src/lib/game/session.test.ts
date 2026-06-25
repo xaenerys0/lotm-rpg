@@ -146,6 +146,17 @@ describe("createDefaultGameState — start archetypes", () => {
     const gs = createDefaultGameState(1, "c1", "Hero");
     expect(gs.sequenceLevel).toBe(9);
   });
+
+  it("clamps an out-of-range selectedSequence to a playable rung (1..9)", () => {
+    const args = ["c1", "Hero", undefined, 5, undefined, undefined, undefined] as const;
+    // Below 1 (e.g. the Seq 0 / Pillar end-game sentinels) clamps up to 1.
+    const tooLow = createDefaultGameState(1, ...args, 0);
+    expect(tooLow.sequenceLevel).toBe(1);
+    expect(tooLow.digestion!.sequenceLevel).toBe(1);
+    // Above 9 clamps down to 9.
+    const tooHigh = createDefaultGameState(1, ...args, 42);
+    expect(tooHigh.sequenceLevel).toBe(9);
+  });
 });
 
 // ─── seedArchetype ─────────────────────────────────────────────────────

@@ -1656,34 +1656,30 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     <div className="mt-4">
                       {selectedArchetype.startSequence !== undefined ? (
                         // Fixed sequence — born-Beyonder, no player choice.
-                        <div className="rounded-xl border border-amber/30 bg-amber/5 px-4 py-3">
-                          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
-                            Starting Sequence
-                          </p>
-                          <p className="text-sm text-foreground">
-                            Born at Sequence {selectedArchetype.startSequence}
-                            {selectedPathwayId !== null &&
-                              getSequence(
-                                selectedPathwayId,
-                                selectedArchetype.startSequence,
-                              ) !== null && (
-                                <>
-                                  {" "}
-                                  &mdash;{" "}
-                                  {
-                                    getSequence(
-                                      selectedPathwayId,
-                                      selectedArchetype.startSequence,
-                                    )!.name
-                                  }
-                                </>
-                              )}
-                          </p>
-                          <p className="mt-1 text-xs text-muted">
-                            You were born a Beyonder — you begin at this sequence, never
-                            potioned.
-                          </p>
-                        </div>
+                        (() => {
+                          const fixedSeq =
+                            selectedPathwayId !== null
+                              ? getSequence(
+                                  selectedPathwayId,
+                                  selectedArchetype.startSequence,
+                                )
+                              : null;
+                          return (
+                            <div className="rounded-xl border border-amber/30 bg-amber/5 px-4 py-3">
+                              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
+                                Starting Sequence
+                              </p>
+                              <p className="text-sm text-foreground">
+                                Born at Sequence {selectedArchetype.startSequence}
+                                {fixedSeq != null && <> &mdash; {fixedSeq.name}</>}
+                              </p>
+                              <p className="mt-1 text-xs text-muted">
+                                You were born a Beyonder — you begin at this sequence,
+                                never potioned.
+                              </p>
+                            </div>
+                          );
+                        })()
                       ) : (
                         // Selectable range — sequence picker.
                         <fieldset className="rounded-xl border border-border bg-surface p-4">

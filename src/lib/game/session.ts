@@ -9,6 +9,7 @@ import {
 import { isValidActingMethodStateShape } from "./acting-method";
 import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
+import { clamp } from "./math";
 import { isValidCustomLocationsShape, registerCustomLocation } from "./location";
 import { cityIdFromLocation, isValidAccessFlagsShape } from "./travel";
 import { isValidFormulaPursuitShape } from "./formula-pursuit";
@@ -102,7 +103,11 @@ export function createDefaultGameState(
   archetype?: StartArchetype,
   selectedSequence?: number,
 ): GameState {
-  const startSequence = selectedSequence ?? 9;
+  // Defensive: a start sequence is always a playable rung 1..9 (Sequence 0 and
+  // the Pillars are end-game ascensions, never a creation start). The UI picker
+  // and the archetype data-integrity test already bound this, but the builder is
+  // exported, so clamp here too rather than seed a nonsensical digestion rung.
+  const startSequence = clamp(Math.round(selectedSequence ?? 9), 1, 9);
   // Varied story openings: a chosen start scenario sets the (randomly varied)
   // starting location; a chosen start ARCHETYPE (issue #131) takes precedence —
   // it carries its own location + opening beat (the character begins embedded in

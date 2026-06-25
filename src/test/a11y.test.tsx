@@ -165,6 +165,35 @@ describe("accessibility — character creation", () => {
     await expectNoAxeViolationsInContainer(container);
   });
 
+  it("the per-archetype starting-sequence picker + badge have no violations", async () => {
+    // Drive to the first-potion step and reveal the archetype cards, then select
+    // archetypes that carry sequence data so the new controls actually render:
+    // a range archetype (the <fieldset>/<legend> sequence picker of aria-pressed
+    // buttons) and a born-Beyonder archetype (the fixed-sequence badge).
+    const { container } = render(
+      <CharacterCreation onComplete={vi.fn()} onBack={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Choose Your Path/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Fool/ }));
+    fireEvent.change(screen.getByLabelText(/Character Name/i), {
+      target: { value: "Test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Continue$/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Within someone's circle/i }));
+
+    // A range archetype → the selectable sequence picker (9 → minStartSequence).
+    fireEvent.click(
+      screen.getByRole("button", { name: /attendant to Lady Audrey Hall/i }),
+    );
+    screen.getByRole("button", { name: /Sequence 7/i });
+    await expectNoAxeViolationsInContainer(container);
+
+    // A born-Beyonder archetype (fixed startSequence) → the no-choice badge.
+    fireEvent.click(screen.getByRole("button", { name: /A Sanguine in Emlyn White's/i }));
+    screen.getByText(/Born at Sequence 7/i);
+    await expectNoAxeViolationsInContainer(container);
+  });
+
   it("the canon-takeover affordance (issue #92) has no violations", async () => {
     // A configured provider enables the AI-prologue path; typing a canon name in
     // character-setup surfaces the opt-in "Take over {name}'s story" card.
