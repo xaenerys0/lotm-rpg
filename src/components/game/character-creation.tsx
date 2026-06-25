@@ -193,7 +193,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     forArchetype: string | null;
     value: number;
   }>({ forArchetype: null, value: 9 });
-  const sequenceCeiling = selectedArchetype?.maxStartSequence ?? 9;
+  const sequenceCeiling =
+    selectedArchetype?.startSequence ?? selectedArchetype?.maxStartSequence ?? 9;
   const selectedSequence =
     sequencePickerState.forArchetype === archetypeId
       ? sequencePickerState.value
@@ -720,9 +721,9 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const progress = getProgress(step, skipPrologue);
   const sceneNumber = prologueHistory.length + 1;
   const progressPct = Math.min((prologueHistory.length / MAX_PROLOGUE_SCENES) * 100, 95);
-  const backstoryValidation = validateBackstorySequence(
-    characterBackground,
-    selectedSequence,
+  const backstoryValidation = useMemo(
+    () => validateBackstorySequence(characterBackground, selectedSequence),
+    [characterBackground, selectedSequence],
   );
 
   return (

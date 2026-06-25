@@ -88,4 +88,101 @@ describe("validateBackstorySequence", () => {
     expect(typeof result.valid).toBe("boolean");
     expect(Array.isArray(result.violations)).toBe(true);
   });
+
+  // --- Tier / role title claims ---
+
+  it("flags 'Saint' claim when startSequence is above the Saint threshold", () => {
+    const result = validateBackstorySequence("I am a Saint of the Lord of Storms.", 9);
+    expect(result.valid).toBe(false);
+    expect(result.violations).toHaveLength(1);
+    expect(result.violations[0].claim.toLowerCase()).toBe("saint");
+  });
+
+  it("allows 'Saint' claim when startSequence is exactly at the Saint threshold (4)", () => {
+    const result = validateBackstorySequence("I am recognised as a Saint.", 4);
+    expect(result.valid).toBe(true);
+  });
+
+  it("flags 'Saint' claim when startSequence is 5 (just above the threshold)", () => {
+    const result = validateBackstorySequence("People call me a Saint.", 5);
+    expect(result.valid).toBe(false);
+    expect(result.violations[0].reason).toContain("Sequence 4 or lower");
+  });
+
+  it("flags plural 'Saints' the same as singular", () => {
+    const result = validateBackstorySequence(
+      "I walk among the Saints of the Fifth Epoch.",
+      9,
+    );
+    expect(result.valid).toBe(false);
+    expect(result.violations[0].claim.toLowerCase()).toBe("saints");
+  });
+
+  it("does NOT flag 'saintly' (word-boundary guard)", () => {
+    const result = validateBackstorySequence("My master displayed saintly patience.", 9);
+    expect(result.valid).toBe(true);
+  });
+
+  it("flags 'Angel' claim when startSequence is above the Angel threshold", () => {
+    const result = validateBackstorySequence("I have reached the level of an Angel.", 5);
+    expect(result.valid).toBe(false);
+    expect(result.violations[0].claim.toLowerCase()).toBe("angel");
+  });
+
+  it("allows 'Angel' claim when startSequence is exactly 2", () => {
+    const result = validateBackstorySequence("I rose to become an Angel.", 2);
+    expect(result.valid).toBe(true);
+  });
+
+  it("does NOT flag 'angelic' (word-boundary guard)", () => {
+    const result = validateBackstorySequence("She possessed an angelic voice.", 9);
+    expect(result.valid).toBe(true);
+  });
+
+  it("flags 'Demigod' claim when startSequence is above the Demigod threshold", () => {
+    const result = validateBackstorySequence("I am a Demigod of the Fate pathway.", 7);
+    expect(result.valid).toBe(false);
+    expect(result.violations[0].claim.toLowerCase()).toBe("demigod");
+  });
+
+  it("flags 'King of Angels' claim when startSequence is above the threshold", () => {
+    const result = validateBackstorySequence(
+      "I became King of Angels in a past life.",
+      5,
+    );
+    expect(result.valid).toBe(false);
+    // Must be exactly 1 — the angel pattern must not double-match "angels" inside the phrase.
+    expect(result.violations).toHaveLength(1);
+    expect(result.violations[0].claim.toLowerCase()).toContain("king of angel");
+  });
+
+  it("flags 'True God' claim at any realistic starting sequence", () => {
+    const result = validateBackstorySequence("I once witnessed a True God descend.", 9);
+    expect(result.valid).toBe(false);
+    expect(result.violations[0].claim.toLowerCase()).toContain("true god");
+  });
+
+  it("flags 'Above the Sequence' claim at any realistic starting sequence", () => {
+    const result = validateBackstorySequence(
+      "My ancestor was said to be Above the Sequence.",
+      5,
+    );
+    expect(result.valid).toBe(false);
+    expect(result.violations[0].claim.toLowerCase()).toContain("above the sequence");
+  });
+
+  it("tier claims are case-insensitive", () => {
+    expect(validateBackstorySequence("I AM A SAINT.", 9).valid).toBe(false);
+    expect(validateBackstorySequence("i am an angel.", 9).valid).toBe(false);
+    expect(validateBackstorySequence("A TRUE GOD blessed me.", 9).valid).toBe(false);
+  });
+
+  it("reports both explicit numeric and tier violations when both appear", () => {
+    const result = validateBackstorySequence(
+      "I hold Sequence 3 power and am known as a Saint.",
+      9,
+    );
+    expect(result.valid).toBe(false);
+    expect(result.violations.length).toBeGreaterThanOrEqual(2);
+  });
 });
