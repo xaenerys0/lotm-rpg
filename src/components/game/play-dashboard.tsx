@@ -187,6 +187,7 @@ export function PlayDashboard() {
       epoch: number,
       prologueRecap: string,
       start: StartSelection,
+      selectedSequence?: number,
     ) => {
       // Canon-character takeover (issue #92). Two entry points resolve to the
       // SAME seeded save: the GUIDED canon prologue (`start.kind ===
@@ -273,6 +274,7 @@ export function PlayDashboard() {
         prologueRecap,
         startScenario,
         archetype,
+        selectedSequence,
       );
       // Cross-epoch echoes (issue #31): a fallen predecessor's artifact may
       // begin the chronicle in this character's possession, and the narrator

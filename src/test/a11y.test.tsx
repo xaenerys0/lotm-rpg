@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { expectNoAxeViolations, expectNoAxeViolationsInContainer } from "@/test/axe";
 
@@ -162,6 +162,63 @@ describe("accessibility — character creation", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /A sealed origin/i }));
     screen.getByRole("button", { name: /Born in the City of Silver/i });
+    await expectNoAxeViolationsInContainer(container);
+  });
+
+  it("the per-archetype starting-sequence picker has no violations", async () => {
+    // Drive to the first-potion step and reveal the archetype cards, then select
+    // archetypes that carry sequence data so the picker (the <fieldset>/<legend>
+    // of aria-pressed buttons) actually renders — both a full-range archetype
+    // (9 → floor) and a born-but-climbable one whose ceiling caps below 9.
+    const { container } = render(
+      <CharacterCreation onComplete={vi.fn()} onBack={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Choose Your Path/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Fool/ }));
+    fireEvent.change(screen.getByLabelText(/Character Name/i), {
+      target: { value: "Test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /^Continue$/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Within someone's circle/i }));
+
+    // A full-range archetype → the selectable sequence picker (9 → minStartSequence).
+    fireEvent.click(
+      screen.getByRole("button", { name: /attendant to Lady Audrey Hall/i }),
+    );
+    screen.getByRole("button", { name: /Sequence 9/i });
+    screen.getByRole("button", { name: /Sequence 7/i });
+    await expectNoAxeViolationsInContainer(container);
+
+    // A born-but-climbable archetype (Sanguine) → the picker is capped at the
+    // born ceiling (Seq 7), offering 7 → 5 but never the impossible Seq 8/9.
+    fireEvent.click(screen.getByRole("button", { name: /A Sanguine in Emlyn White's/i }));
+    screen.getByRole("button", { name: /Sequence 7/i });
+    screen.getByRole("button", { name: /Sequence 5/i });
+    expect(screen.queryByRole("button", { name: /Sequence 8/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Sequence 9/i })).toBeNull();
+    await expectNoAxeViolationsInContainer(container);
+  });
+
+  it("backstory sequence-violation error state has no violations", async () => {
+    // Drive to the character-sheet step (manual path), type a backstory that
+    // claims a more-powerful sequence, then proceed to first-potion where the
+    // role="alert" error div mounts, aria-invalid is set, and the Begin button
+    // is disabled with aria-describedby.
+    const { container } = render(
+      <CharacterCreation onComplete={vi.fn()} onBack={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Choose Your Path/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Fool/ }));
+    // On character-sheet step: type a violating backstory before advancing.
+    fireEvent.change(screen.getByLabelText(/Your Story/i), {
+      target: { value: "I am already a Sequence 7 Zombie." },
+    });
+    fireEvent.change(screen.getByLabelText(/Character Name/i), {
+      target: { value: "Test" },
+    });
+    // Navigate to first-potion step — error alert and disabled button now render.
+    fireEvent.click(screen.getByRole("button", { name: /^Continue$/ }));
+    screen.getByRole("alert");
     await expectNoAxeViolationsInContainer(container);
   });
 

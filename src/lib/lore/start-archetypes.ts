@@ -65,6 +65,21 @@ export interface StartArchetype {
   /** Pathway ids this start thematically SUITS — a picker suggestion only; it
    * never biases anything. */
   pathwayAffinity?: readonly number[];
+  /** Fixed starting sequence — no player choice. Born-Beyonders only (e.g. Sanguines).
+   * Mutually exclusive with minStartSequence. */
+  startSequence?: number;
+  /** Floor for the player-selectable starting sequence (from this value up to the
+   * ceiling — `maxStartSequence` or 9). When set, character creation shows a
+   * sequence picker. Mutually exclusive with startSequence. */
+  minStartSequence?: number;
+  /** Ceiling (highest/weakest rung) of the player-selectable range — defaults to
+   * 9 when absent. Set BELOW 9 for a born-Beyonder who nonetheless may begin
+   * already advanced: a Sanguine is born at Seq 7 (never 8/9) but may start
+   * further along (down to `minStartSequence`). Requires minStartSequence. */
+  maxStartSequence?: number;
+  /** Opening beat for Seq < 9 starts (used when minStartSequence is set and the
+   * player picks a sequence below 9). Falls back to a generic template if absent. */
+  openingBeatEstablished?: string;
   /** Marks a Forsaken-Land origin (consumed by issue #3); absent = central. */
   origin?: "forsaken-land";
   /** Concrete seeds applied at character creation (`session.ts`). */
@@ -94,6 +109,8 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
       "You read history beside Klein Moretti at Khoy University — and now you both keep secrets.",
     openingBeat: `The strange potion still scalds my throat as I cross the fog-dimmed quad of Khoy University, where I read history beside my old classmate Klein Moretti; whatever I have just become, I must keep it from him and from everyone. ${SCENE_CUE}`,
     pathwayAffinity: [1],
+    minStartSequence: 7,
+    openingBeatEstablished: `The fog-dimmed quad of Khoy University is as familiar as my own name as I cross it on the way to another ordinary lecture — the last change settled long since, and beside me Klein Moretti still sees nothing but a fellow student; whatever I carry under my skin, the secret sits easily enough in these corridors. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Klein Moretti"],
       facts: [
@@ -113,6 +130,8 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
       "The newest recruit of Captain Dunn Smith's Tingen Nighthawks, working out of Blackthorn Security.",
     openingBeat: `The change is still settling into my blood as I report to Blackthorn Security on Zouteland Street, where Captain Dunn Smith's Tingen Nighthawks keep their cover — I am the lowest of them now, and not one of them must learn what I just drank. ${SCENE_CUE}`,
     pathwayAffinity: [4, 5],
+    minStartSequence: 7,
+    openingBeatEstablished: `Blackthorn Security on Zouteland Street is an old pattern by now as I report to the team, a known face under Captain Dunn Smith — the change long settled, the cover story worn smooth, and among these hunters of the supernatural I carry a secret that none of them, not even Leonard Mitchell, has yet found. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Leonard Mitchell"],
       society: { orgSlug: "nighthawks-tingen-team", role: "junior operative" },
@@ -133,6 +152,8 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
       "You keep Old Neil's workshop of sealed artifacts and ritual materials for the Tingen team.",
     openingBeat: `The vial is still empty in my hand when I let myself into Old Neil's cluttered workshop, the Nighthawks' artifacts watching from their shelves, and I understand that the old artificer's assistant is no longer entirely human. ${SCENE_CUE}`,
     pathwayAffinity: [],
+    minStartSequence: 7,
+    openingBeatEstablished: `Old Neil's cluttered workshop is as familiar as any room I know as I let myself in, the Nighthawks' artifacts watching from their shelves as they always have — the last change digested long since, and the old artificer, who once watched me with a careful eye, now trusts me with the real inventory without asking. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Old Neil"],
       facts: [
@@ -151,6 +172,8 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
       "A trusted friend of the Moretti household in the working streets of Tingen's Iron Cross.",
     openingBeat: `The potion's heat fades as I climb the stairs of the Iron Cross Street tenement where the Moretti family lives, a covered dish cooling in my hands, and I wonder how I will hide from Melissa and her brother Klein what I have become. ${SCENE_CUE}`,
     pathwayAffinity: [],
+    minStartSequence: 7,
+    openingBeatEstablished: `The Iron Cross Street tenement is warm and familiar as I climb its stairs, the covered dish in my hands an old errand — the change long since settled, and in this household where Melissa Moretti and her brother Klein have always known my face, the secret has grown lighter than I once feared. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Melissa Moretti"],
       facts: [
@@ -174,6 +197,8 @@ const BACKLUND_ARCHETYPES: readonly StartArchetype[] = [
       "You serve in the Hall household of Empress Borough, close to the charming young noblewoman Audrey Hall.",
     openingBeat: `The strange potion still burns in me as I cross the marble entrance hall of the Hall family's Empress Borough townhouse to attend Lady Audrey, the soot-yellow fog of Backlund pressing at the tall windows — whatever I have become this night, none of this gilded household must ever learn it. ${SCENE_CUE}`,
     pathwayAffinity: [2],
+    minStartSequence: 7,
+    openingBeatEstablished: `Three rungs deep now, the last change settled into silence weeks ago as I cross the marble entrance hall of the Hall family's Empress Borough townhouse to attend Lady Audrey — the soot-yellow fog of Backlund pressing at the tall windows, and in this gilded household I hold my place as something none of them have yet guessed. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Audrey Hall"],
       facts: [
@@ -192,6 +217,8 @@ const BACKLUND_ARCHETYPES: readonly StartArchetype[] = [
       "You keep the case files for the enigmatic private detective Sherlock Moriarty in Cherwood Borough.",
     openingBeat: `The strange potion still burns in me as I climb the stairs to the Minsk Street office of Sherlock Moriarty, the famous private detective I assist through Backlund's soot-yellow fog — and I realise the strangest case in this city of secrets may now be myself. ${SCENE_CUE}`,
     pathwayAffinity: [2],
+    minStartSequence: 7,
+    openingBeatEstablished: `The last change settled months ago, the case files familiar and the steps to the Minsk Street office worn smooth by practice, as I climb to find Sherlock Moriarty already at the window — three rungs deep, working a city of secrets, and in this partnership of sharper minds the strangest case may yet be my own. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Sherlock Moriarty"],
       facts: [
@@ -222,6 +249,8 @@ const LOEN_ARCHETYPES: readonly StartArchetype[] = [
     // Paragon (id 19) — the Savant pathway of the God of Steam & Machinery, the
     // industrial Wind City's defining pathway.
     pathwayAffinity: [19],
+    minStartSequence: 7,
+    openingBeatEstablished: `The blast furnaces of Constant glow their usual orange as I approach the McGovern townhouse, the hard sea wind tugging at my coat — three rungs deep now, the last change digested long since, and in the easy warmth of this coal-and-steel money I carry a secret none of this comfortable world suspects. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Welch McGovern"],
       facts: [
@@ -241,6 +270,8 @@ const LOEN_ARCHETYPES: readonly StartArchetype[] = [
       "You keep the records of Audrey Hall's relic foundation in Stoen City, under the watchful Compliance Department.",
     openingBeat: `The change is still settling into my blood as I let myself into the Loen Relic Search and Preservation Foundation's offices in Stoen City, the cabinets of dig-reports and catalogued antiquities around me and the strict Compliance Department a closed door at the end of the hall — and I know I must not let Deputy Director Pacheco Dwayne see what I have become. ${SCENE_CUE}`,
     pathwayAffinity: [],
+    minStartSequence: 7,
+    openingBeatEstablished: `The Foundation's offices in Stoen City have grown familiar under my hands — the dig-reports filed, the ledgers steady, and Deputy Director Pacheco Dwayne's compliance eye still watching from the closed door at the end of the hall; the last change settled long before I learned to read every column of this place, and the secret sits tucked behind an ordinary clerk's expression. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Barton"],
       facts: [
@@ -268,6 +299,8 @@ const INTIS_ARCHETYPES: readonly StartArchetype[] = [
       "You serve at Saint Viève Cathedral in Trier's Island District, under the eye of Cardinal Plessy Descartes.",
     openingBeat: `The strange potion still burns in me as dawn gilds the dome of Saint Viève Cathedral and the white-robed clergy raise their arms to greet the sun, and I — the most junior of the Cardinal's acolytes — must keep my head bowed and let no one in this house of light see what I have become. ${SCENE_CUE}`,
     pathwayAffinity: [3],
+    minStartSequence: 7,
+    openingBeatEstablished: `Dawn gilds the dome of Saint Viève Cathedral and the white-robed clergy raise their arms as I take my place among the Cardinal's acolytes — three rungs deep, the last change settled, and in a house of light where every word and gesture is an act of worship, keeping a secret is its own theology. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Plessy Descartes"],
       facts: [
@@ -287,6 +320,8 @@ const INTIS_ARCHETYPES: readonly StartArchetype[] = [
       "You serve under Deacon Angoulême de François, who hunts heresy in Trier with a censer in one hand and a police badge in the other.",
     openingBeat: `The change is still settling into my blood as I report to Deacon Angoulême de François in the lamplit back-office of Quartier 13, where the Inquisition and the city police are one and the same — and I understand that the newest of his hunters of heresy must now hide a heresy of his own. ${SCENE_CUE}`,
     pathwayAffinity: [3],
+    minStartSequence: 7,
+    openingBeatEstablished: `Three rungs deep and steady in it, I report to Deacon Angoulême de François in the lamplit back-office of Quartier 13 — the Inquisition and the city police are one and the same here, and the newest of his hunters of heresy now carries within them a heresy the job exists to find. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Angoulême de François"],
       facts: [
@@ -313,6 +348,8 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
       "A giant-descended defender of the City of Silver, raised to the watch in the sealed Forsaken Land.",
     openingBeat: `The strange potion still burns in me as I stand the watch on the grey-white walls of the City of Silver, the perpetual lightning walking the sky above the dead country beyond — my line has guarded this sealed city since the world forgot us, and now I am something even our oldest customs have no name for. ${SCENE_CUE}`,
     pathwayAffinity: [11],
+    minStartSequence: 5,
+    openingBeatEstablished: `My hands are steady on the grey-white parapet of the City of Silver as the perpetual lightning walks the sky above the dead country beyond — I have trained for this watch since childhood, and now I stand it as something the City's oldest customs have no name for; whatever I have become, the ramparts still need holding. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Derrick Berg"],
       facts: [
@@ -332,6 +369,8 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
       "A keeper of Moon City's ancient watch on the gray fog, serving under the High Priest Nim in the sealed Forsaken Land.",
     openingBeat: `The strange potion still burns in me as I stand my watch on Moon City's eastern walls, the wall of gray fog unmoving beyond and the perpetual lightning flickering above — I was raised to this vigil under the High Priest Nim, and now I am something our old rites have no name for. ${SCENE_CUE}`,
     pathwayAffinity: [5],
+    minStartSequence: 5,
+    openingBeatEstablished: `The gray fog stands motionless beyond the eastern walls of Moon City as I take my post, the perpetual lightning flickering somewhere above the sealed horizon — I have kept this watch since I was old enough to hold a lamp, and now I keep it as something the High Priest Nim's old rites have no name for; the fog does not move, and the vigil must not end. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Nim"],
       facts: [
@@ -360,6 +399,8 @@ const EARLIER_EPOCH_ARCHETYPES: readonly StartArchetype[] = [
       "A soldier of the one faith in the Glorious Era, sworn to the Ancient Sun God.",
     openingBeat: `The strange draught still burns in me as I take my place among the host's prayer-fires, the banners of the one faith snapping overhead and the field-temple of the Ancient Sun God bright at the camp's heart — I march as the least of the faithful, and whatever I have just become, it must look like nothing more than the god's blessing. ${SCENE_CUE}`,
     pathwayAffinity: [3],
+    minStartSequence: 5,
+    openingBeatEstablished: `The banners of the one faith snap overhead as I take my place among the host, the field-temple of the Ancient Sun God bright at the camp's heart — the last change settled long before this campaign, what I have become already worn into the grain of my bones, and it must look to the faithful around me like nothing but the god's own blessing. ${SCENE_CUE}`,
     seeds: {
       facts: [
         "You march with the crusading host of the Ancient Sun God in the Third Epoch's Glorious Era, one of countless faithful sworn to the one god.",
@@ -377,6 +418,8 @@ const EARLIER_EPOCH_ARCHETYPES: readonly StartArchetype[] = [
       "A soldier under the Black Emperor's banner in the god-empire of the Fourth Epoch.",
     openingBeat: `The strange draught still burns in me as I stand among the ranks at the gates of Saint Millom, the Solomon Empire's black capital, where the Black Emperor's word is law and his war upon the gods never ends — I am one spear among thousands, and whatever I have just become, none of my officers must ever see it. ${SCENE_CUE}`,
     pathwayAffinity: [13],
+    minStartSequence: 6,
+    openingBeatEstablished: `The weight of the black armour is familiar now as I stand at the gates of Saint Millom, the Solomon Empire's war upon the gods continuing without pause — the last change settled long before I earned this post, and whatever I have become among these thousands of spears, none of my officers has seen through it yet. ${SCENE_CUE}`,
     seeds: {
       facts: [
         "You serve in the legions of the Solomon Empire under the distant sovereignty of the Black Emperor; you are a face in his vast god-empire, not a confidant.",
@@ -402,6 +445,8 @@ const FEYSAC_ARCHETYPES: readonly StartArchetype[] = [
       "A sworn squire of the war-faith in the militarist Feysac Empire, serving under the Chief Shepherd Larrion.",
     openingBeat: `The strange draught still burns in me as I stand in the cold shadow of the Great Twilight Hall outside Saint Millom, my training-blade heavy at my side — I am the lowest squire of the war-faith, sworn under the Chief Shepherd Larrion, and whatever I have just become, the brothers who prize only honest strength must never learn of it. ${SCENE_CUE}`,
     pathwayAffinity: [11],
+    minStartSequence: 7,
+    openingBeatEstablished: `The cold shadow of the Great Twilight Hall falls across the courtyard as I take my position beside the other squires, my training-blade easy in my hand now after years at this — three rungs deep under the Chief Shepherd Larrion, and whatever the brothers who prize only honest strength cannot measure in me, the watch still needs bodies. ${SCENE_CUE}`,
     seeds: {
       society: { orgSlug: "combat-church-overview", role: "squire" },
       facts: [
@@ -421,6 +466,8 @@ const FEYSAC_ARCHETYPES: readonly StartArchetype[] = [
       "A junior scholar of the Church of Knowledge in Azshara, under the Lenburg-born archbishop Edwina Edwards.",
     openingBeat: `The strange draught still burns in me as I shelve a stack of brass-clasped tomes in the Holy Temple of Knowledge at Azshara, the seat of the faith that rules Lenburg — I answer to the authority of the archbishop Edwina Edwards, and in a realm of endless examinations a secret is the one thing that cannot be filed away, so what I have just become I must keep off every ledger. ${SCENE_CUE}`,
     pathwayAffinity: [10],
+    minStartSequence: 7,
+    openingBeatEstablished: `The brass-clasped tomes of the Holy Temple of Knowledge at Azshara are old companions now as I carry another stack to its place on the shelf — the last change digested long before my last round of examinations, and in a realm where knowledge is the faith and every act is an audit, keeping a secret has become the most thorough examination of all. ${SCENE_CUE}`,
     seeds: {
       society: { orgSlug: "knowledge-church-overview", role: "acolyte" },
       facts: [
@@ -448,6 +495,8 @@ const RORSTED_ARCHETYPES: readonly StartArchetype[] = [
       "A native initiate of the hunted Sea-God faith, brought into the fold by the merchant-devotee Ralph in colonial Bayam.",
     openingBeat: `The strange draught still burns in me as I keep the curfew in a back-street shrine above Bayam's harbour, the salt-spice dark pressing close and a charm of the old sea-god cool in my fist — Ralph, the trader who brought me to the faith, vouches for me among the islanders, and whatever I have just become, the storm-priests who hunt heretics must never learn of it. ${SCENE_CUE}`,
     pathwayAffinity: [6],
+    minStartSequence: 6,
+    openingBeatEstablished: `The back-street shrine above Bayam's harbour is an old familiar place as I take my post — the salt-spice dark around me an old companion, Ralph's voucher for my standing in the faith long since a formality among the islanders, and whatever I carry under my skin, the ancient sea-god's devotees have always known there are depths in the faithful that remain unspoken. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Ralph"],
       society: { orgSlug: "sea-god-faith-overview", role: "initiate" },
@@ -467,6 +516,8 @@ const RORSTED_ARCHETYPES: readonly StartArchetype[] = [
       "A hand aboard Vice Admiral Iceberg's treasure-seeking fleet, signed on through the boatswain Danitz Dubois in the bars of Bayam.",
     openingBeat: `The strange draught still burns in me as the harbour bars of Bayam roar behind us and the dark island sea breathes ahead, my sea-bag over my shoulder and a berth on a famous treasure-fleet waiting — the boatswain Danitz Dubois clapped me aboard on his own word, and whatever I have just become out here among the salt and the rumour, I must keep it from every soul on the crew. ${SCENE_CUE}`,
     pathwayAffinity: [6],
+    minStartSequence: 6,
+    openingBeatEstablished: `The island sea's motion is as familiar as my own heartbeat as I take my post, the Golden Dream's bells sounding the watch and the hull under my feet an old companion — Danitz Dubois's word that got me aboard long since forgotten by the crew, and what I have become over these seasons of open water is only one more secret a sailor learns to carry with the tide. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Danitz Dubois"],
       facts: [
@@ -498,6 +549,8 @@ const SOUTHERN_ARCHETYPES: readonly StartArchetype[] = [
     openingBeat: `The bitter draught still coats my tongue as I kneel in the coffin-lit shrine deep in the West Balam jungle, where old Haiter keeps the outlawed faith of the dead god — and I know that what I have just become must be hidden even from the brothers of the Episcopate until I understand it. ${SCENE_CUE}`,
     // Death (pathway id 4) — the death-god's own path, the faith of the Balam cult.
     pathwayAffinity: [4],
+    minStartSequence: 5,
+    openingBeatEstablished: `The coffin-lit shrine of old Haiter is as familiar as my own heartbeat as I kneel before him in the West Balam jungle — the rites worn into me now, Haiter's silence the measure of my standing, and whatever the outlawed faith has made of me over these years must still wear the face of the faithful. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Haiter"],
       society: { orgSlug: "numinous-episcopate-overview", role: "acolyte" },
@@ -517,6 +570,8 @@ const SOUTHERN_ARCHETYPES: readonly StartArchetype[] = [
       "A retainer in a Loen colonial household across the Berserk Sea, in service to the gentleman-adventurer Alfred Hall in the Balam colonies.",
     openingBeat: `The strange potion still burns in me as the tropical night presses hot against the verandah of the colonial house in Balam where I serve the Loen gentleman Alfred Hall, the jungle loud beyond the lamplight — and I understand that whatever I drank this night, none of this comfortable, brutal little outpost of home must ever learn it. ${SCENE_CUE}`,
     pathwayAffinity: [],
+    minStartSequence: 7,
+    openingBeatEstablished: `The tropical night is an old familiar weight on the verandah of Alfred Hall's colonial house in Balam, the jungle breathing at the lamplight's edge — I have served here long enough that the change is worn smooth within me, a secret this comfortable, brutal little outpost will never learn. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Alfred Hall"],
       facts: [
@@ -543,9 +598,14 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
     circleNpcs: ["Emlyn White"],
     blurb:
       "One of the scarlet-moon Sanguines of Backlund, kin and confidant to Emlyn White — the vampire who hides among the Harvest Church.",
-    openingBeat: `The strange potion still burns cold in me as I keep to the shuttered Backlund townhouse of my own kind, where Emlyn White — the Sanguine the humans never suspect — holds our little court against the soot-yellow dark; whatever I have become tonight, the blood remembers, and our secret must hold. ${SCENE_CUE}`,
+    openingBeat: `Blood-memory stirs as I keep to the shuttered Backlund townhouse of my own kind, where Emlyn White — the Sanguine the humans never suspect — holds our little court against the soot-yellow dark; I was born to this, and whatever shift just moved through our circle tonight, the secret must hold. ${SCENE_CUE}`,
     // Moon (id 17) — the Sanguines' ancestral path of the scarlet moon.
     pathwayAffinity: [17],
+    // A Sanguine is BORN a Vampire at Seq 7 (never 8/9), but may begin already
+    // climbed — so the range is 7 (the born ceiling) down to 5, not a fixed rung.
+    minStartSequence: 5,
+    maxStartSequence: 7,
+    openingBeatEstablished: `Blood-memory runs deep and settled in me as I keep to the shuttered Backlund townhouse of my own kind, where Emlyn White — the Sanguine the humans never suspect — holds our little court against the soot-yellow dark; I was born to this and have lived it long, and whatever moves through our circle tonight, I have carried heavier secrets than this. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Emlyn White"],
       facts: [
@@ -565,10 +625,35 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
     openingBeat: `The change still hums under my skin as I meet Leonard Mitchell in a quiet Tingen coffee-house, the poet-Nighthawk who counts me a friend — there are circles behind his circles, I have always sensed it, and tonight I have a secret of my own to keep from him. ${SCENE_CUE}`,
     // Darkness (id 5) — Leonard's own pathway, the night-watch road.
     pathwayAffinity: [5],
+    minStartSequence: 7,
+    openingBeatEstablished: `Three rungs deep now and the last change settled, I meet Leonard Mitchell in the quiet Tingen coffee-house as I have done a dozen times — the poet-Nighthawk who counts me a friend, and in the circles behind his circles I have learned to wear a steady face; whatever I carry, he does not yet know it. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Leonard Mitchell"],
       facts: [
         "You are a trusted associate of Leonard Mitchell, the Tingen Nighthawk and poet; he knows your face, though not yet what you have become.",
+      ],
+    },
+  },
+  {
+    id: "backlund-life-school-member",
+    label: "A circle-member of the Life School of Thought in Backlund",
+    epoch: 5,
+    location: "Backlund",
+    relationship: "circle-member",
+    circleNpcs: ["Will Auceptin"],
+    affiliationOrg: "life-school-of-thought-overview",
+    blurb:
+      "A circle-member of the Life School of Thought in Backlund — the secret Wheel-of-Fortune organisation whose president Will Auceptin wears the face of a child but holds a gaze centuries deep.",
+    openingBeat: `The change hums under my skin in the gas-lit streets of Hillston Borough, Backlund, where I have been newly admitted to the circle of the Life School of Thought — its president Will Auceptin seems a child of ten, yet his pitch-black eyes hold a weight I cannot measure; whatever I have just become, the Wheel of Fortune turns as it will, and I am now part of its orbit. ${SCENE_CUE}`,
+    // Wheel of Fortune (pathway id 20) — the fate-and-luck path the Life School tends.
+    pathwayAffinity: [20],
+    minStartSequence: 5,
+    openingBeatEstablished: `The gas-lit streets of Hillston Borough are familiar as my own breath as I walk to the Life School of Thought's meeting-house, where Will Auceptin — that ancient one in a child's face — receives me as a member in standing; whatever the Wheel has asked of me these past years, I have paid, and it has carried me further than most would dare. ${SCENE_CUE}`,
+    seeds: {
+      trackedAllies: ["Will Auceptin"],
+      society: { orgSlug: "life-school-of-thought-overview", role: "circle-member" },
+      facts: [
+        "You are a circle-member of the Life School of Thought in Backlund, the secret organisation that tends the Wheel of Fortune pathway; its president Will Auceptin, an ancient being wearing a child's face, knows your name and your standing.",
       ],
     },
   },
@@ -584,10 +669,112 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
     openingBeat: `The bitter draught still scalds me as I stand my post in the cold halls of the Einhorn house, the imperial family of Feysac whose supreme commander Awatoma Einhorn I serve — strength is the only god respected here, and whatever I have just become must look, to them, like nothing at all. ${SCENE_CUE}`,
     // Red Priest (id 14) — the Einhorn house's own crimson, conquering path.
     pathwayAffinity: [14],
+    minStartSequence: 5,
+    openingBeatEstablished: `The cold halls of the Einhorn house are familiar under my boots as I stand my post, the imperial family of Feysac moving through its routines — years of service read in how I hold myself, the last change long since settled into something the household mistakes for ordinary strength, and whatever I have become must look, to them, like nothing but reliable service. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Awatoma Einhorn"],
       facts: [
         "You serve as a sworn retainer of the Einhorn imperial family of Feysac, in the household of the naval supreme commander Awatoma Einhorn, who knows your face.",
+      ],
+    },
+  },
+] as const;
+
+// ── Orthodox-church & secret-organization archetypes (issue #183 follow-up) ──
+// Broader organization representation: begin embedded in a major faith's
+// Beyonder arm or a secret order that had no archetype yet — each tied to an
+// existing NPC and its existing organization lore entry. The Mandated Punishers
+// (Storms church) and the Machinery Hivemind (Steam church) are the orthodox
+// counterparts of the Tingen Nighthawks; the Psychology Alchemists (Visionary)
+// and the Rose School of Thought's Temperance refuge are secret circles. All
+// canon corpus-verified (see the repo-root CLAUDE.md "Canon & Source Material").
+const ORG_REPRESENTATION_ARCHETYPES: readonly StartArchetype[] = [
+  {
+    id: "tingen-psychology-alchemist",
+    label: "A junior of the Psychology Alchemists in Tingen",
+    epoch: 5,
+    location: "Tingen City",
+    relationship: "circle-member",
+    circleNpcs: ["Daxter Guderian"],
+    affiliationOrg: "psychology-alchemists-overview",
+    blurb:
+      "A new initiate of the Psychology Alchemists in Tingen, brought into the mind-scientists' circle by the nervous asylum doctor Daxter Guderian.",
+    openingBeat: `The strange potion still scalds my throat as I cross fog-dimmed Tingen toward the Greenhill Mental Asylum, where the doctor Daxter Guderian first whispered to me of the Psychology Alchemists — the secret circle that holds the mind has limitless wonders; whatever I have just become, I must keep it from the orthodox hunters and learn the order's formulas before the change undoes me. ${SCENE_CUE}`,
+    // Visionary (id 2) — the pathway of the mind the Psychology Alchemists hold.
+    pathwayAffinity: [2],
+    minStartSequence: 7,
+    openingBeatEstablished: `The fog-dimmed streets toward the Greenhill Mental Asylum are an old route by now as I go to meet Daxter Guderian, the nervous doctor who first brought me into the Psychology Alchemists — the last change settled long since, the order's talk of consciousness and contribution-points grown familiar, and I have learned to study the mind without ever letting it study me. ${SCENE_CUE}`,
+    seeds: {
+      trackedAllies: ["Daxter Guderian"],
+      society: { orgSlug: "psychology-alchemists-overview", role: "junior member" },
+      facts: [
+        "You are a junior member of the Psychology Alchemists in Tingen, a secret society of the Visionary pathway, brought into it by the asylum doctor Daxter Guderian, who knows your face and trades you the order's formulas.",
+      ],
+    },
+  },
+  {
+    id: "backlund-rose-temperance",
+    label: "A Temperance exile of the Rose School of Thought in Backlund",
+    epoch: 5,
+    location: "Backlund",
+    relationship: "circle-member",
+    circleNpcs: ["Sharron", "Maric"],
+    affiliationOrg: "rose-school-of-thought-overview",
+    blurb:
+      "One of the Temperance refugees of the shattered Rose School of Thought, sheltering in Backlund alongside the exiles Sharron and Maric under a mysterious patron's protection.",
+    openingBeat: `The change still aches under my skin as I keep to the Bravehearts Bar near the Backlund Bridge, where Sharron and Maric — fellow refugees of the Rose School's broken Temperance faction — watch the door against the kind we fled; we hold to restraint where our order turned to devouring desire, and whatever I have just become, the Indulgence hunters must never find us. ${SCENE_CUE}`,
+    // Chained (id 22) — the Rose School's core pathway; Temperance is its discipline.
+    pathwayAffinity: [22],
+    minStartSequence: 7,
+    openingBeatEstablished: `The riverside warmth of the Bravehearts Bar is a hard-won refuge by now as I take my seat near Sharron and Maric, fellow exiles of the Rose School's Temperance creed — the change long since settled into the discipline of restraint our order abandoned, and under our quiet patron's protection I have learned to carry both my power and my hunger without letting either rule me. ${SCENE_CUE}`,
+    seeds: {
+      trackedAllies: ["Sharron", "Maric"],
+      facts: [
+        "You are a Temperance exile of the Rose School of Thought, sheltering in Backlund alongside Sharron and Maric under the protection of the Tarot Club's 'The Fool'; you hold to the discipline of restraint while the Indulgence faction that broke your order hunts the like of you.",
+      ],
+    },
+  },
+  {
+    id: "bayam-storms-punisher",
+    label: "A junior Mandated Punisher of the storm-faith in Bayam",
+    epoch: 5,
+    location: "Bayam",
+    relationship: "subordinate",
+    circleNpcs: ["Jahn Kottman"],
+    affiliationOrg: "mandated-punishers-bayam",
+    blurb:
+      "The newest of the Mandated Punishers on the Sonia Sea — the Lord of Storms' Beyonder arm, ruling Bayam's hidden world from the Cathedral of Waves under the Sea King, Cardinal Jahn Kottman.",
+    openingBeat: `The strange draught still burns in me as the salt wind drives off the Sonia Sea and I report to the Cathedral of Waves in Bayam, where the Mandated Punishers answer for everything uncanny on the storm-faith's own water — I am the lowest of the Sea King Jahn Kottman's hunters, and whatever I have just become, the brothers who police heresy must never read it in me. ${SCENE_CUE}`,
+    // Tyrant (id 6) — the sea's own pathway, the Mandated Punishers' power.
+    pathwayAffinity: [6],
+    minStartSequence: 6,
+    openingBeatEstablished: `The Cathedral of Waves and the salt wind off the Sonia Sea are an old familiar watch by now as I take my orders among the Mandated Punishers — seasoned in the storm-faith's headlong way, the last change long since settled, and on Cardinal Jahn Kottman's own water I hunt heresy carrying a secret the order exists to find. ${SCENE_CUE}`,
+    seeds: {
+      society: { orgSlug: "mandated-punishers-bayam", role: "punisher" },
+      facts: [
+        "You serve as a junior Mandated Punisher of the Church of the Lord of Storms in Bayam, the storm-faith's Beyonder arm on the Sonia Sea, under the Sea King Cardinal Jahn Kottman, who rules the archipelago's hidden world from the Cathedral of Waves.",
+      ],
+    },
+  },
+  {
+    id: "trier-machinery-hivemind",
+    label: "A technician of the Machinery Hivemind in Trier",
+    epoch: 5,
+    location: "Trier",
+    relationship: "subordinate",
+    circleNpcs: ["Horamick Haydn"],
+    affiliationOrg: "steam-church-overview",
+    blurb:
+      "A junior of the Machinery Hivemind — the Church of Steam and Machinery's Beyonder arm — hunting supernatural contamination through Trier's foundries under Archbishop Horamick Haydn.",
+    openingBeat: `The strange draught still burns in me amid the hiss and clang of a Trier foundry, where the Machinery Hivemind keeps its watch for supernatural contamination — I am the newest technician sworn to the Church of Steam and Machinery under Archbishop Horamick Haydn, and whatever I have just become, the brothers who share one mind across the network must never sense the wrongness in mine. ${SCENE_CUE}`,
+    // Paragon (id 19) — the God of Steam's pathway, the Hivemind's power.
+    pathwayAffinity: [19],
+    minStartSequence: 7,
+    openingBeatEstablished: `The hiss and clang of the Trier foundries is the sound of my own routine now as I take my place among the Machinery Hivemind — the last change settled long before I earned the Church of Steam's trust, the shared network an old discipline, and under Archbishop Horamick Haydn I hunt contamination through the workshops while keeping the one contamination they cannot trace hidden in myself. ${SCENE_CUE}`,
+    seeds: {
+      society: { orgSlug: "steam-church-overview", role: "Hivemind technician" },
+      facts: [
+        "You serve as a junior technician of the Machinery Hivemind, the Beyonder arm of the Church of the God of Steam and Machinery, in Trier under Archbishop Horamick Haydn, who is also an emeritus professor at Backlund University.",
       ],
     },
   },
@@ -607,6 +794,7 @@ export const START_ARCHETYPES: readonly StartArchetype[] = [
   ...RORSTED_ARCHETYPES,
   ...SOUTHERN_ARCHETYPES,
   ...SECRET_SOCIETY_ARCHETYPES,
+  ...ORG_REPRESENTATION_ARCHETYPES,
 ];
 
 /**

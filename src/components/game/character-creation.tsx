@@ -23,6 +23,7 @@ import {
   isValidDraftShape,
   clearDraft,
   TUTORIAL_SCENES,
+  validateBackstorySequence,
 } from "@/lib/game";
 import {
   DEFAULT_EPOCH_ID,
@@ -108,6 +109,10 @@ interface CharacterCreationProps {
     /** How the chronicle opens — place, curated archetype, custom circle, or
      * random (issue #131). One discriminated value, never a set of nullables. */
     start: StartSelection,
+    /** Resolved starting sequence from an archetype's startSequence (fixed) or
+     * the player's selection within minStartSequence..9 (range). Absent means
+     * default Sequence 9. */
+    selectedSequence?: number,
   ) => void;
   onBack: () => void;
 }
@@ -171,6 +176,33 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const archetypeId = startChoice.startsWith("archetype:")
     ? startChoice.slice("archetype:".length)
     : null;
+  // Resolve the selected archetype at component level so handlers can read it.
+  const selectedArchetype = useMemo(() => {
+    if (archetypeId === null) return null;
+    const arcs = startArchetypesForEpoch(epoch);
+    const originArcs = forsakenLandArchetypesForEpoch(epoch);
+    return [...arcs, ...originArcs].find((a) => a.id === archetypeId) ?? null;
+  }, [archetypeId, epoch]);
+  // Sequence picker for archetypes that have minStartSequence set. The picker
+  // ceiling (highest/weakest selectable rung) defaults to 9, but a born-but-
+  // climbable archetype (the Sanguine) caps it lower (maxStartSequence). The
+  // unpicked default is the ceiling; it auto-resets whenever archetypeId changes
+  // (derived-state pattern — if forArchetype !== current archetypeId we derive
+  // the ceiling instead, so no effect is needed).
+  const [sequencePickerState, setSequencePickerState] = useState<{
+    forArchetype: string | null;
+    value: number;
+  }>({ forArchetype: null, value: 9 });
+  const sequenceCeiling =
+    selectedArchetype?.startSequence ?? selectedArchetype?.maxStartSequence ?? 9;
+  const selectedSequence =
+    sequencePickerState.forArchetype === archetypeId
+      ? sequencePickerState.value
+      : sequenceCeiling;
+  const setSelectedSequence = useCallback(
+    (seq: number) => setSequencePickerState({ forArchetype: archetypeId, value: seq }),
+    [archetypeId],
+  );
   // Custom-circle form (the "Describe your own circle" path). Creativity is never
   // capped by the presets: any tie, and companions that may be canon OR invented.
   const [customTie, setCustomTie] = useState("");
@@ -597,8 +629,25 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     } else {
       start = { kind: "random" };
     }
+    // Per-archetype starting sequence: a fixed startSequence (born-Beyonder)
+    // takes precedence; a minStartSequence uses the player's picker selection.
+    const resolvedSequence =
+      selectedArchetype?.startSequence !== undefined
+        ? selectedArchetype.startSequence
+        : selectedArchetype?.minStartSequence !== undefined
+          ? selectedSequence
+          : undefined;
     clearDraft();
-    onComplete(selectedPathwayId, name, bg, memory, epoch, prologueRecap, start);
+    onComplete(
+      selectedPathwayId,
+      name,
+      bg,
+      memory,
+      epoch,
+      prologueRecap,
+      start,
+      resolvedSequence,
+    );
   }, [
     epoch,
     selectedPathwayId,
@@ -609,6 +658,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     finale,
     startChoice,
     archetypeId,
+    selectedArchetype,
+    selectedSequence,
     customTie,
     customCompanions,
     customLocation,
@@ -670,6 +721,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const progress = getProgress(step, skipPrologue);
   const sceneNumber = prologueHistory.length + 1;
   const progressPct = Math.min((prologueHistory.length / MAX_PROLOGUE_SCENES) * 100, 95);
+  const backstoryValidation = useMemo(
+    () => validateBackstorySequence(characterBackground, selectedSequence),
+    [characterBackground, selectedSequence],
+  );
 
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
@@ -1354,6 +1409,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   maxLength={MAX_BACKGROUND_LENGTH}
                   placeholder="A brief backstory — your occupation, your district, what drew you to this world..."
                   rows={3}
+                  aria-invalid={!backstoryValidation.valid || undefined}
                   className="w-full resize-none rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 />
                 <p className="mt-1 text-right text-xs text-muted">
@@ -1436,11 +1492,6 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             )?.name;
             const isCustom = startChoice === "custom";
             const selectedLoc = options.find((o) => o.location === startChoice);
-            // Origin archetypes live outside the default `archetypes` list, so
-            // resolve the selected archetype across both for the blurb.
-            const selectedArchetype = [...archetypes, ...originArchetypes].find(
-              (a) => a.id === archetypeId,
-            );
             const selectedOriginScenario = startChoice.startsWith("origin-scenario:")
               ? originScenarios.find(
                   (s) => s.id === startChoice.slice("origin-scenario:".length),
@@ -1609,6 +1660,97 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   </div>
                 )}
 
+                {/* Per-archetype starting sequence — badge (fixed) or picker (range).
+                    Shown only when the selected archetype carries sequence data. */}
+                {archetypeId !== null &&
+                  selectedArchetype !== null &&
+                  (selectedArchetype.startSequence !== undefined ||
+                    selectedArchetype.minStartSequence !== undefined) && (
+                    <div className="mt-4">
+                      {selectedArchetype.startSequence !== undefined ? (
+                        // Fixed sequence — born-Beyonder, no player choice.
+                        (() => {
+                          const fixedSeq =
+                            selectedPathwayId !== null
+                              ? getSequence(
+                                  selectedPathwayId,
+                                  selectedArchetype.startSequence,
+                                )
+                              : null;
+                          return (
+                            <div className="rounded-xl border border-amber/30 bg-amber/5 px-4 py-3">
+                              <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
+                                Starting Sequence
+                              </p>
+                              <p className="text-sm text-foreground">
+                                Born at Sequence {selectedArchetype.startSequence}
+                                {fixedSeq != null && <> &mdash; {fixedSeq.name}</>}
+                              </p>
+                              <p className="mt-1 text-xs text-muted">
+                                You were born a Beyonder — you begin at this sequence,
+                                never potioned.
+                              </p>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        // Selectable range — sequence picker.
+                        <fieldset className="rounded-xl border border-border bg-surface p-4">
+                          <legend className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
+                            Your Starting Sequence
+                          </legend>
+                          <p className="mb-3 text-xs text-muted">
+                            You are an established Beyonder. Choose how far you have
+                            already climbed.
+                          </p>
+                          <div className="grid gap-2">
+                            {Array.from(
+                              {
+                                length:
+                                  sequenceCeiling -
+                                  selectedArchetype.minStartSequence! +
+                                  1,
+                              },
+                              (_, i) => {
+                                const seqLevel = sequenceCeiling - i;
+                                const seqData =
+                                  selectedPathwayId !== null
+                                    ? getSequence(selectedPathwayId, seqLevel)
+                                    : null;
+                                return (
+                                  <button
+                                    key={seqLevel}
+                                    type="button"
+                                    aria-pressed={selectedSequence === seqLevel}
+                                    onClick={() => setSelectedSequence(seqLevel)}
+                                    className={`flex items-center justify-between rounded-lg border px-4 py-2.5 text-left text-sm transition-all duration-200 ${
+                                      selectedSequence === seqLevel
+                                        ? "border-amber bg-amber/10 text-foreground"
+                                        : "border-border bg-surface-raised text-muted hover:border-amber/40 hover:text-foreground"
+                                    }`}
+                                  >
+                                    <span>
+                                      Sequence {seqLevel}
+                                      {seqData ? ` — ${seqData.name}` : ""}
+                                    </span>
+                                    {seqLevel === sequenceCeiling && (
+                                      <span
+                                        className="text-xs text-muted"
+                                        aria-hidden="true"
+                                      >
+                                        default
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              },
+                            )}
+                          </div>
+                        </fieldset>
+                      )}
+                    </div>
+                  )}
+
                 {isCustom && (
                   <div className="mt-4 space-y-4 rounded-xl border border-border bg-surface p-4">
                     <div>
@@ -1732,10 +1874,31 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             );
           })()}
 
+          {!backstoryValidation.valid && (
+            <div
+              id="backstory-error"
+              role="alert"
+              className="mb-4 rounded-lg border border-crimson/40 bg-crimson/10 px-4 py-3 text-sm text-foreground"
+            >
+              <p className="mb-2 font-semibold text-crimson">
+                Your backstory claims a higher sequence than your starting level:
+              </p>
+              <ul className="space-y-1.5">
+                {backstoryValidation.violations.map((v) => (
+                  <li key={v.claim} className="text-foreground">
+                    {v.reason}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleBeginChronicle}
-            className="w-full rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
+            disabled={!backstoryValidation.valid}
+            aria-describedby={!backstoryValidation.valid ? "backstory-error" : undefined}
+            className="w-full rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-50"
           >
             Begin Your Chronicle
           </button>

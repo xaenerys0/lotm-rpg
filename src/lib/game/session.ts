@@ -9,6 +9,7 @@ import {
 import { isValidActingMethodStateShape } from "./acting-method";
 import { isValidAnchorStateShape } from "./anchors";
 import { createDigestionState } from "./digestion";
+import { clamp } from "./math";
 import { isValidCustomLocationsShape, registerCustomLocation } from "./location";
 import { cityIdFromLocation, isValidAccessFlagsShape } from "./travel";
 import { isValidFormulaPursuitShape } from "./formula-pursuit";
@@ -100,14 +101,37 @@ export function createDefaultGameState(
   prologueRecap?: string,
   startScenario?: StartScenario,
   archetype?: StartArchetype,
+  selectedSequence?: number,
 ): GameState {
+  // Defensive: a start sequence is always a playable rung 1..9 (Sequence 0 and
+  // the Pillars are end-game ascensions, never a creation start). The UI picker
+  // and the archetype data-integrity test already bound this, but the builder is
+  // exported, so clamp here too rather than seed a nonsensical digestion rung.
+  // The archetype defines the range: a fixed startSequence pins ceiling=floor; a
+  // born-but-climbable archetype (the Sanguine) caps the ceiling below 9
+  // (maxStartSequence); otherwise the ceiling is 9 and the floor is minStartSequence.
+  const seqCeiling = archetype?.startSequence ?? archetype?.maxStartSequence ?? 9;
+  const seqFloor = archetype?.startSequence ?? archetype?.minStartSequence ?? 1;
+  const startSequence = clamp(
+    Math.round(selectedSequence ?? seqCeiling),
+    seqFloor,
+    seqCeiling,
+  );
   // Varied story openings: a chosen start scenario sets the (randomly varied)
   // starting location; a chosen start ARCHETYPE (issue #131) takes precedence —
   // it carries its own location + opening beat (the character begins embedded in
   // an existing circle). Absent both, fall back to the epoch's default location.
   const location =
     archetype?.location ?? startScenario?.location ?? getEpoch(epoch).startingLocation;
-  const openingBeat = archetype?.openingBeat ?? startScenario?.openingBeat;
+  // For established Beyonder starts (below the archetype's born/weakest ceiling)
+  // use openingBeatEstablished when available; it frames the character as already
+  // seasoned, without potion-burn language. For a normal archetype the ceiling is
+  // 9, so this is "Seq < 9" as before; for a Sanguine (ceiling 7) the born beat
+  // still serves the just-born Seq-7 start and the established beat the climbed 6/5.
+  const openingBeat =
+    startSequence < seqCeiling && archetype?.openingBeatEstablished
+      ? archetype.openingBeatEstablished
+      : (archetype?.openingBeat ?? startScenario?.openingBeat);
   // Relationship grounding (issue #131) lives in the DURABLE, never-trimmed
   // background layer (issue #92's insight), not in trimmable session facts alone:
   // the archetype's grounding line is folded into the character background so the
@@ -135,7 +159,7 @@ export function createDefaultGameState(
   return {
     characterId,
     pathwayId,
-    sequenceLevel: 9,
+    sequenceLevel: startSequence,
     sanity: 100,
     maxSanity: 100,
     inventory: [],
@@ -145,7 +169,7 @@ export function createDefaultGameState(
     ...(accessFlags ? { accessFlags } : {}),
     activeQuests: [],
     npcsPresent: [],
-    digestion: createDigestionState(pathwayId, 9),
+    digestion: createDigestionState(pathwayId, startSequence),
     ...(characterName ? { characterName } : {}),
     ...(background ? { characterBackground: background } : {}),
     // Durable prologue recap (the prologue → story bridge) — kept in the

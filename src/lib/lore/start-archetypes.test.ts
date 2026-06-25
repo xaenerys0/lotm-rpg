@@ -163,13 +163,16 @@ describe("START_ARCHETYPES data integrity", () => {
     const ids = intis.map((a) => a.id);
     expect(ids).toContain("trier-blazing-sun-acolyte");
     expect(ids).toContain("trier-inquisition-initiate");
-    // Each is a default (non-origin) Fifth-Epoch start tied to a Trier NPC and
-    // affiliated with the Blazing Sun church org.
+    // Each is a default (non-origin) Fifth-Epoch start tied to a Trier NPC.
     for (const a of intis) {
       expect(a.epoch).toBe(5);
       expect(a.origin).toBeUndefined();
       expect(a.circleNpcs.length).toBeGreaterThan(0);
-      expect(a.affiliationOrg).toBe("blazing-sun-church-members");
+    }
+    // The two Blazing Sun church starts are affiliated with the church org (the
+    // Trier-located Machinery Hivemind start, issue #183, has its own org).
+    for (const id of ["trier-blazing-sun-acolyte", "trier-inquisition-initiate"]) {
+      expect(getStartArchetype(id)!.affiliationOrg).toBe("blazing-sun-church-members");
     }
     expect(getStartArchetype("trier-blazing-sun-acolyte")!.circleNpcs).toContain(
       "Plessy Descartes",
@@ -262,6 +265,13 @@ describe("START_ARCHETYPES data integrity", () => {
     expect(sanguine?.origin).toBeUndefined();
     expect(sanguine?.circleNpcs).toContain("Emlyn White");
     expect(sanguine?.pathwayAffinity).toContain(17); // Moon — the Sanguines' path
+    // A Sanguine is BORN at Seq 7 but may begin already climbed: a capped range
+    // 7 → 5 (issue #183), not a fixed startSequence. It carries an established
+    // beat for the climbed 6/5 starts.
+    expect(sanguine?.startSequence).toBeUndefined();
+    expect(sanguine?.minStartSequence).toBe(5);
+    expect(sanguine?.maxStartSequence).toBe(7);
+    expect(sanguine?.openingBeatEstablished).toBeDefined();
 
     const tarot = getStartArchetype("tingen-tarot-associate");
     expect(tarot?.circleNpcs).toContain("Leonard Mitchell");
@@ -276,6 +286,47 @@ describe("START_ARCHETYPES data integrity", () => {
         "backlund-sanguine-moon",
         "tingen-tarot-associate",
         "feysac-einhorn-retainer",
+      ]),
+    );
+  });
+
+  it("ships the organization-representation archetypes (issue #183)", () => {
+    // Four new starts broadening which organizations are playable, each tied to
+    // an existing NPC + an existing org lore entry (resolution covered above).
+    const alchemist = getStartArchetype("tingen-psychology-alchemist");
+    expect(alchemist?.epoch).toBe(5);
+    expect(alchemist?.origin).toBeUndefined();
+    expect(alchemist?.location).toBe("Tingen City");
+    expect(alchemist?.circleNpcs).toContain("Daxter Guderian");
+    expect(alchemist?.affiliationOrg).toBe("psychology-alchemists-overview");
+    expect(alchemist?.pathwayAffinity).toContain(2); // Visionary
+
+    const rose = getStartArchetype("backlund-rose-temperance");
+    expect(rose?.location).toBe("Backlund");
+    expect(rose?.circleNpcs).toEqual(expect.arrayContaining(["Sharron", "Maric"]));
+    expect(rose?.affiliationOrg).toBe("rose-school-of-thought-overview");
+    expect(rose?.pathwayAffinity).toContain(22); // Chained
+
+    const punisher = getStartArchetype("bayam-storms-punisher");
+    expect(punisher?.location).toBe("Bayam");
+    expect(punisher?.circleNpcs).toContain("Jahn Kottman");
+    expect(punisher?.affiliationOrg).toBe("mandated-punishers-bayam");
+    expect(punisher?.pathwayAffinity).toContain(6); // Tyrant — the sea's path
+
+    const hivemind = getStartArchetype("trier-machinery-hivemind");
+    expect(hivemind?.location).toBe("Trier");
+    expect(hivemind?.circleNpcs).toContain("Horamick Haydn");
+    expect(hivemind?.affiliationOrg).toBe("steam-church-overview");
+    expect(hivemind?.pathwayAffinity).toContain(19); // Paragon — the God of Steam's path
+
+    // All four are default (non-origin) Fifth-Epoch starts in the picker.
+    const fifthIds = startArchetypesForEpoch(5).map((a) => a.id);
+    expect(fifthIds).toEqual(
+      expect.arrayContaining([
+        "tingen-psychology-alchemist",
+        "backlund-rose-temperance",
+        "bayam-storms-punisher",
+        "trier-machinery-hivemind",
       ]),
     );
   });

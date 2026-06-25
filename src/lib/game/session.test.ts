@@ -125,6 +125,74 @@ describe("createDefaultGameState — start archetypes", () => {
     const gs = createDefaultGameState(1, "c1", "Hero", undefined, 5);
     expect(gs.accessFlags).toBeUndefined();
   });
+
+  it("uses selectedSequence when passed directly", () => {
+    const gs = createDefaultGameState(
+      17,
+      "c1",
+      "Hero",
+      undefined,
+      5,
+      undefined,
+      undefined,
+      undefined,
+      7,
+    );
+    expect(gs.sequenceLevel).toBe(7);
+    expect(gs.digestion!.sequenceLevel).toBe(7);
+  });
+
+  it("defaults to Seq 9 when selectedSequence is absent", () => {
+    const gs = createDefaultGameState(1, "c1", "Hero");
+    expect(gs.sequenceLevel).toBe(9);
+  });
+
+  it("clamps an out-of-range selectedSequence to a playable rung (1..9)", () => {
+    const args = ["c1", "Hero", undefined, 5, undefined, undefined, undefined] as const;
+    // Below 1 (e.g. the Seq 0 / Pillar end-game sentinels) clamps up to 1.
+    const tooLow = createDefaultGameState(1, ...args, 0);
+    expect(tooLow.sequenceLevel).toBe(1);
+    expect(tooLow.digestion!.sequenceLevel).toBe(1);
+    // Above 9 clamps down to 9.
+    const tooHigh = createDefaultGameState(1, ...args, 42);
+    expect(tooHigh.sequenceLevel).toBe(9);
+  });
+
+  it("bounds the start sequence to a born-but-climbable archetype's range", () => {
+    // A Sanguine is born at Seq 7 (the ceiling) but may begin already climbed
+    // down to Seq 5 (minStartSequence: 5, maxStartSequence: 7, issue #183).
+    const sanguine = getStartArchetype("backlund-sanguine-moon")!;
+    const make = (seq: number | undefined) =>
+      createDefaultGameState(
+        17,
+        "c1",
+        "Vamp",
+        undefined,
+        5,
+        undefined,
+        undefined,
+        sanguine,
+        seq,
+      );
+
+    // At the born ceiling (7) the just-born beat is used, NOT the established one.
+    const born = make(7);
+    expect(born.sequenceLevel).toBe(7);
+    expect(born.openingBeat).toBe(sanguine.openingBeat);
+
+    // Climbed below the ceiling (5) → the established beat + the chosen rung.
+    const climbed = make(5);
+    expect(climbed.sequenceLevel).toBe(5);
+    expect(climbed.digestion!.sequenceLevel).toBe(5);
+    expect(climbed.openingBeat).toBe(sanguine.openingBeatEstablished);
+
+    // An out-of-range pick is clamped to the archetype's ceiling (7), never 8/9.
+    expect(make(9).sequenceLevel).toBe(7);
+    // Below the floor clamps up to the floor (5).
+    expect(make(3).sequenceLevel).toBe(5);
+    // Absent selection defaults to the ceiling (7), not a flat 9.
+    expect(make(undefined).sequenceLevel).toBe(7);
+  });
 });
 
 // ─── seedArchetype ─────────────────────────────────────────────────────

@@ -110,6 +110,25 @@ export const NPC_LORE: LoreEntry[] = [
     tags: ["antagonist", "nighthawks", "0-08-card", "darkness-pathway", "betrayal"],
     tokenCount: 245,
   },
+  {
+    slug: "npc-daxter-guderian",
+    title: "Daxter Guderian — The Asylum Doctor",
+    category: "npc",
+    content: `Daxter Guderian is a doctor of the Greenhill Mental Asylum in Tingen City, and behind that respectable face a Beyonder of the Visionary pathway and a member of the secret Psychology Alchemists — a Sequence 9 Spectator who was drawn into the order through the asylum, where troubled minds and quiet recruitment go hand in hand. He buys his advancement ingredients at the underground market beneath the Evil Dragon Bar, trading the Alchemists' contribution points for formulas, and keeps the loose, scholarly faith of an organisation that styles itself a circle of mind-scientists. Cautious by nature and easily frightened, he is no fanatic — a junior member who knows little of the powers above him and would rather study consciousness than die for it. When the bounty hunter Gehrman Sparrow leans on him he folds quickly, becoming an informant on the Visionary pathway and the Alchemists' Tingen presence; he later parts with a Telepathist formula. To the city he is only a slightly nervous alienist; to those who know the Beyonder world he is a thread leading into a far larger web.`,
+    epoch: 5,
+    city: "tingen",
+    npcs: ["Daxter Guderian"],
+    sequences: [9],
+    tags: [
+      "psychology-alchemists",
+      "visionary-pathway",
+      "tingen",
+      "informant",
+      "secret-organization",
+    ],
+    tokenCount: 230,
+    narratorOnly: true,
+  },
   // ── Forsaken Land of the Gods — City of Silver characters (issue #132) ──
   // City-keyed so they ride the same location-gating as the continent's lore;
   // each carries family/friends/affiliation relationship data for grounding.
@@ -866,6 +885,26 @@ export const NPC_LORE: LoreEntry[] = [
       "spoiler",
     ],
     tokenCount: 215,
+    narratorOnly: true,
+  },
+  {
+    slug: "npc-will-auceptin",
+    title: "Will Auceptin — President of the Life School of Thought",
+    category: "npc",
+    content: `Will Auceptin is the president of the Life School of Thought and a Beyonder of the Wheel of Fortune pathway at Sequence 2. Though he appears as a child of ten to twelve — dignified, pitch-black-eyed, about 1.4 metres tall with a missing left calf — he is an ancient being who rose to Angel during the Fourth Epoch. He is an ally of the Tarot Club. To evade a predicted threat, he undertook a full restart under the identity "Will Ceres", son of Aaron Ceres, residing at 3 Burningham Road, Hillston Borough, Backlund.`,
+    epoch: 5,
+    city: "backlund",
+    npcs: ["Will Auceptin"],
+    sequences: [2],
+    tags: [
+      "life-school-of-thought",
+      "wheel-of-fortune",
+      "backlund",
+      "angel",
+      "tarot-club",
+      "spoiler",
+    ],
+    tokenCount: 175,
     narratorOnly: true,
   },
 ];
