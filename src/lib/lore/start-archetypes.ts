@@ -104,6 +104,8 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
       "You read history beside Klein Moretti at Khoy University — and now you both keep secrets.",
     openingBeat: `The strange potion still scalds my throat as I cross the fog-dimmed quad of Khoy University, where I read history beside my old classmate Klein Moretti; whatever I have just become, I must keep it from him and from everyone. ${SCENE_CUE}`,
     pathwayAffinity: [1],
+    minStartSequence: 7,
+    openingBeatEstablished: `The fog-dimmed quad of Khoy University is as familiar as my own name as I cross it on the way to another ordinary lecture — the last change settled long since, and beside me Klein Moretti still sees nothing but a fellow student; whatever I carry under my skin, the secret sits easily enough in these corridors. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Klein Moretti"],
       facts: [
@@ -123,6 +125,8 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
       "The newest recruit of Captain Dunn Smith's Tingen Nighthawks, working out of Blackthorn Security.",
     openingBeat: `The change is still settling into my blood as I report to Blackthorn Security on Zouteland Street, where Captain Dunn Smith's Tingen Nighthawks keep their cover — I am the lowest of them now, and not one of them must learn what I just drank. ${SCENE_CUE}`,
     pathwayAffinity: [4, 5],
+    minStartSequence: 7,
+    openingBeatEstablished: `Blackthorn Security on Zouteland Street is an old pattern by now as I report to the team, a known face under Captain Dunn Smith — the change long settled, the cover story worn smooth, and among these hunters of the supernatural I carry a secret that none of them, not even Leonard Mitchell, has yet found. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Leonard Mitchell"],
       society: { orgSlug: "nighthawks-tingen-team", role: "junior operative" },
@@ -143,6 +147,8 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
       "You keep Old Neil's workshop of sealed artifacts and ritual materials for the Tingen team.",
     openingBeat: `The vial is still empty in my hand when I let myself into Old Neil's cluttered workshop, the Nighthawks' artifacts watching from their shelves, and I understand that the old artificer's assistant is no longer entirely human. ${SCENE_CUE}`,
     pathwayAffinity: [],
+    minStartSequence: 7,
+    openingBeatEstablished: `Old Neil's cluttered workshop is as familiar as any room I know as I let myself in, the Nighthawks' artifacts watching from their shelves as they always have — the last change digested long since, and the old artificer, who once watched me with a careful eye, now trusts me with the real inventory without asking. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Old Neil"],
       facts: [
@@ -161,6 +167,8 @@ const TINGEN_ARCHETYPES: readonly StartArchetype[] = [
       "A trusted friend of the Moretti household in the working streets of Tingen's Iron Cross.",
     openingBeat: `The potion's heat fades as I climb the stairs of the Iron Cross Street tenement where the Moretti family lives, a covered dish cooling in my hands, and I wonder how I will hide from Melissa and her brother Klein what I have become. ${SCENE_CUE}`,
     pathwayAffinity: [],
+    minStartSequence: 7,
+    openingBeatEstablished: `The Iron Cross Street tenement is warm and familiar as I climb its stairs, the covered dish in my hands an old errand — the change long since settled, and in this household where Melissa Moretti and her brother Klein have always known my face, the secret has grown lighter than I once feared. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Melissa Moretti"],
       facts: [
@@ -257,6 +265,8 @@ const LOEN_ARCHETYPES: readonly StartArchetype[] = [
       "You keep the records of Audrey Hall's relic foundation in Stoen City, under the watchful Compliance Department.",
     openingBeat: `The change is still settling into my blood as I let myself into the Loen Relic Search and Preservation Foundation's offices in Stoen City, the cabinets of dig-reports and catalogued antiquities around me and the strict Compliance Department a closed door at the end of the hall — and I know I must not let Deputy Director Pacheco Dwayne see what I have become. ${SCENE_CUE}`,
     pathwayAffinity: [],
+    minStartSequence: 7,
+    openingBeatEstablished: `The Foundation's offices in Stoen City have grown familiar under my hands — the dig-reports filed, the ledgers steady, and Deputy Director Pacheco Dwayne's compliance eye still watching from the closed door at the end of the hall; the last change settled long before I learned to read every column of this place, and the secret sits tucked behind an ordinary clerk's expression. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Barton"],
       facts: [
@@ -451,6 +461,8 @@ const FEYSAC_ARCHETYPES: readonly StartArchetype[] = [
       "A junior scholar of the Church of Knowledge in Azshara, under the Lenburg-born archbishop Edwina Edwards.",
     openingBeat: `The strange draught still burns in me as I shelve a stack of brass-clasped tomes in the Holy Temple of Knowledge at Azshara, the seat of the faith that rules Lenburg — I answer to the authority of the archbishop Edwina Edwards, and in a realm of endless examinations a secret is the one thing that cannot be filed away, so what I have just become I must keep off every ledger. ${SCENE_CUE}`,
     pathwayAffinity: [10],
+    minStartSequence: 7,
+    openingBeatEstablished: `The brass-clasped tomes of the Holy Temple of Knowledge at Azshara are old companions now as I carry another stack to its place on the shelf — the last change digested long before my last round of examinations, and in a realm where knowledge is the faith and every act is an audit, keeping a secret has become the most thorough examination of all. ${SCENE_CUE}`,
     seeds: {
       society: { orgSlug: "knowledge-church-overview", role: "acolyte" },
       facts: [
@@ -478,8 +490,8 @@ const RORSTED_ARCHETYPES: readonly StartArchetype[] = [
       "A native initiate of the hunted Sea-God faith, brought into the fold by the merchant-devotee Ralph in colonial Bayam.",
     openingBeat: `The strange draught still burns in me as I keep the curfew in a back-street shrine above Bayam's harbour, the salt-spice dark pressing close and a charm of the old sea-god cool in my fist — Ralph, the trader who brought me to the faith, vouches for me among the islanders, and whatever I have just become, the storm-priests who hunt heretics must never learn of it. ${SCENE_CUE}`,
     pathwayAffinity: [6],
-    minStartSequence: 7,
-    openingBeatEstablished: `The back-street shrine above Bayam's harbour is quiet at this hour, salt and spice in the dark, and the charm of the old sea-god cool in my fist feels less foreign now than it once did — three rungs deep, the last change long settled, and Ralph's approval means I go where the faith sends me without question. ${SCENE_CUE}`,
+    minStartSequence: 6,
+    openingBeatEstablished: `The back-street shrine above Bayam's harbour is an old familiar place as I take my post — the salt-spice dark around me an old companion, Ralph's voucher for my standing in the faith long since a formality among the islanders, and whatever I carry under my skin, the ancient sea-god's devotees have always known there are depths in the faithful that remain unspoken. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Ralph"],
       society: { orgSlug: "sea-god-faith-overview", role: "initiate" },
@@ -499,8 +511,8 @@ const RORSTED_ARCHETYPES: readonly StartArchetype[] = [
       "A hand aboard Vice Admiral Iceberg's treasure-seeking fleet, signed on through the boatswain Danitz Dubois in the bars of Bayam.",
     openingBeat: `The strange draught still burns in me as the harbour bars of Bayam roar behind us and the dark island sea breathes ahead, my sea-bag over my shoulder and a berth on a famous treasure-fleet waiting — the boatswain Danitz Dubois clapped me aboard on his own word, and whatever I have just become out here among the salt and the rumour, I must keep it from every soul on the crew. ${SCENE_CUE}`,
     pathwayAffinity: [6],
-    minStartSequence: 7,
-    openingBeatEstablished: `The island sea moves dark and familiar beneath the hull as I take my post, the Golden Dream's bells sounding the watch — three rungs deep now, Danitz Dubois's voucher a formality they forgot years ago, and whatever I have become out here on this famous treasure-fleet, the crew still needs hands they trust. ${SCENE_CUE}`,
+    minStartSequence: 6,
+    openingBeatEstablished: `The island sea's motion is as familiar as my own heartbeat as I take my post, the Golden Dream's bells sounding the watch and the hull under my feet an old companion — Danitz Dubois's word that got me aboard long since forgotten by the crew, and what I have become over these seasons of open water is only one more secret a sailor learns to carry with the tide. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Danitz Dubois"],
       facts: [
@@ -532,8 +544,8 @@ const SOUTHERN_ARCHETYPES: readonly StartArchetype[] = [
     openingBeat: `The bitter draught still coats my tongue as I kneel in the coffin-lit shrine deep in the West Balam jungle, where old Haiter keeps the outlawed faith of the dead god — and I know that what I have just become must be hidden even from the brothers of the Episcopate until I understand it. ${SCENE_CUE}`,
     // Death (pathway id 4) — the death-god's own path, the faith of the Balam cult.
     pathwayAffinity: [4],
-    minStartSequence: 7,
-    openingBeatEstablished: `Three rungs deep and the jungle's heat as familiar as my own breath as I kneel in the coffin-lit shrine before old Haiter — the outlawed faith's rites have settled into my bones, the last change digested long since, and whatever I have become must still wear the face of the faithful. ${SCENE_CUE}`,
+    minStartSequence: 5,
+    openingBeatEstablished: `The coffin-lit shrine of old Haiter is as familiar as my own heartbeat as I kneel before him in the West Balam jungle — the rites worn into me now, Haiter's silence the measure of my standing, and whatever the outlawed faith has made of me over these years must still wear the face of the faithful. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Haiter"],
       society: { orgSlug: "numinous-episcopate-overview", role: "acolyte" },
@@ -553,6 +565,8 @@ const SOUTHERN_ARCHETYPES: readonly StartArchetype[] = [
       "A retainer in a Loen colonial household across the Berserk Sea, in service to the gentleman-adventurer Alfred Hall in the Balam colonies.",
     openingBeat: `The strange potion still burns in me as the tropical night presses hot against the verandah of the colonial house in Balam where I serve the Loen gentleman Alfred Hall, the jungle loud beyond the lamplight — and I understand that whatever I drank this night, none of this comfortable, brutal little outpost of home must ever learn it. ${SCENE_CUE}`,
     pathwayAffinity: [],
+    minStartSequence: 7,
+    openingBeatEstablished: `The tropical night is an old familiar weight on the verandah of Alfred Hall's colonial house in Balam, the jungle breathing at the lamplight's edge — I have served here long enough that the change is worn smooth within me, a secret this comfortable, brutal little outpost will never learn. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Alfred Hall"],
       facts: [
@@ -612,6 +626,29 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
     },
   },
   {
+    id: "backlund-life-school-member",
+    label: "A circle-member of the Life School of Thought in Backlund",
+    epoch: 5,
+    location: "Backlund",
+    relationship: "circle-member",
+    circleNpcs: ["Will Auceptin"],
+    affiliationOrg: "life-school-of-thought-overview",
+    blurb:
+      "A circle-member of the Life School of Thought in Backlund — the secret Wheel-of-Fortune organisation whose president Will Auceptin wears the face of a child but holds a gaze centuries deep.",
+    openingBeat: `The change hums under my skin in the gas-lit streets of Hillston Borough, Backlund, where I have been newly admitted to the circle of the Life School of Thought — its president Will Auceptin seems a child of ten, yet his pitch-black eyes hold a weight I cannot measure; whatever I have just become, the Wheel of Fortune turns as it will, and I am now part of its orbit. ${SCENE_CUE}`,
+    // Wheel of Fortune (pathway id 20) — the fate-and-luck path the Life School tends.
+    pathwayAffinity: [20],
+    minStartSequence: 5,
+    openingBeatEstablished: `The gas-lit streets of Hillston Borough are familiar as my own breath as I walk to the Life School of Thought's meeting-house, where Will Auceptin — that ancient one in a child's face — receives me as a member in standing; whatever the Wheel has asked of me these past years, I have paid, and it has carried me further than most would dare. ${SCENE_CUE}`,
+    seeds: {
+      trackedAllies: ["Will Auceptin"],
+      society: { orgSlug: "life-school-of-thought-overview", role: "circle-member" },
+      facts: [
+        "You are a circle-member of the Life School of Thought in Backlund, the secret organisation that tends the Wheel of Fortune pathway; its president Will Auceptin, an ancient being wearing a child's face, knows your name and your standing.",
+      ],
+    },
+  },
+  {
     id: "feysac-einhorn-retainer",
     label: "A retainer of the Einhorn imperial family",
     epoch: 5,
@@ -623,8 +660,8 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
     openingBeat: `The bitter draught still scalds me as I stand my post in the cold halls of the Einhorn house, the imperial family of Feysac whose supreme commander Awatoma Einhorn I serve — strength is the only god respected here, and whatever I have just become must look, to them, like nothing at all. ${SCENE_CUE}`,
     // Red Priest (id 14) — the Einhorn house's own crimson, conquering path.
     pathwayAffinity: [14],
-    minStartSequence: 7,
-    openingBeatEstablished: `Three rungs deep and the cold halls of the Einhorn house familiar under my boots, I stand my post as the imperial family of Feysac moves through its routines — the last change settled long since, strength the only god respected here, and whatever I have become must look, to them, like nothing but reliable service. ${SCENE_CUE}`,
+    minStartSequence: 5,
+    openingBeatEstablished: `The cold halls of the Einhorn house are familiar under my boots as I stand my post, the imperial family of Feysac moving through its routines — years of service read in how I hold myself, the last change long since settled into something the household mistakes for ordinary strength, and whatever I have become must look, to them, like nothing but reliable service. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Awatoma Einhorn"],
       facts: [

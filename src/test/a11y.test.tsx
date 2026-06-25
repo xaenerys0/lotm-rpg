@@ -194,6 +194,29 @@ describe("accessibility — character creation", () => {
     await expectNoAxeViolationsInContainer(container);
   });
 
+  it("backstory sequence-violation error state has no violations", async () => {
+    // Drive to the character-sheet step (manual path), type a backstory that
+    // claims a more-powerful sequence, then proceed to first-potion where the
+    // role="alert" error div mounts, aria-invalid is set, and the Begin button
+    // is disabled with aria-describedby.
+    const { container } = render(
+      <CharacterCreation onComplete={vi.fn()} onBack={vi.fn()} />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Choose Your Path/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Fool/ }));
+    // On character-sheet step: type a violating backstory before advancing.
+    fireEvent.change(screen.getByLabelText(/Your Story/i), {
+      target: { value: "I am already a Sequence 7 Zombie." },
+    });
+    fireEvent.change(screen.getByLabelText(/Character Name/i), {
+      target: { value: "Test" },
+    });
+    // Navigate to first-potion step — error alert and disabled button now render.
+    fireEvent.click(screen.getByRole("button", { name: /^Continue$/ }));
+    screen.getByRole("alert");
+    await expectNoAxeViolationsInContainer(container);
+  });
+
   it("the canon-takeover affordance (issue #92) has no violations", async () => {
     // A configured provider enables the AI-prologue path; typing a canon name in
     // character-setup surfaces the opt-in "Take over {name}'s story" card.

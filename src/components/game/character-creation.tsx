@@ -23,6 +23,7 @@ import {
   isValidDraftShape,
   clearDraft,
   TUTORIAL_SCENES,
+  validateBackstorySequence,
 } from "@/lib/game";
 import {
   DEFAULT_EPOCH_ID,
@@ -713,6 +714,10 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const progress = getProgress(step, skipPrologue);
   const sceneNumber = prologueHistory.length + 1;
   const progressPct = Math.min((prologueHistory.length / MAX_PROLOGUE_SCENES) * 100, 95);
+  const backstoryValidation = validateBackstorySequence(
+    characterBackground,
+    selectedSequence,
+  );
 
   return (
     <div className="mx-auto max-w-[var(--container-game)] px-6 py-10 animate-fade-in-up">
@@ -1397,6 +1402,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                   maxLength={MAX_BACKGROUND_LENGTH}
                   placeholder="A brief backstory — your occupation, your district, what drew you to this world..."
                   rows={3}
+                  aria-invalid={!backstoryValidation.valid || undefined}
                   className="w-full resize-none rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
                 />
                 <p className="mt-1 text-right text-xs text-muted">
@@ -1856,10 +1862,31 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             );
           })()}
 
+          {!backstoryValidation.valid && (
+            <div
+              id="backstory-error"
+              role="alert"
+              className="mb-4 rounded-lg border border-crimson/40 bg-crimson/10 px-4 py-3 text-sm text-foreground"
+            >
+              <p className="mb-2 font-semibold text-crimson">
+                Your backstory claims a higher sequence than your starting level:
+              </p>
+              <ul className="space-y-1.5">
+                {backstoryValidation.violations.map((v) => (
+                  <li key={v.claim} className="text-foreground">
+                    {v.reason}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleBeginChronicle}
-            className="w-full rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold"
+            disabled={!backstoryValidation.valid}
+            aria-describedby={!backstoryValidation.valid ? "backstory-error" : undefined}
+            className="w-full rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-50"
           >
             Begin Your Chronicle
           </button>

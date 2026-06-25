@@ -777,4 +777,21 @@ export const ORGANIZATION_LORE: LoreEntry[] = [
     tokenCount: 240,
     narratorOnly: true,
   },
+  {
+    slug: "life-school-of-thought-overview",
+    title: "Life School of Thought — Overview",
+    category: "organization",
+    content: `The Life School of Thought is a Fifth-Epoch secret organisation controlling the Wheel of Fortune pathway. Operating primarily from Backlund, it studies fate and luck — its president holds that a Beyonder of the Fate pathway must pay the price before awaiting fate's bestowment, not the reverse. When its president vanished from public life, the organisation fractured: a branch that also held parts of the Moon pathway defected to the Rose School of Thought's indulgence faction. As of 1358 the Life School of Thought is an ally of the Tarot Club.`,
+    epoch: 5,
+    npcs: [],
+    sequences: [],
+    tags: [
+      "life-school-of-thought",
+      "wheel-of-fortune",
+      "secret-organization",
+      "backlund",
+    ],
+    tokenCount: 175,
+    narratorOnly: false,
+  },
 ];

@@ -718,3 +718,9 @@ export {
 } from "./prologue";
 
 export type { PathwayScore, PrologueRecapInput } from "./prologue";
+
+export {
+  validateBackstorySequence,
+  type BackstoryViolation,
+  type BackstoryValidationResult,
+} from "./backstory-validation";
