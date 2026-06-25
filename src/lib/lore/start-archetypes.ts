@@ -65,6 +65,16 @@ export interface StartArchetype {
   /** Pathway ids this start thematically SUITS — a picker suggestion only; it
    * never biases anything. */
   pathwayAffinity?: readonly number[];
+  /** Fixed starting sequence — no player choice. Born-Beyonders only (e.g. Sanguines).
+   * Mutually exclusive with minStartSequence. */
+  startSequence?: number;
+  /** Floor for the player-selectable starting sequence (from this value up to 9).
+   * When set, character creation shows a sequence picker.
+   * Mutually exclusive with startSequence. */
+  minStartSequence?: number;
+  /** Opening beat for Seq < 9 starts (used when minStartSequence is set and the
+   * player picks a sequence below 9). Falls back to a generic template if absent. */
+  openingBeatEstablished?: string;
   /** Marks a Forsaken-Land origin (consumed by issue #3); absent = central. */
   origin?: "forsaken-land";
   /** Concrete seeds applied at character creation (`session.ts`). */
@@ -174,6 +184,8 @@ const BACKLUND_ARCHETYPES: readonly StartArchetype[] = [
       "You serve in the Hall household of Empress Borough, close to the charming young noblewoman Audrey Hall.",
     openingBeat: `The strange potion still burns in me as I cross the marble entrance hall of the Hall family's Empress Borough townhouse to attend Lady Audrey, the soot-yellow fog of Backlund pressing at the tall windows — whatever I have become this night, none of this gilded household must ever learn it. ${SCENE_CUE}`,
     pathwayAffinity: [2],
+    minStartSequence: 7,
+    openingBeatEstablished: `Three rungs deep now, the last change settled into silence weeks ago as I cross the marble entrance hall of the Hall family's Empress Borough townhouse to attend Lady Audrey — the soot-yellow fog of Backlund pressing at the tall windows, and in this gilded household I hold my place as something none of them have yet guessed. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Audrey Hall"],
       facts: [
@@ -192,6 +204,8 @@ const BACKLUND_ARCHETYPES: readonly StartArchetype[] = [
       "You keep the case files for the enigmatic private detective Sherlock Moriarty in Cherwood Borough.",
     openingBeat: `The strange potion still burns in me as I climb the stairs to the Minsk Street office of Sherlock Moriarty, the famous private detective I assist through Backlund's soot-yellow fog — and I realise the strangest case in this city of secrets may now be myself. ${SCENE_CUE}`,
     pathwayAffinity: [2],
+    minStartSequence: 7,
+    openingBeatEstablished: `The last change settled months ago, the case files familiar and the steps to the Minsk Street office worn smooth by practice, as I climb to find Sherlock Moriarty already at the window — three rungs deep, working a city of secrets, and in this partnership of sharper minds the strangest case may yet be my own. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Sherlock Moriarty"],
       facts: [
@@ -222,6 +236,8 @@ const LOEN_ARCHETYPES: readonly StartArchetype[] = [
     // Paragon (id 19) — the Savant pathway of the God of Steam & Machinery, the
     // industrial Wind City's defining pathway.
     pathwayAffinity: [19],
+    minStartSequence: 7,
+    openingBeatEstablished: `The blast furnaces of Constant glow their usual orange as I approach the McGovern townhouse, the hard sea wind tugging at my coat — three rungs deep now, the last change digested long since, and in the easy warmth of this coal-and-steel money I carry a secret none of this comfortable world suspects. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Welch McGovern"],
       facts: [
@@ -268,6 +284,8 @@ const INTIS_ARCHETYPES: readonly StartArchetype[] = [
       "You serve at Saint Viève Cathedral in Trier's Island District, under the eye of Cardinal Plessy Descartes.",
     openingBeat: `The strange potion still burns in me as dawn gilds the dome of Saint Viève Cathedral and the white-robed clergy raise their arms to greet the sun, and I — the most junior of the Cardinal's acolytes — must keep my head bowed and let no one in this house of light see what I have become. ${SCENE_CUE}`,
     pathwayAffinity: [3],
+    minStartSequence: 7,
+    openingBeatEstablished: `Dawn gilds the dome of Saint Viève Cathedral and the white-robed clergy raise their arms as I take my place among the Cardinal's acolytes — three rungs deep, the last change settled, and in a house of light where every word and gesture is an act of worship, keeping a secret is its own theology. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Plessy Descartes"],
       facts: [
@@ -287,6 +305,8 @@ const INTIS_ARCHETYPES: readonly StartArchetype[] = [
       "You serve under Deacon Angoulême de François, who hunts heresy in Trier with a censer in one hand and a police badge in the other.",
     openingBeat: `The change is still settling into my blood as I report to Deacon Angoulême de François in the lamplit back-office of Quartier 13, where the Inquisition and the city police are one and the same — and I understand that the newest of his hunters of heresy must now hide a heresy of his own. ${SCENE_CUE}`,
     pathwayAffinity: [3],
+    minStartSequence: 7,
+    openingBeatEstablished: `Three rungs deep and steady in it, I report to Deacon Angoulême de François in the lamplit back-office of Quartier 13 — the Inquisition and the city police are one and the same here, and the newest of his hunters of heresy now carries within them a heresy the job exists to find. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Angoulême de François"],
       facts: [
@@ -313,6 +333,8 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
       "A giant-descended defender of the City of Silver, raised to the watch in the sealed Forsaken Land.",
     openingBeat: `The strange potion still burns in me as I stand the watch on the grey-white walls of the City of Silver, the perpetual lightning walking the sky above the dead country beyond — my line has guarded this sealed city since the world forgot us, and now I am something even our oldest customs have no name for. ${SCENE_CUE}`,
     pathwayAffinity: [11],
+    minStartSequence: 6,
+    openingBeatEstablished: `My hands are steady on the grey-white parapet of the City of Silver as the perpetual lightning walks the sky above the dead country beyond — I have trained for this watch since childhood, and now I stand it as something the City's oldest customs have no name for; whatever I have become, the ramparts still need holding. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Derrick Berg"],
       facts: [
@@ -332,6 +354,8 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
       "A keeper of Moon City's ancient watch on the gray fog, serving under the High Priest Nim in the sealed Forsaken Land.",
     openingBeat: `The strange potion still burns in me as I stand my watch on Moon City's eastern walls, the wall of gray fog unmoving beyond and the perpetual lightning flickering above — I was raised to this vigil under the High Priest Nim, and now I am something our old rites have no name for. ${SCENE_CUE}`,
     pathwayAffinity: [5],
+    minStartSequence: 6,
+    openingBeatEstablished: `The gray fog stands motionless beyond the eastern walls of Moon City as I take my post, the perpetual lightning flickering somewhere above the sealed horizon — I have kept this watch since I was old enough to hold a lamp, and now I keep it as something the High Priest Nim's old rites have no name for; the fog does not move, and the vigil must not end. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Nim"],
       facts: [
@@ -360,6 +384,8 @@ const EARLIER_EPOCH_ARCHETYPES: readonly StartArchetype[] = [
       "A soldier of the one faith in the Glorious Era, sworn to the Ancient Sun God.",
     openingBeat: `The strange draught still burns in me as I take my place among the host's prayer-fires, the banners of the one faith snapping overhead and the field-temple of the Ancient Sun God bright at the camp's heart — I march as the least of the faithful, and whatever I have just become, it must look like nothing more than the god's blessing. ${SCENE_CUE}`,
     pathwayAffinity: [3],
+    minStartSequence: 7,
+    openingBeatEstablished: `The banners of the one faith snap overhead as I take my place among the host, the field-temple of the Ancient Sun God bright at the camp's heart — three rungs deep now, the last change settled long before this campaign, and whatever I have become it must look, to the faithful around me, like nothing but the god's own blessing. ${SCENE_CUE}`,
     seeds: {
       facts: [
         "You march with the crusading host of the Ancient Sun God in the Third Epoch's Glorious Era, one of countless faithful sworn to the one god.",
@@ -377,6 +403,8 @@ const EARLIER_EPOCH_ARCHETYPES: readonly StartArchetype[] = [
       "A soldier under the Black Emperor's banner in the god-empire of the Fourth Epoch.",
     openingBeat: `The strange draught still burns in me as I stand among the ranks at the gates of Saint Millom, the Solomon Empire's black capital, where the Black Emperor's word is law and his war upon the gods never ends — I am one spear among thousands, and whatever I have just become, none of my officers must ever see it. ${SCENE_CUE}`,
     pathwayAffinity: [13],
+    minStartSequence: 7,
+    openingBeatEstablished: `Three rungs deep and the weight of the black armour familiar, I stand at the gates of Saint Millom as the Solomon Empire's war upon the gods continues without pause — the last change settled long before I earned this post, and whatever I have become among these thousands of spears, none of my officers has seen through it yet. ${SCENE_CUE}`,
     seeds: {
       facts: [
         "You serve in the legions of the Solomon Empire under the distant sovereignty of the Black Emperor; you are a face in his vast god-empire, not a confidant.",
@@ -402,6 +430,8 @@ const FEYSAC_ARCHETYPES: readonly StartArchetype[] = [
       "A sworn squire of the war-faith in the militarist Feysac Empire, serving under the Chief Shepherd Larrion.",
     openingBeat: `The strange draught still burns in me as I stand in the cold shadow of the Great Twilight Hall outside Saint Millom, my training-blade heavy at my side — I am the lowest squire of the war-faith, sworn under the Chief Shepherd Larrion, and whatever I have just become, the brothers who prize only honest strength must never learn of it. ${SCENE_CUE}`,
     pathwayAffinity: [11],
+    minStartSequence: 7,
+    openingBeatEstablished: `The cold shadow of the Great Twilight Hall falls across the courtyard as I take my position beside the other squires, my training-blade easy in my hand now after years at this — three rungs deep under the Chief Shepherd Larrion, and whatever the brothers who prize only honest strength cannot measure in me, the watch still needs bodies. ${SCENE_CUE}`,
     seeds: {
       society: { orgSlug: "combat-church-overview", role: "squire" },
       facts: [
@@ -448,6 +478,8 @@ const RORSTED_ARCHETYPES: readonly StartArchetype[] = [
       "A native initiate of the hunted Sea-God faith, brought into the fold by the merchant-devotee Ralph in colonial Bayam.",
     openingBeat: `The strange draught still burns in me as I keep the curfew in a back-street shrine above Bayam's harbour, the salt-spice dark pressing close and a charm of the old sea-god cool in my fist — Ralph, the trader who brought me to the faith, vouches for me among the islanders, and whatever I have just become, the storm-priests who hunt heretics must never learn of it. ${SCENE_CUE}`,
     pathwayAffinity: [6],
+    minStartSequence: 7,
+    openingBeatEstablished: `The back-street shrine above Bayam's harbour is quiet at this hour, salt and spice in the dark, and the charm of the old sea-god cool in my fist feels less foreign now than it once did — three rungs deep, the last change long settled, and Ralph's approval means I go where the faith sends me without question. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Ralph"],
       society: { orgSlug: "sea-god-faith-overview", role: "initiate" },
@@ -467,6 +499,8 @@ const RORSTED_ARCHETYPES: readonly StartArchetype[] = [
       "A hand aboard Vice Admiral Iceberg's treasure-seeking fleet, signed on through the boatswain Danitz Dubois in the bars of Bayam.",
     openingBeat: `The strange draught still burns in me as the harbour bars of Bayam roar behind us and the dark island sea breathes ahead, my sea-bag over my shoulder and a berth on a famous treasure-fleet waiting — the boatswain Danitz Dubois clapped me aboard on his own word, and whatever I have just become out here among the salt and the rumour, I must keep it from every soul on the crew. ${SCENE_CUE}`,
     pathwayAffinity: [6],
+    minStartSequence: 7,
+    openingBeatEstablished: `The island sea moves dark and familiar beneath the hull as I take my post, the Golden Dream's bells sounding the watch — three rungs deep now, Danitz Dubois's voucher a formality they forgot years ago, and whatever I have become out here on this famous treasure-fleet, the crew still needs hands they trust. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Danitz Dubois"],
       facts: [
@@ -498,6 +532,8 @@ const SOUTHERN_ARCHETYPES: readonly StartArchetype[] = [
     openingBeat: `The bitter draught still coats my tongue as I kneel in the coffin-lit shrine deep in the West Balam jungle, where old Haiter keeps the outlawed faith of the dead god — and I know that what I have just become must be hidden even from the brothers of the Episcopate until I understand it. ${SCENE_CUE}`,
     // Death (pathway id 4) — the death-god's own path, the faith of the Balam cult.
     pathwayAffinity: [4],
+    minStartSequence: 7,
+    openingBeatEstablished: `Three rungs deep and the jungle's heat as familiar as my own breath as I kneel in the coffin-lit shrine before old Haiter — the outlawed faith's rites have settled into my bones, the last change digested long since, and whatever I have become must still wear the face of the faithful. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Haiter"],
       society: { orgSlug: "numinous-episcopate-overview", role: "acolyte" },
@@ -543,9 +579,10 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
     circleNpcs: ["Emlyn White"],
     blurb:
       "One of the scarlet-moon Sanguines of Backlund, kin and confidant to Emlyn White — the vampire who hides among the Harvest Church.",
-    openingBeat: `The strange potion still burns cold in me as I keep to the shuttered Backlund townhouse of my own kind, where Emlyn White — the Sanguine the humans never suspect — holds our little court against the soot-yellow dark; whatever I have become tonight, the blood remembers, and our secret must hold. ${SCENE_CUE}`,
+    openingBeat: `Blood-memory stirs as I keep to the shuttered Backlund townhouse of my own kind, where Emlyn White — the Sanguine the humans never suspect — holds our little court against the soot-yellow dark; I was born to this, and whatever shift just moved through our circle tonight, the secret must hold. ${SCENE_CUE}`,
     // Moon (id 17) — the Sanguines' ancestral path of the scarlet moon.
     pathwayAffinity: [17],
+    startSequence: 7,
     seeds: {
       trackedAllies: ["Emlyn White"],
       facts: [
@@ -565,6 +602,8 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
     openingBeat: `The change still hums under my skin as I meet Leonard Mitchell in a quiet Tingen coffee-house, the poet-Nighthawk who counts me a friend — there are circles behind his circles, I have always sensed it, and tonight I have a secret of my own to keep from him. ${SCENE_CUE}`,
     // Darkness (id 5) — Leonard's own pathway, the night-watch road.
     pathwayAffinity: [5],
+    minStartSequence: 7,
+    openingBeatEstablished: `Three rungs deep now and the last change settled, I meet Leonard Mitchell in the quiet Tingen coffee-house as I have done a dozen times — the poet-Nighthawk who counts me a friend, and in the circles behind his circles I have learned to wear a steady face; whatever I carry, he does not yet know it. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Leonard Mitchell"],
       facts: [
@@ -584,6 +623,8 @@ const SECRET_SOCIETY_ARCHETYPES: readonly StartArchetype[] = [
     openingBeat: `The bitter draught still scalds me as I stand my post in the cold halls of the Einhorn house, the imperial family of Feysac whose supreme commander Awatoma Einhorn I serve — strength is the only god respected here, and whatever I have just become must look, to them, like nothing at all. ${SCENE_CUE}`,
     // Red Priest (id 14) — the Einhorn house's own crimson, conquering path.
     pathwayAffinity: [14],
+    minStartSequence: 7,
+    openingBeatEstablished: `Three rungs deep and the cold halls of the Einhorn house familiar under my boots, I stand my post as the imperial family of Feysac moves through its routines — the last change settled long since, strength the only god respected here, and whatever I have become must look, to them, like nothing but reliable service. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Awatoma Einhorn"],
       facts: [

@@ -100,14 +100,21 @@ export function createDefaultGameState(
   prologueRecap?: string,
   startScenario?: StartScenario,
   archetype?: StartArchetype,
+  selectedSequence?: number,
 ): GameState {
+  const startSequence = selectedSequence ?? 9;
   // Varied story openings: a chosen start scenario sets the (randomly varied)
   // starting location; a chosen start ARCHETYPE (issue #131) takes precedence —
   // it carries its own location + opening beat (the character begins embedded in
   // an existing circle). Absent both, fall back to the epoch's default location.
   const location =
     archetype?.location ?? startScenario?.location ?? getEpoch(epoch).startingLocation;
-  const openingBeat = archetype?.openingBeat ?? startScenario?.openingBeat;
+  // For established Beyonder starts (Seq < 9) use openingBeatEstablished when
+  // available; it frames the character as already seasoned, without potion-burn language.
+  const openingBeat =
+    startSequence < 9 && archetype?.openingBeatEstablished
+      ? archetype.openingBeatEstablished
+      : (archetype?.openingBeat ?? startScenario?.openingBeat);
   // Relationship grounding (issue #131) lives in the DURABLE, never-trimmed
   // background layer (issue #92's insight), not in trimmable session facts alone:
   // the archetype's grounding line is folded into the character background so the
@@ -135,7 +142,7 @@ export function createDefaultGameState(
   return {
     characterId,
     pathwayId,
-    sequenceLevel: 9,
+    sequenceLevel: startSequence,
     sanity: 100,
     maxSanity: 100,
     inventory: [],
@@ -145,7 +152,7 @@ export function createDefaultGameState(
     ...(accessFlags ? { accessFlags } : {}),
     activeQuests: [],
     npcsPresent: [],
-    digestion: createDigestionState(pathwayId, 9),
+    digestion: createDigestionState(pathwayId, startSequence),
     ...(characterName ? { characterName } : {}),
     ...(background ? { characterBackground: background } : {}),
     // Durable prologue recap (the prologue → story bridge) — kept in the

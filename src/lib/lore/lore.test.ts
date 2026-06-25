@@ -3,6 +3,7 @@ import {
   ALL_LORE_ENTRIES,
   BACKLUND_LORE,
   BAYAM_LORE,
+  START_ARCHETYPES,
   cityNarrationDirective,
   DARKNESS_PATHWAY_LORE,
   DEATH_PATHWAY_LORE,
@@ -1249,6 +1250,31 @@ describe("Total lore corpus", () => {
     ];
     for (const key of pathwayKeys) {
       expect(getLoreByPathway(key).length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("Start archetypes data integrity", () => {
+  it("startSequence and minStartSequence are mutually exclusive and in range", () => {
+    for (const a of START_ARCHETYPES) {
+      if (a.startSequence !== undefined) {
+        expect(a.startSequence, `${a.id}.startSequence`).toBeGreaterThanOrEqual(1);
+        expect(a.startSequence, `${a.id}.startSequence`).toBeLessThanOrEqual(9);
+      }
+      if (a.minStartSequence !== undefined) {
+        expect(a.minStartSequence, `${a.id}.minStartSequence`).toBeGreaterThanOrEqual(1);
+        expect(a.minStartSequence, `${a.id}.minStartSequence`).toBeLessThanOrEqual(9);
+      }
+      expect(
+        a.startSequence !== undefined && a.minStartSequence !== undefined,
+        `${a.id}: startSequence and minStartSequence must not coexist`,
+      ).toBe(false);
+      if (a.openingBeatEstablished !== undefined) {
+        expect(
+          a.minStartSequence,
+          `${a.id}: openingBeatEstablished requires minStartSequence`,
+        ).toBeDefined();
+      }
     }
   });
 });

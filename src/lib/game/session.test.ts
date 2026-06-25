@@ -125,6 +125,27 @@ describe("createDefaultGameState — start archetypes", () => {
     const gs = createDefaultGameState(1, "c1", "Hero", undefined, 5);
     expect(gs.accessFlags).toBeUndefined();
   });
+
+  it("uses selectedSequence when passed directly", () => {
+    const gs = createDefaultGameState(
+      17,
+      "c1",
+      "Hero",
+      undefined,
+      5,
+      undefined,
+      undefined,
+      undefined,
+      7,
+    );
+    expect(gs.sequenceLevel).toBe(7);
+    expect(gs.digestion!.sequenceLevel).toBe(7);
+  });
+
+  it("defaults to Seq 9 when selectedSequence is absent", () => {
+    const gs = createDefaultGameState(1, "c1", "Hero");
+    expect(gs.sequenceLevel).toBe(9);
+  });
 });
 
 // ─── seedArchetype ─────────────────────────────────────────────────────

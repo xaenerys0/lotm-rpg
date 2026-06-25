@@ -108,6 +108,10 @@ interface CharacterCreationProps {
     /** How the chronicle opens — place, curated archetype, custom circle, or
      * random (issue #131). One discriminated value, never a set of nullables. */
     start: StartSelection,
+    /** Resolved starting sequence from an archetype's startSequence (fixed) or
+     * the player's selection within minStartSequence..9 (range). Absent means
+     * default Sequence 9. */
+    selectedSequence?: number,
   ) => void;
   onBack: () => void;
 }
@@ -171,6 +175,26 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
   const archetypeId = startChoice.startsWith("archetype:")
     ? startChoice.slice("archetype:".length)
     : null;
+  // Sequence picker for archetypes that have minStartSequence set. Default 9;
+  // auto-resets to 9 whenever archetypeId changes (derived-state pattern — no
+  // effect needed: if forArchetype !== current archetypeId we derive 9 instead).
+  const [sequencePickerState, setSequencePickerState] = useState<{
+    forArchetype: string | null;
+    value: number;
+  }>({ forArchetype: null, value: 9 });
+  const selectedSequence =
+    sequencePickerState.forArchetype === archetypeId ? sequencePickerState.value : 9;
+  const setSelectedSequence = useCallback(
+    (seq: number) => setSequencePickerState({ forArchetype: archetypeId, value: seq }),
+    [archetypeId],
+  );
+  // Resolve the selected archetype at component level so handlers can read it.
+  const selectedArchetype = useMemo(() => {
+    if (archetypeId === null) return null;
+    const arcs = startArchetypesForEpoch(epoch);
+    const originArcs = forsakenLandArchetypesForEpoch(epoch);
+    return [...arcs, ...originArcs].find((a) => a.id === archetypeId) ?? null;
+  }, [archetypeId, epoch]);
   // Custom-circle form (the "Describe your own circle" path). Creativity is never
   // capped by the presets: any tie, and companions that may be canon OR invented.
   const [customTie, setCustomTie] = useState("");
@@ -597,8 +621,25 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     } else {
       start = { kind: "random" };
     }
+    // Per-archetype starting sequence: a fixed startSequence (born-Beyonder)
+    // takes precedence; a minStartSequence uses the player's picker selection.
+    const resolvedSequence =
+      selectedArchetype?.startSequence !== undefined
+        ? selectedArchetype.startSequence
+        : selectedArchetype?.minStartSequence !== undefined
+          ? selectedSequence
+          : undefined;
     clearDraft();
-    onComplete(selectedPathwayId, name, bg, memory, epoch, prologueRecap, start);
+    onComplete(
+      selectedPathwayId,
+      name,
+      bg,
+      memory,
+      epoch,
+      prologueRecap,
+      start,
+      resolvedSequence,
+    );
   }, [
     epoch,
     selectedPathwayId,
@@ -609,6 +650,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
     finale,
     startChoice,
     archetypeId,
+    selectedArchetype,
+    selectedSequence,
     customTie,
     customCompanions,
     customLocation,
@@ -1436,11 +1479,6 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             )?.name;
             const isCustom = startChoice === "custom";
             const selectedLoc = options.find((o) => o.location === startChoice);
-            // Origin archetypes live outside the default `archetypes` list, so
-            // resolve the selected archetype across both for the blurb.
-            const selectedArchetype = [...archetypes, ...originArchetypes].find(
-              (a) => a.id === archetypeId,
-            );
             const selectedOriginScenario = startChoice.startsWith("origin-scenario:")
               ? originScenarios.find(
                   (s) => s.id === startChoice.slice("origin-scenario:".length),
@@ -1608,6 +1646,96 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
                     ))}
                   </div>
                 )}
+
+                {/* Per-archetype starting sequence — badge (fixed) or picker (range).
+                    Shown only when the selected archetype carries sequence data. */}
+                {archetypeId !== null &&
+                  selectedArchetype !== null &&
+                  (selectedArchetype.startSequence !== undefined ||
+                    selectedArchetype.minStartSequence !== undefined) && (
+                    <div className="mt-4">
+                      {selectedArchetype.startSequence !== undefined ? (
+                        // Fixed sequence — born-Beyonder, no player choice.
+                        <div className="rounded-xl border border-amber/30 bg-amber/5 px-4 py-3">
+                          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
+                            Starting Sequence
+                          </p>
+                          <p className="text-sm text-foreground">
+                            Born at Sequence {selectedArchetype.startSequence}
+                            {selectedPathwayId !== null &&
+                              getSequence(
+                                selectedPathwayId,
+                                selectedArchetype.startSequence,
+                              ) !== null && (
+                                <>
+                                  {" "}
+                                  &mdash;{" "}
+                                  {
+                                    getSequence(
+                                      selectedPathwayId,
+                                      selectedArchetype.startSequence,
+                                    )!.name
+                                  }
+                                </>
+                              )}
+                          </p>
+                          <p className="mt-1 text-xs text-muted">
+                            You were born a Beyonder — you begin at this sequence, never
+                            potioned.
+                          </p>
+                        </div>
+                      ) : (
+                        // Selectable range — sequence picker.
+                        <fieldset className="rounded-xl border border-border bg-surface p-4">
+                          <legend className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
+                            Your Starting Sequence
+                          </legend>
+                          <p className="mb-3 text-xs text-muted">
+                            You are an established Beyonder. Choose how far you have
+                            already climbed.
+                          </p>
+                          <div className="grid gap-2">
+                            {Array.from(
+                              { length: 9 - selectedArchetype.minStartSequence! + 1 },
+                              (_, i) => {
+                                const seqLevel = 9 - i;
+                                const seqData =
+                                  selectedPathwayId !== null
+                                    ? getSequence(selectedPathwayId, seqLevel)
+                                    : null;
+                                return (
+                                  <button
+                                    key={seqLevel}
+                                    type="button"
+                                    aria-pressed={selectedSequence === seqLevel}
+                                    onClick={() => setSelectedSequence(seqLevel)}
+                                    className={`flex items-center justify-between rounded-lg border px-4 py-2.5 text-left text-sm transition-all duration-200 ${
+                                      selectedSequence === seqLevel
+                                        ? "border-amber bg-amber/10 text-foreground"
+                                        : "border-border bg-surface-raised text-muted hover:border-amber/40 hover:text-foreground"
+                                    }`}
+                                  >
+                                    <span>
+                                      Sequence {seqLevel}
+                                      {seqData ? ` — ${seqData.name}` : ""}
+                                    </span>
+                                    {seqLevel === 9 && (
+                                      <span
+                                        className="text-xs text-muted"
+                                        aria-hidden="true"
+                                      >
+                                        default
+                                      </span>
+                                    )}
+                                  </button>
+                                );
+                              },
+                            )}
+                          </div>
+                        </fieldset>
+                      )}
+                    </div>
+                  )}
 
                 {isCustom && (
                   <div className="mt-4 space-y-4 rounded-xl border border-border bg-surface p-4">
