@@ -333,7 +333,7 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
       "A giant-descended defender of the City of Silver, raised to the watch in the sealed Forsaken Land.",
     openingBeat: `The strange potion still burns in me as I stand the watch on the grey-white walls of the City of Silver, the perpetual lightning walking the sky above the dead country beyond — my line has guarded this sealed city since the world forgot us, and now I am something even our oldest customs have no name for. ${SCENE_CUE}`,
     pathwayAffinity: [11],
-    minStartSequence: 6,
+    minStartSequence: 5,
     openingBeatEstablished: `My hands are steady on the grey-white parapet of the City of Silver as the perpetual lightning walks the sky above the dead country beyond — I have trained for this watch since childhood, and now I stand it as something the City's oldest customs have no name for; whatever I have become, the ramparts still need holding. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Derrick Berg"],
@@ -354,7 +354,7 @@ const FORSAKEN_ARCHETYPES: readonly StartArchetype[] = [
       "A keeper of Moon City's ancient watch on the gray fog, serving under the High Priest Nim in the sealed Forsaken Land.",
     openingBeat: `The strange potion still burns in me as I stand my watch on Moon City's eastern walls, the wall of gray fog unmoving beyond and the perpetual lightning flickering above — I was raised to this vigil under the High Priest Nim, and now I am something our old rites have no name for. ${SCENE_CUE}`,
     pathwayAffinity: [5],
-    minStartSequence: 6,
+    minStartSequence: 5,
     openingBeatEstablished: `The gray fog stands motionless beyond the eastern walls of Moon City as I take my post, the perpetual lightning flickering somewhere above the sealed horizon — I have kept this watch since I was old enough to hold a lamp, and now I keep it as something the High Priest Nim's old rites have no name for; the fog does not move, and the vigil must not end. ${SCENE_CUE}`,
     seeds: {
       trackedAllies: ["Nim"],
@@ -384,8 +384,8 @@ const EARLIER_EPOCH_ARCHETYPES: readonly StartArchetype[] = [
       "A soldier of the one faith in the Glorious Era, sworn to the Ancient Sun God.",
     openingBeat: `The strange draught still burns in me as I take my place among the host's prayer-fires, the banners of the one faith snapping overhead and the field-temple of the Ancient Sun God bright at the camp's heart — I march as the least of the faithful, and whatever I have just become, it must look like nothing more than the god's blessing. ${SCENE_CUE}`,
     pathwayAffinity: [3],
-    minStartSequence: 7,
-    openingBeatEstablished: `The banners of the one faith snap overhead as I take my place among the host, the field-temple of the Ancient Sun God bright at the camp's heart — three rungs deep now, the last change settled long before this campaign, and whatever I have become it must look, to the faithful around me, like nothing but the god's own blessing. ${SCENE_CUE}`,
+    minStartSequence: 5,
+    openingBeatEstablished: `The banners of the one faith snap overhead as I take my place among the host, the field-temple of the Ancient Sun God bright at the camp's heart — the last change settled long before this campaign, what I have become already worn into the grain of my bones, and it must look to the faithful around me like nothing but the god's own blessing. ${SCENE_CUE}`,
     seeds: {
       facts: [
         "You march with the crusading host of the Ancient Sun God in the Third Epoch's Glorious Era, one of countless faithful sworn to the one god.",
@@ -403,8 +403,8 @@ const EARLIER_EPOCH_ARCHETYPES: readonly StartArchetype[] = [
       "A soldier under the Black Emperor's banner in the god-empire of the Fourth Epoch.",
     openingBeat: `The strange draught still burns in me as I stand among the ranks at the gates of Saint Millom, the Solomon Empire's black capital, where the Black Emperor's word is law and his war upon the gods never ends — I am one spear among thousands, and whatever I have just become, none of my officers must ever see it. ${SCENE_CUE}`,
     pathwayAffinity: [13],
-    minStartSequence: 7,
-    openingBeatEstablished: `Three rungs deep and the weight of the black armour familiar, I stand at the gates of Saint Millom as the Solomon Empire's war upon the gods continues without pause — the last change settled long before I earned this post, and whatever I have become among these thousands of spears, none of my officers has seen through it yet. ${SCENE_CUE}`,
+    minStartSequence: 6,
+    openingBeatEstablished: `The weight of the black armour is familiar now as I stand at the gates of Saint Millom, the Solomon Empire's war upon the gods continuing without pause — the last change settled long before I earned this post, and whatever I have become among these thousands of spears, none of my officers has seen through it yet. ${SCENE_CUE}`,
     seeds: {
       facts: [
         "You serve in the legions of the Solomon Empire under the distant sovereignty of the Black Emperor; you are a face in his vast god-empire, not a confidant.",
