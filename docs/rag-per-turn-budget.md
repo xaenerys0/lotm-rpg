@@ -28,6 +28,16 @@ larger) narrative-generation time itself.
   $3/M tokens, +1,500 tokens ≈ **$0.0045/turn** (~$0.45 per 100 turns); at
   $0.25/M ≈ $0.0004/turn. Local Ollama narrators pay in prefill time instead.
 
+> **Update (story-memory consistency):** `TOKEN_BUDGET` was later rebalanced to
+> **11,500 total** to fix narrative continuity — `history` **1,000 → 4,500**
+> (the continuity bottleneck), `gameState` **1,000 → 1,200**, with `lore` trimmed
+> back **4,000 → 3,000** (it is prompt-cached and was not the bottleneck) to
+> partly offset it. Net per-turn input is **~+2,700 tokens over the 8,800 above**;
+> at $3/M ≈ **$0.008/turn extra** (~$0.80 per 100 turns), cents/turn even at
+> premium tiers with system+lore caching, and **$0 on local Ollama**. The lore
+> figures in this doc predate that trim (4,000 → 3,000); the retrieval mechanics
+> (curated-first, remainder-filled) are unchanged.
+
 ## Monthly operator floor
 
 | Item                    | Estimate       | Notes                                                                                                                                |

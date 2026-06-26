@@ -13,16 +13,25 @@ import type {
 import { formatMemoryForPrompt, trimMemoryForBudget, CHARS_PER_TOKEN } from "./memory";
 import { classifySanityTier, sanityNarrationDirective } from "./sanity";
 
-// Lore raised 2,500 -> 4,000 for retrieved source chunks (issue #64) — a
-// tunable starting point, not a final answer. The extra ~1,500 input tokens
-// per turn are paid by the player's BYOK key; see docs/rag-per-turn-budget.md.
+// Rebalanced for story-memory consistency. The `history` layer is the
+// continuity bottleneck — at 1,000 tokens it could barely hold the immediate
+// window with no room for the running summary + recent bullets, so detail was
+// trimmed away mid-session and turns lost track of each other. History is raised
+// 1,000 -> 4,500 (it now comfortably holds the widened 8-turn immediate window
+// plus the durable synopsis and recent bullets), gameState 1,000 -> 1,200, and
+// lore is trimmed 4,000 -> 3,000 to partly offset it — lore is prompt-cached
+// (≈10% of input price after the first call) and was NOT the bottleneck, so the
+// trade lands cost on the cheap layer and tokens where continuity needs them.
+// Net per-turn input is ~+2,700 tokens, a rounding error against every provider's
+// context window (Haiku 200K, Sonnet/Opus 1M, GPT-4o 128K) and cents/turn even at
+// premium tiers with caching — $0 on local Ollama. See docs/rag-per-turn-budget.md.
 const TOKEN_BUDGET = {
   system: 2500,
-  lore: 4000,
-  gameState: 1000,
-  history: 1000,
+  lore: 3000,
+  gameState: 1200,
+  history: 4500,
   instruction: 300,
-  total: 8800,
+  total: 11500,
 };
 
 function estimateTokens(text: string): number {
@@ -74,10 +83,16 @@ Always respond with valid JSON matching this schema:
 
 ## Running Summary
 You are given the chronicle's durable synopsis under "## Story So Far" (empty at the very start). Each turn, return "runningSummary": an UPDATED, self-contained synopsis that future turns will rely on as their primary long-term memory — the recent turn-by-turn history is eventually dropped, but this is not.
-- Capture only LASTING, pertinent information: who the character is and their current circumstances, standing goals and obligations, key NPCs and relationships, unresolved threats, secrets they are keeping, and meaningful possessions or commitments.
-- Fold this turn's lasting developments into the prior summary and PRUNE detail that no longer matters. Keep it under ~200 words, written as terse durable notes (not prose, no second-person narration).
-- Carry forward the character's origin and background — never let earlier context silently drop out as the story grows.
+- Maintain it as a set of LABELLED lines, each carrying only lasting, established facts. Use exactly these labels, each on its own line, and OMIT any label that has nothing established yet:
+  - Who: the character — name, their current Sequence/role as established IN PLAY (never a higher one than the game state shows), and defining traits.
+  - Situation: where they are now and their immediate circumstances.
+  - Goals: standing objectives and obligations.
+  - Ties: key NPCs and the nature of each relationship.
+  - Threads: unresolved threats, secrets being kept, debts owed, and meaningful possessions or commitments.
+- Each turn, fold the turn's lasting developments into the matching label and PRUNE detail that no longer matters; OVERWRITE a label's contents to keep them current rather than letting stale facts linger. Keep the whole summary under ~200 words of terse notes (not prose, no second-person narration).
+- Carry the character's origin and background forward under the relevant labels — never let earlier context silently drop out as the story grows, and never blank the whole summary at once.
 - If nothing of lasting consequence happened and the prior summary still holds, you may return it unchanged or omit the field entirely.
+- The "## Ground Truth" block in the History is authoritative: if your synopsis ever disagrees with it about location, who is present, or the character's Sequence/role, correct the synopsis to match it.
 - Record ONLY what has actually happened in play or is supported by the provided lore. Never introduce a new canonical name, organization, deity, place, or piece of history into the summary that was not established in the narrative — an invented detail written here hardens into "fact" for every future turn, so keep the summary strictly faithful.
 
 ## Canon Fidelity
@@ -276,14 +291,43 @@ export function buildGameStatePrompt(gameState: GameState): PromptLayer {
   return { role: "user", content: parts.join("\n\n") };
 }
 
-export function buildHistoryPrompt(memory: MemoryState): PromptLayer {
+/**
+ * Compact, authoritative anchor pinned at the TOP of the history layer — right
+ * above the AI-maintained "## Story So Far" synopsis. The running summary can
+ * drift from the engine's ground truth (a recursive-summarization failure mode),
+ * so this restates the few most drift-prone facts (current location, who is
+ * present) and tells the narrator that THESE win over any conflicting detail in
+ * the notes below. Terse on purpose (~30 tokens): the full state is already in
+ * the never-trimmed `## Current Game State` layer; this is a local reminder
+ * placed next to the synopsis where the model attends to it.
+ */
+function buildGroundTruthAnchor(gameState: GameState): string {
+  const present =
+    gameState.npcsPresent.length > 0
+      ? gameState.npcsPresent.join(", ")
+      : "no specific named NPCs";
+  return [
+    "## Ground Truth (authoritative)",
+    "These engine facts override any conflicting detail in the story notes below — if the synopsis or a past turn disagrees with these, THESE are correct:",
+    `- Current location: ${gameState.location}`,
+    `- Present this scene: ${present}`,
+  ].join("\n");
+}
+
+export function buildHistoryPrompt(
+  memory: MemoryState,
+  gameState?: GameState,
+): PromptLayer {
   const trimmed = trimMemoryForBudget(memory, TOKEN_BUDGET.history);
   const content = formatMemoryForPrompt(trimmed);
 
   if (!content) {
     return { role: "user", content: "" };
   }
-  return { role: "user", content: `## History\n${content}` };
+  // Anchor only once there is history to anchor against (turn 0 has none, and the
+  // game-state layer already carries the ground truth on its own).
+  const body = gameState ? `${buildGroundTruthAnchor(gameState)}\n\n${content}` : content;
+  return { role: "user", content: `## History\n${body}` };
 }
 
 export function buildInstructionPrompt(
@@ -440,7 +484,7 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
   const gameStateLayer = buildGameStatePrompt(input.gameState);
   layers.push(gameStateLayer);
 
-  const historyLayer = buildHistoryPrompt(input.memory);
+  const historyLayer = buildHistoryPrompt(input.memory, input.gameState);
   if (historyLayer.content) {
     layers.push(historyLayer);
   }

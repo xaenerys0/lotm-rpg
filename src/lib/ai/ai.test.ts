@@ -15,6 +15,7 @@ import type {
   ProviderRequest,
   ChatMessage,
   LoreContext,
+  SessionFact,
   TurnRecord,
 } from "./types";
 import { PROVIDER_MODELS } from "./types";
@@ -65,6 +66,12 @@ import {
   buildTurnRecord,
   capRunningSummary,
   RUNNING_SUMMARY_CHAR_CAP,
+  SUMMARY_NARRATIVE_CHAR_CAP,
+  factSalience,
+  lowestSalienceFactIndex,
+  isSummaryRegression,
+  SUMMARY_REGRESSION_FLOOR,
+  SUMMARY_COLLAPSE_CEILING,
 } from "./memory";
 import { parseAIResponse, validateAIResponse, sanitizeAIResponse } from "./validation";
 import {
@@ -1809,6 +1816,16 @@ describe("prompts", () => {
       expect(layer.content).not.toContain("so the player understands");
       expect(layer.content).toContain("secret knowledge");
     });
+
+    it("asks for a labelled, structured running summary (story-memory consistency)", () => {
+      const layer = buildSystemPrompt([], []);
+      expect(layer.content).toContain("## Running Summary");
+      for (const label of ["Who:", "Situation:", "Goals:", "Ties:", "Threads:"]) {
+        expect(layer.content).toContain(label);
+      }
+      // It defers to the authoritative Ground Truth anchor on conflict.
+      expect(layer.content).toContain("## Ground Truth");
+    });
   });
 
   describe("buildLoreContext", () => {
@@ -1996,12 +2013,48 @@ describe("prompts", () => {
       expect(layer.content).toBe("");
     });
 
+    it("returns empty for fresh memory even when game state is supplied", () => {
+      // The anchor only appears once there is history to anchor; turn 0 has none.
+      const layer = buildHistoryPrompt(makeMemoryState(), makeGameState());
+      expect(layer.content).toBe("");
+    });
+
     it("includes turn history", () => {
       let mem = makeMemoryState();
       mem = addTurn(mem, makeTurnRecord(1));
       const layer = buildHistoryPrompt(mem);
       expect(layer.content).toContain("Turn 1");
       expect(layer.content).toContain("I search the room");
+    });
+
+    it("pins a ground-truth anchor above the history when game state is supplied", () => {
+      let mem = makeMemoryState();
+      mem = addTurn(mem, makeTurnRecord(1));
+      const layer = buildHistoryPrompt(
+        mem,
+        makeGameState({ location: "Backlund — Empress Borough", npcsPresent: ["Welch"] }),
+      );
+      expect(layer.content).toContain("## Ground Truth (authoritative)");
+      expect(layer.content).toContain("Current location: Backlund — Empress Borough");
+      expect(layer.content).toContain("Present this scene: Welch");
+      // Anchor precedes the turn history it governs.
+      expect(layer.content.indexOf("Ground Truth")).toBeLessThan(
+        layer.content.indexOf("Turn 1"),
+      );
+    });
+
+    it("renders a no-NPCs anchor when nobody is present", () => {
+      let mem = makeMemoryState();
+      mem = addTurn(mem, makeTurnRecord(1));
+      const layer = buildHistoryPrompt(mem, makeGameState({ npcsPresent: [] }));
+      expect(layer.content).toContain("Present this scene: no specific named NPCs");
+    });
+
+    it("omits the anchor when no game state is supplied", () => {
+      let mem = makeMemoryState();
+      mem = addTurn(mem, makeTurnRecord(1));
+      const layer = buildHistoryPrompt(mem);
+      expect(layer.content).not.toContain("Ground Truth");
     });
   });
 
@@ -2260,7 +2313,7 @@ describe("prompts", () => {
         actingRequirements: [],
       };
       const assembly = assemblePrompt(input);
-      const hasHistory = assembly.layers.some((l) => l.content.includes("History"));
+      const hasHistory = assembly.layers.some((l) => l.content.includes("## History"));
       expect(hasHistory).toBe(true);
     });
 
@@ -2275,7 +2328,7 @@ describe("prompts", () => {
         actingRequirements: [],
       };
       const assembly = assemblePrompt(input);
-      const hasHistory = assembly.layers.some((l) => l.content.includes("History"));
+      const hasHistory = assembly.layers.some((l) => l.content.includes("## History"));
       expect(hasHistory).toBe(false);
     });
 
@@ -2402,7 +2455,7 @@ describe("prompts", () => {
     });
 
     it("returns false for oversized prompt", () => {
-      const assembly = { layers: [], totalTokenEstimate: 10000 };
+      const assembly = { layers: [], totalTokenEstimate: 12000 };
       expect(isWithinTokenBudget(assembly)).toBe(false);
     });
 
@@ -2549,9 +2602,20 @@ describe("memory", () => {
 
     it("truncates long narratives", () => {
       const turn = makeTurnRecord(1);
-      turn.aiResponse.narrative = "A".repeat(200);
+      turn.aiResponse.narrative = "A".repeat(400);
       const summary = summarizeTurn(turn);
       expect(summary.summary).toContain("...");
+      // Keeps far more of the beat than the old 120-char cap (story-memory
+      // consistency): the bullet carries ~320 chars before the ellipsis.
+      expect(summary.summary.length).toBeGreaterThan(SUMMARY_NARRATIVE_CHAR_CAP - 10);
+    });
+
+    it("does not truncate a narrative within the wider cap", () => {
+      const turn = makeTurnRecord(1);
+      // 200 chars sat above the old 120 cap but fits the 320 cap untruncated.
+      turn.aiResponse.narrative = "A".repeat(200);
+      const summary = summarizeTurn(turn);
+      expect(summary.summary).not.toContain("...");
     });
 
     it("does not truncate short narratives", () => {
@@ -2648,6 +2712,142 @@ describe("memory", () => {
     });
   });
 
+  describe("extractSessionFacts provenance", () => {
+    it("tags every extracted fact as ai-sourced", () => {
+      const turn = makeTurnRecord(1);
+      turn.aiResponse.itemsDiscovered = [
+        { name: "A Coin", description: "a coin", category: "mundane" },
+      ];
+      turn.aiResponse.worldStateChanges = [
+        { field: "location", oldValue: "a", newValue: "b", reason: "moved" },
+      ];
+      turn.aiResponse.actingEvaluation = { alignment: 0.9, reasoning: "great" };
+      const facts = extractSessionFacts(turn);
+      expect(facts.length).toBe(3);
+      expect(facts.every((f) => f.source === "ai")).toBe(true);
+    });
+  });
+
+  describe("factSalience", () => {
+    it("ranks engine facts above any ai fact regardless of type", () => {
+      const engineLoot = factSalience({
+        type: "item-change",
+        description: "x",
+        turnNumber: 1,
+        source: "engine",
+      });
+      const aiQuest = factSalience({
+        type: "quest-progress",
+        description: "x",
+        turnNumber: 1,
+        source: "ai",
+      });
+      expect(engineLoot).toBeGreaterThan(aiQuest);
+    });
+
+    it("orders by type importance within the same source", () => {
+      const quest = factSalience({
+        type: "quest-progress",
+        description: "x",
+        turnNumber: 1,
+        source: "ai",
+      });
+      const event = factSalience({
+        type: "event",
+        description: "x",
+        turnNumber: 1,
+        source: "ai",
+      });
+      expect(quest).toBeGreaterThan(event);
+    });
+
+    it("treats a source-less fact as engine (legacy-save safe default)", () => {
+      const legacy = factSalience({ type: "event", description: "x", turnNumber: 1 });
+      const explicitEngine = factSalience({
+        type: "event",
+        description: "x",
+        turnNumber: 1,
+        source: "engine",
+      });
+      expect(legacy).toBe(explicitEngine);
+    });
+  });
+
+  describe("lowestSalienceFactIndex", () => {
+    it("selects the least-salient fact (an ai item-change over an engine quest)", () => {
+      const facts: SessionFact[] = [
+        { type: "quest-progress", description: "q", turnNumber: 5, source: "engine" },
+        { type: "item-change", description: "i", turnNumber: 1, source: "ai" },
+        { type: "npc-encounter", description: "n", turnNumber: 2, source: "engine" },
+      ];
+      expect(lowestSalienceFactIndex(facts)).toBe(1);
+    });
+
+    it("breaks salience ties by oldest turn (FIFO for a uniform set)", () => {
+      const facts: SessionFact[] = [
+        { type: "event", description: "old", turnNumber: 1, source: "ai" },
+        { type: "event", description: "new", turnNumber: 9, source: "ai" },
+      ];
+      expect(lowestSalienceFactIndex(facts)).toBe(0);
+    });
+  });
+
+  describe("salience-weighted fact eviction", () => {
+    it("drops ai facts before engine facts when the cap is hit", () => {
+      let state = createMemoryState();
+      // 40 protected engine facts, then push AI facts over the cap.
+      for (let i = 0; i < 40; i++) {
+        state = addSessionFact(state, {
+          type: "event",
+          description: `engine ${i}`,
+          turnNumber: i,
+          source: "engine",
+        });
+      }
+      const turn = makeTurnRecord(100);
+      turn.aiResponse.worldStateChanges = [
+        { field: "x", oldValue: 0, newValue: 1, reason: "ai event" },
+      ];
+      state = addTurn(state, turn);
+      // The cap held, and the AI fact was the one evicted — every survivor is
+      // still an engine fact.
+      expect(state.sessionFacts.length).toBeLessThanOrEqual(40);
+      expect(state.sessionFacts.every((f) => f.source === "engine")).toBe(true);
+    });
+  });
+
+  describe("isSummaryRegression", () => {
+    it("flags a catastrophic collapse of a substantial prior summary", () => {
+      const prior = "x".repeat(SUMMARY_REGRESSION_FLOOR + 100);
+      expect(isSummaryRegression(prior, "tiny")).toBe(true);
+    });
+
+    it("allows a normal prune that keeps most of the summary", () => {
+      const prior = "x".repeat(SUMMARY_REGRESSION_FLOOR + 100);
+      const pruned = "x".repeat(SUMMARY_REGRESSION_FLOOR);
+      expect(isSummaryRegression(prior, pruned)).toBe(false);
+    });
+
+    it("does NOT livelock: a terse-but-substantive rewrite of a long prior is allowed", () => {
+      // A long prose prior compacted to a terse labelled summary (~200 chars).
+      // A fraction-of-prior rule would reject this forever (the prior never
+      // updates); the absolute collapse ceiling adopts it.
+      const longPrior = "x".repeat(1400);
+      const terse = "y".repeat(SUMMARY_COLLAPSE_CEILING + 80);
+      expect(isSummaryRegression(longPrior, terse)).toBe(false);
+    });
+
+    it("flags a near-empty wipe regardless of how long the prior was", () => {
+      const longPrior = "x".repeat(1400);
+      const wiped = "z".repeat(SUMMARY_COLLAPSE_CEILING - 1);
+      expect(isSummaryRegression(longPrior, wiped)).toBe(true);
+    });
+
+    it("never flags when the prior summary is short (early game)", () => {
+      expect(isSummaryRegression("short prior", "")).toBe(false);
+    });
+  });
+
   describe("addSessionFact", () => {
     it("appends a fact without mutating the input", () => {
       const state = createMemoryState();
@@ -2659,6 +2859,25 @@ describe("memory", () => {
       expect(next.sessionFacts).toHaveLength(1);
       expect(next.sessionFacts[0].description).toBe("Travelled to Backlund.");
       expect(state.sessionFacts).toHaveLength(0);
+    });
+
+    it("defaults a source-less fact to engine provenance", () => {
+      const next = addSessionFact(createMemoryState(), {
+        type: "event",
+        description: "Travelled to Backlund.",
+        turnNumber: 3,
+      });
+      expect(next.sessionFacts[0].source).toBe("engine");
+    });
+
+    it("respects an explicit ai source", () => {
+      const next = addSessionFact(createMemoryState(), {
+        type: "event",
+        description: "Narrator asserted a rumour.",
+        turnNumber: 3,
+        source: "ai",
+      });
+      expect(next.sessionFacts[0].source).toBe("ai");
     });
 
     it("caps session facts at the maximum, evicting the oldest", () => {
@@ -2683,13 +2902,22 @@ describe("memory", () => {
       expect(state.immediateTurns).toHaveLength(1);
     });
 
-    it("evicts to recent when window exceeds 5", () => {
+    it("evicts to recent when the window exceeds its max (8)", () => {
       let state = createMemoryState();
-      for (let i = 1; i <= 6; i++) {
+      for (let i = 1; i <= 9; i++) {
         state = addTurn(state, makeTurnRecord(i));
       }
-      expect(state.immediateTurns).toHaveLength(5);
+      expect(state.immediateTurns).toHaveLength(8);
       expect(state.recentSummaries).toHaveLength(1);
+    });
+
+    it("keeps up to 8 full turns before any eviction", () => {
+      let state = createMemoryState();
+      for (let i = 1; i <= 8; i++) {
+        state = addTurn(state, makeTurnRecord(i));
+      }
+      expect(state.immediateTurns).toHaveLength(8);
+      expect(state.recentSummaries).toHaveLength(0);
     });
 
     it("trims recent summaries beyond 15", () => {
@@ -2752,6 +2980,31 @@ describe("memory", () => {
       blank.aiResponse.runningSummary = "   ";
       state = addTurn(state, blank);
       expect(state.runningSummary).toBe("A standing debt to Welch.");
+    });
+
+    it("keeps the prior summary when a turn collapses it catastrophically", () => {
+      let state = createMemoryState();
+      const first = makeTurnRecord(1);
+      first.aiResponse.runningSummary = "S".repeat(SUMMARY_REGRESSION_FLOOR + 200);
+      state = addTurn(state, first);
+      const prior = state.runningSummary;
+      // A faulty rewrite that wipes nearly the whole synopsis is rejected.
+      const second = makeTurnRecord(2);
+      second.aiResponse.runningSummary = "Lost the plot.";
+      state = addTurn(state, second);
+      expect(state.runningSummary).toBe(prior);
+    });
+
+    it("adopts a normal prune that keeps most of the summary", () => {
+      let state = createMemoryState();
+      const first = makeTurnRecord(1);
+      first.aiResponse.runningSummary = "S".repeat(SUMMARY_REGRESSION_FLOOR + 200);
+      state = addTurn(state, first);
+      const second = makeTurnRecord(2);
+      const pruned = "T".repeat(SUMMARY_REGRESSION_FLOOR + 50);
+      second.aiResponse.runningSummary = pruned;
+      state = addTurn(state, second);
+      expect(state.runningSummary).toBe(pruned);
     });
 
     it("caps an over-long running summary on adoption", () => {
@@ -2845,7 +3098,8 @@ describe("memory", () => {
 
     it("formats recent summaries", () => {
       let state = createMemoryState();
-      for (let i = 1; i <= 6; i++) {
+      // Push past the 8-turn immediate window so a turn evicts to recent.
+      for (let i = 1; i <= 9; i++) {
         state = addTurn(state, makeTurnRecord(i));
       }
       const formatted = formatMemoryForPrompt(state);
