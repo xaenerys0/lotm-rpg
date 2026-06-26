@@ -106,7 +106,7 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
   if (beats.length === 0 && !summary) return null;
 
   return (
-    <section aria-label="The chronicle so far" className="mb-8">
+    <section aria-label="The chronicle so far" className="mb-8 overflow-x-hidden">
       {/* The story so far — the durable summary, kept at the top and collapsible. */}
       {summary && (
         <details className="group mb-5">
@@ -162,7 +162,7 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
               <li key={beat.turnNumber}>
                 <details
                   open={index === 0}
-                  className={`group/beat border-l-2 ${KIND_RULE[beat.kind]} pl-3.5`}
+                  className={`group/beat w-full min-w-0 border-l-2 ${KIND_RULE[beat.kind]} pl-3.5`}
                 >
                   <summary className="flex cursor-pointer list-none items-baseline gap-2.5 py-1 marker:content-none">
                     <span className="shrink-0 rounded-sm border border-border/70 bg-surface px-1.5 py-0.5 font-mono text-[0.65rem] tabular-nums text-copper">
@@ -187,7 +187,7 @@ export function StoryChronicle({ memory }: { memory: MemoryState }) {
                       ▸
                     </span>
                   </summary>
-                  <p className="mt-1.5 mb-1 font-serif text-sm leading-[1.8] text-muted">
+                  <p className="mt-1.5 mb-1 break-words font-serif text-sm leading-[1.8] text-muted">
                     {beat.prose}
                   </p>
                 </details>
