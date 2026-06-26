@@ -302,12 +302,15 @@ export function acquirePower(
   idFactory: () => string = () => crypto.randomUUID(),
   now: number = Date.now(),
 ): AcquirePowerResult {
-  const capability = capabilityForMethod(session, input.method);
+  // Derive the available means ONCE (the inventory scan is the cost) and reuse
+  // it for both the lookup and the "is any means available at all?" distinction.
+  const capabilities = powerAcquisitionCapabilities(session);
+  const capability = capabilities.find((c) => c.method === input.method);
   if (!capability) {
     // Distinguish "no capability at all" from "that specific method isn't yours"
     // so the UI can steer correctly.
     return {
-      outcome: canAcquirePower(session) ? "invalid-method" : "no-capability",
+      outcome: capabilities.length > 0 ? "invalid-method" : "no-capability",
     };
   }
 
