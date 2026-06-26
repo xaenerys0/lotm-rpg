@@ -14,6 +14,7 @@ import { isValidCustomLocationsShape, registerCustomLocation } from "./location"
 import { cityIdFromLocation, isValidAccessFlagsShape } from "./travel";
 import { isValidFormulaPursuitShape } from "./formula-pursuit";
 import { isValidHuntsShape } from "./hunt";
+import { isValidAcquiredPowersShape } from "./acquired-powers";
 import { isValidRitualStateShape } from "./ritual";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
@@ -450,6 +451,13 @@ export function isValidSessionShape(obj: unknown): boolean {
   // Hunt quests are optional but strict when present — they ride the deserialize
   // `...s` spread (no seeding); absent simply means no active hunts.
   if (s.hunts !== undefined && !isValidHuntsShape(s.hunts)) {
+    return false;
+  }
+
+  // Acquired powers (copied/stolen Beyonder abilities) are optional but strict
+  // when present — they ride the deserialize `...s` spread (no seeding); absent
+  // means the character has taken none.
+  if (s.acquiredPowers !== undefined && !isValidAcquiredPowersShape(s.acquiredPowers)) {
     return false;
   }
 

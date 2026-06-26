@@ -11363,7 +11363,7 @@ const errorSequences: Sequence[] = [
       {
         name: "Ability Theft",
         description:
-          "Steal the Beyonder ability of another, taking their power as your own",
+          "Steal a target's Beyonder power and wield it yourself for a short while (about ten minutes); the victim loses it until they recover over hours or days",
         type: "active",
       },
       {

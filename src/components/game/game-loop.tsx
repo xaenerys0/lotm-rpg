@@ -64,6 +64,8 @@ import {
   canAttemptApotheosis,
   drawPetition,
   sequenceAbilities,
+  acquiredPowerAbilityLabels,
+  tickAcquiredPowers,
   sequenceLabel,
   trueGodName,
   APOTHEOSIS_STAGES,
@@ -434,10 +436,13 @@ function buildAICallParams(currentSession: GameSession) {
     currentSession.gameState.pathwayId,
     currentSession.gameState.sequenceLevel,
   );
+  // Powers the character copied/stole from others (acquired-powers subsystem)
+  // ride alongside the derived ones so the narrator can wield them too.
+  const allAbilities = [...abilities, ...acquiredPowerAbilityLabels(currentSession)];
   return {
     pathway,
     seq,
-    abilities,
+    abilities: allAbilities,
     actingReqs: acting,
     // Persona / true-self / recognition narrator contexts (shared helper).
     ...personaPromptContexts(currentSession),
@@ -931,6 +936,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         session.gameState.pathwayId,
         session.gameState.sequenceLevel,
       );
+      // Copied/stolen powers (acquired-powers subsystem) are usable mid-fight too.
+      const combatReadyAbilities = [...abilities, ...acquiredPowerAbilityLabels(session)];
       const availableArtifacts = session.gameState.inventory.filter(
         (item) => item.category === "sealed-artifact",
       );
@@ -941,7 +948,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         playerSequence: session.gameState.sequenceLevel,
         ambush,
         injuries: session.gameState.injuries ?? [],
-        availableAbilities: abilities,
+        availableAbilities: combatReadyAbilities,
         availableArtifacts,
         huntTarget,
       });
@@ -1721,7 +1728,11 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // A turn of play likewise advances the search for the next potion's
       // formula, when one is being sought through the story (issue #171).
       const seeking = advanceFormulaPursuit(tracked);
-      const next = transition(seeking, { type: "APPLY_CONSEQUENCES" });
+      // Temporary copied/stolen powers fade by one turn; expired ones are
+      // released (acquired-powers subsystem), so a Polymath's Imitation or an
+      // artifact-stolen ability does not linger forever.
+      const ticked = tickAcquiredPowers(seeking);
+      const next = transition(ticked, { type: "APPLY_CONSEQUENCES" });
       updateSession(next);
     }
   }, [session, updateSession, preferences]);
@@ -1756,10 +1767,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   const epoch = getEpoch(session.gameState.epoch);
   // Combat only needs ability names; the True-God-aware derivation lives in one
   // place (sequenceAbilities) rather than running the full AI-call bundle.
-  const { abilities: combatAbilities } = sequenceAbilities(
+  const { abilities: derivedCombatAbilities } = sequenceAbilities(
     session.gameState.pathwayId,
     session.gameState.sequenceLevel,
   );
+  const combatAbilities = [
+    ...derivedCombatAbilities,
+    ...acquiredPowerAbilityLabels(session),
+  ];
 
   return (
     <SanityEffects

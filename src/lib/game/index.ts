@@ -82,6 +82,43 @@ export {
   type HuntState,
 } from "./hunt";
 
+// Acquired powers — copied/stolen/borrowed Beyonder abilities (Error Prometheus,
+// White Tower Imitation, the Ring of Mimicry / Blood Vessel Thief artifacts).
+export {
+  acquirePower,
+  acquiredPowerAbilityLabels,
+  canAcquirePower,
+  capabilityForMethod,
+  findAcquiredPower,
+  isValidAcquiredPowerShape,
+  isValidAcquiredPowersShape,
+  permanentPowers,
+  powerAcquisitionCapabilities,
+  releasePower,
+  temporaryPowers,
+  tickAcquiredPowers,
+  updateAcquiredPower,
+  ARTIFACT_ACQUISITIONS,
+  BLOOD_VESSEL_THIEF_DURATION_TURNS,
+  GRAZED_SOUL_DURATION_TURNS,
+  IMITATION_DURATION_TURNS,
+  MAX_ACQUIRED_POWERS,
+  PATHWAY_ACQUISITIONS,
+  PROMETHEUS_THEFT_DURATION_TURNS,
+  RING_OF_MIMICRY_DURATION_TURNS,
+  SINGLE_USE_DURATION_TURNS,
+  type AcquiredPower,
+  type AcquirePowerInput,
+  type AcquirePowerOutcome,
+  type AcquirePowerResult,
+  type AcquisitionCapability,
+  type PowerAcquisitionMethod,
+  type PowerPermanence,
+  type UpdateAcquiredPowerInput,
+  type UpdateAcquiredPowerOutcome,
+  type UpdateAcquiredPowerResult,
+} from "./acquired-powers";
+
 // Advancement rituals performed across turns (issue #99 Part C).
 export {
   advanceRitualStep,

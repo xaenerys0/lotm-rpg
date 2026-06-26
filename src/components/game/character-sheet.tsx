@@ -14,6 +14,10 @@ import { getCumulativeAbilityGroups, getPathway, getSequence } from "@/lib/rules
 import { getEpoch } from "@/lib/lore";
 import {
   isUndeletableCharacter,
+  acquirePower,
+  powerAcquisitionCapabilities,
+  releasePower,
+  updateAcquiredPower,
   activeIdentity,
   addProfileNote,
   applyProfileChange,
@@ -37,6 +41,8 @@ import {
   sequenceLabel,
   switchIdentity,
   transformationRiteFor,
+  type AcquiredPower,
+  type AcquisitionCapability,
   type DemeanorTrait,
   type GameSession,
   type IdentityCapability,
@@ -345,6 +351,9 @@ export function CharacterSheet() {
       {/* Companions & pursuers (issue #101) */}
       <CompanionsSection session={session} onUpdate={persistSession} />
 
+      {/* Acquired powers — copied/stolen Beyonder abilities */}
+      <AcquiredPowersSection session={session} onUpdate={persistSession} />
+
       {/* Inventory */}
       <section
         aria-labelledby="sheet-inventory"
@@ -573,6 +582,434 @@ function CompanionsSection({
         </div>
       )}
     </section>
+  );
+}
+
+const PERMANENCE_LABEL: Record<AcquiredPower["permanence"], string> = {
+  permanent: "Bound — kept for good",
+  temporary: "Fading copy",
+};
+
+// Acquired powers — copying/stealing/borrowing another Beyonder's power. The
+// add/update/remove surface for the `acquired-powers` engine subsystem: the
+// "take a power" form appears only when the character has a means to do it
+// (`powerAcquisitionCapabilities` — an Error Prometheus, a White Tower
+// Imitation, or a carried Ring of Mimicry / Blood Vessel Thief), each recorded
+// power can be edited (retuned / a copy's leash refreshed / a copy bound for
+// good) or released, and the temporary ones count down each turn of play.
+function AcquiredPowersSection({
+  session,
+  onUpdate,
+}: {
+  session: GameSession;
+  onUpdate: (next: GameSession) => void;
+}) {
+  const powers = session.acquiredPowers ?? [];
+  const capabilities = powerAcquisitionCapabilities(session);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // "Take a power" form state.
+  const [adding, setAdding] = useState(false);
+  const [method, setMethod] = useState<AcquisitionCapability["method"] | "">("");
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [sourceName, setSourceName] = useState("");
+
+  const resetAddForm = useCallback(() => {
+    setAdding(false);
+    setMethod("");
+    setName("");
+    setDescription("");
+    setSourceName("");
+    setError(null);
+  }, []);
+
+  const handleAdd = useCallback(() => {
+    const chosen = method || capabilities[0]?.method;
+    if (!chosen) return;
+    const result = acquirePower(session, {
+      method: chosen,
+      name,
+      description,
+      sourceName,
+    });
+    if (result.outcome === "missing-name") {
+      setError("Give the power a name before recording it.");
+      return;
+    }
+    if (result.outcome === "at-capacity") {
+      setError("You are already holding as many powers as you can keep.");
+      return;
+    }
+    if (result.outcome !== "acquired" || !result.session) {
+      setError("You have no means to take that power right now.");
+      return;
+    }
+    onUpdate({ ...result.session, updatedAt: Date.now() });
+    resetAddForm();
+  }, [
+    session,
+    method,
+    capabilities,
+    name,
+    description,
+    sourceName,
+    onUpdate,
+    resetAddForm,
+  ]);
+
+  return (
+    <section
+      aria-labelledby="sheet-acquired-powers"
+      className="rounded-xl border border-border bg-surface p-6"
+    >
+      <h2
+        id="sheet-acquired-powers"
+        className="font-serif text-lg font-semibold text-foreground"
+      >
+        Acquired powers
+      </h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        Powers taken from others — stolen, copied, or borrowed. Bound powers are yours for
+        good; fading copies wane with each passing turn until they slip away.
+      </p>
+
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-crimson">
+          {error}
+        </p>
+      )}
+
+      {powers.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">You have taken no one&rsquo;s power.</p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {powers.map((power) => (
+            <li
+              key={power.id}
+              className="rounded-lg border border-border bg-surface-raised p-4"
+            >
+              {editingId === power.id ? (
+                <AcquiredPowerEditor
+                  power={power}
+                  onCancel={() => setEditingId(null)}
+                  onSave={(changes) => {
+                    const result = updateAcquiredPower(session, power.id, changes);
+                    if (result.outcome === "missing-name") {
+                      setError("A power needs a name.");
+                      return;
+                    }
+                    if (result.session) {
+                      onUpdate({ ...result.session, updatedAt: Date.now() });
+                    }
+                    setEditingId(null);
+                    setError(null);
+                  }}
+                />
+              ) : (
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">
+                      {power.name}{" "}
+                      <span className="text-xs font-normal text-muted">
+                        (
+                        {power.permanence === "temporary"
+                          ? `${Math.max(0, power.turnsRemaining ?? 0)} turn${
+                              (power.turnsRemaining ?? 0) === 1 ? "" : "s"
+                            } left`
+                          : "bound"}
+                        )
+                      </span>
+                    </p>
+                    {power.description && (
+                      <p className="mt-0.5 text-xs leading-relaxed text-muted">
+                        {power.description}
+                      </p>
+                    )}
+                    <p className="mt-1 text-[11px] text-muted">
+                      {PERMANENCE_LABEL[power.permanence]}
+                      {power.sourceName ? ` · from ${power.sourceName}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingId(power.id);
+                        setError(null);
+                      }}
+                      className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onUpdate({
+                          ...releasePower(session, power.id),
+                          updatedAt: Date.now(),
+                        })
+                      }
+                      className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-crimson/50 hover:text-crimson"
+                      aria-label={`Release ${power.name}`}
+                    >
+                      Release
+                    </button>
+                  </div>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {capabilities.length === 0 ? (
+        <p className="mt-5 text-xs text-muted">
+          You have no means to take another&rsquo;s power yet — it awaits the right
+          pathway rung or a relic that can steal or copy.
+        </p>
+      ) : adding ? (
+        <div className="mt-5 space-y-3 rounded-lg border border-amber/30 bg-amber/5 p-4">
+          <div>
+            <label
+              htmlFor="acquire-method"
+              className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
+              How you take it
+            </label>
+            <select
+              id="acquire-method"
+              value={method || capabilities[0].method}
+              onChange={(e) =>
+                setMethod(e.target.value as AcquisitionCapability["method"])
+              }
+              className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            >
+              {capabilities.map((cap) => (
+                <option key={cap.method} value={cap.method}>
+                  {cap.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="acquire-name"
+              className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
+              The power
+            </label>
+            <input
+              id="acquire-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. a Sleepless's nightmare touch"
+              className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="acquire-description"
+              className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
+              What it does (optional)
+            </label>
+            <textarea
+              id="acquire-description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={2}
+              className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            />
+          </div>
+          <div>
+            <label
+              htmlFor="acquire-source"
+              className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
+              Taken from (optional)
+            </label>
+            <input
+              id="acquire-source"
+              type="text"
+              value={sourceName}
+              onChange={(e) => setSourceName(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            />
+          </div>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleAdd}
+              className="inline-flex min-h-[24px] items-center rounded-lg border border-amber/50 bg-amber/10 px-4 py-1.5 text-xs font-medium text-amber transition-colors hover:bg-amber/20"
+            >
+              Record the power
+            </button>
+            <button
+              type="button"
+              onClick={resetAddForm}
+              className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-muted transition-colors hover:text-foreground"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setAdding(true);
+            setError(null);
+          }}
+          className="mt-5 inline-flex min-h-[24px] items-center rounded-lg border border-amber/40 px-4 py-1.5 text-xs font-medium text-amber transition-colors hover:bg-amber/10"
+        >
+          Take a power
+        </button>
+      )}
+    </section>
+  );
+}
+
+// The inline editor for one acquired power: rename / re-describe / re-attribute,
+// refresh a fading copy's remaining turns, or convert it between bound and
+// fading. Local form state; commits via the parent's `updateAcquiredPower`.
+function AcquiredPowerEditor({
+  power,
+  onSave,
+  onCancel,
+}: {
+  power: AcquiredPower;
+  onSave: (changes: {
+    name: string;
+    description: string;
+    sourceName: string;
+    permanence: AcquiredPower["permanence"];
+    turnsRemaining?: number;
+  }) => void;
+  onCancel: () => void;
+}) {
+  const [name, setName] = useState(power.name);
+  const [description, setDescription] = useState(power.description);
+  const [sourceName, setSourceName] = useState(power.sourceName ?? "");
+  const [permanence, setPermanence] = useState<AcquiredPower["permanence"]>(
+    power.permanence,
+  );
+  const [turns, setTurns] = useState(String(power.turnsRemaining ?? 1));
+
+  const fieldId = (f: string) => `acquired-${power.id}-${f}`;
+
+  return (
+    <div className="space-y-3">
+      <div>
+        <label
+          htmlFor={fieldId("name")}
+          className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+        >
+          Name
+        </label>
+        <input
+          id={fieldId("name")}
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+        />
+      </div>
+      <div>
+        <label
+          htmlFor={fieldId("description")}
+          className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+        >
+          What it does
+        </label>
+        <textarea
+          id={fieldId("description")}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          rows={2}
+          className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+        />
+      </div>
+      <div>
+        <label
+          htmlFor={fieldId("source")}
+          className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+        >
+          Taken from
+        </label>
+        <input
+          id={fieldId("source")}
+          type="text"
+          value={sourceName}
+          onChange={(e) => setSourceName(e.target.value)}
+          className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+        />
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <div>
+          <label
+            htmlFor={fieldId("permanence")}
+            className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+          >
+            Hold
+          </label>
+          <select
+            id={fieldId("permanence")}
+            value={permanence}
+            onChange={(e) => setPermanence(e.target.value as AcquiredPower["permanence"])}
+            className="mt-1 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+          >
+            <option value="permanent">Bound — kept for good</option>
+            <option value="temporary">Fading copy</option>
+          </select>
+        </div>
+        {permanence === "temporary" && (
+          <div>
+            <label
+              htmlFor={fieldId("turns")}
+              className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
+              Turns left
+            </label>
+            <input
+              id={fieldId("turns")}
+              type="number"
+              min={1}
+              value={turns}
+              onChange={(e) => setTurns(e.target.value)}
+              className="mt-1 w-24 rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            />
+          </div>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() =>
+            onSave({
+              name,
+              description,
+              sourceName,
+              permanence,
+              turnsRemaining:
+                permanence === "temporary" ? Math.max(1, Number(turns) || 1) : undefined,
+            })
+          }
+          className="inline-flex min-h-[24px] items-center rounded-lg border border-amber/50 bg-amber/10 px-4 py-1.5 text-xs font-medium text-amber transition-colors hover:bg-amber/20"
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-muted transition-colors hover:text-foreground"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
 

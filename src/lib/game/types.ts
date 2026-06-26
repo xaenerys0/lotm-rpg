@@ -85,6 +85,18 @@ export interface GameSession {
    */
   hunts?: import("./hunt").HuntState[];
   /**
+   * Acquired powers — Beyonder abilities the character copied, stole, or
+   * borrowed from someone else (e.g. an Error Prometheus's permanent theft, a
+   * White Tower Polymath's temporary Imitation, the Ring of Mimicry / Blood
+   * Vessel Thief artifacts). Abilities are otherwise DERIVED from
+   * `pathwayId`/`sequenceLevel`, so this is the only place another's power is
+   * recorded on the character. Absent on saves that never took one; strictly
+   * validated when present (`isValidAcquiredPowersShape`), NEVER AI-mutable, and
+   * preserved on the deserialize `...s` spread (no seeding), exactly like
+   * `hunts`. The temporary ones tick down each turn (`tickAcquiredPowers`).
+   */
+  acquiredPowers?: import("./acquired-powers").AcquiredPower[];
+  /**
    * Advancement ritual in progress (issue #99 Part C). From Sequence 5 the rite
    * is performed STEP BY STEP across turns before the climb unlocks; this tracks
    * the progress. Absent when no rite is under way; strictly validated when

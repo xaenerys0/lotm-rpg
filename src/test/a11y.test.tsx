@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { expectNoAxeViolations, expectNoAxeViolationsInContainer } from "@/test/axe";
 
 import { LoginForm } from "@/components/auth/login-form";
@@ -746,6 +746,43 @@ describe("accessibility — stub pages", () => {
 
     // Open the two-step delete confirm and re-check the live region + buttons.
     fireEvent.click(screen.getByRole("button", { name: /Delete Klein/ }));
+    await expectNoAxeViolationsInContainer(container);
+  });
+
+  it("character sheet acquired-powers add + edit forms have no violations", async () => {
+    // An Error Beyonder at Sequence 6 (Prometheus) HAS a power-acquisition
+    // capability, so the interactive "Take a power" form renders; seed one
+    // recorded power so the per-power edit form (with its select + number
+    // inputs) renders too. This covers the form fields the read-only sheet test
+    // (a Fool with no capability) cannot reach.
+    const base = createDefaultGameState(8, "char-ap", "The Thief");
+    const session = {
+      ...createSession({ ...base, sequenceLevel: 6 }, "ap-1", 1000),
+      acquiredPowers: [
+        {
+          id: "ap-power-1",
+          name: "Borrowed Flame",
+          description: "A copied gout of red-priest fire.",
+          method: "prometheus-theft" as const,
+          permanence: "temporary" as const,
+          turnsRemaining: 3,
+          acquiredAtTurn: 0,
+        },
+      ],
+    };
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["ap-1"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "ap-1", serializeSession(session));
+    const { container } = render(<CharacterPage />);
+    await expectNoAxeViolationsInContainer(container);
+
+    const region = screen.getByRole("region", { name: "Acquired powers" });
+    // Open the per-power edit form (name/description/source + permanence select
+    // + turns-left number input).
+    fireEvent.click(within(region).getByRole("button", { name: "Edit" }));
+    await expectNoAxeViolationsInContainer(container);
+
+    // Open the "Take a power" form (method select + the text/textarea fields).
+    fireEvent.click(within(region).getByRole("button", { name: "Take a power" }));
     await expectNoAxeViolationsInContainer(container);
   });
 
