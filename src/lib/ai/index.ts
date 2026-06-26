@@ -19,6 +19,7 @@ export type {
   TurnKind,
   BulletSummary,
   SessionFact,
+  FactSource,
   MemoryState,
   PromptLayer,
   PromptAssembly,
@@ -82,7 +83,13 @@ export {
   buildTurnRecord,
   capRunningSummary,
   capWithEllipsis,
+  factSalience,
+  lowestSalienceFactIndex,
+  isSummaryRegression,
   RUNNING_SUMMARY_CHAR_CAP,
+  SUMMARY_NARRATIVE_CHAR_CAP,
+  SUMMARY_REGRESSION_FLOOR,
+  SUMMARY_COLLAPSE_CEILING,
   CHARS_PER_TOKEN,
 } from "./memory";
 

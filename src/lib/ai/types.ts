@@ -391,10 +391,24 @@ export interface BulletSummary {
   summary: string;
 }
 
+/**
+ * Provenance of a {@link SessionFact}. `engine` facts are recorded directly by
+ * the rules engine from authoritative state transitions (travel, inventory,
+ * quests, discovery leads); `ai` facts are extracted from the narrator's
+ * structured output and are therefore only as reliable as that output. Eviction
+ * is salience-weighted and protects `engine` facts above `ai` facts, so a
+ * ground-truth event survives longer than an AI-asserted one when the cap bites.
+ * Optional for back-compat: a fact without a source is treated as `engine`
+ * (authoritative — kept longer), the conservative default for legacy saves.
+ */
+export type FactSource = "engine" | "ai";
+
 export interface SessionFact {
   type: "event" | "npc-encounter" | "item-change" | "quest-progress";
   description: string;
   turnNumber: number;
+  /** Provenance (see {@link FactSource}); absent on legacy saves → `engine`. */
+  source?: FactSource;
 }
 
 export interface MemoryState {

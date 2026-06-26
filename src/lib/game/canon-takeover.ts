@@ -87,7 +87,17 @@ export function createCanonCharacterSession(
   // relationships (those live in `characterBackground`, set above).
   let memory = initialMemory;
   for (const description of preset.earlySalienceFacts ?? []) {
-    memory = addSessionFact(memory, { type: "event", description, turnNumber: 0 });
+    // Turn-0 scaffolding meant to age out as real play accrues (the durable
+    // identity rides the never-trimmed `characterBackground`/`prologueRecap`,
+    // not these). Tag them `ai` so salience-weighted eviction treats them as
+    // ageable rather than the ground-truth-protected `engine` default — keeping
+    // the documented "allowed to age out" behaviour.
+    memory = addSessionFact(memory, {
+      type: "event",
+      description,
+      turnNumber: 0,
+      source: "ai",
+    });
   }
 
   // Seed the timeline gate at the character's introduction chapter (issue #63);
