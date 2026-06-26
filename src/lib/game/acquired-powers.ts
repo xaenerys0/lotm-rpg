@@ -9,16 +9,19 @@ import type { GameSession } from "./types";
 //
 // In the engine a character's abilities are DERIVED from `(pathwayId,
 // sequenceLevel)` (see `apotheosis.ts` `sequenceAbilities`) — there is no slot
-// for a power the character took from someone ELSE. Several pathways and a
-// couple of Sealed Artifacts can do exactly that, though, and the canon turns on
-// it: an Error-pathway **Prometheus** "steals the Beyonder ability of another,
-// taking their power as their own", a White-Tower **Polymath** Analyses and
-// **Imitates** a witnessed power, the **Ring of Mimicry** (Sealed Artifact
-// 2-081) imitates a witnessed ability, and the **Blood Vessel Thief** (2-105)
-// steals an ability for about ten minutes. This module is where those acquired
-// powers are RECORDED on the character so they can actually be used — added when
-// taken, updated (retuned / a temporary copy refreshed), removed when released,
-// and ticked down to expiry for the temporary ones.
+// for a power the character took from someone ELSE. Several pathways and a few
+// Sealed Artifacts can do exactly that, though, each corpus-verified below: an
+// Error **Prometheus** steals a power and wields it ~10 minutes; an Error
+// **Parasite** takes one for good on emerging from a host; a Door **Scribe**
+// Records a witnessed active power for a single use; a White-Tower **Polymath**
+// Analyses and Imitates a witnessed power; a Hanged Man **Shepherd** Grazes a
+// soul and wields its powers until they wear away; plus the relics **Ring of
+// Mimicry** (2-081), **Blood Vessel Thief** (2-105), **Leymano's Travels** (the
+// Tarot Club's copy-once notebook), and **Creeping Hunger** (the Shepherd-souls
+// glove). This module is where those acquired powers are RECORDED on the
+// character so they can actually be used — added when taken, updated (retuned /
+// a copy refreshed), removed when released, and ticked down to expiry for the
+// temporary ones (only Parasite's taking is permanent).
 //
 // The acquisition is CAPABILITY-GATED: a character may only record a power they
 // have the means to take (the right pathway rung, or the carried artifact), so
@@ -41,9 +44,13 @@ export type PowerPermanence = "permanent" | "temporary";
 export type PowerAcquisitionMethod =
   | "prometheus-theft"
   | "parasite-siphon"
+  | "scribe-record"
   | "imitation"
+  | "shepherd-grazing"
   | "ring-of-mimicry"
-  | "blood-vessel-thief";
+  | "blood-vessel-thief"
+  | "leymano-spellbook"
+  | "creeping-hunger";
 
 /** One power the character has taken from someone (or something) else. */
 export interface AcquiredPower {
@@ -96,8 +103,19 @@ export const ACQUIRED_POWER_SOURCE_CAP = 80;
 /** Default lifetimes (in turns) for the temporary means. */
 export const IMITATION_DURATION_TURNS = 4;
 export const RING_OF_MIMICRY_DURATION_TURNS = 4;
-/** The Blood Vessel Thief leaves a stolen ability usable only briefly (~10 minutes). */
+/** A Blood Vessel Thief leaves a stolen ability usable only briefly (~10 minutes). */
 export const BLOOD_VESSEL_THIEF_DURATION_TURNS = 2;
+/** A Prometheus wields a stolen power for "about ten minutes" (corpus) — brief. */
+export const PROMETHEUS_THEFT_DURATION_TURNS = 2;
+/** A Scribe's Record (and Leymano's Travels) stores a power for a SINGLE use. */
+export const SINGLE_USE_DURATION_TURNS = 1;
+/**
+ * A Grazed soul (Hanged Man Shepherd / Creeping Hunger) is held a long while but
+ * is NOT permanent: corpus — "Even if the Soul of a target stays Grazed, it will
+ * gradually wear away afterwards, meaning it can't be permanently kept by them."
+ * So it is temporary with a long lifetime, refreshable by re-grazing.
+ */
+export const GRAZED_SOUL_DURATION_TURNS = 12;
 
 /**
  * A pathway means of acquisition: the pathway it belongs to and the sequence at
@@ -114,27 +132,49 @@ interface PathwayAcquisition {
 }
 
 /**
- * The pathway acquisition table — corpus-grounded against `pathways.ts` /
- * `pathway-error.ts`. Error's theft is a PERMANENT binding ("taking their power
- * as their own"); White Tower's Imitation is a TEMPORARY copy of an analysed
- * power.
+ * The pathway acquisition table — corpus-grounded against each pathway's
+ * `<Pathway>/Abilities` wiki page. **All durations/permanences verified against
+ * the corpus, not memory:**
+ * - Error → Prometheus (Seq 6): "Steal a target's Beyonder power and use it
+ *   themselves for about ten minutes" — TEMPORARY (the victim recovers it after
+ *   hours-to-days; the thief's window is brief).
+ * - Error → Parasite (Seq 4): Parasitism is a "Theft of Life"; a Parasite
+ *   "will always Steal something when emerging from their Parasitized host" —
+ *   a PERMANENT taking.
+ * - Door → Scribe (Seq 6): "Record" a witnessed (ACTIVE) Beyonder power,
+ *   "storing them for a single use" — TEMPORARY, single-use.
+ * - White Tower → Polymath (Seq 6): Analyse, then Imitate — TEMPORARY.
+ * - Hanged Man → Shepherd (Seq 5): "Grazing" swallows a target's Soul and uses
+ *   "those Beyonder powers for themselves" — but the soul "will gradually wear
+ *   away afterwards, meaning it can't be permanently kept" (corpus), so this is
+ *   TEMPORARY with a long lifetime, not permanent.
  */
 export const PATHWAY_ACQUISITIONS: readonly PathwayAcquisition[] = [
   {
-    // Error Sequence 6 — Prometheus: steal the Beyonder ability of another.
+    // Error Sequence 6 — Prometheus: steal a power and wield it ~10 minutes.
     pathwayId: 8,
     unlocksAtOrBelow: 6,
     method: "prometheus-theft",
-    label: "Prometheus — steal a Beyonder's power and take it as your own",
-    permanence: "permanent",
+    label: "Prometheus — steal a Beyonder's power and wield it for a short while",
+    permanence: "temporary",
+    defaultDuration: PROMETHEUS_THEFT_DURATION_TURNS,
   },
   {
-    // Error Sequence 4 — Parasite: siphon vitality, memory, and power from a host.
+    // Error Sequence 4 — Parasite: Theft of Life; always steals on emerging.
     pathwayId: 8,
     unlocksAtOrBelow: 4,
     method: "parasite-siphon",
-    label: "Parasite — siphon a host's vitality, memory, and power",
+    label: "Parasite — leech a host and take a power from them",
     permanence: "permanent",
+  },
+  {
+    // Door Sequence 6 — Scribe: Record a witnessed active power for one use.
+    pathwayId: 7,
+    unlocksAtOrBelow: 6,
+    method: "scribe-record",
+    label: "Record — copy a witnessed active Beyonder power for a single use",
+    permanence: "temporary",
+    defaultDuration: SINGLE_USE_DURATION_TURNS,
   },
   {
     // White Tower Sequence 6 — Polymath: Analyse, then Imitate a witnessed power.
@@ -145,32 +185,91 @@ export const PATHWAY_ACQUISITIONS: readonly PathwayAcquisition[] = [
     permanence: "temporary",
     defaultDuration: IMITATION_DURATION_TURNS,
   },
+  {
+    // Hanged Man Sequence 5 — Shepherd: Graze a soul and use its powers, which
+    // wear away over a long while (corpus) — temporary-long, not permanent.
+    pathwayId: 9,
+    unlocksAtOrBelow: 5,
+    method: "shepherd-grazing",
+    label: "Grazing — swallow a soul and wield its Beyonder powers for a long while",
+    permanence: "temporary",
+    defaultDuration: GRAZED_SOUL_DURATION_TURNS,
+  },
 ];
 
 /**
- * The Sealed-Artifact acquisition table, keyed by the artifact's catalogue
- * number (recovered from the carried item's name). Both copy-relics are
- * corpus-grounded in `sealed-artifacts.ts`.
+ * How a carried Sealed Artifact is recognised: either by its church catalogue
+ * number (recovered from the minted item name) or — for the famous relics that
+ * have NO canon church number (held privately, never church-catalogued) — by a
+ * lowercase substring of the carried item's name. Keeping both in one matcher
+ * list means the same loop handles both kinds without a fabricated code.
  */
-export const ARTIFACT_ACQUISITIONS: Record<
-  string,
-  Omit<AcquisitionCapability, "source">
-> = {
-  // 2-081 Ring of Mimicry — imitate Beyonder abilities the wearer has witnessed.
-  "2-081": {
+type ArtifactMatcher = { number: string } | { nameIncludes: string };
+
+interface ArtifactAcquisition extends Omit<AcquisitionCapability, "source"> {
+  match: ArtifactMatcher;
+}
+
+/**
+ * The Sealed-Artifact acquisition table — every relic corpus-grounded.
+ * - 2-081 Ring of Mimicry (church-catalogued): imitate a witnessed power.
+ * - 2-105 Blood Vessel Thief (church-catalogued): steal an ability ~10 minutes.
+ * - Leymano's Travels (Door relic, NO church number): "Copies Beyonder abilities
+ *   it has seen, allowing them to be reused only once" — the Tarot Club's
+ *   rental notebook (its ability is the Door Scribe's Record).
+ * - Creeping Hunger (Hanged Man / Shepherd relic, NO church number): "Can use
+ *   the stored souls' Beyonder abilities."
+ */
+export const ARTIFACT_ACQUISITIONS: readonly ArtifactAcquisition[] = [
+  {
+    match: { number: "2-081" },
     method: "ring-of-mimicry",
     label: "Ring of Mimicry — imitate a Beyonder ability you have witnessed",
     permanence: "temporary",
     defaultDuration: RING_OF_MIMICRY_DURATION_TURNS,
   },
-  // 2-105 Blood Vessel Thief — steal a target's ability for about ten minutes.
-  "2-105": {
+  {
+    match: { number: "2-105" },
     method: "blood-vessel-thief",
     label: "Blood Vessel Thief — steal a target's ability for a short while",
     permanence: "temporary",
     defaultDuration: BLOOD_VESSEL_THIEF_DURATION_TURNS,
   },
-};
+  {
+    match: { nameIncludes: "leymano" },
+    method: "leymano-spellbook",
+    label: "Leymano's Travels — copy a witnessed Beyonder power for a single use",
+    permanence: "temporary",
+    defaultDuration: SINGLE_USE_DURATION_TURNS,
+  },
+  {
+    // Like the Shepherd's Grazing it embodies, a stored soul wears away (and the
+    // glove consumes a soul per day) — temporary-long, not permanent.
+    match: { nameIncludes: "creeping hunger" },
+    method: "creeping-hunger",
+    label: "Creeping Hunger — wield the Beyonder powers of the souls it has stored",
+    permanence: "temporary",
+    defaultDuration: GRAZED_SOUL_DURATION_TURNS,
+  },
+];
+
+/**
+ * Does a carried sealed-artifact item satisfy an artifact matcher? `churchNumber`
+ * is the item's recovered church code (or `undefined`). A church-numbered item is
+ * matched ONLY by number; an un-numbered item ONLY by name — so a future
+ * numbered relic whose name happens to contain "leymano"/"creeping hunger" can
+ * never misfire the name path.
+ */
+function artifactMatches(
+  item: { name: string },
+  match: ArtifactMatcher,
+  churchNumber: string | undefined,
+): boolean {
+  if ("number" in match) return churchNumber === match.number;
+  return (
+    churchNumber === undefined && item.name.toLowerCase().includes(match.nameIncludes)
+  );
+}
 
 /**
  * The means of acquisition available to the character right now: the pathway
@@ -198,15 +297,22 @@ export function powerAcquisitionCapabilities(
     }
   }
 
-  const seenArtifacts = new Set<string>();
+  const seenMethods = new Set<PowerAcquisitionMethod>(capabilities.map((c) => c.method));
   for (const item of state.inventory) {
     if (item.category !== "sealed-artifact") continue;
-    const number = sealedArtifactNumberFromItemName(item.name);
-    if (!number || seenArtifacts.has(number)) continue;
-    const artifact = ARTIFACT_ACQUISITIONS[number];
-    if (!artifact) continue;
-    seenArtifacts.add(number);
-    capabilities.push({ ...artifact, source: "artifact" });
+    const churchNumber = sealedArtifactNumberFromItemName(item.name);
+    for (const artifact of ARTIFACT_ACQUISITIONS) {
+      if (seenMethods.has(artifact.method)) continue;
+      if (!artifactMatches(item, artifact.match, churchNumber)) continue;
+      seenMethods.add(artifact.method);
+      capabilities.push({
+        method: artifact.method,
+        label: artifact.label,
+        permanence: artifact.permanence,
+        defaultDuration: artifact.defaultDuration,
+        source: "artifact",
+      });
+    }
   }
 
   return capabilities;
@@ -521,9 +627,13 @@ export function tickAcquiredPowers(
 const ACQUISITION_METHODS: readonly PowerAcquisitionMethod[] = [
   "prometheus-theft",
   "parasite-siphon",
+  "scribe-record",
   "imitation",
+  "shepherd-grazing",
   "ring-of-mimicry",
   "blood-vessel-thief",
+  "leymano-spellbook",
+  "creeping-hunger",
 ];
 
 export function isValidAcquiredPowerShape(obj: unknown): boolean {

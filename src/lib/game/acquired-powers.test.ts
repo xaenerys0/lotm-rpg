@@ -66,8 +66,26 @@ describe("powerAcquisitionCapabilities", () => {
     expect(powerAcquisitionCapabilities(atRung(8, 7)).map((c) => c.method)).toEqual([]);
     const caps = powerAcquisitionCapabilities(atRung(8, 6));
     expect(caps.map((c) => c.method)).toEqual(["prometheus-theft"]);
-    expect(caps[0].permanence).toBe("permanent");
+    // Corpus: a Prometheus wields a stolen power for ~10 minutes — TEMPORARY.
+    expect(caps[0].permanence).toBe("temporary");
     expect(caps[0].source).toBe("pathway");
+  });
+
+  it("offers the Door Scribe single-use Record at Sequence 6 (not 7)", () => {
+    expect(powerAcquisitionCapabilities(atRung(7, 7)).map((c) => c.method)).toEqual([]);
+    const caps = powerAcquisitionCapabilities(atRung(7, 6));
+    expect(caps.map((c) => c.method)).toEqual(["scribe-record"]);
+    expect(caps[0].permanence).toBe("temporary");
+    expect(caps[0].defaultDuration).toBe(1);
+  });
+
+  it("offers the Hanged Man Shepherd's Grazing at Sequence 5 (temporary-long)", () => {
+    expect(powerAcquisitionCapabilities(atRung(9, 6)).map((c) => c.method)).toEqual([]);
+    const caps = powerAcquisitionCapabilities(atRung(9, 5));
+    expect(caps.map((c) => c.method)).toEqual(["shepherd-grazing"]);
+    // Corpus: a Grazed soul "will gradually wear away" — temporary, not permanent.
+    expect(caps[0].permanence).toBe("temporary");
+    expect(caps[0].defaultDuration).toBe(12);
   });
 
   it("adds Parasite siphon once the Error Beyonder reaches Sequence 4", () => {
@@ -99,6 +117,32 @@ describe("powerAcquisitionCapabilities", () => {
     const caps = powerAcquisitionCapabilities(atRung(1, 9, [thief]));
     expect(caps.map((c) => c.method)).toEqual(["blood-vessel-thief"]);
     expect(caps[0].defaultDuration).toBe(BLOOD_VESSEL_THIEF_DURATION_TURNS);
+  });
+
+  it("offers Leymano's Travels (no church number) by name match — copy once", () => {
+    const book: Item = {
+      name: "Leymano's Travels",
+      description: "A palm-sized copper-green notebook.",
+      category: "sealed-artifact",
+    };
+    const caps = powerAcquisitionCapabilities(atRung(1, 9, [book]));
+    expect(caps.map((c) => c.method)).toEqual(["leymano-spellbook"]);
+    expect(caps[0].permanence).toBe("temporary");
+    expect(caps[0].defaultDuration).toBe(1);
+    expect(caps[0].source).toBe("artifact");
+  });
+
+  it("offers Creeping Hunger (no church number) by name match — permanent", () => {
+    const glove: Item = {
+      name: "Creeping Hunger",
+      description: "A thin human-skinned glove.",
+      category: "sealed-artifact",
+    };
+    const caps = powerAcquisitionCapabilities(atRung(1, 9, [glove]));
+    expect(caps.map((c) => c.method)).toEqual(["creeping-hunger"]);
+    // Stored souls wear away / are consumed — temporary-long, not permanent.
+    expect(caps[0].permanence).toBe("temporary");
+    expect(caps[0].defaultDuration).toBe(12);
   });
 
   it("combines a pathway capability with a carried artifact one", () => {
@@ -149,12 +193,14 @@ describe("canAcquirePower / capabilityForMethod", () => {
 
 describe("acquirePower", () => {
   it("records a permanent stolen power and seeds a memory fact", () => {
+    // Error Parasite's "Theft of Life" is the one PERMANENT taking — a Parasite
+    // "will always Steal something when emerging from their Parasitized host".
     const result = acquirePower(
-      atRung(8, 6),
+      atRung(8, 4),
       {
-        method: "prometheus-theft",
+        method: "parasite-siphon",
         name: "Nightmare Touch",
-        description: "A stolen Sleepless power.",
+        description: "A power torn from a host on emerging.",
         sourceName: "a Sleepless",
       },
       ids(),
@@ -172,6 +218,17 @@ describe("acquirePower", () => {
     const facts = result.session!.memory.sessionFacts;
     expect(facts[facts.length - 1].description).toContain("Took the Beyonder power");
     expect(facts[facts.length - 1].description).toContain("from a Sleepless");
+  });
+
+  it("records a Prometheus theft as a temporary ~10-minute copy (corpus)", () => {
+    const result = acquirePower(atRung(8, 6), {
+      method: "prometheus-theft",
+      name: "Stolen Flame",
+      description: "A power flicked off a foe.",
+    });
+    expect(result.outcome).toBe("acquired");
+    expect(result.power!.permanence).toBe("temporary");
+    expect(result.power!.turnsRemaining).toBe(2);
   });
 
   it("records a temporary copy with the capability's default duration", () => {
