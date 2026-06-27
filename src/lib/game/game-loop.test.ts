@@ -1554,13 +1554,23 @@ describe("discoveredItemLeadFact", () => {
     expect(fact.description).toContain("Seer Formula");
   });
 
-  it("phrases a main-ingredient (Characteristic) lead", () => {
+  it("phrases a main-ingredient lead by the item's own (already-complete) name", () => {
+    // The main-ingredient name is already complete (a "{role} Beyonder
+    // Characteristic" or a creature material), so the lead must NOT append a
+    // redundant "Beyonder Characteristic" label.
     const fact = discoveredItemLeadFact(
-      { name: "Devil Eye", description: "d", category: "main-ingredient" },
+      {
+        name: "Bizarro Sorcerer Beyonder Characteristic",
+        description: "d",
+        category: "main-ingredient",
+      },
       0,
     );
-    expect(fact.description).toContain("Beyonder Characteristic");
-    expect(fact.description).toContain("Devil Eye");
+    expect(fact.description).toContain("Bizarro Sorcerer Beyonder Characteristic");
+    expect(fact.description).not.toContain(
+      "Beyonder Characteristic Beyonder Characteristic",
+    );
+    expect(fact.description).toContain("hunted or bought");
   });
 
   it("phrases a supplementary-ingredient lead", () => {

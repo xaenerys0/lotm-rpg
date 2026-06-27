@@ -276,7 +276,7 @@ export function discoveredItemLeadFact(item: Item, turnNumber: number): SessionF
       : item.category === "potion-formula"
         ? `A lead surfaced toward the formula "${item.name}" — it must still be obtained through the proper channels for the next potion.`
         : item.category === "main-ingredient"
-          ? `Word of the ${item.name} Beyonder Characteristic surfaced — it must still be hunted or bought for the next potion.`
+          ? `Word of the ${item.name} surfaced — it must still be hunted or bought for the next potion.`
           : `Learned where ${item.name} might be acquired for the next potion.`;
   return { type: "quest-progress", description, turnNumber };
 }

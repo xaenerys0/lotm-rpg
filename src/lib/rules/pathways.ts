@@ -12595,11 +12595,51 @@ function applyCanonAdvancement(pathway: Pathway): Pathway {
   };
 }
 
-// Overlay the canon Advancement Rituals (Seq 5–1), then the corpus-derived
-// demigod abilities (Seq 4–1 of pathways 10–22, issue #120) — both replace
-// hand-authored placeholders with corpus-sourced data at module load.
+/**
+ * Overlay the canon main-ingredient Beyonder Characteristic onto each sequence.
+ *
+ * Canon (wiki `Module:Sequence/standard` — e.g. the Fool "Sequence 4: Bizarro
+ * Sorcerer" formula): the Sequence-N potion's main ingredient is the Sequence-N
+ * role's OWN Beyonder Characteristic — the SAME tier as the potion (a Bizarro
+ * Sorcerer potion takes a **Bizarro Sorcerer** Characteristic, NOT the weaker
+ * Marionettist's). The hand-authored data named the Seq 4-1 Characteristic
+ * ingredient one tier too weak (the previous rung's role), so this rewrites any
+ * Characteristic-type main ingredient to the sequence's OWN role — fixing the
+ * off-by-one across all 22 pathways in one drift-proof place.
+ *
+ * Only the engine-placeholder role/pathway form — named `"Sequence N …
+ * Characteristic"` — is rewritten. Monster-material main ingredients are LEFT
+ * UNTOUCHED, INCLUDING a creature's OWN characteristic ("Characteristic of a
+ * Human-Skinned Shadow" — the canon Faceless material, a creature characteristic,
+ * NOT the rung's role): the canon lists those as an equally-valid same-tier
+ * option. Keying on the `"Sequence \d"` marker (not the bare word
+ * "Characteristic") is what distinguishes the two — every placeholder carries it,
+ * no creature material does.
+ */
+function applyCanonMainIngredient(pathway: Pathway): Pathway {
+  return {
+    ...pathway,
+    sequences: pathway.sequences.map((seq) => ({
+      ...seq,
+      prerequisiteItems: seq.prerequisiteItems.map((item) =>
+        item.category === "main-ingredient" && /Sequence\s+\d/i.test(item.name)
+          ? {
+              ...item,
+              name: `${seq.name} Beyonder Characteristic`,
+              description: `The Beyonder Characteristic of a ${seq.name} — the core supernatural ingredient of the ${seq.name} potion, carrying the ${pathway.name} pathway's imprint.`,
+            }
+          : item,
+      ),
+    })),
+  };
+}
+
+// Overlay the canon Advancement Rituals (Seq 5–1), the same-tier main-ingredient
+// Characteristic, then the corpus-derived demigod abilities (Seq 4–1 of pathways
+// 10–22, issue #120) — each replaces hand-authored placeholders with
+// corpus-sourced data at module load.
 export const ALL_PATHWAYS: Pathway[] = applyCanonDemigodAbilities(
-  RAW_PATHWAYS.map(applyCanonAdvancement),
+  RAW_PATHWAYS.map(applyCanonAdvancement).map(applyCanonMainIngredient),
 );
 
 // Indexed by id at module load — getPathway/getSequence are called several

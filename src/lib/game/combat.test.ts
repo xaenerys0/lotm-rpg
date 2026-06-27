@@ -775,27 +775,48 @@ describe("deriveHuntQuarry — pathway/sequence-aligned, never a friend", () => 
   });
 });
 
-/** The main-ingredient item for advancing into `target` on a pathway. */
+/** The first main-ingredient item for advancing into `target` on a pathway. */
 function mainIngredientFor(pathwayId: number, target: number): Item | undefined {
   return getSequence(pathwayId, target)?.prerequisiteItems.find(
     (i) => i.category === "main-ingredient",
   );
 }
 
+/** Every main-ingredient item for advancing into `target` on a pathway. */
+function mainIngredientsFor(pathwayId: number, target: number): Item[] {
+  return (getSequence(pathwayId, target)?.prerequisiteItems ?? []).filter(
+    (i) => i.category === "main-ingredient",
+  );
+}
+
 describe("deriveHuntQuarry — matches the hunted ingredient (creatures vs characteristics)", () => {
-  it("hunts a Beyonder at the Characteristic's OWN embedded Sequence, not blindly targetSeq", () => {
-    // Fool (1) at Seq 5 → target 4; the Seq-4 potion's main ingredient is the
-    // "Sequence 5 Marionettist Characteristic" — so the quarry is a Seq 5
-    // Marionettist (Rosago, the catalogued Fool Seq-5 carrier), NOT a Seq-4 foe.
+  it("hunts a Beyonder of the TARGET rung's own role (same tier as the potion)", () => {
+    // Canon: the Seq-4 Bizarro Sorcerer potion takes a Bizarro Sorcerer (Seq 4)
+    // Beyonder Characteristic — NOT the weaker Marionettist (Seq 5). So a Fool at
+    // Seq 5 hunting it faces a Seq-4 Bizarro Sorcerer, not a Seq-5 Marionettist.
     const huntItem = mainIngredientFor(1, 4)!;
-    expect(huntItem.name).toContain("Sequence 5");
+    expect(huntItem.name).toBe("Bizarro Sorcerer Beyonder Characteristic");
     const quarry = deriveHuntQuarry(
       makeGameState({ sequenceLevel: 5, pathwayId: 1, currentCity: "backlund" }),
       { targetSeq: 4, huntItem },
     );
     expect(quarry.enemy.pathwayId).toBe(1);
-    expect(quarry.enemy.sequenceLevel).toBe(5); // the Characteristic's own rung
-    expect(quarry.enemy.bestiaryId).toBe("backlund-rosago"); // the canon Marionettist
+    expect(quarry.enemy.sequenceLevel).toBe(4); // the TARGET rung, same as the potion
+    expect(quarry.enemy.name).toBe("a rogue Bizarro Sorcerer of the Fool Pathway");
+  });
+
+  it("prefers the catalogued carrier when one bears the TARGET rung's Characteristic", () => {
+    // An Abyss (21) hunter at Seq 8 → target 7; the Seq-7 potion takes that rung's
+    // own Beyonder Characteristic, and the Devil Dog (Abyss, band [6,7]) IS its
+    // canon bearer — so the hunt fields the Devil Dog, not a synthesized foe.
+    const huntItem = mainIngredientFor(21, 7)!;
+    expect(huntItem.name).toMatch(/Beyonder Characteristic$/);
+    const quarry = deriveHuntQuarry(
+      makeGameState({ sequenceLevel: 8, pathwayId: 21, currentCity: "backlund" }),
+      { targetSeq: 7, huntItem },
+    );
+    expect(quarry.enemy.bestiaryId).toBe("backlund-devil-dog");
+    expect(quarry.enemy.sequenceLevel).toBe(7);
   });
 
   it("hunts the CREATURE (a beast) for a monster-material ingredient, never a pathway Beyonder", () => {
@@ -815,40 +836,64 @@ describe("deriveHuntQuarry — matches the hunted ingredient (creatures vs chara
     expect(quarry.enemy.description).toContain("Hornacis Mountain Goat Horn Crystal");
   });
 
-  it("is accurate for EVERY pathway and sequence (comprehensive integrity sweep)", () => {
+  it("is accurate for EVERY pathway, sequence, and main ingredient (comprehensive integrity sweep)", () => {
+    let sawCreatureCharacteristic = false;
     for (const pathway of ALL_PATHWAYS) {
       for (let current = 9; current >= 2; current--) {
         const target = current - 1;
-        const huntItem = mainIngredientFor(pathway.id, target);
-        if (!huntItem) continue;
-        const quarry = deriveHuntQuarry(
-          makeGameState({ sequenceLevel: current, pathwayId: pathway.id }),
-          { targetSeq: target, huntItem },
-        );
-        const where = `${pathway.name} target ${target}: "${huntItem.name}"`;
-        // No malformed names anywhere.
-        expect(quarry.enemy.name, where).not.toMatch(/undefined|unknown|NaN/i);
-        expect(quarry.enemy.name.length, where).toBeGreaterThan(0);
-        expect(quarry.enemy.knownAbilities?.length ?? 0, where).toBeGreaterThan(0);
-
-        if (/Characteristic/i.test(huntItem.name)) {
-          // A Characteristic hunt → a Beyonder of the player's OWN pathway, at
-          // the Sequence the Characteristic names.
-          expect(quarry.enemy.isBeyonder, where).toBe(true);
-          expect(quarry.enemy.pathwayId, where).toBe(pathway.id);
-          const embedded = Number(/Sequence\s+(\d+)/i.exec(huntItem.name)?.[1]);
-          expect(quarry.enemy.sequenceLevel, where).toBe(embedded);
-        } else {
-          // A creature material → that beast, never a pathway Beyonder.
-          expect(quarry.enemy.isBeyonder, where).toBe(false);
-          expect(quarry.enemy.pathwayId, where).toBeUndefined();
-          expect(quarry.context.framing, where).toBe("beast");
-          expect(quarry.enemy.name, where).toBe(
-            `the ${creatureFromMaterial(huntItem.name)}`,
+        // Every main ingredient of the rung — a rung may list more than one (a
+        // monster material AND a creature's characteristic), each hunted distinctly.
+        for (const huntItem of mainIngredientsFor(pathway.id, target)) {
+          const quarry = deriveHuntQuarry(
+            makeGameState({ sequenceLevel: current, pathwayId: pathway.id }),
+            { targetSeq: target, huntItem },
           );
+          const where = `${pathway.name} target ${target}: "${huntItem.name}"`;
+          // No malformed names anywhere.
+          expect(quarry.enemy.name, where).not.toMatch(/undefined|unknown|NaN/i);
+          expect(quarry.enemy.name.length, where).toBeGreaterThan(0);
+          expect(quarry.enemy.knownAbilities?.length ?? 0, where).toBeGreaterThan(0);
+
+          if (/Beyonder Characteristic/i.test(huntItem.name)) {
+            // A Beyonder Characteristic hunt → a Beyonder of the player's OWN
+            // pathway at the TARGET rung (same tier as the potion), the ingredient
+            // named for that rung's own role.
+            expect(quarry.enemy.isBeyonder, where).toBe(true);
+            expect(quarry.enemy.pathwayId, where).toBe(pathway.id);
+            expect(quarry.enemy.sequenceLevel, where).toBe(target);
+            expect(huntItem.name, where).toBe(
+              `${getSequence(pathway.id, target)!.name} Beyonder Characteristic`,
+            );
+          } else {
+            // A creature material — INCLUDING a creature's own characteristic —
+            // → that beast, never a pathway Beyonder.
+            if (/Characteristic/i.test(huntItem.name)) sawCreatureCharacteristic = true;
+            expect(quarry.enemy.isBeyonder, where).toBe(false);
+            expect(quarry.enemy.pathwayId, where).toBeUndefined();
+            expect(quarry.context.framing, where).toBe("beast");
+            expect(quarry.enemy.name, where).toBe(
+              `the ${creatureFromMaterial(huntItem.name)}`,
+            );
+          }
         }
       }
     }
+    // The Faceless rung's "Characteristic of a Human-Skinned Shadow" is the canon
+    // creature characteristic that must be hunted as a beast — assert we exercised it.
+    expect(sawCreatureCharacteristic).toBe(true);
+  });
+
+  it("hunts the CREATURE for the Faceless rung's 'Characteristic of a Human-Skinned Shadow' (a creature characteristic, not a Beyonder)", () => {
+    const items = mainIngredientsFor(1, 6); // Fool Seq 6 (Faceless)
+    const creatureChar = items.find((i) => /Human-Skinned Shadow/i.test(i.name));
+    expect(creatureChar, "Faceless creature characteristic present").toBeDefined();
+    const quarry = deriveHuntQuarry(makeGameState({ sequenceLevel: 7, pathwayId: 1 }), {
+      targetSeq: 6,
+      huntItem: creatureChar!,
+    });
+    expect(quarry.enemy.isBeyonder).toBe(false);
+    expect(quarry.context.framing).toBe("beast");
+    expect(quarry.enemy.name).toBe("the Human-Skinned Shadow");
   });
 });
 

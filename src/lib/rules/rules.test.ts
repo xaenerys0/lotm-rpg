@@ -293,6 +293,32 @@ describe("pathway definitions", () => {
       }
     }
   });
+
+  it("a main-ingredient Beyonder Characteristic is the sequence's OWN role (same tier as the potion)", () => {
+    // Canon (wiki Module:Sequence/standard — the Bizarro Sorcerer formula): the
+    // Sequence-N potion's role Characteristic main ingredient is the Sequence-N
+    // role's OWN Characteristic (a Bizarro Sorcerer potion takes a Bizarro
+    // Sorcerer Characteristic, never the weaker Marionettist's). Monster materials
+    // — INCLUDING a creature's OWN characteristic (the Faceless rung's
+    // "Characteristic of a Human-Skinned Shadow") — are an equally-canon same-tier
+    // option and are exempt; only the "{role} Beyonder Characteristic" form is held
+    // to the rule.
+    for (const pathway of ALL_PATHWAYS) {
+      for (const seq of pathway.sequences) {
+        for (const main of seq.prerequisiteItems.filter(
+          (i) => i.category === "main-ingredient",
+        )) {
+          const where = `${pathway.name} Seq ${seq.level}: "${main.name}"`;
+          // The off-by-one placeholder form must be gone everywhere.
+          expect(main.name, where).not.toMatch(/Sequence\s+\d/i);
+          // A Beyonder Characteristic (a Beyonder's, role-named) must be THIS rung's role.
+          if (/Beyonder Characteristic/i.test(main.name)) {
+            expect(main.name, where).toBe(`${seq.name} Beyonder Characteristic`);
+          }
+        }
+      }
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
