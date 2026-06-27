@@ -57,6 +57,7 @@ import {
   ARTIFACT_VOLATILE_THRESHOLD,
 } from "./combat";
 import { getSealedArtifact, mintArtifactItem, getBestiaryFoe } from "@/lib/lore";
+import { getPathway, getSequence } from "@/lib/rules";
 import type { TrackedNpcState } from "./tracked-npcs";
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -681,33 +682,93 @@ describe("deriveEncounter", () => {
   });
 });
 
-describe("deriveHuntQuarry — never targets a friend", () => {
-  it("ignores a present ally and draws the quarry from the bestiary", () => {
+describe("deriveHuntQuarry — pathway/sequence-aligned, never a friend", () => {
+  it("ignores a present ally entirely — a hunt never targets the cast", () => {
+    // A present "ally" in the scene must never be fielded as the quarry; the hunt
+    // reads neither `npcsPresent` nor the roster.
     const quarry = deriveHuntQuarry(
       makeGameState({
         npcsPresent: ["Trusted Friend"],
         currentCity: "backlund",
         sequenceLevel: 9,
+        pathwayId: 10, // White Tower — no catalogued carrier, so synthesized
       }),
-      {
-        trackedNpcState: {
-          roster: [{ name: "Trusted Friend", disposition: "ally", follows: true }],
-        },
-      },
     );
-    // The friend is NEVER the quarry.
     expect(quarry.enemy.name).not.toBe("Trusted Friend");
     expect(quarry.source).toBe("bestiary");
-    // A huntable framing — never a reconcilable ally framing.
-    expect(["beast", "hostile-beyonder", "lost-control", "mundane-threat"]).toContain(
-      quarry.context.framing,
-    );
     expect(quarry.context.isKnownPerson).toBe(false);
   });
 
-  it("falls back to a generic framed foe when no bestiary quarry fits the region/Sequence", () => {
-    // A powerful player (Seq 2) with no region-appropriate catalogued foe.
-    const quarry = deriveHuntQuarry(makeGameState({ sequenceLevel: 2 }));
+  it("synthesizes a Beyonder of the player's OWN pathway at the target rung", () => {
+    // White Tower (10) player at Seq 9 → hunts the Sequence 8 White Tower
+    // Characteristic, so the quarry is a Sequence 8 White Tower Beyonder.
+    const quarry = deriveHuntQuarry(
+      makeGameState({ sequenceLevel: 9, pathwayId: 10, currentCity: "backlund" }),
+    );
+    expect(quarry.enemy.isBeyonder).toBe(true);
+    expect(quarry.enemy.pathwayId).toBe(10);
+    expect(quarry.enemy.sequenceLevel).toBe(8); // targetSeq = sequenceLevel - 1
+    const pathway = getPathway(10)!;
+    const seq = getSequence(10, 8)!;
+    expect(quarry.enemy.name).toBe(`a rogue ${seq.name} of the ${pathway.name} Pathway`);
+    expect(quarry.enemy.knownAbilities).toEqual(
+      seq.abilities.slice(0, 3).map((a) => a.name),
+    );
+    expect(quarry.context.framing).toBe("hostile-beyonder");
+  });
+
+  it("aligns the quarry to the explicit hunt targetSeq when provided", () => {
+    // A Visionary (2) player at Seq 7 hunting a Sequence 6 Characteristic.
+    const quarry = deriveHuntQuarry(
+      makeGameState({ sequenceLevel: 7, pathwayId: 2, currentCity: "tingen" }),
+      { targetSeq: 6 },
+    );
+    expect(quarry.enemy.pathwayId).toBe(2);
+    expect(quarry.enemy.sequenceLevel).toBe(6);
+    expect(quarry.enemy.name).toBe(
+      `a rogue ${getSequence(2, 6)!.name} of the ${getPathway(2)!.name} Pathway`,
+    );
+  });
+
+  it("prefers a catalogued carrier of the player's pathway + sequence (the Devil Dog for an Abyss hunter)", () => {
+    // Abyss (21) hunter at Seq 8 in Backlund → target Seq 7, where the Devil Dog
+    // (Abyss, band [6,7]) IS the canonical bearer.
+    const quarry = deriveHuntQuarry(
+      makeGameState({ sequenceLevel: 8, pathwayId: 21, currentCity: "backlund" }),
+    );
+    expect(quarry.enemy.bestiaryId).toBe("backlund-devil-dog");
+    expect(quarry.enemy.pathwayId).toBe(21);
+    expect(quarry.source).toBe("bestiary");
+    expect(quarry.enemy.sequenceLevel).toBe(7); // scaled to targetSeq, in-band
+  });
+
+  it("scales the catalogued carrier to the HUNTED rung, not the current Sequence", () => {
+    // An explicit hunt targetSeq (6) below the current-Sequence default (sequence
+    // 8 → 7) must drive the curated enemy's rung, mirroring the synthesize branch
+    // — the Devil Dog band [6,7] still covers 6, so it resolves to exactly 6.
+    const quarry = deriveHuntQuarry(
+      makeGameState({ sequenceLevel: 8, pathwayId: 21, currentCity: "backlund" }),
+      { targetSeq: 6 },
+    );
+    expect(quarry.enemy.bestiaryId).toBe("backlund-devil-dog");
+    expect(quarry.enemy.sequenceLevel).toBe(6);
+  });
+
+  it("never fields the Devil Dog for a hunter on a different pathway (the reported bug)", () => {
+    // A Fool (1) hunter in Backlund must NOT be handed the Abyss Devil Dog.
+    const quarry = deriveHuntQuarry(
+      makeGameState({ sequenceLevel: 8, pathwayId: 1, currentCity: "backlund" }),
+    );
+    expect(quarry.enemy.bestiaryId).toBeUndefined();
+    expect(quarry.enemy.pathwayId).toBe(1); // the player's OWN pathway
+    expect(quarry.enemy.sequenceLevel).toBe(7);
+  });
+
+  it("falls back to a generic framed foe when no canon pathway data exists", () => {
+    // An out-of-range pathway id has no canon sequence/pathway data → generic foe.
+    const quarry = deriveHuntQuarry(makeGameState({ sequenceLevel: 9 }), {
+      pathwayId: 999,
+    });
     expect(quarry.enemy.name).toBe("a lurking Beyonder");
     expect(quarry.context.framing).toBe("hostile-beyonder");
   });

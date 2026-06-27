@@ -58,6 +58,7 @@ export {
   BESTIARY,
   getBestiaryFoe,
   bestiaryFor,
+  bestiaryForPathwaySequence,
   bestiaryFoeSequence,
   type BestiaryFoe,
 } from "./bestiary";

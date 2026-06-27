@@ -23,10 +23,11 @@ import type {
   ResolutionLine,
   TerrainAdvantage,
 } from "@/lib/types/combat";
-import { getGroupForPathway } from "@/lib/rules";
+import { getGroupForPathway, getPathway, getSequence } from "@/lib/rules";
 import {
   gradeForArtifactItem,
   bestiaryFor,
+  bestiaryForPathwaySequence,
   bestiaryFoeSequence,
   type ArtifactGrade,
   type BestiaryFoe,
@@ -1369,45 +1370,119 @@ export function deriveEncounter(
   return fallbackOpponent(state, opts.ambush ?? false);
 }
 
-/** Framings a hunt quarry may carry — a creature/foe you track, never an ally. */
-const HUNTABLE_FRAMINGS = new Set<EncounterFraming>([
-  "beast",
-  "hostile-beyonder",
-  "lost-control",
-  "mundane-threat",
-]);
+/**
+ * Options for deriving an ingredient-hunt quarry (issue #187 follow-up). A hunt
+ * deliberately ignores the scene cast and the roster, so — unlike
+ * `SelectOpponentsOptions` — there is no `trackedNpcState`/`ambush` here.
+ */
+export interface DeriveHuntQuarryOptions {
+  /** City id for bestiary region preference; defaults to `state.currentCity`. */
+  regionId?: string;
+  /**
+   * The pathway whose Beyonder Characteristic is being hunted. Defaults to the
+   * player's OWN pathway — the next potion's main ingredient is always the
+   * player's pathway Characteristic at the rung being climbed into.
+   */
+  pathwayId?: number;
+  /**
+   * The Sequence the hunted Characteristic belongs to. Defaults to one rung
+   * stronger than the player's current Sequence (mirrors `targetSequence`). The
+   * React layer passes the hunt's recorded `targetSeq` so the quarry matches the
+   * exact Characteristic in flight.
+   */
+  targetSeq?: number;
+}
+
+/** How many of a synthesized quarry's signature abilities to surface to intel. */
+const MAX_SYNTH_QUARRY_ABILITIES = 3;
+
+/**
+ * Synthesize a pathway- AND Sequence-aligned quarry when the curated bestiary
+ * catalogues no matching carrier (the common case — the bestiary names foes for
+ * only a handful of the 22 pathways). The hunted Beyonder Characteristic belongs
+ * to the player's OWN pathway at the target rung, so the canonical bearer is a
+ * Beyonder of that EXACT pathway and Sequence — named for its canon Sequence
+ * role and armed with that rung's abilities. This is what lets a hunt align with
+ * ALL 22 pathways and every Sequence, not just the regions the bestiary names.
+ * Falls back to the generic framed threat if canon data is somehow absent.
+ */
+function synthesizeHuntQuarry(
+  state: GameState,
+  pathwayId: number,
+  targetSeq: number,
+): OpponentOption {
+  const pathway = getPathway(pathwayId);
+  const seq = getSequence(pathwayId, targetSeq);
+  if (!pathway || !seq) {
+    // No canon data for this pathway/rung — a generic, framed foe to hunt.
+    return fallbackOpponent(state, false);
+  }
+  const enemy: Enemy = {
+    name: `a rogue ${seq.name} of the ${pathway.name} Pathway`,
+    sequenceLevel: targetSeq,
+    isBeyonder: true,
+    pathwayId,
+    description:
+      `A Beyonder of the ${pathway.name} Pathway at the rung you climb toward — ` +
+      `the canonical bearer of the Sequence ${targetSeq} Characteristic your next ` +
+      `potion needs, run to ground for the hunt.`,
+    knownAbilities: seq.abilities
+      .slice(0, MAX_SYNTH_QUARRY_ABILITIES)
+      .map((ability) => ability.name),
+  };
+  return {
+    enemy,
+    context: makeEncounterContext("hostile-beyonder", { isKnownPerson: false }),
+    source: "bestiary",
+  };
+}
 
 /**
  * Derive the quarry for an ingredient HUNT (issue #187 follow-up). A hunt tracks
- * the creature/Beyonder whose Beyonder Characteristic the player needs — so it
- * must NEVER target a present ally or scene NPC (the bug `deriveEncounter` caused
- * by preferring a present-NPC option, which would pit you against a friend
- * reframed as mind-controlled). This pulls ONLY from the curated bestiary,
- * preferring a huntable framing (a beast / hostile Beyonder / lost-control
- * rampager / mundane threat), and falls back to the generic framed threat
- * ("a lurking Beyonder"). It deliberately ignores `npcsPresent` and the roster.
+ * the creature/Beyonder whose Beyonder Characteristic the player needs — and that
+ * Characteristic is always the player's OWN pathway at the target rung, so the
+ * quarry's pathway AND Sequence must ALIGN with it (the reported bug: a hunt
+ * fielded an unrelated foe — a Devil Dog of the Abyss Pathway — that incongruously
+ * dropped a different pathway's Characteristic). It first looks for a catalogued
+ * carrier of that exact pathway + Sequence (a "related monster of the pathway and
+ * sequence you need", e.g. the Devil Dog for an ACTUAL Abyss hunter), and
+ * otherwise synthesizes the canonical bearer — a Beyonder of the player's pathway
+ * at the target Sequence — so alignment holds for ALL 22 pathways and every rung.
+ *
+ * It NEVER targets a present ally or scene NPC (it ignores `npcsPresent` and the
+ * roster entirely), so engaging a hunt can never pit the player against a friend.
  * Pure and deterministic.
  */
 export function deriveHuntQuarry(
   state: GameState,
-  opts: Omit<SelectOpponentsOptions, "ambush"> = {},
+  opts: DeriveHuntQuarryOptions = {},
 ): OpponentOption {
   const regionId = opts.regionId ?? state.currentCity;
-  const maxBestiary = opts.maxBestiary ?? DEFAULT_MAX_BESTIARY;
-  const foes = bestiaryFor(regionId, state.sequenceLevel).slice(0, maxBestiary);
-  const quarry = foes.find((foe) => HUNTABLE_FRAMINGS.has(foe.framing)) ?? foes[0];
-  if (quarry) {
+  const pathwayId = opts.pathwayId ?? state.pathwayId;
+  // The next potion's main ingredient is the player's pathway Characteristic at
+  // the rung being climbed into — one Sequence stronger (mirrors `targetSequence`).
+  const targetSeq = opts.targetSeq ?? state.sequenceLevel - 1;
+
+  // 1. A catalogued carrier of this pathway's Characteristic at the target rung —
+  //    pathway/Sequence alignment first, region only as a tiebreak.
+  const curated = bestiaryForPathwaySequence(pathwayId, targetSeq, regionId)[0];
+  if (curated) {
     return {
-      enemy: bestiaryFoeToEnemy(quarry, state.sequenceLevel),
-      context: makeEncounterContext(quarry.framing, {
+      // Scale the carrier to the HUNTED rung, not the player's current Sequence,
+      // so the curated branch aligns to `targetSeq` exactly like the synthesized
+      // one. `bestiaryFoeSequence` subtracts one, and the foe's band is guaranteed
+      // to contain `targetSeq` (the selection filter), so this resolves to it.
+      enemy: bestiaryFoeToEnemy(curated, targetSeq + 1),
+      context: makeEncounterContext(curated.framing, {
         isKnownPerson: false,
-        ...(quarry.motive !== undefined ? { motive: quarry.motive } : {}),
+        ...(curated.motive !== undefined ? { motive: curated.motive } : {}),
       }),
       source: "bestiary",
     };
   }
-  // No region-appropriate quarry catalogued — a generic, framed foe to hunt.
-  return fallbackOpponent(state, false);
+
+  // 2. No catalogued carrier — synthesize the canonical bearer (all 22 pathways).
+  return synthesizeHuntQuarry(state, pathwayId, targetSeq);
 }
 
 /**
