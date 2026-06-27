@@ -1409,44 +1409,71 @@ const MAX_SYNTH_QUARRY_ABILITIES = 3;
 /**
  * Trailing body-part / harvested-material phrases stripped from a creature
  * material to recover the creature's name (longest first so "Stomach Sac" wins
- * over "Stomach"). Curated to the canon main-material ingredient set in
- * `pathways.ts`; verified exhaustively by the combat tests.
+ * over "Stomach"). Curated to the corpus-generated main-material set
+ * (`main-ingredients-canon.ts`); verified exhaustively by the combat tests.
  */
 const MATERIAL_PART_SUFFIXES = [
-  "Horn Crystal",
-  "Pituitary Gland",
-  "Feather Fragment",
-  "Spirit Crystal",
-  "Vocal Cords",
-  "Stomach Sac",
-  "Wing Bone",
-  "Stomach",
-  "Blood",
-  "Heart",
-  "Brain",
-  "Ears",
-  "Root",
-] as const;
+  "pair of eyes", // multi-word phrases first so they win over their tail word
+  "pituitary gland",
+  "composite eyes",
+  "feather fragment",
+  "marrow crystal",
+  "spirit crystal",
+  "front claws",
+  "vocal cords",
+  "stomach sac",
+  "wing bone",
+  "venom sac",
+  "horn crystal",
+  "spinal fluid",
+  "stomach",
+  "blood",
+  "heart",
+  "brain",
+  "ears",
+  "eyes",
+  "root",
+  "horn",
+  "gland",
+  "core",
+  "tongue",
+  "bladder",
+  "scales",
+  "crystal",
+];
 
-/**
- * Recover the creature/entity a hunted material comes from (issue #187 follow-up
- * 2): a canon main material is named EITHER "{Part} of a/an/the {Creature}" (the
- * creature is the tail) or "{Creature} {body-part}" (strip the trailing part) or
- * is itself the whole creature/plant/mineral (no part — used verbatim). Pure;
- * the article in the "of a/an/the" form is required so an article-less "Shadow
- * of Death" stays a whole entity rather than degrading to "Death".
- */
-export function creatureFromMaterial(material: string): string {
-  const ofMatch = /^.+ of (?:a|an|the) (.+)$/i.exec(material);
-  if (ofMatch) return ofMatch[1];
+/** Strip a trailing curated body-part phrase from a candidate creature name. */
+function stripPartSuffix(candidate: string): string {
+  const lower = candidate.toLowerCase();
   for (const part of MATERIAL_PART_SUFFIXES) {
     const suffix = ` ${part}`;
-    if (material.endsWith(suffix)) {
-      const creature = material.slice(0, material.length - suffix.length).trim();
+    if (lower.endsWith(suffix)) {
+      const creature = candidate.slice(0, candidate.length - suffix.length).trim();
       if (creature.length > 0) return creature;
     }
   }
-  return material;
+  return candidate;
+}
+
+/**
+ * Recover the creature/entity a hunted material comes from (issue #187): a canon
+ * main material is named EITHER "{Part} of a/an/the {Creature}" (the creature is
+ * the tail), OR "{Creature}'s {Part}" (possessive — the creature is the head),
+ * OR "{Creature} {body-part}" (strip the trailing part), OR is itself the whole
+ * creature/plant/mineral (no part — used verbatim). A leading quantity ("pair of
+ * …") is dropped first, and a trailing body-part is stripped from whatever the
+ * "of"/possessive forms yield too, so messy compound canon names ("Spring of the
+ * Elves Marrow Crystal", "Pair of Terror Demon Worm's eyes") still resolve to the
+ * creature. Pure; the article in the "of a/an/the" form is required so an
+ * article-less "Shadow of Death" stays a whole entity rather than degrading.
+ */
+export function creatureFromMaterial(material: string): string {
+  const trimmed = material.replace(/^pair of\s+/i, "").trim();
+  const ofMatch = /^.+ of (?:a|an|the) (.+)$/i.exec(trimmed);
+  if (ofMatch) return stripPartSuffix(ofMatch[1].trim());
+  const possessive = /^(.+?)'s\s+.+$/i.exec(trimmed); // "Lavos Squid's Blood" → head
+  if (possessive) return stripPartSuffix(possessive[1].trim());
+  return stripPartSuffix(trimmed);
 }
 
 /**

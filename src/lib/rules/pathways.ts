@@ -2,6 +2,7 @@ import type { Ability, Pathway, Sequence } from "@/lib/types/rules";
 
 import { ADVANCEMENT_RITUALS, RITUAL_FROM_SEQUENCE } from "./advancement-canon";
 import { applyCanonDemigodAbilities } from "./demigod-abilities";
+import { MAIN_INGREDIENTS } from "./main-ingredients-canon";
 
 const whiteTowerSequences: Sequence[] = [
   {
@@ -12607,30 +12608,51 @@ function applyCanonAdvancement(pathway: Pathway): Pathway {
  * Characteristic-type main ingredient to the sequence's OWN role — fixing the
  * off-by-one across all 22 pathways in one drift-proof place.
  *
- * Only the engine-placeholder role/pathway form — named `"Sequence N …
- * Characteristic"` — is rewritten. Monster-material main ingredients are LEFT
- * UNTOUCHED, INCLUDING a creature's OWN characteristic ("Characteristic of a
- * Human-Skinned Shadow" — the canon Faceless material, a creature characteristic,
- * NOT the rung's role): the canon lists those as an equally-valid same-tier
- * option. Keying on the `"Sequence \d"` marker (not the bare word
- * "Characteristic") is what distinguishes the two — every placeholder carries it,
- * no creature material does.
+ * Each rung carries exactly ONE main ingredient, resolved as:
+ *
+ * - the canon PRIMARY material where the wiki documents one for that rung
+ *   (`MAIN_INGREDIENTS`, corpus-generated — e.g. Fool Seq 7 = "True Root of a
+ *   Mist Treant", Red Priest Seq 7 = "Fire Salamander gland"); the rung's other
+ *   canon materials ride along in the description as alternatives; otherwise
+ * - the same-tier **role Beyonder Characteristic** (`"{seq.name} Beyonder
+ *   Characteristic"`), the canon "Or a {role} Beyonder Characteristic" option the
+ *   wiki offers when it documents no monster material for the rung.
+ *
+ * This replaces the hand-authored ingredient names (off-by-one role
+ * Characteristics at Seq 4-1, paraphrased/incorrect creatures at the low rungs)
+ * with corpus-exact data in one drift-proof place.
  */
 function applyCanonMainIngredient(pathway: Pathway): Pathway {
+  const canonByLevel = MAIN_INGREDIENTS[pathway.id] ?? {};
   return {
     ...pathway,
-    sequences: pathway.sequences.map((seq) => ({
-      ...seq,
-      prerequisiteItems: seq.prerequisiteItems.map((item) =>
-        item.category === "main-ingredient" && /Sequence\s+\d/i.test(item.name)
+    sequences: pathway.sequences.map((seq) => {
+      const others = seq.prerequisiteItems.filter(
+        (item) => item.category !== "main-ingredient",
+      );
+      const canonMaterials = canonByLevel[seq.level];
+      const main: Sequence["prerequisiteItems"][number] =
+        canonMaterials && canonMaterials.length > 0
           ? {
-              ...item,
+              name: canonMaterials[0],
+              description:
+                `The primary main material of the ${seq.name} potion (${pathway.name} Pathway).` +
+                (canonMaterials.length > 1
+                  ? ` Canon alternatives: ${canonMaterials.slice(1).join("; ")}.`
+                  : ""),
+              category: "main-ingredient",
+            }
+          : {
               name: `${seq.name} Beyonder Characteristic`,
               description: `The Beyonder Characteristic of a ${seq.name} — the core supernatural ingredient of the ${seq.name} potion, carrying the ${pathway.name} pathway's imprint.`,
-            }
-          : item,
-      ),
-    })),
+              category: "main-ingredient",
+            };
+      // Formula first, then the single main ingredient, then supplementary — the
+      // order the original hand-authored data used.
+      const formula = others.filter((i) => i.category === "potion-formula");
+      const rest = others.filter((i) => i.category !== "potion-formula");
+      return { ...seq, prerequisiteItems: [...formula, main, ...rest] };
+    }),
   };
 }
 

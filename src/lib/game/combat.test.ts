@@ -790,19 +790,19 @@ function mainIngredientsFor(pathwayId: number, target: number): Item[] {
 }
 
 describe("deriveHuntQuarry — matches the hunted ingredient (creatures vs characteristics)", () => {
-  it("hunts a Beyonder of the TARGET rung's own role (same tier as the potion)", () => {
-    // Canon: the Seq-4 Bizarro Sorcerer potion takes a Bizarro Sorcerer (Seq 4)
-    // Beyonder Characteristic — NOT the weaker Marionettist (Seq 5). So a Fool at
-    // Seq 5 hunting it faces a Seq-4 Bizarro Sorcerer, not a Seq-5 Marionettist.
-    const huntItem = mainIngredientFor(1, 4)!;
-    expect(huntItem.name).toBe("Bizarro Sorcerer Beyonder Characteristic");
+  it("hunts a Beyonder of the TARGET rung's own role for a role-Characteristic rung (same tier)", () => {
+    // White Tower (10) is undocumented in the corpus material map, so each rung
+    // takes the canon "Or a {role} Beyonder Characteristic" option. The Seq-4
+    // Prophet potion takes a Prophet (Seq 4) Characteristic → a Seq-4 Prophet foe.
+    const huntItem = mainIngredientFor(10, 4)!;
+    expect(huntItem.name).toBe("Prophet Beyonder Characteristic");
     const quarry = deriveHuntQuarry(
-      makeGameState({ sequenceLevel: 5, pathwayId: 1, currentCity: "backlund" }),
+      makeGameState({ sequenceLevel: 5, pathwayId: 10, currentCity: "backlund" }),
       { targetSeq: 4, huntItem },
     );
-    expect(quarry.enemy.pathwayId).toBe(1);
+    expect(quarry.enemy.pathwayId).toBe(10);
     expect(quarry.enemy.sequenceLevel).toBe(4); // the TARGET rung, same as the potion
-    expect(quarry.enemy.name).toBe("a rogue Bizarro Sorcerer of the Fool Pathway");
+    expect(quarry.enemy.name).toBe("a rogue Prophet of the White Tower Pathway");
   });
 
   it("prefers the catalogued carrier when one bears the TARGET rung's Characteristic", () => {
@@ -819,12 +819,12 @@ describe("deriveHuntQuarry — matches the hunted ingredient (creatures vs chara
     expect(quarry.enemy.sequenceLevel).toBe(7);
   });
 
-  it("hunts the CREATURE (a beast) for a monster-material ingredient, never a pathway Beyonder", () => {
-    // Fool (1) at Seq 9 → target 8; the Seq-8 potion's main ingredient is the
-    // "Hornacis Mountain Goat Horn Crystal" — a creature material, so the quarry
-    // is that creature, framed as a beast that drops no Characteristic.
+  it("hunts the CREATURE (a beast) for a canon monster-material ingredient, never a pathway Beyonder", () => {
+    // Fool (1) at Seq 9 → target 8; the Seq-8 potion's canon primary main material
+    // is the "Hornacis Gray Mountain Goat Horn" — a creature material, so the
+    // quarry is that creature, framed as a beast that drops no Characteristic.
     const huntItem = mainIngredientFor(1, 8)!;
-    expect(huntItem.name).toBe("Hornacis Mountain Goat Horn Crystal");
+    expect(huntItem.name).toBe("Hornacis Gray Mountain Goat Horn");
     const quarry = deriveHuntQuarry(makeGameState({ sequenceLevel: 9, pathwayId: 1 }), {
       targetSeq: 8,
       huntItem,
@@ -832,17 +832,29 @@ describe("deriveHuntQuarry — matches the hunted ingredient (creatures vs chara
     expect(quarry.enemy.isBeyonder).toBe(false);
     expect(quarry.enemy.pathwayId).toBeUndefined();
     expect(quarry.context.framing).toBe("beast");
-    expect(quarry.enemy.name).toBe("the Hornacis Mountain Goat");
-    expect(quarry.enemy.description).toContain("Hornacis Mountain Goat Horn Crystal");
+    expect(quarry.enemy.name).toBe("the Hornacis Gray Mountain Goat");
+    expect(quarry.enemy.description).toContain("Hornacis Gray Mountain Goat Horn");
+  });
+
+  it("hunts the canon CREATURE for a documented rung (the Faceless rung → the Thousand-faced Hunter)", () => {
+    // Fool Seq 6 (Faceless) canon primary = "Mutated pituitary gland of a
+    // Thousand-faced Hunter" → hunt the Thousand-faced Hunter beast.
+    const huntItem = mainIngredientFor(1, 6)!;
+    expect(huntItem.name).toBe("Mutated pituitary gland of a Thousand-faced Hunter");
+    const quarry = deriveHuntQuarry(makeGameState({ sequenceLevel: 7, pathwayId: 1 }), {
+      targetSeq: 6,
+      huntItem,
+    });
+    expect(quarry.enemy.isBeyonder).toBe(false);
+    expect(quarry.context.framing).toBe("beast");
+    expect(quarry.enemy.name).toBe("the Thousand-faced Hunter");
   });
 
   it("is accurate for EVERY pathway, sequence, and main ingredient (comprehensive integrity sweep)", () => {
-    let sawCreatureCharacteristic = false;
+    let sawCanonMaterial = false;
     for (const pathway of ALL_PATHWAYS) {
       for (let current = 9; current >= 2; current--) {
         const target = current - 1;
-        // Every main ingredient of the rung — a rung may list more than one (a
-        // monster material AND a creature's characteristic), each hunted distinctly.
         for (const huntItem of mainIngredientsFor(pathway.id, target)) {
           const quarry = deriveHuntQuarry(
             makeGameState({ sequenceLevel: current, pathwayId: pathway.id }),
@@ -855,7 +867,7 @@ describe("deriveHuntQuarry — matches the hunted ingredient (creatures vs chara
           expect(quarry.enemy.knownAbilities?.length ?? 0, where).toBeGreaterThan(0);
 
           if (/Beyonder Characteristic/i.test(huntItem.name)) {
-            // A Beyonder Characteristic hunt → a Beyonder of the player's OWN
+            // A role Beyonder Characteristic hunt → a Beyonder of the player's OWN
             // pathway at the TARGET rung (same tier as the potion), the ingredient
             // named for that rung's own role.
             expect(quarry.enemy.isBeyonder, where).toBe(true);
@@ -865,9 +877,8 @@ describe("deriveHuntQuarry — matches the hunted ingredient (creatures vs chara
               `${getSequence(pathway.id, target)!.name} Beyonder Characteristic`,
             );
           } else {
-            // A creature material — INCLUDING a creature's own characteristic —
-            // → that beast, never a pathway Beyonder.
-            if (/Characteristic/i.test(huntItem.name)) sawCreatureCharacteristic = true;
+            // A canon monster material → that beast, never a pathway Beyonder.
+            sawCanonMaterial = true;
             expect(quarry.enemy.isBeyonder, where).toBe(false);
             expect(quarry.enemy.pathwayId, where).toBeUndefined();
             expect(quarry.context.framing, where).toBe("beast");
@@ -878,22 +889,9 @@ describe("deriveHuntQuarry — matches the hunted ingredient (creatures vs chara
         }
       }
     }
-    // The Faceless rung's "Characteristic of a Human-Skinned Shadow" is the canon
-    // creature characteristic that must be hunted as a beast — assert we exercised it.
-    expect(sawCreatureCharacteristic).toBe(true);
-  });
-
-  it("hunts the CREATURE for the Faceless rung's 'Characteristic of a Human-Skinned Shadow' (a creature characteristic, not a Beyonder)", () => {
-    const items = mainIngredientsFor(1, 6); // Fool Seq 6 (Faceless)
-    const creatureChar = items.find((i) => /Human-Skinned Shadow/i.test(i.name));
-    expect(creatureChar, "Faceless creature characteristic present").toBeDefined();
-    const quarry = deriveHuntQuarry(makeGameState({ sequenceLevel: 7, pathwayId: 1 }), {
-      targetSeq: 6,
-      huntItem: creatureChar!,
-    });
-    expect(quarry.enemy.isBeyonder).toBe(false);
-    expect(quarry.context.framing).toBe("beast");
-    expect(quarry.enemy.name).toBe("the Human-Skinned Shadow");
+    // The corpus documents monster materials for several pathways — assert the
+    // material (beast) branch was actually exercised, not just the Characteristic one.
+    expect(sawCanonMaterial).toBe(true);
   });
 });
 
@@ -924,6 +922,28 @@ describe("creatureFromMaterial", () => {
     expect(creatureFromMaterial("Source of Mad Dreams")).toBe("Source of Mad Dreams");
     expect(creatureFromMaterial("Crystal Sunflower")).toBe("Crystal Sunflower");
     expect(creatureFromMaterial("Wandering Hide")).toBe("Wandering Hide");
+  });
+
+  it("takes the head of a possessive '{creature}'s {part}' canon material", () => {
+    expect(creatureFromMaterial("Lavos Squid's Blood")).toBe("Lavos Squid");
+    expect(creatureFromMaterial("Gray Demonic Wolf's front claws")).toBe(
+      "Gray Demonic Wolf",
+    );
+    expect(creatureFromMaterial("Sun Divine Bird's tail feathers")).toBe(
+      "Sun Divine Bird",
+    );
+    expect(creatureFromMaterial("Matured Manhal Fish's Eyeball")).toBe(
+      "Matured Manhal Fish",
+    );
+  });
+
+  it("parses the lowercase-cased canon body-part forms (case-insensitive)", () => {
+    expect(creatureFromMaterial("Fire Salamander gland")).toBe("Fire Salamander");
+    expect(creatureFromMaterial("Magma Giant's core")).toBe("Magma Giant");
+    expect(creatureFromMaterial("Succubus eyes")).toBe("Succubus");
+    expect(creatureFromMaterial("Black Hunting Spider Composite Eyes")).toBe(
+      "Black Hunting Spider",
+    );
   });
 
   it("yields a non-empty creature for EVERY canon monster-material ingredient", () => {

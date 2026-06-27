@@ -60,12 +60,16 @@ model without re-parsing or re-chunking.
   - Flags: `--concealment-tier <n>` (default 0), `--base-url <url>` (default the
     LOTM Fandom wiki), `--min-chars <n>` (stub threshold, default 40).
 
-- `advancement-canon.ts` (`pnpm rag:advancement-canon`) — extracts the canon
-  **Advancement Ritual** text + material lists from the committed wiki dump's
-  `Module:Sequence/standard` and writes `src/lib/rules/advancement-canon.ts`
-  (`ADVANCEMENT_RITUALS`, keyed by pathway id → sequence level 5-1). Canon: a
-  ritual is mandatory only from Sequence 5, so only levels 5-1 are emitted. Run a
-  `pnpm format` pass afterwards (the emitted file is committed).
+- `advancement-canon.ts` (`pnpm rag:advancement-canon`) — extracts canon data from
+  the committed wiki dump's `Module:Sequence/standard` and writes **three**
+  generated rules-engine files: `src/lib/rules/advancement-canon.ts`
+  (`ADVANCEMENT_RITUALS`, pathway id → sequence level 5-1 — a ritual is mandatory
+  only from Sequence 5), `src/lib/rules/sequence-names-canon.ts` (`SEQUENCE_NAMES`,
+  every rung's canon name 9 → 0), and `src/lib/rules/main-ingredients-canon.ts`
+  (`MAIN_INGREDIENTS`, the canon main-ingredient materials for the rungs the wiki
+  documents one for, cleaned of wiki cruft via `cleanIngredientName`). Run a
+  `pnpm format` pass afterwards (the emitted files are committed; `JSON.stringify`
+  emits compact arrays that prettier re-expands).
   - `pnpm rag:advancement-canon` (reads `corpus/wiki/…xml`)
   - `pnpm rag:advancement-canon <pages.xml>` (explicit dump path)
 

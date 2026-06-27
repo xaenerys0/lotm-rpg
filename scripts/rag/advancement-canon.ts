@@ -31,6 +31,7 @@ import { resolve } from "node:path";
 const DEFAULT_DUMP = "corpus/wiki/lordofthemystery_pages_current.xml";
 const OUTPUT = "src/lib/rules/advancement-canon.ts";
 const NAMES_OUTPUT = "src/lib/rules/sequence-names-canon.ts";
+const MAIN_INGR_OUTPUT = "src/lib/rules/main-ingredients-canon.ts";
 
 /** Lowest sequence whose advancement is mandatory-ritual (canon). */
 const RITUAL_FROM_SEQUENCE = 5;
@@ -106,6 +107,24 @@ function extractIngredients(block: string | null): string[] {
   return out;
 }
 
+/**
+ * Tidy a raw canon ingredient name into a usable game-item name: drop wiki
+ * parentheticals ("(also known as …)"), curly-quote → straight, collapse
+ * whitespace, trim. Conservative — keeps the canon wording, only removing the
+ * editorial cruft that makes a raw name unusable as an item label.
+ */
+function cleanIngredientName(raw: string): string {
+  const cleaned = raw
+    .replace(/\([^)]*\)/g, " ") // drop "(also known as …)" editorial asides
+    .replace(/[’]/g, "'")
+    .replace(/\s+'s\b/g, "'s") // a stripped parenthetical left " 's" → "'s"
+    .replace(/\s+/g, " ")
+    .trim();
+  // Capitalize the first letter so a canon name beginning lowercase
+  // ("fruit of the Tree of Elders") reads as an item label.
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+}
+
 function field(body: string, key: string): string | null {
   const patterns = [
     new RegExp(`\\['${key}'\\]\\s*=\\s*\\[=\\[([\\s\\S]*?)\\]=\\]`),
@@ -136,6 +155,8 @@ function main(): void {
   const byPathway = new Map<number, Map<number, RitualEntry>>();
   // id -> level (9-0) -> canonical sequence name (the wiki entry key).
   const names = new Map<number, Map<number, string>>();
+  // id -> level (9-1) -> the canon main-ingredient material list (cleaned).
+  const mainIngrs = new Map<number, Map<number, string[]>>();
 
   for (const entry of entries) {
     const body = entry;
@@ -155,6 +176,19 @@ function main(): void {
     if (keyMatch && level >= 0 && level <= 9) {
       if (!names.has(pathwayId)) names.set(pathwayId, new Map());
       names.get(pathwayId)!.set(level, keyMatch[1].trim());
+    }
+
+    // The canon main-ingredient materials (levels 9-1) — the monster materials a
+    // potion's primary main ingredient is drawn from. Collected independently of
+    // the ritual (which only exists Seq 5-1), so the low rungs are covered too.
+    if (level >= 1 && level <= 9) {
+      const materials = extractIngredients(field(body, "main_ingr"))
+        .map(cleanIngredientName)
+        .filter((s) => s.length > 0);
+      if (materials.length > 0) {
+        if (!mainIngrs.has(pathwayId)) mainIngrs.set(pathwayId, new Map());
+        mainIngrs.get(pathwayId)!.set(level, materials);
+      }
     }
 
     const ritual = field(body, "ritual");
@@ -259,6 +293,55 @@ function main(): void {
   const nameTotal = [...names.values()].reduce((n, m) => n + m.size, 0);
   process.stderr.write(
     `Wrote ${NAMES_OUTPUT}: ${names.size} pathways, ${nameTotal} sequence names.\n`,
+  );
+
+  // ---- main-ingredients-canon.ts --------------------------------------------
+  const ingrLines: string[] = [];
+  ingrLines.push("// AUTO-GENERATED — do not edit by hand.");
+  ingrLines.push("//");
+  ingrLines.push(
+    "// Source: corpus/wiki Module:Sequence/standard (the committed Fandom dump).",
+  );
+  ingrLines.push("// Regenerate with: pnpm rag:advancement-canon");
+  ingrLines.push("//");
+  ingrLines.push(
+    "// The canon main-ingredient MATERIALS for each rung (the monster materials a",
+  );
+  ingrLines.push(
+    "// potion's primary main ingredient is drawn from), cleaned of wiki cruft. Only",
+  );
+  ingrLines.push(
+    "// the rungs the wiki documents a material for appear; the rest take the canon",
+  );
+  ingrLines.push(
+    '// "Or a {role} Beyonder Characteristic" option. The rules engine overlays the',
+  );
+  ingrLines.push(
+    "// PRIMARY (first) material as the rung's single main ingredient (the others are",
+  );
+  ingrLines.push("// canon alternatives, surfaced in the item description).");
+  ingrLines.push("");
+  ingrLines.push(
+    "/** pathwayId -> sequence level (9-1) -> the canon main-ingredient materials. */",
+  );
+  ingrLines.push(
+    "export const MAIN_INGREDIENTS: Record<number, Record<number, string[]>> = {",
+  );
+  for (const pathwayId of [...mainIngrs.keys()].sort((a, b) => a - b)) {
+    const levels = mainIngrs.get(pathwayId)!;
+    ingrLines.push(`  ${pathwayId}: {`);
+    for (const level of [...levels.keys()].sort((a, b) => b - a)) {
+      ingrLines.push(`    ${level}: ${JSON.stringify(levels.get(level)!)},`);
+    }
+    ingrLines.push("  },");
+  }
+  ingrLines.push("};");
+  ingrLines.push("");
+
+  writeFileSync(resolve(process.cwd(), MAIN_INGR_OUTPUT), ingrLines.join("\n"), "utf-8");
+  const ingrTotal = [...mainIngrs.values()].reduce((n, m) => n + m.size, 0);
+  process.stderr.write(
+    `Wrote ${MAIN_INGR_OUTPUT}: ${mainIngrs.size} pathways, ${ingrTotal} rungs with materials.\n`,
   );
 
   // Surface any pathway the extractor produced NOTHING for, so a parsing/name
