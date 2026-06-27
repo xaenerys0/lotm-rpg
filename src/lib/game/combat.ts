@@ -9,19 +9,31 @@ import type {
   DecisionOption,
   DecisionPoint,
   Enemy,
+  EncounterContext,
+  EncounterFraming,
   Injury,
   InjurySeverity,
   IntelligenceLevel,
   PathwayMatchup,
   PreparationQuality,
   PreparationTier,
+  ResolutionLine,
   TerrainAdvantage,
 } from "@/lib/types/combat";
 import { getGroupForPathway } from "@/lib/rules";
-import { gradeForArtifactItem, type ArtifactGrade } from "@/lib/lore";
+import {
+  gradeForArtifactItem,
+  bestiaryFor,
+  bestiaryFoeSequence,
+  type ArtifactGrade,
+  type BestiaryFoe,
+} from "@/lib/lore";
 import { sanityDelta } from "./sanity";
-import { clamp } from "./math";
-import { removeItemsByName } from "./inventory";
+import { clamp, round4 } from "./math";
+import { isConsumable, removeItemsByName } from "./inventory";
+import type { TrackedDisposition, TrackedNpcState } from "./tracked-npcs";
+import { abilityKindTag, combatKitFor } from "./combat-abilities";
+import type { CombatAbility } from "@/lib/types/combat";
 
 /**
  * Combat engine (issue #10).
@@ -42,11 +54,6 @@ import { removeItemsByName } from "./inventory";
  * as the `randomFactor` captured at encounter creation, so a serialized
  * encounter always resolves the same way.
  */
-
-/** Round to 4 decimals to keep advantage maths free of float noise. */
-function round4(value: number): number {
-  return Math.round(value * 10000) / 10000;
-}
 
 // ─── Preparation Scoring ─────────────────────────────────────────────
 
@@ -579,8 +586,6 @@ function artifactPrepWeight(grade: ArtifactGrade | undefined): number {
   return grade === undefined ? PER_SEALED_ARTIFACT : ARTIFACT_GRADE_PREP[grade];
 }
 
-/** Dynamic ability options offered per decision point (in addition to the trio). */
-export const MAX_DYNAMIC_ABILITY_OPTIONS = 2;
 /** Dynamic carried-artifact options offered per decision point. */
 export const MAX_DYNAMIC_ARTIFACT_OPTIONS_PER_POINT = 1;
 
@@ -649,6 +654,82 @@ const POINT_KINDS: DecisionKind[][] = [
   ["defensive", "aggressive", "artifact"],
 ];
 
+/** Legible, plain-language effect tags for the templated tactics (clarity). */
+const KIND_EFFECT_TAG: Record<DecisionKind, string> = {
+  aggressive: "Aggressive — strong with an edge, risky without",
+  defensive: "Defensive — steadies the fight",
+  evasive: "Evasive — buys distance · counts toward escape",
+  ability: "Pathway power",
+  artifact: "Artifact — potent, but a backlash on your mind",
+};
+
+/** How many kit ability options to surface per decision point. */
+const MAX_KIT_OPTIONS_PER_POINT = 2;
+
+/**
+ * The advantage modifier for a kit ability invoked mid-fight (issue #187,
+ * Phase 2). Built from the ability's `potency`: an offensive gambit pays off
+ * only with an edge; a control/utility play lands better when you know the foe
+ * (intel); an ability that counters the encounter's framing gets a small bump.
+ * Stays within the same bounded band as the templated options.
+ */
+function kitOptionModifier(
+  ability: CombatAbility,
+  edge: number,
+  intel: number,
+  framing: EncounterFraming,
+): number {
+  let modifier = ability.potency;
+  if (ability.kind === "offensive") {
+    modifier = edge >= EDGE_THRESHOLD ? modifier : modifier * 0.4;
+  }
+  if (ability.kind === "control" || ability.kind === "utility") {
+    modifier += OPTION_MODIFIER.abilityIntel * intel * 0.5;
+  }
+  if (ability.counters?.includes(framing)) {
+    modifier += 0.04;
+  }
+  return round4(modifier);
+}
+
+/**
+ * The non-lethal resolution line offered at a decision point, by framing
+ * (issue #187, Phase 4): a snap-free line for a puppeteered/coerced opponent, a
+ * talk-down line for any other reconcilable framing, and a subdue line for a
+ * genuine foe (you can still choose to take them down without killing).
+ */
+function lineForFraming(framing: EncounterFraming): {
+  line: ResolutionLine;
+  label: string;
+  description: string;
+  tag: string;
+} {
+  if (framing === "mind-controlled" || framing === "coerced") {
+    return {
+      line: "free",
+      label: "Try to snap them free",
+      description:
+        "Pour your effort into breaking the hold on them, not into hurting them.",
+      tag: "Snap-free — commit across the fight to restore them",
+    };
+  }
+  if (isReconcilableFraming(framing)) {
+    return {
+      line: "talk-down",
+      label: "Try to talk them down",
+      description:
+        "Reach them with words — reason, intimidation, the truth of the matter.",
+      tag: "De-escalate — sustain it to end the fight without blood",
+    };
+  }
+  return {
+    line: "subdue",
+    label: "Subdue without killing",
+    description: "Pull your strikes — aim to put them down, not to end them.",
+    tag: "Non-lethal — win without a kill",
+  };
+}
+
 const DECISION_PROMPTS = [
   (enemy: string) => `The ${enemy} commits to its opening assault.`,
   (enemy: string) => `The ${enemy} presses harder, hunting for an opening.`,
@@ -669,6 +750,10 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
   const intel = INTEL_FACTOR[encounter.preparation?.intelligence ?? "none"];
   const artifactsAvailable = encounter.preparation?.sealedArtifacts.length ?? 0;
   const enemyName = encounter.enemy.name;
+  const kit = encounter.availableKit ?? [];
+  const framing: EncounterFraming =
+    encounter.context?.framing ??
+    (encounter.enemy.isBeyonder ? "hostile-beyonder" : "mundane-threat");
 
   // Dynamic mid-fight capabilities: the player's actual learned abilities and
   // carried artifacts, offered in the moment (not only what was readied during
@@ -725,6 +810,7 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
           kind === style.signatureKind,
           artifactGrade,
         ),
+        effectTag: KIND_EFFECT_TAG[kind],
       };
       if (consumesArtifact) {
         option.consumesArtifact = true;
@@ -732,30 +818,49 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
       return option;
     });
 
-    // Append dynamic ability options — the character's own learned powers, named
-    // explicitly. Picked by point index so they rotate without repeating within
-    // a point and without any randomness.
-    if (availableAbilities.length > 0) {
+    // Append dynamic ability options from the player's COMBAT KIT (issue #187,
+    // Phase 2): the canon abilities promoted to costed combat tools, each with a
+    // role tag and a potency-derived modifier. Rotated by point index so they
+    // vary without repeating in a point and without any randomness.
+    if (kit.length > 0) {
       const seen = new Set<number>();
-      for (let k = 0; k < MAX_DYNAMIC_ABILITY_OPTIONS; k++) {
-        const idx = (i + k) % availableAbilities.length;
+      for (let k = 0; k < MAX_KIT_OPTIONS_PER_POINT; k++) {
+        const idx = (i + k) % kit.length;
         if (seen.has(idx)) break;
         seen.add(idx);
-        const ability = availableAbilities[idx];
+        const ability = kit[idx];
         options.push({
-          id: `${pointId}-dyn-ability-${idx}`,
-          label: `Invoke ${ability}`,
+          id: `${pointId}-kit-${ability.id}`,
+          label: `Invoke ${ability.name}`,
           kind: "ability",
-          description: `Turn your ${ability} on the ${enemyName}.`,
-          modifier: optionModifier(
-            "ability",
-            edge,
-            intel,
-            style.signatureKind === "ability",
-          ),
-          abilityName: ability,
+          description: ability.description,
+          modifier: kitOptionModifier(ability, edge, intel, framing),
+          abilityName: ability.name,
+          effectTag: abilityKindTag(ability.kind),
         });
       }
+    }
+
+    // Append one acquired/stolen-power option (issue #187: the kit covers the
+    // pathway's own abilities, so `availableAbilities` now carries only copied
+    // powers — see `game-loop.tsx`). Picked by point index.
+    if (availableAbilities.length > 0) {
+      const idx = i % availableAbilities.length;
+      const ability = availableAbilities[idx];
+      options.push({
+        id: `${pointId}-dyn-ability-${idx}`,
+        label: `Invoke ${ability}`,
+        kind: "ability",
+        description: `Turn your ${ability} on the ${enemyName}.`,
+        modifier: optionModifier(
+          "ability",
+          edge,
+          intel,
+          style.signatureKind === "ability",
+        ),
+        abilityName: ability,
+        effectTag: "Acquired power",
+      });
     }
 
     // Append dynamic artifact options — carried artifacts unsealed in the
@@ -779,6 +884,45 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
         ),
         consumesArtifact: true,
         artifactItem: artifact,
+        effectTag: KIND_EFFECT_TAG.artifact,
+      });
+    }
+
+    // Append the outcome-spectrum lines (issue #187, Phase 4): a framing-keyed
+    // non-lethal line every point (snap-free / talk-down / subdue), plus the
+    // decisive-win dispositions (capture / spare) at the final point.
+    const line = lineForFraming(framing);
+    options.push({
+      id: `${pointId}-line-${line.line}`,
+      // A snap-free / talk-down line trades blows for effort, so it is modelled
+      // as a defensive-weight modifier — it does not push your raw advantage.
+      label: line.label,
+      kind: line.line === "subdue" ? "aggressive" : "defensive",
+      description: line.description,
+      modifier:
+        line.line === "subdue" ? OPTION_MODIFIER.defensive : OPTION_MODIFIER.evasive,
+      resolutionLine: line.line,
+      effectTag: line.tag,
+    });
+
+    if (i === DECISION_POINT_COUNT - 1) {
+      options.push({
+        id: `${pointId}-line-capture`,
+        label: "Beat them, then take them alive",
+        kind: "aggressive",
+        description: "Press for a decisive win — but to capture, not to kill.",
+        modifier: optionModifier("aggressive", edge, intel, false),
+        resolutionLine: "capture",
+        effectTag: "Capture — on a win, take them prisoner (a lead, not loot)",
+      });
+      options.push({
+        id: `${pointId}-line-spare`,
+        label: "Beat them, then let them live",
+        kind: "aggressive",
+        description: "Press for a decisive win — then stay your hand.",
+        modifier: optionModifier("aggressive", edge, intel, false),
+        resolutionLine: "spare",
+        effectTag: "Spare — win, but leave them alive",
       });
     }
 
@@ -794,29 +938,303 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
 
 // ─── Encounter Lifecycle ─────────────────────────────────────────────
 
+// ─── Encounter Framing & Opponent Selection (issue #187, Phase 1) ────
+
 /**
- * Derive a plausible foe from the current scene. A prepared confrontation faces
- * a known Beyonder a step stronger than the player (a lower sequence number); an
- * ambusher strikes at a roughly even footing. A named NPC present becomes the
- * foe, otherwise a generic threat. Encodes the (balance-bearing) difficulty
- * curve, so it lives in the engine rather than the UI; richer, lore-driven
- * enemies are a follow-up.
+ * The framings under which a fight can still end without bloodshed — the
+ * opponent is not truly your enemy (puppeteered, coerced, broken, or simply at
+ * cross-purposes), so a snap-free / talk-down / subdue line is available. A
+ * genuine hostile, a mundane threat, or a mindless beast is not reconcilable.
  */
-export function deriveEncounterEnemy(state: GameState, ambush: boolean): Enemy {
-  const sequenceLevel = Math.max(
-    0,
-    ambush ? state.sequenceLevel : state.sequenceLevel - 1,
-  );
-  const name =
-    state.npcsPresent[0] ?? (ambush ? "an assailant in the fog" : "a lurking Beyonder");
+const RECONCILABLE_FRAMINGS = new Set<EncounterFraming>([
+  "mind-controlled",
+  "coerced",
+  "lost-control",
+  "rival-motive",
+]);
+
+export function isReconcilableFraming(framing: EncounterFraming): boolean {
+  return RECONCILABLE_FRAMINGS.has(framing);
+}
+
+/** The reconcilable framing an ally is forced into when they attack you. */
+const ALLY_DEFAULT_FRAMING: EncounterFraming = "mind-controlled";
+
+/**
+ * Engine truth over an AI string: an **ally** who fights you can never be a
+ * plain `hostile-beyonder` / `mundane-threat` / `beast`. A non-reconcilable
+ * framing proposed for an ally is coerced to `mind-controlled` (the
+ * most-common canon reason a comrade turns on you). Any other disposition keeps
+ * the proposed framing. This is the validation the design calls for — an ally
+ * combatant is forced reconcilable, or the fight is refused.
+ */
+export function coerceAllyFraming(
+  framing: EncounterFraming,
+  disposition: TrackedDisposition | undefined,
+): EncounterFraming {
+  if (disposition === "ally" && !isReconcilableFraming(framing)) {
+    return ALLY_DEFAULT_FRAMING;
+  }
+  return framing;
+}
+
+/** Build an `EncounterContext`, deriving `reconcilable` from the framing. */
+export function makeEncounterContext(
+  framing: EncounterFraming,
+  opts: { isKnownPerson: boolean; controllerName?: string; motive?: string } = {
+    isKnownPerson: false,
+  },
+): EncounterContext {
+  return {
+    framing,
+    isKnownPerson: opts.isKnownPerson,
+    ...(opts.controllerName !== undefined ? { controllerName: opts.controllerName } : {}),
+    ...(opts.motive !== undefined ? { motive: opts.motive } : {}),
+    reconcilable: isReconcilableFraming(framing),
+  };
+}
+
+/** A short, player-facing label for a framing (threat card + narration). */
+const FRAMING_LABEL: Record<EncounterFraming, string> = {
+  "hostile-beyonder": "Hostile Beyonder",
+  "mundane-threat": "Mundane threat",
+  "mind-controlled": "Mind-controlled",
+  "lost-control": "Lost control",
+  "rival-motive": "Rival with their own agenda",
+  coerced: "Coerced against their will",
+  beast: "Supernatural beast",
+};
+
+export function framingLabel(framing: EncounterFraming): string {
+  return FRAMING_LABEL[framing];
+}
+
+/** One-line, player-facing framing summary for the threat-assessment card. */
+export function describeFraming(context: EncounterContext): string {
+  if (context.motive) return context.motive;
+  switch (context.framing) {
+    case "mind-controlled":
+      return context.controllerName
+        ? `Puppeteered by ${context.controllerName} — they are fighting against their will.`
+        : "Puppeteered by another Beyonder — they are fighting against their will.";
+    case "coerced":
+      return "Forced to attack you against their will.";
+    case "lost-control":
+      return "They have lost control of themselves — more danger than malice.";
+    case "rival-motive":
+      return "Not truly your foe — they have an agenda of their own.";
+    case "beast":
+      return "A supernatural creature, beyond reason.";
+    case "mundane-threat":
+      return "An ordinary, mortal danger.";
+    case "hostile-beyonder":
+      return "A genuine enemy Beyonder.";
+  }
+}
+
+/** The disposition the roster records for a named NPC, if any. */
+function dispositionFor(
+  name: string,
+  trackedNpcState: TrackedNpcState | undefined,
+): TrackedDisposition | undefined {
+  return trackedNpcState?.roster.find((npc) => npc.name === name)?.disposition;
+}
+
+/**
+ * The framing for a present, named NPC who comes to blows with the player,
+ * derived from the durable roster disposition: an **ally** is reframed (forced
+ * reconcilable — they don't truly want this), a roster **hostile** is a genuine
+ * enemy, and anyone else is a rival with their own agenda (still reconcilable —
+ * a scene can end in words). The engine derives this; an AI-proposed framing is
+ * still validated through `coerceAllyFraming`.
+ */
+function framingForNpc(
+  name: string,
+  trackedNpcState: TrackedNpcState | undefined,
+): EncounterFraming {
+  const disposition = dispositionFor(name, trackedNpcState);
+  if (disposition === "ally") return ALLY_DEFAULT_FRAMING;
+  if (disposition === "hostile") return "hostile-beyonder";
+  return "rival-motive";
+}
+
+/** A framed opponent the player may choose to fight (surfaced as a target list). */
+export interface OpponentOption {
+  enemy: Enemy;
+  context: EncounterContext;
+  /** Where this opponent came from, for the target-selection UI. */
+  source: "present-npc" | "pursuer" | "bestiary";
+}
+
+export interface SelectOpponentsOptions {
+  /** True for an ambush — opponents strike at an even footing, no framing reframe. */
+  ambush?: boolean;
+  /** The durable roster, so allies are reframed and pursuers surface as targets. */
+  trackedNpcState?: TrackedNpcState;
+  /** City id for bestiary region filtering; defaults to `state.currentCity`. */
+  regionId?: string;
+  /** Max curated bestiary picks to surface (default 3). */
+  maxBestiary?: number;
+}
+
+const DEFAULT_MAX_BESTIARY = 3;
+
+/** Convert a curated bestiary foe into a concrete, Sequence-scaled enemy. */
+export function bestiaryFoeToEnemy(foe: BestiaryFoe, playerSequence: number): Enemy {
+  return {
+    name: foe.name,
+    sequenceLevel: bestiaryFoeSequence(foe, playerSequence),
+    isBeyonder: foe.isBeyonder,
+    description: foe.description,
+    ...(foe.pathwayId !== undefined ? { pathwayId: foe.pathwayId } : {}),
+    knownAbilities: foe.signatureAbilities,
+    bestiaryId: foe.id,
+  };
+}
+
+/**
+ * Scale a non-bestiary opponent to the player: a known confrontation faces a
+ * Beyonder a step stronger; an ambusher strikes at an even, mundane footing.
+ * The single place this difficulty rule lives (shared by present-NPC opponents
+ * and the generic fallback) so a balance change is made once.
+ */
+function scaledEnemy(
+  name: string,
+  description: string,
+  state: GameState,
+  ambush: boolean,
+): Enemy {
   return {
     name,
-    sequenceLevel,
+    sequenceLevel: Math.max(0, ambush ? state.sequenceLevel : state.sequenceLevel - 1),
     isBeyonder: !ambush,
-    description: ambush
+    description,
+  };
+}
+
+/** The enemy stats for a present, named NPC opponent (Sequence scaled to play). */
+function npcEnemy(name: string, state: GameState, ambush: boolean): Enemy {
+  return scaledEnemy(
+    name,
+    ambush
+      ? "Someone from the scene turns on you without warning."
+      : "Someone present in the scene squares off against you.",
+    state,
+    ambush,
+  );
+}
+
+/**
+ * The framed target list for the current scene (issue #187, Phase 1) — the
+ * explicit "who do you fight, and why?" step that retires the silent
+ * `npcsPresent[0]` auto-pick. Surfaces, in order: the present NPCs (each with a
+ * disposition-derived framing — an ally is reframed, never gated out), any
+ * roster pursuers not already in the scene, and curated bestiary picks fitting
+ * the region and the player's Sequence. Pure and deterministic.
+ */
+export function selectOpponents(
+  state: GameState,
+  opts: SelectOpponentsOptions = {},
+): OpponentOption[] {
+  const ambush = opts.ambush ?? false;
+  const regionId = opts.regionId ?? state.currentCity;
+  const maxBestiary = opts.maxBestiary ?? DEFAULT_MAX_BESTIARY;
+  const options: OpponentOption[] = [];
+  const seenNames = new Set<string>();
+
+  // 1. Present NPCs — each offered WITH a framing (allies reframed reconcilable).
+  for (const name of state.npcsPresent) {
+    if (seenNames.has(name)) continue;
+    seenNames.add(name);
+    const framing = framingForNpc(name, opts.trackedNpcState);
+    options.push({
+      enemy: npcEnemy(name, state, ambush),
+      context: makeEncounterContext(framing, { isKnownPerson: true }),
+      source: "present-npc",
+    });
+  }
+
+  // 2. Roster pursuers not already present — hostiles who follow you.
+  for (const npc of opts.trackedNpcState?.roster ?? []) {
+    if (npc.disposition !== "hostile" || !npc.follows) continue;
+    if (seenNames.has(npc.name)) continue;
+    seenNames.add(npc.name);
+    options.push({
+      enemy: npcEnemy(npc.name, state, ambush),
+      context: makeEncounterContext("hostile-beyonder", { isKnownPerson: true }),
+      source: "pursuer",
+    });
+  }
+
+  // 3. Curated bestiary picks for the region + Sequence band.
+  for (const foe of bestiaryFor(regionId, state.sequenceLevel).slice(0, maxBestiary)) {
+    options.push({
+      enemy: bestiaryFoeToEnemy(foe, state.sequenceLevel),
+      context: makeEncounterContext(foe.framing, {
+        isKnownPerson: false,
+        ...(foe.motive !== undefined ? { motive: foe.motive } : {}),
+      }),
+      source: "bestiary",
+    });
+  }
+
+  return options;
+}
+
+/**
+ * The guaranteed fallback opponent when the scene surfaces no framed target —
+ * a generic, but now-framed, threat scaled to the player. Replaces the old bare
+ * `"a lurking Beyonder"` / `"an assailant in the fog"` with the same strings
+ * carrying an explicit framing and reconcilability.
+ */
+function fallbackOpponent(state: GameState, ambush: boolean): OpponentOption {
+  const enemy = scaledEnemy(
+    ambush ? "an assailant in the fog" : "a lurking Beyonder",
+    ambush
       ? "A sudden attacker, seizing the advantage of surprise."
       : "A known threat you have chosen to confront.",
+    state,
+    ambush,
+  );
+  const framing: EncounterFraming = ambush ? "mundane-threat" : "hostile-beyonder";
+  return {
+    enemy,
+    context: makeEncounterContext(framing, { isKnownPerson: false }),
+    source: "bestiary",
   };
+}
+
+/**
+ * Derive a single framed opponent for the current scene (the engine entry point
+ * the hunt path and any non-picker caller use). Prefers a present NPC or a
+ * roster pursuer — each carrying its disposition-derived framing — and otherwise
+ * returns the generic framed fallback. The curated bestiary enriches the
+ * EXPLICIT target picker (`selectOpponents`), not this silent single pick, so
+ * the auto-path stays predictable. Replaces the old `npcsPresent[0]` grab: an
+ * ally present is now reframed (mind-controlled), never silently a plain foe.
+ */
+export function deriveEncounter(
+  state: GameState,
+  opts: SelectOpponentsOptions = {},
+): OpponentOption {
+  for (const option of selectOpponents(state, opts)) {
+    if (option.source === "present-npc" || option.source === "pursuer") return option;
+  }
+  return fallbackOpponent(state, opts.ambush ?? false);
+}
+
+/**
+ * Backward-compatible enemy-only derivation: the framed enemy of
+ * `deriveEncounter`. Prefer `deriveEncounter`/`selectOpponents` so the
+ * `EncounterContext` is carried; this remains for callers that only need the
+ * `Enemy`.
+ */
+export function deriveEncounterEnemy(
+  state: GameState,
+  ambush: boolean,
+  opts: Omit<SelectOpponentsOptions, "ambush"> = {},
+): Enemy {
+  return deriveEncounter(state, { ...opts, ambush }).enemy;
 }
 
 /**
@@ -884,6 +1302,8 @@ export function enemyIntel(
 export interface CreateEncounterOptions {
   id: string;
   enemy: Enemy;
+  /** Why this fight is happening (issue #187). Defaults to a generic framing. */
+  context?: EncounterContext;
   playerPathwayId: number;
   playerSequence: number;
   /** True for an ambush — skips the preparation phase. */
@@ -915,9 +1335,22 @@ export function createEncounter(options: CreateEncounterOptions): CombatEncounte
   const matchup = computePathwayMatchup(options.playerPathwayId, options.enemy);
   const injuryPenalty = computeInjuryPenalty(options.injuries ?? []);
 
+  const context =
+    options.context ??
+    makeEncounterContext(
+      options.enemy.isBeyonder ? "hostile-beyonder" : "mundane-threat",
+      {
+        isKnownPerson: false,
+      },
+    );
+  // An ally opponent is forced reconcilable — but we have no roster here, so the
+  // caller (`selectOpponents`) already validated via `coerceAllyFraming`; the
+  // passed-in context is trusted, defaulting only when absent.
+
   const encounter: CombatEncounter = {
     id: options.id,
     enemy: options.enemy,
+    context,
     ambush,
     phase: "preparation",
     playerPathwayId: options.playerPathwayId,
@@ -937,6 +1370,7 @@ export function createEncounter(options: CreateEncounterOptions): CombatEncounte
     result: null,
     availableAbilities: options.availableAbilities ?? [],
     availableArtifacts: options.availableArtifacts ?? [],
+    availableKit: combatKitFor(options.playerPathwayId, options.playerSequence),
     ...(options.huntTarget !== undefined ? { huntTarget: options.huntTarget } : {}),
   };
 
@@ -1055,6 +1489,21 @@ const TERRAIN_NARRATION: Record<TerrainAdvantage, string> = {
 export function combatNarrationContext(encounter: CombatEncounter): string {
   const parts: string[] = [];
 
+  // Encounter framing first (issue #187, Phase 6) — so the narrated fight reads
+  // as what it is: a mind-controlled comrade, a coerced ally, a lurking beast.
+  // Only the SPECIAL framings narrate; the two defaults (a plain hostile or a
+  // plain mundane threat) stay silent so an ordinary fight's opening reads clean.
+  const context = encounter.context;
+  if (
+    context &&
+    context.framing !== "hostile-beyonder" &&
+    context.framing !== "mundane-threat"
+  ) {
+    parts.push(
+      `This fight is framed as: ${framingLabel(context.framing)} — ${describeFraming(context)}`,
+    );
+  }
+
   const prep = encounter.preparation;
   if (prep) {
     const prepBits: string[] = [
@@ -1090,18 +1539,73 @@ export function combatNarrationContext(encounter: CombatEncounter): string {
 const VICTORY_THRESHOLD = 0.15;
 const DEFEAT_THRESHOLD = -0.3;
 
+/** The chosen resolution lines, tallied (issue #187, Phase 4). */
+export type ResolutionLineTally = Record<ResolutionLine, number>;
+
+function emptyLineTally(): ResolutionLineTally {
+  return { subdue: 0, free: 0, "talk-down": 0, capture: 0, spare: 0 };
+}
+
+function tallyResolutionLines(chosen: DecisionOption[]): ResolutionLineTally {
+  const lines = emptyLineTally();
+  for (const option of chosen) {
+    if (option.resolutionLine) lines[option.resolutionLine]++;
+  }
+  return lines;
+}
+
+export interface OutcomeInput {
+  finalAdvantage: number;
+  /** Number of decision points in the exchange. */
+  decisionCount: number;
+  /** Count of evasive picks (a majority routes to escape). */
+  evasiveCount: number;
+  /** The encounter framing — gates the reconciled outcomes. */
+  framing: EncounterFraming;
+  /** Whether the framing allows a non-violent resolution. */
+  reconcilable: boolean;
+  /** The chosen resolution lines. */
+  lines: ResolutionLineTally;
+}
+
 /**
- * Map a final advantage and the chosen tactics to an outcome. A clear edge
- * wins; a player who chose to flee (a majority of evasive picks) escapes rather
- * than trading blows; a clear deficit is a defeat; anything between is a
- * stalemate.
+ * Map a final advantage, the chosen tactics, and the encounter framing to an
+ * outcome (issue #187, Phase 4 — the outcome spectrum). Beyond the original
+ * win/lose/escape/stalemate, a player's chosen LINE can end a fight without a
+ * kill: a sustained de-escalation talks a reconcilable foe down; a dedicated
+ * snap-free effort restores a puppeteered/coerced ally on a winning advantage;
+ * and a winning player who chose a subdue/capture/spare line ends it
+ * accordingly. Driven by the player's choices, never by randomness.
  */
-export function resolveOutcome(
-  finalAdvantage: number,
-  evasiveCount: number,
-  decisionCount: number,
-): CombatOutcome {
-  if (finalAdvantage >= VICTORY_THRESHOLD) {
+export function resolveOutcome(input: OutcomeInput): CombatOutcome {
+  const { finalAdvantage, decisionCount, evasiveCount, framing, reconcilable, lines } =
+    input;
+  const winning = finalAdvantage >= VICTORY_THRESHOLD;
+  // A "committed line" threshold — a majority of the exchange spent on it.
+  const committed = Math.max(1, Math.ceil(decisionCount / 2));
+
+  // Talk-down: a sustained de-escalation of a reconcilable foe ends the fight
+  // without violence, as long as you are not being routed.
+  if (
+    reconcilable &&
+    lines["talk-down"] >= committed &&
+    finalAdvantage > DEFEAT_THRESHOLD
+  ) {
+    return "talked-down";
+  }
+  // Snap-free: harder than simply winning — a committed effort AND a winning edge.
+  if (
+    (framing === "mind-controlled" || framing === "coerced") &&
+    lines.free >= committed &&
+    winning
+  ) {
+    return "freed";
+  }
+  if (winning) {
+    // The most deliberate chosen end-state wins out.
+    if (lines.capture >= 1) return "captured";
+    if (lines.spare >= 1) return "spared";
+    if (lines.subdue >= 1) return "subdued";
     return "victory";
   }
   const escapeThreshold = Math.ceil(decisionCount / 2);
@@ -1116,12 +1620,36 @@ export function resolveOutcome(
 
 // ─── Consequences ────────────────────────────────────────────────────
 
+// Sanity-drain scale per outcome. The reconciled outcomes (won without a kill,
+// freed an ally, talked them down, captured/spared) are LIGHTER than a bloody
+// victory — mercy steadies the mind.
 const SANITY_OUTCOME_FACTOR: Record<CombatOutcome, number> = {
   victory: 0.5,
   escape: 1,
   stalemate: 1.2,
   defeat: 1.5,
+  subdued: 0.4,
+  freed: 0.5,
+  "talked-down": 0.3,
+  captured: 0.5,
+  spared: 0.45,
 };
+
+/** Outcomes that are a form of winning the fight (no escape/defeat/stalemate). */
+const WINNING_OUTCOMES = new Set<CombatOutcome>([
+  "victory",
+  "subdued",
+  "freed",
+  "talked-down",
+  "captured",
+  "spared",
+]);
+
+/** Whether an outcome is a win in some form — used by the UI for tone. */
+export function isWinningOutcome(outcome: CombatOutcome): boolean {
+  return WINNING_OUTCOMES.has(outcome);
+}
+
 const MAX_COMBAT_SANITY_DRAIN = -40;
 const DOMINANT_VICTORY_MARGIN = 0.4;
 
@@ -1160,9 +1688,17 @@ function injuriesFor(
 
   switch (outcome) {
     case "victory":
+    case "subdued":
+    case "freed":
+    case "captured":
+    case "spared":
+      // A win that still cost something when you were outmatched and it was close.
       if (finalAdvantage <= DOMINANT_VICTORY_MARGIN && sequenceGap < 0) {
         severities.push("minor");
       }
+      break;
+    case "talked-down":
+      // Ended with words — no wound.
       break;
     case "escape":
       severities.push("minor");
@@ -1235,6 +1771,12 @@ const OUTCOME_SENTENCE: Record<CombatOutcome, (enemy: string) => string> = {
   escape: (enemy) => `You break away from the ${enemy} and escape.`,
   stalemate: (enemy) =>
     `Neither you nor the ${enemy} can force a decision; you part bloodied.`,
+  subdued: (enemy) => `You overpower the ${enemy} without a kill — they live, beaten.`,
+  freed: (enemy) => `You break the hold on the ${enemy}; they are themselves again.`,
+  "talked-down": (enemy) =>
+    `You reach the ${enemy} with words, and the fight ends without blood.`,
+  captured: (enemy) => `You beat the ${enemy} down and take them alive.`,
+  spared: (enemy) => `You overcome the ${enemy}, then stay your hand and let them live.`,
 };
 
 function narrativeSummary(encounter: CombatEncounter, outcome: CombatOutcome): string {
@@ -1266,14 +1808,24 @@ export function computeConsequences(
 
   const ritualMaterials = encounter.preparation?.ritualMaterials ?? [];
   const sealedArtifacts = encounter.preparation?.sealedArtifacts ?? [];
-  // Every artifact actually spent this fight (readied-and-used + grabbed
-  // mid-fight) — the slice that incurs the sanity backlash below.
-  const consumedArtifacts: Item[] = [
+  // Every artifact actually INVOKED this fight (readied-and-used + grabbed
+  // mid-fight) — the slice that incurs the sanity backlash below, whether or not
+  // the relic is destroyed.
+  const invokedArtifacts: Item[] = [
     ...sealedArtifacts.slice(0, consumedSealed),
     ...dynamicArtifactItems,
   ];
-  const itemsLost: Item[] = [...ritualMaterials, ...consumedArtifacts];
+  // Items actually LOST (issue #187 §4.6): only those that are CONSUMED by use.
+  // Sealed Artifacts persist by default — invoking one carries its backlash but
+  // does not destroy it — so a non-consumable relic is NOT added to `itemsLost`.
+  // Ritual materials / one-use reagents stay consumed (`isConsumable` default).
+  const itemsLost: Item[] = [...ritualMaterials, ...invokedArtifacts].filter(
+    isConsumable,
+  );
 
+  // Loot and a dropped characteristic come only from a lethal `victory` — the
+  // reconciled outcomes (subdued/freed/talked-down/captured/spared) spare the
+  // foe, so there is no body to loot and no characteristic falls.
   const itemsGained: Item[] = outcome === "victory" ? (encounter.enemy.loot ?? []) : [];
 
   const characteristicsDropped: BeyonderCharacteristic[] =
@@ -1294,7 +1846,7 @@ export function computeConsequences(
     injuries: injuriesFor(encounter, outcome, finalAdvantage),
     sanityImpact:
       combatSanityImpact(encounter, outcome) +
-      artifactBacklash(consumedArtifacts, encounter.randomFactor),
+      artifactBacklash(invokedArtifacts, encounter.randomFactor),
     itemsGained,
     itemsLost,
     characteristicsDropped,
@@ -1315,11 +1867,20 @@ export function resolveEncounter(encounter: CombatEncounter): CombatEncounter {
   const finalAdvantage = round4(encounter.baseAdvantage + encounter.accumulatedModifier);
   const chosen = chosenOptions(encounter);
   const evasiveCount = chosen.filter((o) => o.kind === "evasive").length;
-  const outcome = resolveOutcome(
+  const context =
+    encounter.context ??
+    makeEncounterContext(
+      encounter.enemy.isBeyonder ? "hostile-beyonder" : "mundane-threat",
+      { isKnownPerson: false },
+    );
+  const outcome = resolveOutcome({
     finalAdvantage,
+    decisionCount: encounter.decisionPoints.length,
     evasiveCount,
-    encounter.decisionPoints.length,
-  );
+    framing: context.framing,
+    reconcilable: context.reconcilable,
+    lines: tallyResolutionLines(chosen),
+  });
   const result = computeConsequences(encounter, outcome, finalAdvantage);
 
   return { ...encounter, phase: "resolution", outcome, result };

@@ -6,6 +6,7 @@ import {
   hasItem,
   hasItemMatching,
   isReagentCategory,
+  isConsumable,
   removeItemsByName,
 } from "./inventory";
 
@@ -55,6 +56,44 @@ describe("isReagentCategory", () => {
 
   it("is false for a Sealed Artifact — it is church-gated, never a tradable reagent", () => {
     expect(isReagentCategory("sealed-artifact")).toBe(false);
+  });
+});
+
+describe("isConsumable", () => {
+  it("defaults a Sealed Artifact and the Uniqueness to non-consumable (§4.6)", () => {
+    expect(
+      isConsumable({ name: "Quill", description: "", category: "sealed-artifact" }),
+    ).toBe(false);
+    expect(
+      isConsumable({ name: "Uniqueness", description: "", category: "uniqueness" }),
+    ).toBe(false);
+  });
+
+  it("defaults reagents and mundane items to consumable", () => {
+    expect(isConsumable(formula)).toBe(true);
+    expect(isConsumable(key)).toBe(true);
+    expect(
+      isConsumable({ name: "Toad", description: "", category: "main-ingredient" }),
+    ).toBe(true);
+  });
+
+  it("honours an explicit consumable override either way", () => {
+    expect(
+      isConsumable({
+        name: "Single-use relic",
+        description: "",
+        category: "sealed-artifact",
+        consumable: true,
+      }),
+    ).toBe(true);
+    expect(
+      isConsumable({
+        name: "Reusable charm",
+        description: "",
+        category: "mundane",
+        consumable: false,
+      }),
+    ).toBe(false);
   });
 });
 

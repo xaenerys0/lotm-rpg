@@ -5,8 +5,10 @@ import {
   applyPreparation,
   chooseOption,
   combatNarrationContext,
+  describeFraming,
   emptyPreparation,
   enemyIntel,
+  framingLabel,
   isExchangeComplete,
   resolveEncounter,
   type CombatEncounter,
@@ -47,6 +49,11 @@ const OUTCOME_COPY: Record<CombatOutcome, { title: string; tone: string }> = {
   escape: { title: "Escape", tone: "text-gaslight" },
   stalemate: { title: "Stalemate", tone: "text-amber" },
   defeat: { title: "Defeat", tone: "text-sanity-low" },
+  subdued: { title: "Subdued", tone: "text-sanity-high" },
+  freed: { title: "Freed", tone: "text-sanity-high" },
+  "talked-down": { title: "Talked Down", tone: "text-gaslight" },
+  captured: { title: "Captured", tone: "text-sanity-high" },
+  spared: { title: "Spared", tone: "text-sanity-high" },
 };
 
 const EMPTY_LORE: LoreContext = { entries: [], totalTokens: 0 };
@@ -290,6 +297,19 @@ function EnemyPanel({ encounter }: { encounter: CombatEncounter }) {
       </p>
       {intel.description && (
         <p className="mt-1 text-center text-sm text-muted">{intel.description}</p>
+      )}
+      {encounter.context && (
+        <div className="mt-3 rounded-lg border border-occult/30 bg-surface-raised p-3 text-center">
+          <p className="text-[10px] font-semibold tracking-[0.18em] text-occult-bright uppercase">
+            {framingLabel(encounter.context.framing)}
+            {encounter.context.reconcilable && (
+              <span className="ml-1 text-muted">· can end without bloodshed</span>
+            )}
+          </p>
+          <p className="mt-1 text-xs leading-relaxed text-foreground">
+            {describeFraming(encounter.context)}
+          </p>
+        </div>
       )}
       <dl className="mt-4 space-y-2 text-sm">
         {intel.strength && (
@@ -606,6 +626,11 @@ function ExchangePhase({
             <p className="mt-1 text-xs leading-relaxed text-muted">
               {option.description}
             </p>
+            {option.effectTag && (
+              <p className="mt-1.5 text-[11px] font-medium tracking-wide text-amber">
+                {option.effectTag}
+              </p>
+            )}
           </button>
         ))}
       </div>

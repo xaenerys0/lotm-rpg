@@ -16,6 +16,38 @@ export type IntelligenceLevel = "none" | "partial" | "thorough";
 /** Terrain / positioning secured before the fight. */
 export type TerrainAdvantage = "none" | "neutral" | "favorable";
 
+/**
+ * Why a fight is happening — who you are facing and the reason (issue #187,
+ * combat overhaul Phase 1). Replaces the old silent "the first present NPC is
+ * your enemy" assumption. An ally never becomes a plain foe: they appear under a
+ * *reconcilable* framing that explains why they are fighting you.
+ */
+export type EncounterFraming =
+  | "hostile-beyonder" // a genuine enemy Beyonder
+  | "mundane-threat" // thugs, beasts, ordinary danger
+  | "mind-controlled" // an ally/NPC puppeteered by another Beyonder
+  | "lost-control" // an ally/NPC who has lost control of themselves
+  | "rival-motive" // someone with their own agenda, not truly your foe
+  | "coerced" // forced to attack you against their will
+  | "beast"; // a supernatural creature / monster
+
+/**
+ * The in-world context of an encounter: who the opponent is and why the fight is
+ * happening. Carried on the `CombatEncounter` and surfaced to the player as the
+ * threat-assessment framing, and to the narrator so the prose matches mechanics.
+ */
+export interface EncounterContext {
+  framing: EncounterFraming;
+  /** True when the opponent is someone the player knows (ally/companion/named NPC). */
+  isKnownPerson: boolean;
+  /** If mind-controlled/coerced: the puppeteer's identity, when known. */
+  controllerName?: string;
+  /** One-line in-world reason this fight is happening. */
+  motive?: string;
+  /** Whether a non-lethal / snap-free / talk-down resolution is available. */
+  reconcilable: boolean;
+}
+
 /** An enemy combatant. */
 export interface Enemy {
   name: string;
@@ -31,6 +63,36 @@ export interface Enemy {
   knownAbilities?: string[];
   /** Loot awarded to the player on victory. */
   loot?: Item[];
+  /** Source bestiary entry id, when drawn from the curated catalogue (issue #187). */
+  bestiaryId?: string;
+}
+
+/** The combat role a curated ability fills (issue #187, Phase 2). */
+export type AbilityKind = "offensive" | "defensive" | "control" | "evasive" | "utility";
+
+/**
+ * A canon ability promoted to a real combat tool (issue #187, Phase 2). Derived
+ * from each pathway's corpus abilities by `combatKitFor`, classified into a
+ * combat role with a cost, cooldown, and potency so the exchange offers a
+ * pathway-authentic toolkit instead of three templated verbs.
+ */
+export interface CombatAbility {
+  id: string;
+  /** Canon ability name. */
+  name: string;
+  kind: AbilityKind;
+  /** Canon description, condensed for combat. */
+  description: string;
+  /** Sanity cost when invoked (≤ 0 applied as a drain). */
+  sanityCost: number;
+  /** Strain added to the loss-of-control meter; 0 for safe abilities. */
+  controlStrain: number;
+  /** Rounds before re-use within one fight. */
+  cooldown: number;
+  /** Advantage contribution before edge/intel scaling. */
+  potency: number;
+  /** Framings this ability is especially strong against. */
+  counters?: EncounterFraming[];
 }
 
 /** The mechanical preparation a player completes before a known fight. */
@@ -80,6 +142,16 @@ export type DecisionKind =
   | "artifact"
   | "ability";
 
+/**
+ * A non-lethal line of effort the player can pursue across the exchange (issue
+ * #187, Phase 4 outcome spectrum). Tagged on a `DecisionOption`; the engine
+ * tallies the chosen lines and, combined with the encounter framing and the
+ * final advantage, resolves a richer outcome than win/lose. `subdue`/`capture`/
+ * `spare` are available in any fight; `free`/`talk-down` only when the framing
+ * is reconcilable.
+ */
+export type ResolutionLine = "subdue" | "free" | "talk-down" | "capture" | "spare";
+
 /** A single tactical option presented at a decision point. */
 export interface DecisionOption {
   id: string;
@@ -101,6 +173,18 @@ export interface DecisionOption {
    * moment (pairs with `consumesArtifact`). Removed from inventory on use.
    */
   artifactItem?: Item;
+  /**
+   * A non-lethal resolution line this option advances (issue #187, Phase 4).
+   * Choosing it counts toward a `subdued`/`freed`/`talked-down`/`captured`/
+   * `spared` outcome instead of a plain victory.
+   */
+  resolutionLine?: ResolutionLine;
+  /**
+   * A legible, plain-language effect/risk tag shown on the option (issue #187
+   * clarity). Surfaces the direction of a choice without leaking the exact
+   * hidden modifier.
+   */
+  effectTag?: string;
 }
 
 /** A mid-fight decision the player resolves. */
@@ -111,7 +195,17 @@ export interface DecisionPoint {
   options: DecisionOption[];
 }
 
-export type CombatOutcome = "victory" | "defeat" | "escape" | "stalemate";
+export type CombatOutcome =
+  | "victory"
+  | "defeat"
+  | "escape"
+  | "stalemate"
+  // Outcome spectrum (issue #187, Phase 4) — beyond win/lose:
+  | "subdued" // won non-lethally — no kill, no dropped characteristic
+  | "freed" // broke the control over a turned ally — ally restored
+  | "talked-down" // ended by words/intimidation/motive — no violence
+  | "captured" // foe taken alive (interrogation/leverage/recruit hook)
+  | "spared"; // a decisive win, but you let them live
 
 export type InjurySeverity = "minor" | "major" | "grievous";
 
@@ -145,6 +239,12 @@ export type CombatPhase = "preparation" | "exchange" | "resolution";
 export interface CombatEncounter {
   id: string;
   enemy: Enemy;
+  /**
+   * Why this fight is happening and who the opponent is (issue #187, Phase 1).
+   * Optional so legacy serialized encounters stay valid; a fight created without
+   * one is treated as a `hostile-beyonder`/`mundane-threat` by the engine.
+   */
+  context?: EncounterContext;
   /** True for an ambush — no preparation phase, capped preparation score. */
   ambush: boolean;
   phase: CombatPhase;
@@ -183,6 +283,13 @@ export interface CombatEncounter {
    * item when used. Captured on the encounter for the same determinism reason.
    */
   availableArtifacts?: Item[];
+  /**
+   * The player's pathway-and-Sequence combat ability kit (issue #187, Phase 2):
+   * the canon abilities promoted to costed combat tools, offered as the exchange
+   * options. Captured at encounter start (from `combatKitFor`) so a serialized
+   * fight regenerates identical options. Optional for legacy encounters.
+   */
+  availableKit?: CombatAbility[];
   /**
    * Potion-preparation hunt objective (issue #84): the name of the Beyonder
    * Characteristic this fight is hunting for. Set when the encounter is launched

@@ -549,6 +549,31 @@ describe("accessibility — combat", () => {
     await expectNoAxeViolations(view(prepared));
   });
 
+  it("exchange phase with a mind-controlled (reconcilable) framing has no violations", async () => {
+    const prepared = applyPreparation(
+      createEncounter({
+        id: "a11y-combat-framed",
+        enemy: {
+          name: "Lawrence",
+          sequenceLevel: 8,
+          isBeyonder: true,
+          pathwayId: 4,
+        },
+        context: {
+          framing: "mind-controlled",
+          isKnownPerson: true,
+          controllerName: "the Puppeteer",
+          reconcilable: true,
+        },
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      emptyPreparation(),
+    );
+    await expectNoAxeViolations(view(prepared));
+  });
+
   it("resolution phase has no violations", async () => {
     let encounter = applyPreparation(
       createEncounter({

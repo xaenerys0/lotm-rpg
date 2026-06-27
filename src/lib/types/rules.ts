@@ -32,6 +32,14 @@ export interface Item {
     | "mundane"
     | "uniqueness"
     | "sealed-artifact";
+  /**
+   * Whether the item is destroyed when used (combat overhaul, issue #187).
+   * Optional override of the category default resolved by `isConsumable` in
+   * `@/lib/game/inventory`: a Sealed Artifact persists unless its description
+   * says otherwise; a one-use reagent/potion is spent. Set explicitly only when
+   * an item's behaviour differs from its category's default.
+   */
+  consumable?: boolean;
 }
 
 export interface Ritual {
