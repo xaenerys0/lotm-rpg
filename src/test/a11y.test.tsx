@@ -521,6 +521,32 @@ describe("accessibility — combat", () => {
     await expectNoAxeViolations(view(prepared));
   });
 
+  it("exchange phase with a slipping control meter + enemy stance has no violations", async () => {
+    const prepared = applyPreparation(
+      createEncounter({
+        id: "a11y-combat-control",
+        enemy: {
+          name: "a lurking Beyonder",
+          sequenceLevel: 8,
+          isBeyonder: true,
+          pathwayId: 4,
+        },
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      emptyPreparation(),
+    );
+    // Force the control meter into a slipping state so the progressbar + warning
+    // render for the axe pass.
+    const slipping = {
+      ...prepared,
+      controlStrain: 0.78,
+      controlTier: "slipping" as const,
+    };
+    await expectNoAxeViolations(view(slipping));
+  });
+
   it("enemy dossier at thorough intelligence (full reveal) has no violations", async () => {
     const prepared = applyPreparation(
       createEncounter({
@@ -590,6 +616,34 @@ describe("accessibility — combat", () => {
       }),
       emptyPreparation(),
     );
+    while (!isExchangeComplete(encounter)) {
+      encounter = chooseOption(
+        encounter,
+        encounter.decisionPoints[encounter.decisionIndex].options[0].id,
+      );
+    }
+    encounter = resolveEncounter(encounter);
+    await expectNoAxeViolations(view(encounter));
+  });
+
+  it("after-action report on a control spiral has no violations", async () => {
+    let encounter = applyPreparation(
+      createEncounter({
+        id: "a11y-combat-spiral",
+        enemy: {
+          name: "a lurking Beyonder",
+          sequenceLevel: 8,
+          isBeyonder: true,
+          pathwayId: 4,
+        },
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      emptyPreparation(),
+    );
+    // Drive the meter to spiral so the resolution reports the lost-control outcome.
+    encounter = { ...encounter, controlStrain: 0.95, controlTier: "spiral" };
     while (!isExchangeComplete(encounter)) {
       encounter = chooseOption(
         encounter,

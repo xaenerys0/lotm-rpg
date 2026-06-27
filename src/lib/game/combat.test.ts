@@ -23,6 +23,7 @@ import {
   generateDecisionPoints,
   deriveEncounterEnemy,
   deriveEncounter,
+  deriveHuntQuarry,
   selectOpponents,
   bestiaryFoeToEnemy,
   isReconcilableFraming,
@@ -43,6 +44,15 @@ import {
   tickInjuries,
   combatNarrationContext,
   isValidEncounterShape,
+  controlTierFor,
+  controlTierLabel,
+  describeControlTier,
+  seedControlStrain,
+  stanceForPoint,
+  stanceLabel,
+  describeStance,
+  threatAssessment,
+  afterActionReport,
   artifactBacklash,
   ARTIFACT_VOLATILE_THRESHOLD,
 } from "./combat";
@@ -671,6 +681,38 @@ describe("deriveEncounter", () => {
   });
 });
 
+describe("deriveHuntQuarry — never targets a friend", () => {
+  it("ignores a present ally and draws the quarry from the bestiary", () => {
+    const quarry = deriveHuntQuarry(
+      makeGameState({
+        npcsPresent: ["Trusted Friend"],
+        currentCity: "backlund",
+        sequenceLevel: 9,
+      }),
+      {
+        trackedNpcState: {
+          roster: [{ name: "Trusted Friend", disposition: "ally", follows: true }],
+        },
+      },
+    );
+    // The friend is NEVER the quarry.
+    expect(quarry.enemy.name).not.toBe("Trusted Friend");
+    expect(quarry.source).toBe("bestiary");
+    // A huntable framing — never a reconcilable ally framing.
+    expect(["beast", "hostile-beyonder", "lost-control", "mundane-threat"]).toContain(
+      quarry.context.framing,
+    );
+    expect(quarry.context.isKnownPerson).toBe(false);
+  });
+
+  it("falls back to a generic framed foe when no bestiary quarry fits the region/Sequence", () => {
+    // A powerful player (Seq 2) with no region-appropriate catalogued foe.
+    const quarry = deriveHuntQuarry(makeGameState({ sequenceLevel: 2 }));
+    expect(quarry.enemy.name).toBe("a lurking Beyonder");
+    expect(quarry.context.framing).toBe("hostile-beyonder");
+  });
+});
+
 describe("bestiaryFoeToEnemy", () => {
   it("scales a curated foe to the player while keeping canon data", () => {
     const devilDog = getBestiaryFoe("backlund-devil-dog")!;
@@ -814,6 +856,40 @@ describe("combatNarrationContext framing line (Phase 6)", () => {
       randomFactor: 0.5,
     });
     expect(combatNarrationContext(encounter)).toBe("");
+  });
+
+  it("narrates the pursued resolution line and a fraying control tier", () => {
+    let e = applyPreparation(
+      createEncounter({
+        id: "narr3",
+        enemy: makeEnemy({ isBeyonder: true }),
+        context: makeEncounterContext("mind-controlled", { isKnownPerson: true }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep(),
+    );
+    // Pick the snap-free line at the first point.
+    const free = e.decisionPoints[0].options.find((o) => o.resolutionLine === "free")!;
+    e = chooseOption(e, free.id);
+    const ctx = combatNarrationContext(e);
+    expect(ctx).toContain("break the control over them");
+  });
+
+  it("narrates a slipping control tier", () => {
+    const prepared = applyPreparation(
+      createEncounter({
+        id: "narr4",
+        enemy: makeEnemy({ isBeyonder: true }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep(),
+    );
+    const slipping: CombatEncounter = { ...prepared, controlTier: "slipping" };
+    expect(combatNarrationContext(slipping)).toContain("slipping");
   });
 });
 
@@ -1262,12 +1338,24 @@ describe("chooseOption", () => {
     return applyPreparation(encounter, makePrep({ intelligence: "thorough" }));
   }
 
-  it("records the choice, accumulates its modifier, and advances", () => {
+  // Mirror of the engine's STANCE_MODIFIER table (issue #187, Phase 3b).
+  const STANCE_ADJ: Record<string, Partial<Record<string, number>>> = {
+    pressing: { aggressive: -0.05, defensive: 0.04, evasive: 0.04 },
+    guarded: { aggressive: -0.04, ability: 0.02 },
+    reeling: { aggressive: 0.05, ability: 0.03 },
+    desperate: { aggressive: 0.06, defensive: -0.03 },
+  };
+
+  it("records the choice, accumulates its modifier plus the stance shift, and advances", () => {
     const encounter = prepared();
-    const option = encounter.decisionPoints[0].options[0];
+    const point = encounter.decisionPoints[0];
+    const option = point.options[0];
     const next = chooseOption(encounter, option.id);
     expect(next.chosenOptionIds).toEqual([option.id]);
-    expect(next.accumulatedModifier).toBeCloseTo(option.modifier, 5);
+    // The accumulated modifier = the option modifier + the active enemy stance's
+    // shift for that tactic (issue #187, Phase 3b).
+    const adj = STANCE_ADJ[point.enemyStance!]?.[option.kind] ?? 0;
+    expect(next.accumulatedModifier).toBeCloseTo(option.modifier + adj, 5);
     expect(next.decisionIndex).toBe(1);
   });
 
@@ -2156,5 +2244,410 @@ describe("artifactBacklash", () => {
       category: "sealed-artifact",
     };
     expect(artifactBacklash([unknown], 0.5)).toBeLessThan(0);
+  });
+});
+
+// ─── Control meter & enemy stances (issue #187, Phase 3) ─────────────
+
+describe("seedControlStrain", () => {
+  it("starts steady at full sanity and frayed when sanity is gone", () => {
+    expect(seedControlStrain(100, 100)).toBe(0);
+    expect(seedControlStrain(0, 100)).toBe(0.5);
+    // Half sanity → a quarter strain.
+    expect(seedControlStrain(50, 100)).toBeCloseTo(0.25, 5);
+    // Defensive against a zero max.
+    expect(seedControlStrain(0, 0)).toBe(0);
+  });
+});
+
+describe("controlTierFor", () => {
+  it("maps strain to its tier at the thresholds", () => {
+    expect(controlTierFor(0)).toBe("steady");
+    expect(controlTierFor(0.39)).toBe("steady");
+    expect(controlTierFor(0.4)).toBe("frayed");
+    expect(controlTierFor(0.69)).toBe("frayed");
+    expect(controlTierFor(0.7)).toBe("slipping");
+    expect(controlTierFor(0.89)).toBe("slipping");
+    expect(controlTierFor(0.9)).toBe("spiral");
+    expect(controlTierFor(1)).toBe("spiral");
+  });
+});
+
+describe("control meter accrual & recovery", () => {
+  function prepared(overrides = {}): CombatEncounter {
+    return applyPreparation(
+      createEncounter({
+        id: "ctrl",
+        enemy: makeEnemy({ sequenceLevel: 5 }), // stronger foe → low edge
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+        playerSanity: 60,
+        playerMaxSanity: 100,
+        ...overrides,
+      }),
+      makePrep(),
+    );
+  }
+
+  it("seeds the encounter's strain from sanity", () => {
+    const e = prepared();
+    expect(e.controlStrain).toBeCloseTo(0.2, 5);
+    expect(e.controlTier).toBe("steady");
+  });
+
+  it("pushing an aggressive option without an edge raises strain", () => {
+    const e = prepared();
+    const aggressive = e.decisionPoints[0].options.find((o) => o.kind === "aggressive")!;
+    expect(aggressive.strainDelta).toBeGreaterThan(0);
+    const next = chooseOption(e, aggressive.id);
+    expect(next.controlStrain!).toBeGreaterThan(e.controlStrain!);
+  });
+
+  it("a defensive / de-escalation choice eases strain (back off the brink)", () => {
+    const e = prepared();
+    const defensive = e.decisionPoints[0].options.find((o) => o.kind === "defensive")!;
+    expect(defensive.strainDelta).toBeLessThan(0);
+    const next = chooseOption(e, defensive.id);
+    expect(next.controlStrain!).toBeLessThan(e.controlStrain!);
+  });
+
+  it("is deterministic — the same choice yields the same strain", () => {
+    const e = prepared();
+    const id = e.decisionPoints[0].options[0].id;
+    expect(chooseOption(e, id).controlStrain).toBe(chooseOption(e, id).controlStrain);
+  });
+});
+
+describe("forced-reckless at slipping", () => {
+  it("drops the evasive and de-escalation options for the next point once slipping", () => {
+    // Seed near slipping, then a heavy aggressive push tips into it.
+    const prepared = applyPreparation(
+      createEncounter({
+        id: "reck",
+        enemy: makeEnemy({ sequenceLevel: 5 }), // stronger foe → no edge
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep(),
+    );
+    // Sit just below slipping; a no-edge aggressive push (+0.18) tips into it.
+    const e: CombatEncounter = { ...prepared, controlStrain: 0.6, controlTier: "frayed" };
+    const aggressive = e.decisionPoints[0].options.find((o) => o.kind === "aggressive")!;
+    const next = chooseOption(e, aggressive.id);
+    expect(next.controlTier).toBe("slipping");
+    const upcoming = next.decisionPoints[next.decisionIndex];
+    // No flee / talk / snap-free escape hatch while slipping — forced reckless.
+    expect(upcoming.options.some((o) => o.kind === "evasive")).toBe(false);
+    expect(
+      upcoming.options.some(
+        (o) => o.resolutionLine === "free" || o.resolutionLine === "talk-down",
+      ),
+    ).toBe(false);
+    // The point is still playable (at least one option remains).
+    expect(upcoming.options.length).toBeGreaterThan(0);
+  });
+
+  it("restores the safe options once the meter recovers below slipping", () => {
+    const prepared = applyPreparation(
+      createEncounter({
+        id: "recover",
+        enemy: makeEnemy({ sequenceLevel: 9 }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep(),
+    );
+    // Frayed, not slipping — a defensive choice eases the meter; the upcoming
+    // point keeps its evasive option (no forced-reckless constraint applied).
+    const e: CombatEncounter = { ...prepared, controlStrain: 0.5, controlTier: "frayed" };
+    const defensive = e.decisionPoints[0].options.find((o) => o.kind === "defensive")!;
+    const next = chooseOption(e, defensive.id);
+    expect(next.controlTier).not.toBe("slipping");
+    expect(
+      next.decisionPoints[next.decisionIndex].options.some((o) => o.kind === "evasive"),
+    ).toBe(true);
+  });
+});
+
+describe("loss-of-control spiral routing", () => {
+  function spiralEncounter(playerSequence: number, highRisk = false): CombatEncounter {
+    const e = applyPreparation(
+      createEncounter({
+        id: "spiral",
+        enemy: makeEnemy({ sequenceLevel: 5 }),
+        playerPathwayId: 1,
+        playerSequence,
+        randomFactor: 0.5,
+        highRisk,
+      }),
+      makePrep(),
+    );
+    // Force the meter to spiral, as a pushed fight would.
+    return { ...e, controlStrain: 0.95, controlTier: "spiral" };
+  }
+
+  it("sets a setback verdict at a low Sequence", () => {
+    const resolved = resolveEncounter(spiralEncounter(8));
+    expect(resolved.result?.lossOfControl?.outcome).toBe("setback");
+    expect(resolved.result?.lossOfControl?.severity).toBe("setback");
+  });
+
+  it("sets a permadeath verdict at a high Sequence (Angel tier)", () => {
+    const resolved = resolveEncounter(spiralEncounter(2));
+    expect(resolved.result?.lossOfControl?.outcome).toBe("permadeath");
+    expect(resolved.result?.lossOfControl?.severity).toBe("fatal");
+  });
+
+  it("escalates one step when the fighter was high-risk", () => {
+    // Seq 7 alone is a setback; high-risk pushes it to transformation/permadeath.
+    const calm = resolveEncounter(spiralEncounter(7, false));
+    expect(calm.result?.lossOfControl?.outcome).toBe("setback");
+    const fragile = resolveEncounter(spiralEncounter(7, true));
+    expect(fragile.result?.lossOfControl?.outcome).toBe("permadeath");
+  });
+
+  it("does NOT set a verdict when the player backed off (no spiral)", () => {
+    const e = applyPreparation(
+      createEncounter({
+        id: "calm",
+        enemy: makeEnemy({ sequenceLevel: 8 }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep(),
+    );
+    expect(resolveEncounter(e).result?.lossOfControl).toBeUndefined();
+  });
+
+  it("a spiral penalty makes the fight harder to win than a steady one", () => {
+    const base = applyPreparation(
+      createEncounter({
+        id: "pen",
+        enemy: makeEnemy({ sequenceLevel: 9 }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep({ intelligence: "thorough" }),
+    );
+    const steady = resolveEncounter(base);
+    const spiraled = resolveEncounter({
+      ...base,
+      controlStrain: 0.95,
+      controlTier: "spiral",
+    });
+    // The spiral's advantage penalty makes a worse (or equal) outcome — never better.
+    const rank = (o: string) => ["defeat", "stalemate", "escape", "victory"].indexOf(o);
+    expect(rank(spiraled.outcome!)).toBeLessThanOrEqual(rank(steady.outcome!));
+  });
+});
+
+describe("enemy stances (Phase 3b)", () => {
+  it("derives the stance from the running advantage", () => {
+    expect(stanceForPoint(0.4)).toBe("desperate");
+    expect(stanceForPoint(0.2)).toBe("reeling");
+    expect(stanceForPoint(0)).toBe("guarded");
+    expect(stanceForPoint(-0.3)).toBe("pressing");
+  });
+
+  it("stamps every decision point with a stance and re-stamps reactively", () => {
+    const e = applyPreparation(
+      createEncounter({
+        id: "stance",
+        enemy: makeEnemy({ sequenceLevel: 9 }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep({ intelligence: "thorough" }),
+    );
+    expect(e.decisionPoints.every((p) => p.enemyStance !== undefined)).toBe(true);
+    // A strong aggressive choice shifts the next point's stance toward reeling.
+    const aggressive = e.decisionPoints[0].options.find((o) => o.kind === "aggressive")!;
+    const next = chooseOption(e, aggressive.id);
+    expect(next.decisionPoints[1].enemyStance).toBeDefined();
+  });
+
+  it("labels and describes every stance", () => {
+    for (const s of ["pressing", "guarded", "reeling", "desperate"] as const) {
+      expect(stanceLabel(s).length).toBeGreaterThan(0);
+      expect(describeStance(s).length).toBeGreaterThan(0);
+    }
+  });
+});
+
+// ─── Clarity surfaces (issue #187, Phase 5) ──────────────────────────
+
+describe("control tier copy", () => {
+  it("labels and describes every tier", () => {
+    for (const t of ["steady", "frayed", "slipping", "spiral"] as const) {
+      expect(controlTierLabel(t).length).toBeGreaterThan(0);
+      expect(describeControlTier(t).length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("threatAssessment", () => {
+  function withIntel(
+    intel: "none" | "partial" | "thorough",
+    enemy: Partial<Enemy> = {},
+  ): CombatEncounter {
+    return applyPreparation(
+      createEncounter({
+        id: "threat",
+        enemy: makeEnemy(enemy),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep({ intelligence: intel }),
+    );
+  }
+
+  it("reads the danger tier from the sequence gap", () => {
+    // A much stronger foe (Seq 5 vs player 9 → gap −4) is severe.
+    expect(threatAssessment(withIntel("none", { sequenceLevel: 5 })).dangerTier).toBe(
+      "severe",
+    );
+    // A weaker foe (Seq 9 enemy = gap 0 here; a Seq 7 player'd see low) — even.
+    expect(threatAssessment(withIntel("none", { sequenceLevel: 9 })).dangerTier).toBe(
+      "even",
+    );
+  });
+
+  it("gates the odds band by intelligence", () => {
+    expect(threatAssessment(withIntel("none")).oddsBand).toBe("unknown");
+    expect(threatAssessment(withIntel("partial")).oddsBand).not.toBe("unknown");
+    // A thorough read of a much weaker mundane foe (player Seq 5 vs Seq 9 thug,
+    // gap +4) is strongly in your favour.
+    const dominant = applyPreparation(
+      createEncounter({
+        id: "dom",
+        enemy: makeEnemy({ sequenceLevel: 9, isBeyonder: false }),
+        playerPathwayId: 1,
+        playerSequence: 5,
+        randomFactor: 0.5,
+      }),
+      makePrep({ intelligence: "thorough" }),
+    );
+    expect(threatAssessment(dominant).oddsBand).toBe("strongly in your favour");
+  });
+
+  it("surfaces reconcilability from the context", () => {
+    const reconcilable = applyPreparation(
+      createEncounter({
+        id: "rec",
+        enemy: makeEnemy({ isBeyonder: true }),
+        context: makeEncounterContext("mind-controlled", { isKnownPerson: true }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep(),
+    );
+    expect(threatAssessment(reconcilable).reconcilable).toBe(true);
+  });
+});
+
+describe("afterActionReport", () => {
+  function resolvedFight(): CombatEncounter {
+    let e = applyPreparation(
+      createEncounter({
+        id: "aar",
+        enemy: makeEnemy({ isBeyonder: true, pathwayId: 4, sequenceLevel: 8 }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep(),
+    );
+    while (!isExchangeComplete(e)) {
+      e = chooseOption(e, e.decisionPoints[e.decisionIndex].options[0].id);
+    }
+    return resolveEncounter(e);
+  }
+
+  it("itemizes the consequences from the resolved encounter", () => {
+    const e = resolvedFight();
+    const report = afterActionReport(e, e.result!);
+    expect(report.outcome).toBe(e.outcome);
+    expect(report.injuries).toBe(e.result!.injuries);
+    expect(report.itemsSpent).toBe(e.result!.itemsLost);
+    expect(["steady", "frayed", "slipping", "spiral"]).toContain(report.controlTier);
+    expect(typeof report.spiraled).toBe("boolean");
+  });
+
+  it("lists an INVOKED relic that survived as KEPT, but not a merely-readied one (§4.6)", () => {
+    const relic = mintArtifactItem(getSealedArtifact("3-0782")!);
+    // A fight where the readied relic IS invoked (an artifact option chosen) —
+    // the sealed artifact persists (non-consumable), so it is reported as kept.
+    const invoked: CombatEncounter = {
+      ...resolvedFight(),
+      preparation: makePrep({ sealedArtifacts: [relic] }),
+      decisionPoints: [
+        {
+          id: "dp",
+          prompt: "",
+          options: [
+            {
+              id: "use-relic",
+              label: "",
+              kind: "artifact",
+              description: "",
+              modifier: 0.2,
+              consumesArtifact: true,
+            },
+          ],
+        },
+      ],
+      chosenOptionIds: ["use-relic"],
+    };
+    const usedReport = afterActionReport(invoked, { ...invoked.result!, itemsLost: [] });
+    expect(usedReport.itemsKept.map((i) => i.name)).toContain(relic.name);
+
+    // A relic that was readied but NEVER invoked is NOT listed as "kept" (it was
+    // never spent — it just stays in inventory).
+    const unused: CombatEncounter = {
+      ...resolvedFight(),
+      preparation: makePrep({ sealedArtifacts: [relic] }),
+    };
+    const unusedReport = afterActionReport(unused, { ...unused.result!, itemsLost: [] });
+    expect(unusedReport.itemsKept).toEqual([]);
+  });
+
+  it("notes the world ripple for a freed ally", () => {
+    const base = resolvedFight();
+    const freed: CombatEncounter = {
+      ...base,
+      enemy: { ...base.enemy, name: "Lawrence" },
+      context: makeEncounterContext("mind-controlled", { isKnownPerson: true }),
+    };
+    const report = afterActionReport(freed, { ...freed.result!, outcome: "freed" });
+    expect(report.ripple.join(" ")).toContain("Lawrence");
+  });
+
+  it("notes the ripple for a captured or spared foe", () => {
+    const base = resolvedFight();
+    expect(
+      afterActionReport(base, { ...base.result!, outcome: "captured" }).ripple.join(" "),
+    ).toContain("taken alive");
+    expect(
+      afterActionReport(base, { ...base.result!, outcome: "spared" }).ripple.join(" "),
+    ).toContain("lives");
+  });
+
+  it("attributes a spiral in the sanity causes", () => {
+    const base = resolvedFight();
+    const report = afterActionReport(base, {
+      ...base.result!,
+      sanityImpact: -10,
+      lossOfControl: { severity: "setback", outcome: "setback" },
+    });
+    expect(report.spiraled).toBe(true);
+    expect(report.sanityCauses.join(" ")).toContain("control");
   });
 });

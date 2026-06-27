@@ -57,7 +57,11 @@ and fit the viewport while signed in. `canon-takeover-prologue.spec.ts` (issue
 #92) also runs in this tier: it route-intercepts the AI provider and drives the
 canon-character takeover — naming the character after a novel figure, accepting
 the takeover affordance, walking the canon-faithful guided prologue, and opening
-the chronicle.
+the chronicle. `combat.spec.ts` (issue #187) seeds a session plus an in-progress
+combat encounter (persisted under the `lotm:combat:` key, re-hydrated on mount),
+enters the game loop, and asserts the framed clarity surfaces render — the
+mind-controlled framing card, the threat-assessment card, and the loss-of-control
+meter `progressbar`.
 
 Enable it by exporting:
 

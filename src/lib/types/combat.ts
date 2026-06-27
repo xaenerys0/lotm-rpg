@@ -152,6 +152,22 @@ export type DecisionKind =
  */
 export type ResolutionLine = "subdue" | "free" | "talk-down" | "capture" | "spare";
 
+/**
+ * The live loss-of-control meter during a fight (issue #187, Phase 3). Seeded
+ * from sanity and pushed by risky play; at `spiral` the resolution routes
+ * through the sanity/death ladder (setback → transformation → fatal). Recoverable
+ * by backing off (defensive/evasive/de-escalation choices reduce strain).
+ */
+export type ControlTier = "steady" | "frayed" | "slipping" | "spiral";
+
+/**
+ * The enemy's reactive posture at a decision point (issue #187, Phase 3b). Shifts
+ * which of the player's options pay off — a `guarded` foe blunts aggression, a
+ * `reeling` one rewards it. Engine-computed from the running advantage, shown to
+ * the player.
+ */
+export type EnemyStance = "pressing" | "guarded" | "reeling" | "desperate";
+
 /** A single tactical option presented at a decision point. */
 export interface DecisionOption {
   id: string;
@@ -185,6 +201,12 @@ export interface DecisionOption {
    * hidden modifier.
    */
   effectTag?: string;
+  /**
+   * How much this choice pushes (+) or eases (−) the loss-of-control meter
+   * (issue #187, Phase 3). Risky aggression / high-grade artifacts / straining
+   * abilities add; defensive, evasive, and de-escalation choices subtract.
+   */
+  strainDelta?: number;
 }
 
 /** A mid-fight decision the player resolves. */
@@ -193,6 +215,11 @@ export interface DecisionPoint {
   /** Engine-generated prompt; the AI may replace it with richer narration. */
   prompt: string;
   options: DecisionOption[];
+  /**
+   * The enemy's reactive stance at this point (issue #187, Phase 3b). Shown to
+   * the player; shifts which options pay off. Optional for legacy encounters.
+   */
+  enemyStance?: EnemyStance;
 }
 
 export type CombatOutcome =
@@ -217,6 +244,17 @@ export interface Injury {
   recoveryTurns: number;
 }
 
+/**
+ * A loss-of-control verdict from a combat spiral (issue #187, Phase 3) —
+ * structurally a subset of the death engine's `FailureVerdict`. When present on
+ * a result, the React layer routes it through the shared setback / permadeath
+ * paths instead of the normal turn weave.
+ */
+export interface CombatControlVerdict {
+  severity: "setback" | "transformation" | "fatal";
+  outcome: "setback" | "permadeath";
+}
+
 export interface CombatResult {
   outcome: CombatOutcome;
   injuries: Injury[];
@@ -227,6 +265,12 @@ export interface CombatResult {
   /** Characteristics dropped by a defeated Beyonder enemy. */
   characteristicsDropped: BeyonderCharacteristic[];
   narrativeSummary: string;
+  /**
+   * Set when the fight ended in a loss-of-control SPIRAL (issue #187, Phase 3).
+   * The React layer routes a `permadeath` verdict through `concludeChronicle`
+   * and a `setback` through `applySetback`. Absent for an ordinary resolution.
+   */
+  lossOfControl?: CombatControlVerdict;
 }
 
 export type CombatPhase = "preparation" | "exchange" | "resolution";
@@ -255,6 +299,20 @@ export interface CombatEncounter {
   randomFactor: number;
   /** Penalty from the player's active injuries, in [0, 1]. */
   injuryPenalty: number;
+  /**
+   * Loss-of-control meter (issue #187, Phase 3), 0..1 — seeded from sanity at
+   * creation, pushed by risky play, eased by backing off. Optional so legacy
+   * serialized encounters stay valid (treated as 0/`steady`).
+   */
+  controlStrain?: number;
+  /** The tier the current `controlStrain` falls into (shown to the player). */
+  controlTier?: ControlTier;
+  /**
+   * Whether this fighter is in a fragile, high-risk state (under-anchored at a
+   * high Sequence, or already low on sanity). Escalates a spiral's severity by
+   * one step at resolution. Passed in by the React layer at encounter creation.
+   */
+  highRisk?: boolean;
   preparation: CombatPreparationInput | null;
   prepQuality: PreparationQuality | null;
   /** enemySequence - playerSequence; positive favours the player. */
