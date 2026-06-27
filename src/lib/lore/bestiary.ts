@@ -324,3 +324,42 @@ export function bestiaryFoeSequence(foe: BestiaryFoe, playerSequence: number): n
   const target = playerSequence - 1;
   return Math.min(weak, Math.max(strong, target));
 }
+
+/**
+ * Whether a foe's canon Sequence band CONTAINS a specific Sequence (lower number
+ * = stronger): the band `[strong, weak]` covers `seq` when `strong <= seq <=
+ * weak`. Used to align an ingredient-hunt quarry to the exact Sequence of the
+ * Beyonder Characteristic being hunted (not the ±2 fight-difficulty window).
+ */
+function bandCoversSequence(band: [number, number], seq: number): boolean {
+  const [strong, weak] = band;
+  return strong <= seq && seq <= weak;
+}
+
+/**
+ * The curated foes that BEAR a given pathway's Characteristic at a target
+ * Sequence — a catalogued Beyonder of that exact pathway whose canon band covers
+ * the rung whose Characteristic a hunter needs (issue #187 follow-up). This is
+ * the "hunt a related monster that is part of the pathway and sequence you need"
+ * case: an Abyss hunter after a Sequence 6-7 Characteristic finds the Devil Dog,
+ * while a hunter on any OTHER pathway never does. Region-preferred (region-fitting
+ * foes first) but not region-bound — the pathway/Sequence match matters more than
+ * locale for a hunt, and the catalogue is sparse. Pure and deterministic, in
+ * catalogue order within each group.
+ */
+export function bestiaryForPathwaySequence(
+  pathwayId: number,
+  targetSeq: number,
+  regionId?: string,
+): BestiaryFoe[] {
+  const matches = BESTIARY.filter(
+    (foe) =>
+      foe.isBeyonder &&
+      foe.pathwayId === pathwayId &&
+      bandCoversSequence(foe.sequenceBand, targetSeq),
+  );
+  return [
+    ...matches.filter((foe) => fitsRegion(foe, regionId)),
+    ...matches.filter((foe) => !fitsRegion(foe, regionId)),
+  ];
+}

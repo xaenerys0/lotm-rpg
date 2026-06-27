@@ -2,6 +2,7 @@ import type { Ability, Pathway, Sequence } from "@/lib/types/rules";
 
 import { ADVANCEMENT_RITUALS, RITUAL_FROM_SEQUENCE } from "./advancement-canon";
 import { applyCanonDemigodAbilities } from "./demigod-abilities";
+import { MAIN_INGREDIENTS } from "./main-ingredients-canon";
 
 const whiteTowerSequences: Sequence[] = [
   {
@@ -12595,11 +12596,72 @@ function applyCanonAdvancement(pathway: Pathway): Pathway {
   };
 }
 
-// Overlay the canon Advancement Rituals (Seq 5–1), then the corpus-derived
-// demigod abilities (Seq 4–1 of pathways 10–22, issue #120) — both replace
-// hand-authored placeholders with corpus-sourced data at module load.
+/**
+ * Overlay the canon main-ingredient Beyonder Characteristic onto each sequence.
+ *
+ * Canon (wiki `Module:Sequence/standard` — e.g. the Fool "Sequence 4: Bizarro
+ * Sorcerer" formula): the Sequence-N potion's main ingredient is the Sequence-N
+ * role's OWN Beyonder Characteristic — the SAME tier as the potion (a Bizarro
+ * Sorcerer potion takes a **Bizarro Sorcerer** Characteristic, NOT the weaker
+ * Marionettist's). The hand-authored data named the Seq 4-1 Characteristic
+ * ingredient one tier too weak (the previous rung's role), so this rewrites any
+ * Characteristic-type main ingredient to the sequence's OWN role — fixing the
+ * off-by-one across all 22 pathways in one drift-proof place.
+ *
+ * Each rung carries exactly ONE main ingredient, resolved as:
+ *
+ * - the canon PRIMARY material where the wiki documents one for that rung
+ *   (`MAIN_INGREDIENTS`, corpus-generated — e.g. Fool Seq 7 = "True Root of a
+ *   Mist Treant", Red Priest Seq 7 = "Fire Salamander gland"); the rung's other
+ *   canon materials ride along in the description as alternatives; otherwise
+ * - the same-tier **role Beyonder Characteristic** (`"{seq.name} Beyonder
+ *   Characteristic"`), the canon "Or a {role} Beyonder Characteristic" option the
+ *   wiki offers when it documents no monster material for the rung.
+ *
+ * This replaces the hand-authored ingredient names (off-by-one role
+ * Characteristics at Seq 4-1, paraphrased/incorrect creatures at the low rungs)
+ * with corpus-exact data in one drift-proof place.
+ */
+function applyCanonMainIngredient(pathway: Pathway): Pathway {
+  const canonByLevel = MAIN_INGREDIENTS[pathway.id] ?? {};
+  return {
+    ...pathway,
+    sequences: pathway.sequences.map((seq) => {
+      const others = seq.prerequisiteItems.filter(
+        (item) => item.category !== "main-ingredient",
+      );
+      const canonMaterials = canonByLevel[seq.level];
+      const main: Sequence["prerequisiteItems"][number] =
+        canonMaterials && canonMaterials.length > 0
+          ? {
+              name: canonMaterials[0],
+              description:
+                `The primary main material of the ${seq.name} potion (${pathway.name} Pathway).` +
+                (canonMaterials.length > 1
+                  ? ` Canon alternatives: ${canonMaterials.slice(1).join("; ")}.`
+                  : ""),
+              category: "main-ingredient",
+            }
+          : {
+              name: `${seq.name} Beyonder Characteristic`,
+              description: `The Beyonder Characteristic of a ${seq.name} — the core supernatural ingredient of the ${seq.name} potion, carrying the ${pathway.name} pathway's imprint.`,
+              category: "main-ingredient",
+            };
+      // Formula first, then the single main ingredient, then supplementary — the
+      // order the original hand-authored data used.
+      const formula = others.filter((i) => i.category === "potion-formula");
+      const rest = others.filter((i) => i.category !== "potion-formula");
+      return { ...seq, prerequisiteItems: [...formula, main, ...rest] };
+    }),
+  };
+}
+
+// Overlay the canon Advancement Rituals (Seq 5–1), the same-tier main-ingredient
+// Characteristic, then the corpus-derived demigod abilities (Seq 4–1 of pathways
+// 10–22, issue #120) — each replaces hand-authored placeholders with
+// corpus-sourced data at module load.
 export const ALL_PATHWAYS: Pathway[] = applyCanonDemigodAbilities(
-  RAW_PATHWAYS.map(applyCanonAdvancement),
+  RAW_PATHWAYS.map(applyCanonAdvancement).map(applyCanonMainIngredient),
 );
 
 // Indexed by id at module load — getPathway/getSequence are called several

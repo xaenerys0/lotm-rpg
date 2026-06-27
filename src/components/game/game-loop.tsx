@@ -953,15 +953,32 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     (ambush: boolean, huntTarget?: string, opponent?: OpponentOption) => {
       if (!session) return;
       // Who you fight and WHY (issue #187): an explicitly-picked, framed target
-      // when the player chose one; a HUNT tracks its quarry from the bestiary
-      // (never a present ally — `deriveHuntQuarry`); otherwise the framed engine
-      // derivation (present NPC / pursuer / generic fallback) — never the old
-      // silent `npcsPresent[0]`.
+      // when the player chose one; a HUNT tracks the Beyonder/creature whose
+      // Characteristic the player needs — its pathway AND Sequence ALIGNED to that
+      // Characteristic (the player's own pathway at the hunt's target rung), never
+      // a present ally (`deriveHuntQuarry` ignores the cast); otherwise the framed
+      // engine derivation (present NPC / pursuer / generic fallback) — never the
+      // old silent `npcsPresent[0]`.
       const trackedNpcState = resolveTrackedNpcState(session.trackedNpcState);
+      const hunt = huntTarget ? findHunt(session, huntTarget) : undefined;
+      // The hunted ingredient itself decides the quarry: a Beyonder Characteristic
+      // → a Beyonder of the player's pathway at that Characteristic's Sequence; a
+      // creature material → that beast (never a pathway Beyonder). Resolve the item
+      // from the hunt's OWN recorded `targetSeq` (not the current-target plan) so a
+      // hunt engaged after the target potion changed still matches the right thing.
+      const huntItem = hunt
+        ? getSequence(
+            session.gameState.pathwayId,
+            hunt.targetSeq,
+          )?.prerequisiteItems.find((item) => item.name === huntTarget)
+        : undefined;
       const chosen =
         opponent ??
         (huntTarget
-          ? deriveHuntQuarry(session.gameState, { trackedNpcState })
+          ? deriveHuntQuarry(session.gameState, {
+              ...(hunt ? { targetSeq: hunt.targetSeq } : {}),
+              ...(huntItem ? { huntItem } : {}),
+            })
           : deriveEncounter(session.gameState, { ambush, trackedNpcState }));
       // The pathway's own abilities now come from the engine combat KIT (issue
       // #187, Phase 2), so only copied/stolen powers ride as `availableAbilities`.

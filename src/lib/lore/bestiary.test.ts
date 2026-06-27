@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { BESTIARY, getBestiaryFoe, bestiaryFor, bestiaryFoeSequence } from "./bestiary";
+import {
+  BESTIARY,
+  getBestiaryFoe,
+  bestiaryFor,
+  bestiaryForPathwaySequence,
+  bestiaryFoeSequence,
+} from "./bestiary";
 import type { EncounterFraming } from "@/lib/types/combat";
 
 const FRAMINGS: EncounterFraming[] = [
@@ -102,5 +108,35 @@ describe("bestiaryFoeSequence", () => {
     const rogue = getBestiaryFoe("generic-rogue-monster")!; // band [6,9]
     expect(bestiaryFoeSequence(rogue, 9)).toBe(8);
     expect(bestiaryFoeSequence(rogue, 7)).toBe(6);
+  });
+});
+
+describe("bestiaryForPathwaySequence — ingredient-hunt carrier alignment", () => {
+  it("matches a catalogued Beyonder of the exact pathway whose band covers the target sequence", () => {
+    // Devil Dog: Abyss (21), band [6,7].
+    const seq7 = bestiaryForPathwaySequence(21, 7, "backlund");
+    expect(seq7.map((f) => f.id)).toContain("backlund-devil-dog");
+    const seq6 = bestiaryForPathwaySequence(21, 6, "backlund");
+    expect(seq6.map((f) => f.id)).toContain("backlund-devil-dog");
+  });
+
+  it("excludes a foe whose canon band does not COVER the target sequence", () => {
+    // Devil Dog band [6,7] does not cover Seq 9 (a strict containment, not the
+    // ±2 fight window).
+    expect(bestiaryForPathwaySequence(21, 9, "backlund")).toHaveLength(0);
+  });
+
+  it("never returns a foe of a DIFFERENT pathway (the mismatch bug guard)", () => {
+    // A Fool (1) hunter must never be handed the Abyss Devil Dog.
+    const fool = bestiaryForPathwaySequence(1, 7, "backlund");
+    expect(fool.every((f) => f.pathwayId === 1)).toBe(true);
+    expect(fool.map((f) => f.id)).not.toContain("backlund-devil-dog");
+  });
+
+  it("prefers region-fitting carriers but is not region-bound", () => {
+    // Out of region, the pathway/sequence match still surfaces (region is only a
+    // tiebreak), so a roving Abyss hunter is not left empty-handed by locale.
+    const elsewhere = bestiaryForPathwaySequence(21, 7, "tingen");
+    expect(elsewhere.map((f) => f.id)).toContain("backlund-devil-dog");
   });
 });
