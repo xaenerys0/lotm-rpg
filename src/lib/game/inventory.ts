@@ -20,6 +20,22 @@ export function isReagentCategory(category: Item["category"]): boolean {
 }
 
 /**
+ * Whether using an item destroys it (combat overhaul, issue #187 §4.6). The
+ * single source of truth so combat, advancement, and any other "spend an item"
+ * path agree. An explicit `item.consumable` always wins; otherwise the default
+ * is by category: **Sealed Artifacts and the apotheosis Uniqueness persist**
+ * (they are relics, not single-use reagents — invoking a sealed artifact still
+ * carries its sanity backlash, but it is not burned away), while reagents and
+ * ordinary `mundane` consumables are spent. This corrects the prior combat bug
+ * where ritual materials were burned by the act of preparing and sealed
+ * artifacts were destroyed on use.
+ */
+export function isConsumable(item: Item): boolean {
+  if (typeof item.consumable === "boolean") return item.consumable;
+  return item.category !== "sealed-artifact" && item.category !== "uniqueness";
+}
+
+/**
  * Remove `items` from an inventory by name — one match removed per entry,
  * unmatched names ignored. The single shared form of the "drop these items"
  * operation the combat, advancement, and failure subsystems all need (so they

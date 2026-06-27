@@ -20,8 +20,13 @@ import {
   applyDigestion,
   applyCombatResult,
   createEncounter,
-  deriveEncounterEnemy,
+  deriveEncounter,
+  selectOpponents,
+  framingLabel,
+  describeFraming,
+  joinRoster,
   isValidEncounterShape,
+  type OpponentOption,
   digestionFeedback,
   classifySanityTier,
   isLossOfControl,
@@ -221,6 +226,11 @@ const COMBAT_OUTCOME_SUMMARY: Record<CombatResult["outcome"], string> = {
   defeat: "Was overcome by",
   escape: "Escaped from",
   stalemate: "Fought to a standstill with",
+  subdued: "Subdued",
+  freed: "Broke the hold over",
+  "talked-down": "Talked down",
+  captured: "Captured",
+  spared: "Spared",
 };
 
 function loadProviderConfig(): ProviderConfig | null {
@@ -925,25 +935,29 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   }, []);
 
   const startCombat = useCallback(
-    (ambush: boolean, huntTarget?: string) => {
+    (ambush: boolean, huntTarget?: string, opponent?: OpponentOption) => {
       if (!session) return;
-      // The player's actual abilities and carried artifacts ride onto the
-      // encounter so they can be invoked dynamically mid-fight (not only readied
-      // in preparation). The combat-artifact pool is exactly the carried Sealed
-      // Artifacts — the canon dangerous relics, each consumed (with a sanity
-      // backlash) when invoked — not ordinary loot or potion reagents.
-      const { abilities } = sequenceAbilities(
-        session.gameState.pathwayId,
-        session.gameState.sequenceLevel,
-      );
-      // Copied/stolen powers (acquired-powers subsystem) are usable mid-fight too.
-      const combatReadyAbilities = [...abilities, ...acquiredPowerAbilityLabels(session)];
+      // Who you fight and WHY (issue #187): an explicitly-picked, framed target
+      // when the player chose one, else the framed engine derivation (present
+      // NPC / pursuer / generic fallback) — never the old silent `npcsPresent[0]`.
+      const chosen =
+        opponent ??
+        deriveEncounter(session.gameState, {
+          ambush,
+          trackedNpcState: resolveTrackedNpcState(session.trackedNpcState),
+        });
+      // The pathway's own abilities now come from the engine combat KIT (issue
+      // #187, Phase 2), so only copied/stolen powers ride as `availableAbilities`.
+      // The combat-artifact pool is exactly the carried Sealed Artifacts — the
+      // canon dangerous relics — not ordinary loot or potion reagents.
+      const combatReadyAbilities = acquiredPowerAbilityLabels(session);
       const availableArtifacts = session.gameState.inventory.filter(
         (item) => item.category === "sealed-artifact",
       );
       const encounter = createEncounter({
         id: crypto.randomUUID(),
-        enemy: deriveEncounterEnemy(session.gameState, ambush),
+        enemy: chosen.enemy,
+        context: chosen.context,
         playerPathwayId: session.gameState.pathwayId,
         playerSequence: session.gameState.sequenceLevel,
         ambush,
@@ -998,6 +1012,23 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         // The quarry is down — retire the tracking quest (its label drops from
         // activeQuests). On a loss/escape the hunt stays ready to re-engage.
         next = clearHunt(next, huntTarget);
+      }
+
+      // World ripple (issue #187, Phase 4): snapping a mind-controlled / coerced
+      // ally free restores them to the roster as a companion who travels with you.
+      if (result.outcome === "freed" && combat.context?.isKnownPerson) {
+        next = joinRoster(next, {
+          name: enemyName,
+          disposition: "ally",
+          follows: true,
+        });
+        appendJournalEntries(session.id, [
+          buildJournalEntry(next.gameState, next.turnCount, {
+            eventType: "npc-encounter",
+            summary: `Freed ${enemyName} from another's control.`,
+            narrative: `You broke the hold over ${enemyName}; themselves again, they stand at your side.`,
+          }),
+        ]);
       }
 
       // Weave the fight back into the MAIN story: its prose (the narrator's, or
@@ -1973,7 +2004,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   onAbandonHunt={handleAbandonHunt}
                 />
                 <IdentityActionPanel session={session} onUpdate={updateSession} />
-                <CombatLauncher onStart={startCombat} />
+                <CombatLauncher session={session} onStart={startCombat} />
                 {session.gameState.digestion?.complete === true &&
                   isAdvanceableSequence(session.gameState.sequenceLevel) && (
                     <TheClimb session={session}>
@@ -2790,28 +2821,90 @@ function IdentityActionPanel({
   );
 }
 
-function CombatLauncher({ onStart }: { onStart: (ambush: boolean) => void }) {
+// The combat launcher (issue #187, Phase 1): instead of silently fighting the
+// first NPC in the scene, the player picks an explicit, FRAMED target — present
+// NPCs (an ally tagged as mind-controlled, never a plain foe), pursuers, and
+// curated region foes — each showing who they are and why the fight is happening.
+function CombatLauncher({
+  session,
+  onStart,
+}: {
+  session: GameSession;
+  onStart: (ambush: boolean, huntTarget?: string, opponent?: OpponentOption) => void;
+}) {
+  const [picking, setPicking] = useState(false);
+  const opponents = useMemo(() => {
+    if (!picking) return [];
+    const trackedNpcState = resolveTrackedNpcState(session.trackedNpcState);
+    const found = selectOpponents(session.gameState, { trackedNpcState });
+    // Never dead-end the player: when the scene surfaces no framed target (no
+    // present NPCs, no pursuers, no region/Sequence-appropriate bestiary foe),
+    // fall back to the generic framed threat the engine derives.
+    return found.length > 0
+      ? found
+      : [deriveEncounter(session.gameState, { trackedNpcState })];
+  }, [picking, session.gameState, session.trackedNpcState]);
+
   return (
     <div className="mt-8 border-t border-border/40 pt-5">
       <p className="mb-3 text-center text-[10px] tracking-[0.2em] text-muted uppercase">
         Or steel yourself for violence
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <button
-          type="button"
-          onClick={() => onStart(false)}
-          className="min-h-[24px] rounded-md border border-crimson/30 bg-crimson/[0.06] px-4 py-2.5 text-sm text-foreground/80 transition-colors hover:border-crimson/50 hover:bg-crimson/[0.1]"
-        >
-          <span aria-hidden="true">⚔ </span>Confront a known threat
-        </button>
-        <button
-          type="button"
-          onClick={() => onStart(true)}
-          className="min-h-[24px] rounded-md border border-border/50 bg-surface/30 px-4 py-2.5 text-sm text-muted transition-colors hover:border-border hover:text-foreground/80"
-        >
-          Brave an ambush
-        </button>
-      </div>
+
+      {!picking ? (
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <button
+            type="button"
+            onClick={() => setPicking(true)}
+            className="min-h-[24px] rounded-md border border-crimson/30 bg-crimson/[0.06] px-4 py-2.5 text-sm text-foreground/80 transition-colors hover:border-crimson/50 hover:bg-crimson/[0.1]"
+          >
+            <span aria-hidden="true">⚔ </span>Choose who to fight
+          </button>
+          <button
+            type="button"
+            onClick={() => onStart(true)}
+            className="min-h-[24px] rounded-md border border-border/50 bg-surface/30 px-4 py-2.5 text-sm text-muted transition-colors hover:border-border hover:text-foreground/80"
+          >
+            Brave an ambush
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-center text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+            Who do you fight?
+          </p>
+          <ul className="space-y-2">
+            {opponents.map((opponent, i) => (
+              <li key={`${opponent.enemy.name}-${i}`}>
+                <button
+                  type="button"
+                  onClick={() => onStart(false, undefined, opponent)}
+                  className="w-full rounded-lg border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-crimson/40"
+                >
+                  <p className="font-serif text-sm font-medium text-foreground">
+                    {opponent.enemy.name}
+                    <span className="ml-2 rounded bg-surface-raised px-1.5 py-0.5 text-[10px] tracking-wide text-occult-bright">
+                      {framingLabel(opponent.context.framing)}
+                    </span>
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted">
+                    {describeFraming(opponent.context)}
+                  </p>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setPicking(false)}
+              className="min-h-[24px] rounded-md px-3 py-1.5 text-sm font-medium text-muted underline-offset-4 transition-colors hover:text-amber hover:underline"
+            >
+              Stand down
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

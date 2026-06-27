@@ -55,6 +55,13 @@ export {
   type SealedArtifact,
 } from "./sealed-artifacts";
 export {
+  BESTIARY,
+  getBestiaryFoe,
+  bestiaryFor,
+  bestiaryFoeSequence,
+  type BestiaryFoe,
+} from "./bestiary";
+export {
   selectStartScenario,
   selectStartScenarioForLocation,
   startScenariosForEpoch,

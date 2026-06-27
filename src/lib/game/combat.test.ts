@@ -22,23 +22,32 @@ import {
   computeBaseAdvantage,
   generateDecisionPoints,
   deriveEncounterEnemy,
+  deriveEncounter,
+  selectOpponents,
+  bestiaryFoeToEnemy,
+  isReconcilableFraming,
+  coerceAllyFraming,
+  makeEncounterContext,
+  framingLabel,
+  describeFraming,
   enemyIntel,
   createEncounter,
   applyPreparation,
   chooseOption,
   isExchangeComplete,
   resolveOutcome,
+  isWinningOutcome,
   computeConsequences,
   resolveEncounter,
   applyCombatResult,
   tickInjuries,
   combatNarrationContext,
   isValidEncounterShape,
-  MAX_DYNAMIC_ABILITY_OPTIONS,
   artifactBacklash,
   ARTIFACT_VOLATILE_THRESHOLD,
 } from "./combat";
-import { getSealedArtifact, mintArtifactItem } from "@/lib/lore";
+import { getSealedArtifact, mintArtifactItem, getBestiaryFoe } from "@/lib/lore";
+import type { TrackedNpcState } from "./tracked-npcs";
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 
@@ -490,6 +499,324 @@ describe("deriveEncounterEnemy", () => {
   });
 });
 
+// ─── Encounter framing & opponent selection (issue #187, Phase 1) ────
+
+describe("framing helpers", () => {
+  it("classifies reconcilable framings", () => {
+    expect(isReconcilableFraming("mind-controlled")).toBe(true);
+    expect(isReconcilableFraming("coerced")).toBe(true);
+    expect(isReconcilableFraming("lost-control")).toBe(true);
+    expect(isReconcilableFraming("rival-motive")).toBe(true);
+    expect(isReconcilableFraming("hostile-beyonder")).toBe(false);
+    expect(isReconcilableFraming("mundane-threat")).toBe(false);
+    expect(isReconcilableFraming("beast")).toBe(false);
+  });
+
+  it("forces an ally combatant into a reconcilable framing (engine truth over AI string)", () => {
+    expect(coerceAllyFraming("hostile-beyonder", "ally")).toBe("mind-controlled");
+    expect(coerceAllyFraming("beast", "ally")).toBe("mind-controlled");
+    // An already-reconcilable framing for an ally is kept.
+    expect(coerceAllyFraming("coerced", "ally")).toBe("coerced");
+    // A non-ally keeps the proposed framing.
+    expect(coerceAllyFraming("hostile-beyonder", "hostile")).toBe("hostile-beyonder");
+    expect(coerceAllyFraming("hostile-beyonder", undefined)).toBe("hostile-beyonder");
+  });
+
+  it("derives reconcilability from the framing in makeEncounterContext", () => {
+    const ctx = makeEncounterContext("mind-controlled", {
+      isKnownPerson: true,
+      controllerName: "The Puppeteer",
+    });
+    expect(ctx.reconcilable).toBe(true);
+    expect(ctx.controllerName).toBe("The Puppeteer");
+    expect(makeEncounterContext("hostile-beyonder").reconcilable).toBe(false);
+  });
+
+  it("labels and describes framings for the threat card", () => {
+    expect(framingLabel("mind-controlled")).toBe("Mind-controlled");
+    const controlled = describeFraming(
+      makeEncounterContext("mind-controlled", {
+        isKnownPerson: true,
+        controllerName: "Hood Eugen",
+      }),
+    );
+    expect(controlled).toContain("Hood Eugen");
+    // A motive overrides the generic description.
+    const withMotive = describeFraming(
+      makeEncounterContext("rival-motive", {
+        isKnownPerson: false,
+        motive: "After the relic.",
+      }),
+    );
+    expect(withMotive).toBe("After the relic.");
+    // Each framing has a non-empty fallback description.
+    for (const framing of [
+      "mind-controlled",
+      "coerced",
+      "lost-control",
+      "rival-motive",
+      "beast",
+      "mundane-threat",
+      "hostile-beyonder",
+    ] as const) {
+      expect(describeFraming(makeEncounterContext(framing)).length).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("selectOpponents", () => {
+  const roster = (npcs: TrackedNpcState["roster"]): TrackedNpcState => ({ roster: npcs });
+
+  it("reframes a present ally as mind-controlled, never a plain foe", () => {
+    const state = makeGameState({ npcsPresent: ["Lawrence"], currentCity: "tingen" });
+    const options = selectOpponents(state, {
+      trackedNpcState: roster([{ name: "Lawrence", disposition: "ally", follows: true }]),
+    });
+    const lawrence = options.find((o) => o.enemy.name === "Lawrence")!;
+    expect(lawrence.source).toBe("present-npc");
+    expect(lawrence.context.framing).toBe("mind-controlled");
+    expect(lawrence.context.reconcilable).toBe(true);
+    expect(lawrence.context.isKnownPerson).toBe(true);
+  });
+
+  it("frames a roster hostile as a genuine enemy", () => {
+    const state = makeGameState({ npcsPresent: ["The Killer"] });
+    const options = selectOpponents(state, {
+      trackedNpcState: roster([
+        { name: "The Killer", disposition: "hostile", follows: true },
+      ]),
+    });
+    expect(options[0].context.framing).toBe("hostile-beyonder");
+  });
+
+  it("frames an unknown present NPC as a rival with their own agenda", () => {
+    const options = selectOpponents(makeGameState({ npcsPresent: ["A Stranger"] }));
+    expect(options[0].context.framing).toBe("rival-motive");
+    expect(options[0].context.reconcilable).toBe(true);
+  });
+
+  it("surfaces roster pursuers not in the scene as targets", () => {
+    const options = selectOpponents(makeGameState(), {
+      trackedNpcState: roster([
+        { name: "The Hunter", disposition: "hostile", follows: true },
+      ]),
+    });
+    const pursuer = options.find((o) => o.source === "pursuer");
+    expect(pursuer?.enemy.name).toBe("The Hunter");
+  });
+
+  it("surfaces curated bestiary picks for the region + Sequence", () => {
+    const options = selectOpponents(makeGameState({ currentCity: "backlund" }), {
+      maxBestiary: 5,
+    });
+    const bestiary = options.filter((o) => o.source === "bestiary");
+    expect(bestiary.length).toBeGreaterThan(0);
+    expect(bestiary.some((o) => o.enemy.bestiaryId === "backlund-devil-dog")).toBe(true);
+  });
+
+  it("does not duplicate a present NPC who is also a roster pursuer", () => {
+    const state = makeGameState({ npcsPresent: ["The Hunter"] });
+    const options = selectOpponents(state, {
+      trackedNpcState: roster([
+        { name: "The Hunter", disposition: "hostile", follows: true },
+      ]),
+    });
+    expect(options.filter((o) => o.enemy.name === "The Hunter")).toHaveLength(1);
+  });
+
+  it("can return an empty list when nothing fits (the launcher then uses deriveEncounter)", () => {
+    // A powerful player (Seq 2) with no NPCs/pursuers and no region-appropriate
+    // bestiary foe surfaces no framed target...
+    expect(selectOpponents(makeGameState({ sequenceLevel: 2 }))).toEqual([]);
+    // ...but the single-pick derivation still yields a framed fallback, so the
+    // UI never dead-ends.
+    expect(deriveEncounter(makeGameState({ sequenceLevel: 2 })).enemy.name).toBe(
+      "a lurking Beyonder",
+    );
+  });
+
+  it("an ambush opponent strikes at an even footing", () => {
+    const options = selectOpponents(
+      makeGameState({ npcsPresent: ["X"], sequenceLevel: 7 }),
+      {
+        ambush: true,
+      },
+    );
+    expect(options[0].enemy.sequenceLevel).toBe(7);
+    expect(options[0].enemy.isBeyonder).toBe(false);
+  });
+});
+
+describe("deriveEncounter", () => {
+  it("returns a framed present-NPC opponent over the bestiary", () => {
+    const option = deriveEncounter(
+      makeGameState({ npcsPresent: ["Comrade"], currentCity: "tingen" }),
+      {
+        trackedNpcState: {
+          roster: [{ name: "Comrade", disposition: "ally", follows: true }],
+        },
+      },
+    );
+    expect(option.enemy.name).toBe("Comrade");
+    expect(option.context.framing).toBe("mind-controlled");
+  });
+
+  it("falls back to a framed generic threat when the scene is empty", () => {
+    const known = deriveEncounter(makeGameState({ sequenceLevel: 7 }), { ambush: false });
+    expect(known.enemy.name).toBe("a lurking Beyonder");
+    expect(known.context.framing).toBe("hostile-beyonder");
+    const ambush = deriveEncounter(makeGameState({ sequenceLevel: 7 }), { ambush: true });
+    expect(ambush.enemy.name).toBe("an assailant in the fog");
+    expect(ambush.context.framing).toBe("mundane-threat");
+  });
+});
+
+describe("bestiaryFoeToEnemy", () => {
+  it("scales a curated foe to the player while keeping canon data", () => {
+    const devilDog = getBestiaryFoe("backlund-devil-dog")!;
+    const enemy = bestiaryFoeToEnemy(devilDog, 9);
+    expect(enemy.name).toContain("Devil Dog");
+    expect(enemy.isBeyonder).toBe(true);
+    expect(enemy.pathwayId).toBe(21);
+    expect(enemy.bestiaryId).toBe("backlund-devil-dog");
+    expect(enemy.knownAbilities).toEqual(devilDog.signatureAbilities);
+    // Stays inside the canon band [6,7].
+    expect(enemy.sequenceLevel).toBeGreaterThanOrEqual(6);
+    expect(enemy.sequenceLevel).toBeLessThanOrEqual(7);
+  });
+
+  it("omits the pathway for a mundane foe", () => {
+    const thugs = getBestiaryFoe("generic-desperate-thugs")!;
+    const enemy = bestiaryFoeToEnemy(thugs, 9);
+    expect(enemy.isBeyonder).toBe(false);
+    expect(enemy.pathwayId).toBeUndefined();
+  });
+});
+
+describe("createEncounter framing + kit capture (issues #187)", () => {
+  it("captures the combat kit and the passed context", () => {
+    const context = makeEncounterContext("coerced", { isKnownPerson: true });
+    const encounter = createEncounter({
+      id: "ck",
+      enemy: makeEnemy({ isBeyonder: true }),
+      context,
+      playerPathwayId: 1,
+      playerSequence: 9,
+      randomFactor: 0.5,
+    });
+    expect(encounter.context).toEqual(context);
+    expect((encounter.availableKit ?? []).length).toBeGreaterThan(0);
+  });
+
+  it("defaults a context from the enemy when none is passed", () => {
+    const beyonder = createEncounter({
+      id: "d1",
+      enemy: makeEnemy({ isBeyonder: true }),
+      playerPathwayId: 1,
+      playerSequence: 9,
+      randomFactor: 0.5,
+    });
+    expect(beyonder.context?.framing).toBe("hostile-beyonder");
+    const mundane = createEncounter({
+      id: "d2",
+      enemy: makeEnemy({ isBeyonder: false }),
+      playerPathwayId: 1,
+      playerSequence: 9,
+      randomFactor: 0.5,
+    });
+    expect(mundane.context?.framing).toBe("mundane-threat");
+  });
+});
+
+describe("end-to-end resolution lines (Phase 4)", () => {
+  // Pick the first option matching a predicate at each point; resolve.
+  function playLine(
+    encounter: CombatEncounter,
+    pickId: (point: CombatEncounter["decisionPoints"][number]) => string,
+  ): CombatEncounter {
+    let current = encounter;
+    for (let i = 0; i < current.decisionPoints.length; i++) {
+      const point = current.decisionPoints[current.decisionIndex];
+      current = chooseOption(current, pickId(point));
+    }
+    return resolveEncounter(current);
+  }
+
+  function controlledAlly(): CombatEncounter {
+    return applyPreparation(
+      createEncounter({
+        id: "free",
+        enemy: makeEnemy({ isBeyonder: true, sequenceLevel: 9 }),
+        context: makeEncounterContext("mind-controlled", { isKnownPerson: true }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep({ intelligence: "thorough" }),
+    );
+  }
+
+  it("offers a snap-free line for a mind-controlled ally and frees them on a committed win", () => {
+    const resolved = playLine(controlledAlly(), (point) => {
+      const free = point.options.find((o) => o.resolutionLine === "free");
+      if (free) return free.id;
+      // Otherwise take the strongest-modifier option to secure the win.
+      return [...point.options].sort((a, b) => b.modifier - a.modifier)[0].id;
+    });
+    expect(resolved.outcome).toBe("freed");
+  });
+
+  it("talks a reconcilable rival down with a sustained de-escalation", () => {
+    const encounter = applyPreparation(
+      createEncounter({
+        id: "talk",
+        enemy: makeEnemy({ isBeyonder: true }),
+        context: makeEncounterContext("rival-motive", { isKnownPerson: true }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep(),
+    );
+    const resolved = playLine(encounter, (point) => {
+      const talk = point.options.find((o) => o.resolutionLine === "talk-down");
+      return (talk ?? point.options[0]).id;
+    });
+    expect(resolved.outcome).toBe("talked-down");
+  });
+});
+
+describe("combatNarrationContext framing line (Phase 6)", () => {
+  it("prepends a framing line for a special framing", () => {
+    const encounter = applyPreparation(
+      createEncounter({
+        id: "narr",
+        enemy: makeEnemy({ isBeyonder: true }),
+        context: makeEncounterContext("mind-controlled", {
+          isKnownPerson: true,
+          controllerName: "The Puppeteer",
+        }),
+        playerPathwayId: 1,
+        playerSequence: 9,
+        randomFactor: 0.5,
+      }),
+      makePrep(),
+    );
+    expect(combatNarrationContext(encounter)).toContain("Mind-controlled");
+  });
+
+  it("stays silent on framing for an ordinary hostile fight", () => {
+    const encounter = createEncounter({
+      id: "narr2",
+      enemy: makeEnemy({ isBeyonder: true }),
+      playerPathwayId: 1,
+      playerSequence: 9,
+      randomFactor: 0.5,
+    });
+    expect(combatNarrationContext(encounter)).toBe("");
+  });
+});
+
 describe("isValidEncounterShape", () => {
   const valid = createEncounter({
     id: "shape-1",
@@ -599,14 +926,28 @@ describe("generateDecisionPoints", () => {
     return applyPreparation(encounter, makePrep(prep));
   }
 
-  it("produces the configured number of decision points with three options each", () => {
+  it("produces the configured number of decision points with the templated trio plus kit/line options", () => {
     const encounter = preparedEncounter();
     const points = generateDecisionPoints(encounter);
     expect(points).toHaveLength(DECISION_POINT_COUNT);
     expect(points).toEqual(encounter.decisionPoints);
     for (const point of points) {
-      expect(point.options).toHaveLength(3);
+      // The three templated tactics are always present, now joined by combat-kit
+      // ability options and an outcome-spectrum resolution line (issue #187).
+      expect(point.options.length).toBeGreaterThanOrEqual(4);
+      expect(point.options.some((o) => o.kind === "aggressive")).toBe(true);
+      expect(point.options.some((o) => o.resolutionLine)).toBe(true);
     }
+  });
+
+  it("surfaces combat-kit ability options with effect tags (Phase 2)", () => {
+    const points = preparedEncounter().decisionPoints;
+    const kitOptions = points
+      .flatMap((p) => p.options)
+      .filter((o) => o.id.includes("-kit-"));
+    expect(kitOptions.length).toBeGreaterThan(0);
+    expect(kitOptions.every((o) => o.kind === "ability" && !!o.abilityName)).toBe(true);
+    expect(kitOptions.every((o) => !!o.effectTag)).toBe(true);
   });
 
   it("offers an artifact option only when an artifact is available", () => {
@@ -625,13 +966,18 @@ describe("generateDecisionPoints", () => {
     ).toBe(false);
   });
 
-  it("scales ability options with intelligence (investigation rewards)", () => {
+  it("scales the templated ability option with intelligence (investigation rewards)", () => {
     const noIntel = preparedEncounter({ intelligence: "none" });
     const thorough = preparedEncounter({ intelligence: "thorough" });
-    const abilityModifier = (e: CombatEncounter) =>
-      e.decisionPoints.flatMap((p) => p.options).find((o) => o.kind === "ability")!
-        .modifier;
-    expect(abilityModifier(thorough)).toBeGreaterThan(abilityModifier(noIntel));
+    // The templated ability option (POINT_KINDS[1] includes "ability") has the
+    // stable id suffix `-ability`; kit options use `-kit-` ids.
+    const templatedAbilityModifier = (e: CombatEncounter) =>
+      e.decisionPoints
+        .flatMap((p) => p.options)
+        .find((o) => o.kind === "ability" && o.id.endsWith("-ability"))!.modifier;
+    expect(templatedAbilityModifier(thorough)).toBeGreaterThan(
+      templatedAbilityModifier(noIntel),
+    );
   });
 
   it("flavours options by the player's pathway", () => {
@@ -704,18 +1050,21 @@ describe("dynamic abilities & artifacts mid-fight", () => {
     return applyPreparation(encounter, makePrep());
   }
 
-  it("offers the player's actual learned abilities as named options each point", () => {
-    const points = dynamicEncounter(["Spirit Vision", "Divination"], []).decisionPoints;
+  it("offers acquired/stolen powers as named options alongside the combat kit", () => {
+    // `availableAbilities` now carries only copied/stolen powers — the pathway's
+    // own abilities come from the kit (issue #187, Phase 2).
+    const points = dynamicEncounter(["Borrowed Foresight"], []).decisionPoints;
     for (const point of points) {
-      const abilityOptions = point.options.filter((o) => o.abilityName);
-      expect(abilityOptions.length).toBeGreaterThan(0);
-      expect(abilityOptions.length).toBeLessThanOrEqual(MAX_DYNAMIC_ABILITY_OPTIONS);
-      expect(abilityOptions[0].label).toContain(abilityOptions[0].abilityName!);
+      const acquired = point.options.find((o) => o.abilityName === "Borrowed Foresight");
+      expect(acquired).toBeDefined();
+      expect(acquired!.label).toContain("Borrowed Foresight");
+      expect(acquired!.effectTag).toBe("Acquired power");
+      // The kit also supplies named ability options.
+      expect(point.options.some((o) => o.id.includes("-kit-"))).toBe(true);
     }
   });
 
-  it("does not repeat a single ability within one decision point", () => {
-    // With one ability and a 2-option cap, only one ability option appears.
+  it("does not repeat a single acquired power within one decision point", () => {
     const point = dynamicEncounter(["Lone Power"], []).decisionPoints[0];
     expect(point.options.filter((o) => o.abilityName === "Lone Power")).toHaveLength(1);
   });
@@ -1035,24 +1384,200 @@ describe("isExchangeComplete", () => {
 // ─── Outcome Resolution ──────────────────────────────────────────────
 
 describe("resolveOutcome", () => {
+  const baseOutcome = (
+    overrides: Partial<Parameters<typeof resolveOutcome>[0]> = {},
+  ): Parameters<typeof resolveOutcome>[0] => ({
+    finalAdvantage: 0,
+    decisionCount: 3,
+    evasiveCount: 0,
+    framing: "hostile-beyonder",
+    reconcilable: false,
+    lines: { subdue: 0, free: 0, "talk-down": 0, capture: 0, spare: 0 },
+    ...overrides,
+  });
+
   it("returns victory at or above the victory threshold", () => {
-    expect(resolveOutcome(VICTORY_THRESHOLD, 0, 3)).toBe("victory");
+    expect(resolveOutcome(baseOutcome({ finalAdvantage: VICTORY_THRESHOLD }))).toBe(
+      "victory",
+    );
   });
 
   it("returns escape when evasive choices dominate and it is not a victory", () => {
-    expect(resolveOutcome(0, 2, 3)).toBe("escape");
+    expect(resolveOutcome(baseOutcome({ evasiveCount: 2 }))).toBe("escape");
   });
 
   it("returns defeat at or below the defeat threshold", () => {
-    expect(resolveOutcome(DEFEAT_THRESHOLD, 0, 3)).toBe("defeat");
+    expect(resolveOutcome(baseOutcome({ finalAdvantage: DEFEAT_THRESHOLD }))).toBe(
+      "defeat",
+    );
   });
 
   it("returns stalemate in the middle band", () => {
-    expect(resolveOutcome(0, 0, 3)).toBe("stalemate");
+    expect(resolveOutcome(baseOutcome())).toBe("stalemate");
   });
 
   it("never escapes with no decision points", () => {
-    expect(resolveOutcome(0, 0, 0)).toBe("stalemate");
+    expect(resolveOutcome(baseOutcome({ decisionCount: 0 }))).toBe("stalemate");
+  });
+
+  it("subdues on a winning advantage when a subdue line was pursued", () => {
+    expect(
+      resolveOutcome(
+        baseOutcome({
+          finalAdvantage: VICTORY_THRESHOLD,
+          lines: { subdue: 1, free: 0, "talk-down": 0, capture: 0, spare: 0 },
+        }),
+      ),
+    ).toBe("subdued");
+  });
+
+  it("frees a mind-controlled ally on a committed snap-free line + a win", () => {
+    expect(
+      resolveOutcome(
+        baseOutcome({
+          finalAdvantage: VICTORY_THRESHOLD,
+          framing: "mind-controlled",
+          reconcilable: true,
+          lines: { subdue: 0, free: 2, "talk-down": 0, capture: 0, spare: 0 },
+        }),
+      ),
+    ).toBe("freed");
+  });
+
+  it("does NOT free without the committed line even on a win", () => {
+    expect(
+      resolveOutcome(
+        baseOutcome({
+          finalAdvantage: VICTORY_THRESHOLD,
+          framing: "mind-controlled",
+          reconcilable: true,
+          lines: { subdue: 0, free: 1, "talk-down": 0, capture: 0, spare: 0 },
+        }),
+      ),
+    ).toBe("victory");
+  });
+
+  it("talks a reconcilable foe down on a committed de-escalation, even without a win", () => {
+    expect(
+      resolveOutcome(
+        baseOutcome({
+          finalAdvantage: 0,
+          framing: "rival-motive",
+          reconcilable: true,
+          lines: { subdue: 0, free: 0, "talk-down": 2, capture: 0, spare: 0 },
+        }),
+      ),
+    ).toBe("talked-down");
+  });
+
+  it("does NOT talk down while being routed", () => {
+    expect(
+      resolveOutcome(
+        baseOutcome({
+          finalAdvantage: DEFEAT_THRESHOLD,
+          framing: "rival-motive",
+          reconcilable: true,
+          lines: { subdue: 0, free: 0, "talk-down": 3, capture: 0, spare: 0 },
+        }),
+      ),
+    ).toBe("defeat");
+  });
+
+  it("captures or spares a beaten foe by the chosen line", () => {
+    expect(
+      resolveOutcome(
+        baseOutcome({
+          finalAdvantage: VICTORY_THRESHOLD,
+          lines: { subdue: 0, free: 0, "talk-down": 0, capture: 1, spare: 0 },
+        }),
+      ),
+    ).toBe("captured");
+    expect(
+      resolveOutcome(
+        baseOutcome({
+          finalAdvantage: VICTORY_THRESHOLD,
+          lines: { subdue: 0, free: 0, "talk-down": 0, capture: 0, spare: 1 },
+        }),
+      ),
+    ).toBe("spared");
+  });
+});
+
+describe("isWinningOutcome", () => {
+  it("treats every win-shape as a win and the rest as not", () => {
+    for (const o of [
+      "victory",
+      "subdued",
+      "freed",
+      "talked-down",
+      "captured",
+      "spared",
+    ] as const) {
+      expect(isWinningOutcome(o)).toBe(true);
+    }
+    for (const o of ["defeat", "escape", "stalemate"] as const) {
+      expect(isWinningOutcome(o)).toBe(false);
+    }
+  });
+});
+
+describe("computeConsequences — outcome spectrum (Phase 4)", () => {
+  function beyonderEncounter(): CombatEncounter {
+    return resolveEncounter(
+      applyPreparation(
+        createEncounter({
+          id: "spec",
+          enemy: makeEnemy({ isBeyonder: true, pathwayId: 4, sequenceLevel: 8 }),
+          context: makeEncounterContext("mind-controlled", { isKnownPerson: true }),
+          playerPathwayId: 1,
+          playerSequence: 9,
+          randomFactor: 0.5,
+        }),
+        makePrep(),
+      ),
+    );
+  }
+
+  it("drops no loot or characteristic for a reconciled (non-lethal) outcome", () => {
+    const encounter = beyonderEncounter();
+    for (const outcome of [
+      "subdued",
+      "freed",
+      "talked-down",
+      "captured",
+      "spared",
+    ] as const) {
+      const result = computeConsequences(encounter, outcome, 0.3);
+      expect(result.itemsGained).toEqual([]);
+      expect(result.characteristicsDropped).toEqual([]);
+    }
+  });
+
+  it("still drops loot and a characteristic for a lethal victory", () => {
+    const encounter: CombatEncounter = {
+      ...beyonderEncounter(),
+      enemy: {
+        ...makeEnemy({ isBeyonder: true, pathwayId: 4, sequenceLevel: 8 }),
+        loot: [makeItem("Spoils")],
+      },
+    };
+    const result = computeConsequences(encounter, "victory", 0.3);
+    expect(result.itemsGained).toEqual([makeItem("Spoils")]);
+    expect(result.characteristicsDropped).toHaveLength(1);
+  });
+
+  it("inflicts no injury when a fight ends in words (talked-down)", () => {
+    const encounter = beyonderEncounter();
+    const result = computeConsequences(encounter, "talked-down", -0.1);
+    expect(result.injuries).toEqual([]);
+  });
+
+  it("drains less sanity for a reconciled outcome than a bloody victory", () => {
+    const encounter = beyonderEncounter();
+    const talked = computeConsequences(encounter, "talked-down", 0.3).sanityImpact;
+    const won = computeConsequences(encounter, "victory", 0.3).sanityImpact;
+    // Sanity impacts are ≤ 0; a lighter drain is the larger (closer to 0) value.
+    expect(talked).toBeGreaterThanOrEqual(won);
   });
 });
 
@@ -1259,7 +1784,7 @@ describe("computeConsequences", () => {
     expect(result.itemsLost).toEqual([]);
   });
 
-  it("applies a sanity backlash when a Sealed Artifact is consumed mid-fight", () => {
+  it("applies a sanity backlash when a Sealed Artifact is invoked, but does NOT destroy it (§4.6)", () => {
     const artifact = mintArtifactItem(getSealedArtifact("0-08")!); // Grade 0
     const base = resolvedWith("victory", { sequenceLevel: 7 }, 0.5);
     const withArtifact: CombatEncounter = {
@@ -1285,9 +1810,41 @@ describe("computeConsequences", () => {
     };
     const baseline = computeConsequences(base, "victory", 0.5).sanityImpact;
     const result = computeConsequences(withArtifact, "victory", 0.5);
-    // The artifact is consumed AND its grade-0 backlash deepens the sanity drain.
-    expect(result.itemsLost).toEqual([artifact]);
+    // The relic PERSISTS (it is not a single-use reagent) — but invoking it
+    // still bites: its grade-0 backlash deepens the sanity drain.
+    expect(result.itemsLost).toEqual([]);
     expect(result.sanityImpact).toBeLessThan(baseline);
+  });
+
+  it("still destroys an artifact explicitly flagged consumable (§4.6 override)", () => {
+    const artifact: Item = {
+      ...mintArtifactItem(getSealedArtifact("0-08")!),
+      consumable: true,
+    };
+    const base = resolvedWith("victory", { sequenceLevel: 7 }, 0.5);
+    const withArtifact: CombatEncounter = {
+      ...base,
+      preparation: makePrep({ sealedArtifacts: [artifact] }),
+      decisionPoints: [
+        {
+          id: "dp",
+          prompt: "",
+          options: [
+            {
+              id: "use-artifact",
+              label: "",
+              kind: "artifact",
+              description: "",
+              modifier: 0.2,
+              consumesArtifact: true,
+            },
+          ],
+        },
+      ],
+      chosenOptionIds: ["use-artifact"],
+    };
+    const result = computeConsequences(withArtifact, "victory", 0.5);
+    expect(result.itemsLost).toEqual([artifact]);
   });
 
   it("loses a dynamically-invoked carried artifact without double-counting sealed ones", () => {
