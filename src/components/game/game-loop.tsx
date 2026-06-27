@@ -961,10 +961,24 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // old silent `npcsPresent[0]`.
       const trackedNpcState = resolveTrackedNpcState(session.trackedNpcState);
       const hunt = huntTarget ? findHunt(session, huntTarget) : undefined;
+      // The hunted ingredient itself decides the quarry: a Beyonder Characteristic
+      // → a Beyonder of the player's pathway at that Characteristic's Sequence; a
+      // creature material → that beast (never a pathway Beyonder). Resolve the item
+      // from the hunt's OWN recorded `targetSeq` (not the current-target plan) so a
+      // hunt engaged after the target potion changed still matches the right thing.
+      const huntItem = hunt
+        ? getSequence(
+            session.gameState.pathwayId,
+            hunt.targetSeq,
+          )?.prerequisiteItems.find((item) => item.name === huntTarget)
+        : undefined;
       const chosen =
         opponent ??
         (huntTarget
-          ? deriveHuntQuarry(session.gameState, hunt ? { targetSeq: hunt.targetSeq } : {})
+          ? deriveHuntQuarry(session.gameState, {
+              ...(hunt ? { targetSeq: hunt.targetSeq } : {}),
+              ...(huntItem ? { huntItem } : {}),
+            })
           : deriveEncounter(session.gameState, { ambush, trackedNpcState }));
       // The pathway's own abilities now come from the engine combat KIT (issue
       // #187, Phase 2), so only copied/stolen powers ride as `availableAbilities`.

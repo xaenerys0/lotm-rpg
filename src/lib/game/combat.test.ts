@@ -55,9 +55,10 @@ import {
   afterActionReport,
   artifactBacklash,
   ARTIFACT_VOLATILE_THRESHOLD,
+  creatureFromMaterial,
 } from "./combat";
 import { getSealedArtifact, mintArtifactItem, getBestiaryFoe } from "@/lib/lore";
-import { getPathway, getSequence } from "@/lib/rules";
+import { ALL_PATHWAYS, getPathway, getSequence } from "@/lib/rules";
 import type { TrackedNpcState } from "./tracked-npcs";
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -771,6 +772,127 @@ describe("deriveHuntQuarry — pathway/sequence-aligned, never a friend", () => 
     });
     expect(quarry.enemy.name).toBe("a lurking Beyonder");
     expect(quarry.context.framing).toBe("hostile-beyonder");
+  });
+});
+
+/** The main-ingredient item for advancing into `target` on a pathway. */
+function mainIngredientFor(pathwayId: number, target: number): Item | undefined {
+  return getSequence(pathwayId, target)?.prerequisiteItems.find(
+    (i) => i.category === "main-ingredient",
+  );
+}
+
+describe("deriveHuntQuarry — matches the hunted ingredient (creatures vs characteristics)", () => {
+  it("hunts a Beyonder at the Characteristic's OWN embedded Sequence, not blindly targetSeq", () => {
+    // Fool (1) at Seq 5 → target 4; the Seq-4 potion's main ingredient is the
+    // "Sequence 5 Marionettist Characteristic" — so the quarry is a Seq 5
+    // Marionettist (Rosago, the catalogued Fool Seq-5 carrier), NOT a Seq-4 foe.
+    const huntItem = mainIngredientFor(1, 4)!;
+    expect(huntItem.name).toContain("Sequence 5");
+    const quarry = deriveHuntQuarry(
+      makeGameState({ sequenceLevel: 5, pathwayId: 1, currentCity: "backlund" }),
+      { targetSeq: 4, huntItem },
+    );
+    expect(quarry.enemy.pathwayId).toBe(1);
+    expect(quarry.enemy.sequenceLevel).toBe(5); // the Characteristic's own rung
+    expect(quarry.enemy.bestiaryId).toBe("backlund-rosago"); // the canon Marionettist
+  });
+
+  it("hunts the CREATURE (a beast) for a monster-material ingredient, never a pathway Beyonder", () => {
+    // Fool (1) at Seq 9 → target 8; the Seq-8 potion's main ingredient is the
+    // "Hornacis Mountain Goat Horn Crystal" — a creature material, so the quarry
+    // is that creature, framed as a beast that drops no Characteristic.
+    const huntItem = mainIngredientFor(1, 8)!;
+    expect(huntItem.name).toBe("Hornacis Mountain Goat Horn Crystal");
+    const quarry = deriveHuntQuarry(makeGameState({ sequenceLevel: 9, pathwayId: 1 }), {
+      targetSeq: 8,
+      huntItem,
+    });
+    expect(quarry.enemy.isBeyonder).toBe(false);
+    expect(quarry.enemy.pathwayId).toBeUndefined();
+    expect(quarry.context.framing).toBe("beast");
+    expect(quarry.enemy.name).toBe("the Hornacis Mountain Goat");
+    expect(quarry.enemy.description).toContain("Hornacis Mountain Goat Horn Crystal");
+  });
+
+  it("is accurate for EVERY pathway and sequence (comprehensive integrity sweep)", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      for (let current = 9; current >= 2; current--) {
+        const target = current - 1;
+        const huntItem = mainIngredientFor(pathway.id, target);
+        if (!huntItem) continue;
+        const quarry = deriveHuntQuarry(
+          makeGameState({ sequenceLevel: current, pathwayId: pathway.id }),
+          { targetSeq: target, huntItem },
+        );
+        const where = `${pathway.name} target ${target}: "${huntItem.name}"`;
+        // No malformed names anywhere.
+        expect(quarry.enemy.name, where).not.toMatch(/undefined|unknown|NaN/i);
+        expect(quarry.enemy.name.length, where).toBeGreaterThan(0);
+        expect(quarry.enemy.knownAbilities?.length ?? 0, where).toBeGreaterThan(0);
+
+        if (/Characteristic/i.test(huntItem.name)) {
+          // A Characteristic hunt → a Beyonder of the player's OWN pathway, at
+          // the Sequence the Characteristic names.
+          expect(quarry.enemy.isBeyonder, where).toBe(true);
+          expect(quarry.enemy.pathwayId, where).toBe(pathway.id);
+          const embedded = Number(/Sequence\s+(\d+)/i.exec(huntItem.name)?.[1]);
+          expect(quarry.enemy.sequenceLevel, where).toBe(embedded);
+        } else {
+          // A creature material → that beast, never a pathway Beyonder.
+          expect(quarry.enemy.isBeyonder, where).toBe(false);
+          expect(quarry.enemy.pathwayId, where).toBeUndefined();
+          expect(quarry.context.framing, where).toBe("beast");
+          expect(quarry.enemy.name, where).toBe(
+            `the ${creatureFromMaterial(huntItem.name)}`,
+          );
+        }
+      }
+    }
+  });
+});
+
+describe("creatureFromMaterial", () => {
+  it("strips a trailing body-part / harvested-material phrase", () => {
+    expect(creatureFromMaterial("Hornacis Mountain Goat Horn Crystal")).toBe(
+      "Hornacis Mountain Goat",
+    );
+    expect(creatureFromMaterial("Psychic Dragon Pituitary Gland")).toBe("Psychic Dragon");
+    expect(creatureFromMaterial("Lavos Squid Blood")).toBe("Lavos Squid");
+    expect(creatureFromMaterial("Sphinx Brain")).toBe("Sphinx");
+    expect(creatureFromMaterial("Soul-Grazing Beast Stomach")).toBe("Soul-Grazing Beast");
+  });
+
+  it("takes the creature tail of a '{part} of a/an/the {creature}' material", () => {
+    expect(creatureFromMaterial("Eye of a Dreamweaver Spider")).toBe(
+      "Dreamweaver Spider",
+    );
+    expect(creatureFromMaterial("Scale of a Golden Serpent")).toBe("Golden Serpent");
+    expect(creatureFromMaterial("Skull of an Underworld Wanderer")).toBe(
+      "Underworld Wanderer",
+    );
+    expect(creatureFromMaterial("Fruit of the Tree of Elders")).toBe("Tree of Elders");
+  });
+
+  it("keeps an article-less or whole-entity material intact (no degradation)", () => {
+    expect(creatureFromMaterial("Shadow of Death")).toBe("Shadow of Death");
+    expect(creatureFromMaterial("Source of Mad Dreams")).toBe("Source of Mad Dreams");
+    expect(creatureFromMaterial("Crystal Sunflower")).toBe("Crystal Sunflower");
+    expect(creatureFromMaterial("Wandering Hide")).toBe("Wandering Hide");
+  });
+
+  it("yields a non-empty creature for EVERY canon monster-material ingredient", () => {
+    for (const pathway of ALL_PATHWAYS) {
+      for (let s = 9; s >= 1; s--) {
+        const main = mainIngredientFor(pathway.id, s);
+        if (!main || /Characteristic/i.test(main.name)) continue;
+        const creature = creatureFromMaterial(main.name);
+        expect(creature.length, main.name).toBeGreaterThan(0);
+        expect(creature, main.name).toBe(creature.trim());
+        // The body-part suffixes must not survive as the creature's whole name.
+        expect(creature, main.name).not.toMatch(/ (Pituitary Gland|Horn Crystal)$/);
+      }
+    }
   });
 });
 

@@ -1391,42 +1391,126 @@ export interface DeriveHuntQuarryOptions {
    * exact Characteristic in flight.
    */
   targetSeq?: number;
+  /**
+   * The actual prerequisite item being hunted, so the quarry matches what the
+   * ingredient really is (issue #187 follow-up 2). The next potion's main
+   * ingredient is EITHER a Beyonder Characteristic (hunt a Beyonder of the
+   * pathway at the Characteristic's OWN Sequence — which the name embeds, and
+   * which is not always `targetSeq`) OR a creature material (hunt that creature —
+   * a beast, not a pathway Beyonder). When omitted, the quarry is synthesized
+   * from `pathwayId`/`targetSeq` alone (a Beyonder bearer).
+   */
+  huntItem?: Item;
 }
 
 /** How many of a synthesized quarry's signature abilities to surface to intel. */
 const MAX_SYNTH_QUARRY_ABILITIES = 3;
 
 /**
- * Synthesize a pathway- AND Sequence-aligned quarry when the curated bestiary
- * catalogues no matching carrier (the common case — the bestiary names foes for
- * only a handful of the 22 pathways). The hunted Beyonder Characteristic belongs
- * to the player's OWN pathway at the target rung, so the canonical bearer is a
- * Beyonder of that EXACT pathway and Sequence — named for its canon Sequence
- * role and armed with that rung's abilities. This is what lets a hunt align with
- * ALL 22 pathways and every Sequence, not just the regions the bestiary names.
- * Falls back to the generic framed threat if canon data is somehow absent.
+ * Trailing body-part / harvested-material phrases stripped from a creature
+ * material to recover the creature's name (longest first so "Stomach Sac" wins
+ * over "Stomach"). Curated to the canon main-material ingredient set in
+ * `pathways.ts`; verified exhaustively by the combat tests.
  */
-function synthesizeHuntQuarry(
+const MATERIAL_PART_SUFFIXES = [
+  "Horn Crystal",
+  "Pituitary Gland",
+  "Feather Fragment",
+  "Spirit Crystal",
+  "Vocal Cords",
+  "Stomach Sac",
+  "Wing Bone",
+  "Stomach",
+  "Blood",
+  "Heart",
+  "Brain",
+  "Ears",
+  "Root",
+] as const;
+
+/**
+ * Recover the creature/entity a hunted material comes from (issue #187 follow-up
+ * 2): a canon main material is named EITHER "{Part} of a/an/the {Creature}" (the
+ * creature is the tail) or "{Creature} {body-part}" (strip the trailing part) or
+ * is itself the whole creature/plant/mineral (no part — used verbatim). Pure;
+ * the article in the "of a/an/the" form is required so an article-less "Shadow
+ * of Death" stays a whole entity rather than degrading to "Death".
+ */
+export function creatureFromMaterial(material: string): string {
+  const ofMatch = /^.+ of (?:a|an|the) (.+)$/i.exec(material);
+  if (ofMatch) return ofMatch[1];
+  for (const part of MATERIAL_PART_SUFFIXES) {
+    const suffix = ` ${part}`;
+    if (material.endsWith(suffix)) {
+      const creature = material.slice(0, material.length - suffix.length).trim();
+      if (creature.length > 0) return creature;
+    }
+  }
+  return material;
+}
+
+/** Whether a hunted main ingredient is a Beyonder Characteristic (vs a creature material). */
+function isCharacteristicIngredient(item: Item | undefined): boolean {
+  return item !== undefined && /Characteristic/i.test(item.name);
+}
+
+/** The Sequence a Beyonder Characteristic ingredient names, if its name embeds one. */
+function characteristicSequence(item: Item): number | undefined {
+  const match = /Sequence\s+(\d+)/i.exec(item.name);
+  if (!match) return undefined;
+  const seq = Number(match[1]);
+  return Number.isFinite(seq) ? seq : undefined;
+}
+
+/** A catalogued carrier of a pathway's Characteristic at a Sequence, scaled to that rung. */
+function curatedCarrier(
+  pathwayId: number,
+  seq: number,
+  regionId: string | undefined,
+): OpponentOption | undefined {
+  const curated = bestiaryForPathwaySequence(pathwayId, seq, regionId)[0];
+  if (!curated) return undefined;
+  return {
+    // Scale the carrier to the HUNTED rung (`seq`), not the player's current
+    // Sequence. `bestiaryFoeSequence` subtracts one, and the foe's band is
+    // guaranteed to contain `seq` (the selection filter), so this resolves to it.
+    enemy: bestiaryFoeToEnemy(curated, seq + 1),
+    context: makeEncounterContext(curated.framing, {
+      isKnownPerson: false,
+      ...(curated.motive !== undefined ? { motive: curated.motive } : {}),
+    }),
+    source: "bestiary",
+  };
+}
+
+/**
+ * Synthesize a Beyonder bearer of a pathway's Characteristic at a given Sequence
+ * (the bearer of "a Sequence N {role} Characteristic"). Named for its canon
+ * Sequence role and armed with that rung's abilities, so a Characteristic hunt
+ * aligns with ALL 22 pathways and every Sequence even where the bestiary names
+ * no carrier. Falls back to the generic framed threat if canon data is absent.
+ */
+function synthesizeBeyonderQuarry(
   state: GameState,
   pathwayId: number,
-  targetSeq: number,
+  seq: number,
 ): OpponentOption {
   const pathway = getPathway(pathwayId);
-  const seq = getSequence(pathwayId, targetSeq);
-  if (!pathway || !seq) {
+  const sequence = getSequence(pathwayId, seq);
+  if (!pathway || !sequence) {
     // No canon data for this pathway/rung — a generic, framed foe to hunt.
     return fallbackOpponent(state, false);
   }
   const enemy: Enemy = {
-    name: `a rogue ${seq.name} of the ${pathway.name} Pathway`,
-    sequenceLevel: targetSeq,
+    name: `a rogue ${sequence.name} of the ${pathway.name} Pathway`,
+    sequenceLevel: seq,
     isBeyonder: true,
     pathwayId,
     description:
-      `A Beyonder of the ${pathway.name} Pathway at the rung you climb toward — ` +
-      `the canonical bearer of the Sequence ${targetSeq} Characteristic your next ` +
-      `potion needs, run to ground for the hunt.`,
-    knownAbilities: seq.abilities
+      `A Beyonder of the ${pathway.name} Pathway — the canonical bearer of the ` +
+      `Sequence ${seq} ${sequence.name} Characteristic your next potion needs, ` +
+      `run to ground for the hunt.`,
+    knownAbilities: sequence.abilities
       .slice(0, MAX_SYNTH_QUARRY_ABILITIES)
       .map((ability) => ability.name),
   };
@@ -1437,21 +1521,54 @@ function synthesizeHuntQuarry(
   };
 }
 
+/** Generic mystical-creature tells surfaced for a hunted-material beast. */
+const BEAST_QUARRY_ABILITIES = ["Predatory instinct", "Mystical resilience"];
+
 /**
- * Derive the quarry for an ingredient HUNT (issue #187 follow-up). A hunt tracks
- * the creature/Beyonder whose Beyonder Characteristic the player needs — and that
- * Characteristic is always the player's OWN pathway at the target rung, so the
- * quarry's pathway AND Sequence must ALIGN with it (the reported bug: a hunt
- * fielded an unrelated foe — a Devil Dog of the Abyss Pathway — that incongruously
- * dropped a different pathway's Characteristic). It first looks for a catalogued
- * carrier of that exact pathway + Sequence (a "related monster of the pathway and
- * sequence you need", e.g. the Devil Dog for an ACTUAL Abyss hunter), and
- * otherwise synthesizes the canonical bearer — a Beyonder of the player's pathway
- * at the target Sequence — so alignment holds for ALL 22 pathways and every rung.
+ * Synthesize the CREATURE a hunted material comes from (issue #187 follow-up 2):
+ * a `beast` — NOT a pathway Beyonder — since a creature material is harvested
+ * from a mystical animal/plant, never dropped as a Beyonder Characteristic. The
+ * creature is recovered from the material's canon name; its rough power scales to
+ * the rung being prepared for.
+ */
+function synthesizeBeastQuarry(material: Item, seq: number): OpponentOption {
+  const creature = creatureFromMaterial(material.name);
+  const enemy: Enemy = {
+    name: `the ${creature}`,
+    sequenceLevel: Math.max(0, seq),
+    isBeyonder: false,
+    description:
+      `A mystical creature that yields ${material.name} — the main material your ` +
+      `next potion needs, run to ground for the hunt.`,
+    knownAbilities: BEAST_QUARRY_ABILITIES,
+  };
+  return {
+    enemy,
+    context: makeEncounterContext("beast", { isKnownPerson: false }),
+    source: "bestiary",
+  };
+}
+
+/**
+ * Derive the quarry for an ingredient HUNT (issue #187 follow-ups). A hunt tracks
+ * the creature/Beyonder whose main ingredient the player needs, so the quarry
+ * must match WHAT is being hunted (the reported bug: a hunt fielded an unrelated
+ * foe — a Devil Dog of the Abyss Pathway — that incongruously "dropped" a
+ * different pathway's Characteristic). The next potion's main ingredient is
+ * EITHER:
  *
- * It NEVER targets a present ally or scene NPC (it ignores `npcsPresent` and the
- * roster entirely), so engaging a hunt can never pit the player against a friend.
- * Pure and deterministic.
+ * - a **Beyonder Characteristic** (always the player's OWN pathway, at the
+ *   Sequence the Characteristic's name embeds — which is not always `targetSeq`):
+ *   the quarry is a Beyonder of that pathway + Sequence, preferring a catalogued
+ *   carrier (e.g. Rosago for a Fool "Sequence 5 Marionettist Characteristic")
+ *   and otherwise the synthesized bearer; or
+ * - a **creature material** (a body part / harvested matter of a mystical
+ *   animal/plant): the quarry is that CREATURE, a `beast`, never a pathway
+ *   Beyonder — so it can't claim to drop a Characteristic it never had.
+ *
+ * When no `huntItem` is supplied the quarry is derived from `pathwayId`/`targetSeq`
+ * alone (a Beyonder bearer). It NEVER reads `npcsPresent`/the roster, so engaging
+ * a hunt can never pit the player against a present friend. Pure and deterministic.
  */
 export function deriveHuntQuarry(
   state: GameState,
@@ -1463,26 +1580,23 @@ export function deriveHuntQuarry(
   // the rung being climbed into — one Sequence stronger (mirrors `targetSequence`).
   const targetSeq = opts.targetSeq ?? state.sequenceLevel - 1;
 
-  // 1. A catalogued carrier of this pathway's Characteristic at the target rung —
-  //    pathway/Sequence alignment first, region only as a tiebreak.
-  const curated = bestiaryForPathwaySequence(pathwayId, targetSeq, regionId)[0];
-  if (curated) {
-    return {
-      // Scale the carrier to the HUNTED rung, not the player's current Sequence,
-      // so the curated branch aligns to `targetSeq` exactly like the synthesized
-      // one. `bestiaryFoeSequence` subtracts one, and the foe's band is guaranteed
-      // to contain `targetSeq` (the selection filter), so this resolves to it.
-      enemy: bestiaryFoeToEnemy(curated, targetSeq + 1),
-      context: makeEncounterContext(curated.framing, {
-        isKnownPerson: false,
-        ...(curated.motive !== undefined ? { motive: curated.motive } : {}),
-      }),
-      source: "bestiary",
-    };
+  // A creature material is harvested from a beast, never a pathway Beyonder.
+  if (opts.huntItem !== undefined && !isCharacteristicIngredient(opts.huntItem)) {
+    return synthesizeBeastQuarry(opts.huntItem, targetSeq);
   }
 
-  // 2. No catalogued carrier — synthesize the canonical bearer (all 22 pathways).
-  return synthesizeHuntQuarry(state, pathwayId, targetSeq);
+  // A Beyonder Characteristic: hunt a Beyonder of the player's pathway at the
+  // Characteristic's OWN Sequence (the name embeds it, e.g. a Sequence-4 potion
+  // takes a Sequence-5 Characteristic), falling back to `targetSeq`.
+  const charSeq =
+    (opts.huntItem !== undefined ? characteristicSequence(opts.huntItem) : undefined) ??
+    targetSeq;
+
+  // Prefer a catalogued carrier of that pathway + Sequence, else the synthesized bearer.
+  return (
+    curatedCarrier(pathwayId, charSeq, regionId) ??
+    synthesizeBeyonderQuarry(state, pathwayId, charSeq)
+  );
 }
 
 /**
