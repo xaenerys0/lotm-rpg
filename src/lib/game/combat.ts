@@ -1,16 +1,19 @@
 import type { GameState } from "@/lib/ai";
 import type { BeyonderCharacteristic, Item } from "@/lib/types/rules";
 import type {
+  CombatControlVerdict,
   CombatEncounter,
   CombatOutcome,
   CombatPreparationInput,
   CombatResult,
+  ControlTier,
   DecisionKind,
   DecisionOption,
   DecisionPoint,
   Enemy,
   EncounterContext,
   EncounterFraming,
+  EnemyStance,
   Injury,
   InjurySeverity,
   IntelligenceLevel,
@@ -29,6 +32,7 @@ import {
   type BestiaryFoe,
 } from "@/lib/lore";
 import { sanityDelta } from "./sanity";
+import { evaluateFailure } from "./death";
 import { clamp, round4 } from "./math";
 import { isConsumable, removeItemsByName } from "./inventory";
 import type { TrackedDisposition, TrackedNpcState } from "./tracked-npcs";
@@ -730,6 +734,136 @@ function lineForFraming(framing: EncounterFraming): {
   };
 }
 
+// ─── Control meter (issue #187, Phase 3) ─────────────────────────────
+
+/** Tier thresholds: steady < 0.4 ≤ frayed < 0.7 ≤ slipping < 0.9 ≤ spiral. */
+const CONTROL_FRAYED = 0.4;
+const CONTROL_SLIPPING = 0.7;
+const CONTROL_SPIRAL = 0.9;
+
+export function controlTierFor(strain: number): ControlTier {
+  if (strain >= CONTROL_SPIRAL) return "spiral";
+  if (strain >= CONTROL_SLIPPING) return "slipping";
+  if (strain >= CONTROL_FRAYED) return "frayed";
+  return "steady";
+}
+
+/**
+ * The strain a fighter carries into the exchange, seeded from sanity: a Beyonder
+ * already low on sanity starts closer to the brink. Bounded so a full-sanity
+ * fighter starts `steady` (0) and an empty-sanity one starts no worse than
+ * mid-`frayed` (0.5) — the fight's choices, not the seed, drive the spiral.
+ */
+export function seedControlStrain(sanity: number, maxSanity: number): number {
+  if (maxSanity <= 0) return 0;
+  return round4(clamp(0.5 * (1 - sanity / maxSanity), 0, 0.5));
+}
+
+// Per-choice strain. Risky aggression / relics / straining abilities PUSH the
+// meter; defensive, evasive, and de-escalation choices EASE it (back off the
+// brink). Bounded so no single choice swings the whole meter.
+const STRAIN_AGGRESSIVE_NO_EDGE = 0.18;
+const STRAIN_AGGRESSIVE_EDGE = 0.05;
+const STRAIN_DEFENSIVE = -0.12;
+const STRAIN_EVASIVE = -0.1;
+const STRAIN_DEESCALATE = -0.08;
+const STRAIN_ABILITY_FALLBACK = 0.04;
+/** Artifact strain by danger grade (Grade 0 lurches hardest); ungraded default. */
+const ARTIFACT_STRAIN_BY_GRADE: Record<ArtifactGrade, number> = {
+  0: 0.16,
+  1: 0.12,
+  2: 0.09,
+  3: 0.06,
+};
+const ARTIFACT_STRAIN_UNGRADED = 0.08;
+
+/** The advantage penalty pushing the meter inflicts at resolution, by tier. */
+const CONTROL_PENALTY: Record<ControlTier, number> = {
+  steady: 0,
+  frayed: 0.03,
+  slipping: 0.08,
+  spiral: 0.15,
+};
+
+function aggressiveStrain(edge: number): number {
+  return edge >= EDGE_THRESHOLD ? STRAIN_AGGRESSIVE_EDGE : STRAIN_AGGRESSIVE_NO_EDGE;
+}
+
+function artifactStrain(grade: ArtifactGrade | undefined): number {
+  return grade === undefined ? ARTIFACT_STRAIN_UNGRADED : ARTIFACT_STRAIN_BY_GRADE[grade];
+}
+
+/** Strain a templated-tactic option adds (+) or eases (−) the control meter. */
+function templatedKindStrain(
+  kind: DecisionKind,
+  edge: number,
+  grade?: ArtifactGrade,
+): number {
+  switch (kind) {
+    case "aggressive":
+      return aggressiveStrain(edge);
+    case "defensive":
+      return STRAIN_DEFENSIVE;
+    case "evasive":
+      return STRAIN_EVASIVE;
+    case "ability":
+      return STRAIN_ABILITY_FALLBACK;
+    case "artifact":
+      return artifactStrain(grade);
+  }
+}
+
+// ─── Enemy stances (issue #187, Phase 3b) ────────────────────────────
+
+/**
+ * The enemy's reactive stance, from the player's running advantage going into a
+ * point: a player well ahead has the foe `reeling` then `desperate`; a player
+ * behind faces a `pressing` foe; near-even reads as `guarded`. Pure.
+ */
+export function stanceForPoint(runningAdvantage: number): EnemyStance {
+  if (runningAdvantage >= 0.35) return "desperate";
+  if (runningAdvantage >= 0.12) return "reeling";
+  if (runningAdvantage <= -0.12) return "pressing";
+  return "guarded";
+}
+
+/**
+ * A bounded modifier shift per stance × tactic — which option pays off shifts
+ * with the foe's posture (a `guarded` foe blunts aggression; a `reeling` or
+ * `desperate` one is open to it; a `pressing` foe makes defence/evasion wiser).
+ * Stays small so "preparation/abilities help but never decide" holds.
+ */
+const STANCE_MODIFIER: Record<EnemyStance, Partial<Record<DecisionKind, number>>> = {
+  pressing: { aggressive: -0.05, defensive: 0.04, evasive: 0.04 },
+  guarded: { aggressive: -0.04, ability: 0.02 },
+  reeling: { aggressive: 0.05, ability: 0.03 },
+  desperate: { aggressive: 0.06, defensive: -0.03 },
+};
+
+const STANCE_LABEL: Record<EnemyStance, string> = {
+  pressing: "Pressing",
+  guarded: "Guarded",
+  reeling: "Reeling",
+  desperate: "Desperate",
+};
+
+export function stanceLabel(stance: EnemyStance): string {
+  return STANCE_LABEL[stance];
+}
+
+export function describeStance(stance: EnemyStance): string {
+  switch (stance) {
+    case "pressing":
+      return "The foe presses hard — brace or slip aside; raw aggression is risky.";
+    case "guarded":
+      return "The foe is guarded — a blunt assault meets its defence.";
+    case "reeling":
+      return "The foe is reeling — an opening for a decisive strike.";
+    case "desperate":
+      return "The foe is desperate — wide open, but a cornered thing bites back.";
+  }
+}
+
 const DECISION_PROMPTS = [
   (enemy: string) => `The ${enemy} commits to its opening assault.`,
   (enemy: string) => `The ${enemy} presses harder, hunting for an opening.`,
@@ -811,6 +945,7 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
           artifactGrade,
         ),
         effectTag: KIND_EFFECT_TAG[kind],
+        strainDelta: templatedKindStrain(kind, edge, artifactGrade),
       };
       if (consumesArtifact) {
         option.consumesArtifact = true;
@@ -837,6 +972,7 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
           modifier: kitOptionModifier(ability, edge, intel, framing),
           abilityName: ability.name,
           effectTag: abilityKindTag(ability.kind),
+          strainDelta: round4(ability.controlStrain),
         });
       }
     }
@@ -860,6 +996,7 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
         ),
         abilityName: ability,
         effectTag: "Acquired power",
+        strainDelta: STRAIN_ABILITY_FALLBACK,
       });
     }
 
@@ -885,6 +1022,7 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
         consumesArtifact: true,
         artifactItem: artifact,
         effectTag: KIND_EFFECT_TAG.artifact,
+        strainDelta: artifactStrain(gradeForArtifactItem(artifact)),
       });
     }
 
@@ -903,6 +1041,8 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
         line.line === "subdue" ? OPTION_MODIFIER.defensive : OPTION_MODIFIER.evasive,
       resolutionLine: line.line,
       effectTag: line.tag,
+      // De-escalation eases the meter — backing off the brink.
+      strainDelta: STRAIN_DEESCALATE,
     });
 
     if (i === DECISION_POINT_COUNT - 1) {
@@ -914,6 +1054,7 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
         modifier: optionModifier("aggressive", edge, intel, false),
         resolutionLine: "capture",
         effectTag: "Capture — on a win, take them prisoner (a lead, not loot)",
+        strainDelta: aggressiveStrain(edge),
       });
       options.push({
         id: `${pointId}-line-spare`,
@@ -923,6 +1064,7 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
         modifier: optionModifier("aggressive", edge, intel, false),
         resolutionLine: "spare",
         effectTag: "Spare — win, but leave them alive",
+        strainDelta: aggressiveStrain(edge),
       });
     }
 
@@ -930,6 +1072,10 @@ export function generateDecisionPoints(encounter: CombatEncounter): DecisionPoin
       id: pointId,
       prompt: DECISION_PROMPTS[i](enemyName),
       options,
+      // Reactive stance (issue #187, Phase 3b): point 0 reflects the base
+      // advantage; later points are re-stamped in `chooseOption` from the
+      // running advantage after each choice.
+      enemyStance: stanceForPoint(encounter.baseAdvantage),
     });
   }
 
@@ -1223,6 +1369,47 @@ export function deriveEncounter(
   return fallbackOpponent(state, opts.ambush ?? false);
 }
 
+/** Framings a hunt quarry may carry — a creature/foe you track, never an ally. */
+const HUNTABLE_FRAMINGS = new Set<EncounterFraming>([
+  "beast",
+  "hostile-beyonder",
+  "lost-control",
+  "mundane-threat",
+]);
+
+/**
+ * Derive the quarry for an ingredient HUNT (issue #187 follow-up). A hunt tracks
+ * the creature/Beyonder whose Beyonder Characteristic the player needs — so it
+ * must NEVER target a present ally or scene NPC (the bug `deriveEncounter` caused
+ * by preferring a present-NPC option, which would pit you against a friend
+ * reframed as mind-controlled). This pulls ONLY from the curated bestiary,
+ * preferring a huntable framing (a beast / hostile Beyonder / lost-control
+ * rampager / mundane threat), and falls back to the generic framed threat
+ * ("a lurking Beyonder"). It deliberately ignores `npcsPresent` and the roster.
+ * Pure and deterministic.
+ */
+export function deriveHuntQuarry(
+  state: GameState,
+  opts: Omit<SelectOpponentsOptions, "ambush"> = {},
+): OpponentOption {
+  const regionId = opts.regionId ?? state.currentCity;
+  const maxBestiary = opts.maxBestiary ?? DEFAULT_MAX_BESTIARY;
+  const foes = bestiaryFor(regionId, state.sequenceLevel).slice(0, maxBestiary);
+  const quarry = foes.find((foe) => HUNTABLE_FRAMINGS.has(foe.framing)) ?? foes[0];
+  if (quarry) {
+    return {
+      enemy: bestiaryFoeToEnemy(quarry, state.sequenceLevel),
+      context: makeEncounterContext(quarry.framing, {
+        isKnownPerson: false,
+        ...(quarry.motive !== undefined ? { motive: quarry.motive } : {}),
+      }),
+      source: "bestiary",
+    };
+  }
+  // No region-appropriate quarry catalogued — a generic, framed foe to hunt.
+  return fallbackOpponent(state, false);
+}
+
 /**
  * Backward-compatible enemy-only derivation: the framed enemy of
  * `deriveEncounter`. Prefer `deriveEncounter`/`selectOpponents` so the
@@ -1318,6 +1505,12 @@ export interface CreateEncounterOptions {
   availableArtifacts?: Item[];
   /** Potion-preparation hunt objective (issue #84): the Characteristic sought. */
   huntTarget?: string;
+  /** Current sanity, to seed the control meter (issue #187, Phase 3). Default full. */
+  playerSanity?: number;
+  /** Max sanity, paired with `playerSanity` for the seed. Default 100. */
+  playerMaxSanity?: number;
+  /** Fragile state — escalates a spiral's severity at resolution (issue #187). */
+  highRisk?: boolean;
 }
 
 /**
@@ -1334,6 +1527,10 @@ export function createEncounter(options: CreateEncounterOptions): CombatEncounte
   );
   const matchup = computePathwayMatchup(options.playerPathwayId, options.enemy);
   const injuryPenalty = computeInjuryPenalty(options.injuries ?? []);
+  const controlStrain = seedControlStrain(
+    options.playerSanity ?? 100,
+    options.playerMaxSanity ?? 100,
+  );
 
   const context =
     options.context ??
@@ -1357,6 +1554,9 @@ export function createEncounter(options: CreateEncounterOptions): CombatEncounte
     playerSequence: options.playerSequence,
     randomFactor,
     injuryPenalty,
+    controlStrain,
+    controlTier: controlTierFor(controlStrain),
+    ...(options.highRisk !== undefined ? { highRisk: options.highRisk } : {}),
     preparation: null,
     prepQuality: null,
     sequenceGap,
@@ -1417,9 +1617,40 @@ export function applyPreparation(
 }
 
 /**
+ * Re-stamp the point at `index` (when it exists) for the control meter + stance
+ * (issue #187, Phase 3): set its reactive `enemyStance` from the running
+ * advantage, and — once `slipping`/`spiral` — drop the safe escape hatches
+ * (evasive and the snap-free/talk-down lines) for that one point: forced
+ * reckless. A brace-and-recover defence stays, so the spiral is not inevitable.
+ * Returns a NEW points array with only that point replaced (pure).
+ */
+function restampUpcomingPoint(
+  points: DecisionPoint[],
+  index: number,
+  runningAdvantage: number,
+  tier: ControlTier,
+): DecisionPoint[] {
+  const point = points[index];
+  if (!point) return points;
+  const forcedReckless = tier === "slipping" || tier === "spiral";
+  const options = forcedReckless
+    ? point.options.filter(
+        (o) =>
+          o.kind !== "evasive" &&
+          o.resolutionLine !== "free" &&
+          o.resolutionLine !== "talk-down",
+      )
+    : point.options;
+  const next = points.slice();
+  next[index] = { ...point, enemyStance: stanceForPoint(runningAdvantage), options };
+  return next;
+}
+
+/**
  * Resolve the current decision point with the chosen option, accumulating its
- * modifier and advancing to the next point. A no-op outside the `exchange`
- * phase, when the exchange is already complete, or for an unknown option id.
+ * modifier (plus the enemy-stance shift) and the control strain, then advancing.
+ * A no-op outside the `exchange` phase, when the exchange is already complete, or
+ * for an unknown option id.
  */
 export function chooseOption(
   encounter: CombatEncounter,
@@ -1437,11 +1668,37 @@ export function chooseOption(
     return encounter;
   }
 
+  // The stance shown for this point shifts which tactic pays off (issue #187 3b).
+  const stance = point.enemyStance ?? stanceForPoint(encounter.baseAdvantage);
+  const stanceAdj = STANCE_MODIFIER[stance][option.kind] ?? 0;
+  const accumulatedModifier = round4(
+    encounter.accumulatedModifier + option.modifier + stanceAdj,
+  );
+
+  // Push/ease the control meter (issue #187, Phase 3).
+  const controlStrain = round4(
+    clamp((encounter.controlStrain ?? 0) + (option.strainDelta ?? 0), 0, 1),
+  );
+  const controlTier = controlTierFor(controlStrain);
+
+  const nextIndex = encounter.decisionIndex + 1;
+  // Re-stamp the upcoming point's stance from the new running advantage and apply
+  // the forced-reckless constraint once the meter is slipping.
+  const decisionPoints = restampUpcomingPoint(
+    encounter.decisionPoints,
+    nextIndex,
+    round4(encounter.baseAdvantage + accumulatedModifier),
+    controlTier,
+  );
+
   return {
     ...encounter,
     chosenOptionIds: [...encounter.chosenOptionIds, optionId],
-    accumulatedModifier: round4(encounter.accumulatedModifier + option.modifier),
-    decisionIndex: encounter.decisionIndex + 1,
+    accumulatedModifier,
+    controlStrain,
+    controlTier,
+    decisionPoints,
+    decisionIndex: nextIndex,
   };
 }
 
@@ -1529,6 +1786,35 @@ export function combatNarrationContext(encounter: CombatEncounter): string {
   const chosen = chosenOptions(encounter);
   if (chosen.length > 0) {
     parts.push(`Tactics chosen, in order: ${chosen.map((o) => o.label).join("; ")}.`);
+  }
+
+  // The non-lethal LINE the player pursued (issue #187, Phase 6) — so a freed
+  // ally reads as saving a friend, a talk-down as words winning out.
+  const lineLabels: Partial<Record<ResolutionLine, string>> = {
+    free: "trying to break the control over them",
+    "talk-down": "trying to talk them down",
+    subdue: "fighting to subdue, not to kill",
+    capture: "fighting to take them alive",
+    spare: "winning but sparing them",
+  };
+  const pursued = [
+    ...new Set(
+      chosen
+        .map((o) => o.resolutionLine)
+        .filter((l): l is ResolutionLine => l !== undefined),
+    ),
+  ]
+    .map((l) => lineLabels[l])
+    .filter((s): s is string => s !== undefined);
+  if (pursued.length > 0) {
+    parts.push(`The player is ${pursued.join("; ")}.`);
+  }
+
+  // Control tier (issue #187, Phase 6) — a fraying/slipping/spiralling Beyonder
+  // should read as fighting their own power, not just the foe.
+  const tier = encounter.controlTier;
+  if (tier === "frayed" || tier === "slipping" || tier === "spiral") {
+    parts.push(`The player's control is ${tier}: ${describeControlTier(tier)}`);
   }
 
   return parts.join(" ");
@@ -1785,6 +2071,27 @@ function narrativeSummary(encounter: CombatEncounter, outcome: CombatOutcome): s
 }
 
 /**
+ * The artifacts actually INVOKED in a fight (issue #187): the readied sealed
+ * artifacts spent in order through the templated slot, plus any carried artifact
+ * grabbed mid-fight. The single source both `computeConsequences` (backlash +
+ * loss) and `afterActionReport` ("kept, not consumed") read, so a readied-but-
+ * UNUSED relic is never mistaken for one that was invoked. Pure.
+ */
+function invokedArtifactsFor(encounter: CombatEncounter): Item[] {
+  const chosen = chosenOptions(encounter);
+  const dynamicArtifactItems = chosen
+    .filter(
+      (o): o is DecisionOption & { artifactItem: Item } => o.artifactItem !== undefined,
+    )
+    .map((o) => o.artifactItem);
+  const consumedSealed = chosen.filter(
+    (o) => o.consumesArtifact && o.artifactItem === undefined,
+  ).length;
+  const sealedArtifacts = encounter.preparation?.sealedArtifacts ?? [];
+  return [...sealedArtifacts.slice(0, consumedSealed), ...dynamicArtifactItems];
+}
+
+/**
  * Compute the full consequences of a resolved encounter: injuries scaled to the
  * outcome and sequence gap, sanity drain, loot gained, materials/artifacts
  * spent, and any characteristic dropped by a slain Beyonder.
@@ -1794,27 +2101,10 @@ export function computeConsequences(
   outcome: CombatOutcome,
   finalAdvantage: number,
 ): CombatResult {
-  const chosen = chosenOptions(encounter);
-  // Dynamic artifacts carry the concrete item they spend; sealed-prep artifacts
-  // (no `artifactItem`) draw from the readied `sealedArtifacts` list in order.
-  const dynamicArtifactItems = chosen
-    .filter(
-      (o): o is DecisionOption & { artifactItem: Item } => o.artifactItem !== undefined,
-    )
-    .map((o) => o.artifactItem);
-  const consumedSealed = chosen.filter(
-    (o) => o.consumesArtifact && o.artifactItem === undefined,
-  ).length;
-
   const ritualMaterials = encounter.preparation?.ritualMaterials ?? [];
-  const sealedArtifacts = encounter.preparation?.sealedArtifacts ?? [];
-  // Every artifact actually INVOKED this fight (readied-and-used + grabbed
-  // mid-fight) — the slice that incurs the sanity backlash below, whether or not
-  // the relic is destroyed.
-  const invokedArtifacts: Item[] = [
-    ...sealedArtifacts.slice(0, consumedSealed),
-    ...dynamicArtifactItems,
-  ];
+  // Every artifact actually INVOKED this fight — the slice that incurs the
+  // sanity backlash below, whether or not the relic is destroyed.
+  const invokedArtifacts = invokedArtifactsFor(encounter);
   // Items actually LOST (issue #187 §4.6): only those that are CONSUMED by use.
   // Sealed Artifacts persist by default — invoking one carries its backlash but
   // does not destroy it — so a non-consumable relic is NOT added to `itemsLost`.
@@ -1864,7 +2154,14 @@ export function resolveEncounter(encounter: CombatEncounter): CombatEncounter {
     return encounter;
   }
 
-  const finalAdvantage = round4(encounter.baseAdvantage + encounter.accumulatedModifier);
+  // The control meter (issue #187, Phase 3): pushing it costs you — a tier-scaled
+  // penalty folds into the final advantage, so a frayed/slipping fighter is more
+  // likely to lose, and a `spiral` routes the resolution through the loss-of-
+  // control ladder (setback → transformation → fatal).
+  const finalTier: ControlTier = encounter.controlTier ?? "steady";
+  const finalAdvantage = round4(
+    encounter.baseAdvantage + encounter.accumulatedModifier - CONTROL_PENALTY[finalTier],
+  );
   const chosen = chosenOptions(encounter);
   const evasiveCount = chosen.filter((o) => o.kind === "evasive").length;
   const context =
@@ -1882,8 +2179,26 @@ export function resolveEncounter(encounter: CombatEncounter): CombatEncounter {
     lines: tallyResolutionLines(chosen),
   });
   const result = computeConsequences(encounter, outcome, finalAdvantage);
+  if (finalTier === "spiral") {
+    result.lossOfControl = controlSpiralVerdict(encounter);
+  }
 
   return { ...encounter, phase: "resolution", outcome, result };
+}
+
+/**
+ * The loss-of-control verdict for a fight that ended in a SPIRAL (issue #187,
+ * Phase 3). Defers to the shared death-engine ladder — a setback at low
+ * Sequence, transformation/death at high Sequence, escalated one step when the
+ * fighter was in a fragile (`highRisk`) state. The engine owns the consequence;
+ * the React layer routes a `permadeath` through `concludeChronicle`.
+ */
+function controlSpiralVerdict(encounter: CombatEncounter): CombatControlVerdict {
+  return evaluateFailure({
+    cause: "loss-of-control",
+    sequenceLevel: encounter.playerSequence,
+    highRisk: encounter.highRisk,
+  });
 }
 
 // ─── Applying Results to Game State ──────────────────────────────────
@@ -1894,6 +2209,166 @@ export function resolveEncounter(encounter: CombatEncounter): CombatEncounter {
  * characteristics are surfaced in the result but not added to a player ledger
  * (the game state holds no characteristic inventory yet).
  */
+// ─── Clarity surfaces (issue #187, Phase 5) ──────────────────────────
+
+const CONTROL_TIER_LABEL: Record<ControlTier, string> = {
+  steady: "Steady",
+  frayed: "Frayed",
+  slipping: "Slipping",
+  spiral: "Spiralling",
+};
+
+export function controlTierLabel(tier: ControlTier): string {
+  return CONTROL_TIER_LABEL[tier];
+}
+
+export function describeControlTier(tier: ControlTier): string {
+  switch (tier) {
+    case "steady":
+      return "Your grip on yourself holds.";
+    case "frayed":
+      return "The power frays at the edges of your control.";
+    case "slipping":
+      return "Control is slipping — you are being pulled toward recklessness.";
+    case "spiral":
+      return "You are losing control entirely — pull back now, or be lost.";
+  }
+}
+
+/** The coarse danger tier of a fight, from the sequence gap (intel-free). */
+export type DangerTier = "low" | "even" | "high" | "severe";
+
+/** The intel-gated odds read shown on the threat card. */
+export type OddsBand =
+  | "unknown"
+  | "in your favour"
+  | "even"
+  | "against you"
+  | "strongly in your favour"
+  | "strongly against you";
+
+export interface ThreatAssessment {
+  dangerTier: DangerTier;
+  oddsBand: OddsBand;
+  reconcilable: boolean;
+}
+
+/**
+ * The threat-assessment read for the preparation card (issue #187, Phase 5).
+ * `dangerTier` is the coarse danger from the sequence gap (always shown).
+ * `oddsBand` is INTEL-GATED — vague without intelligence, a coarse band with
+ * `partial`, a finer band with `thorough` — derived from the sequence gap +
+ * pathway matchup (never the exact hidden advantage, preserving tension). Pure.
+ */
+export function threatAssessment(encounter: CombatEncounter): ThreatAssessment {
+  const gap = encounter.sequenceGap; // enemySeq − playerSeq; negative = stronger foe
+  const dangerTier: DangerTier =
+    gap >= 2 ? "low" : gap >= 0 ? "even" : gap <= -3 ? "severe" : "high";
+
+  const intel = encounter.preparation?.intelligence ?? "none";
+  // A coarse favourability estimate from the spine of the advantage maths
+  // (sequence gap + matchup), independent of the hidden random factor.
+  const estimate =
+    clamp(gap, -SEQUENCE_GAP_CLAMP, SEQUENCE_GAP_CLAMP) / SEQUENCE_GAP_CLAMP +
+    encounter.matchup.advantage;
+
+  let oddsBand: OddsBand = "unknown";
+  if (intel === "partial") {
+    oddsBand =
+      estimate > 0.2 ? "in your favour" : estimate < -0.2 ? "against you" : "even";
+  } else if (intel === "thorough") {
+    oddsBand =
+      estimate > 0.6
+        ? "strongly in your favour"
+        : estimate > 0.15
+          ? "in your favour"
+          : estimate < -0.6
+            ? "strongly against you"
+            : estimate < -0.15
+              ? "against you"
+              : "even";
+  }
+
+  return {
+    dangerTier,
+    oddsBand,
+    reconcilable: encounter.context?.reconcilable ?? false,
+  };
+}
+
+/** Itemized after-action breakdown for the resolution screen (issue #187, Phase 5). */
+export interface AfterActionReport {
+  outcome: CombatOutcome;
+  sanityDelta: number;
+  /** Plain-language causes of the sanity change, when it drained. */
+  sanityCauses: string[];
+  injuries: Injury[];
+  itemsGained: Item[];
+  itemsSpent: Item[];
+  /** Reusable relics invoked but NOT consumed (§4.6) — surfaced explicitly. */
+  itemsKept: Item[];
+  controlTier: ControlTier;
+  spiraled: boolean;
+  characteristicDropped: boolean;
+  /** World-ripple notes (freed ally rejoins, captive taken, …). */
+  ripple: string[];
+}
+
+/**
+ * Build the itemized after-action report (issue #187, Phase 5). Pure data the
+ * resolution screen renders — every consequence accounted for, INCLUDING the
+ * reusable artifacts that were invoked but survived (§4.6, "what was NOT
+ * consumed"). Reads only the resolved encounter + its result.
+ */
+export function afterActionReport(
+  encounter: CombatEncounter,
+  result: CombatResult,
+): AfterActionReport {
+  const lostNames = new Set(result.itemsLost.map((i) => i.name));
+  // Relics actually INVOKED this fight that were NOT consumed — the §4.6 point
+  // ("a sealed artifact survives its use"). A readied-but-unused relic is NOT
+  // listed (it was never spent, so "kept, not consumed" would mislead).
+  const invoked = invokedArtifactsFor(encounter);
+  const itemsKept = invoked.filter(
+    (a) => a.category === "sealed-artifact" && !lostNames.has(a.name),
+  );
+
+  const sanityCauses: string[] = [];
+  if (result.sanityImpact < 0) {
+    sanityCauses.push("the horror of the clash");
+    // Backlash only fires on a relic that was actually INVOKED, not merely readied.
+    if (invoked.some((a) => a.category === "sealed-artifact")) {
+      sanityCauses.push("a sealed artifact's backlash");
+    }
+    if (result.lossOfControl) {
+      sanityCauses.push("your control giving way");
+    }
+  }
+
+  const ripple: string[] = [];
+  if (result.outcome === "freed" && encounter.context?.isKnownPerson) {
+    ripple.push(`${encounter.enemy.name} is freed and stands with you.`);
+  } else if (result.outcome === "captured") {
+    ripple.push(`${encounter.enemy.name} is taken alive — a lead to follow.`);
+  } else if (result.outcome === "spared") {
+    ripple.push(`${encounter.enemy.name} lives — they will remember the mercy.`);
+  }
+
+  return {
+    outcome: result.outcome,
+    sanityDelta: result.sanityImpact,
+    sanityCauses,
+    injuries: result.injuries,
+    itemsGained: result.itemsGained,
+    itemsSpent: result.itemsLost,
+    itemsKept,
+    controlTier: encounter.controlTier ?? "steady",
+    spiraled: result.lossOfControl !== undefined,
+    characteristicDropped: result.characteristicsDropped.length > 0,
+    ripple,
+  };
+}
+
 export function applyCombatResult(state: GameState, result: CombatResult): GameState {
   const sanity = clamp(state.sanity + result.sanityImpact, 0, state.maxSanity);
   let inventory = state.inventory;

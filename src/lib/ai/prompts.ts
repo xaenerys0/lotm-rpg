@@ -344,7 +344,7 @@ export function buildInstructionPrompt(
     advancement:
       "The player is undergoing a Beyonder advancement that the rules engine has ALREADY committed — the game state now reflects their new Sequence. Narrate the ritual and the transformation into the new role described in the player action, evaluate acting alignment, and describe the consequences. This is the ONLY context in which you may portray the character at a higher Sequence.",
     combat:
-      "The player is in combat. Narrate this combat exchange vividly and in the flavour of their pathway (a Seer divines the enemy's moves, a Spectator reads their intent, a Bard channels searing light, a Death Beyonder commands spirits). The mechanical outcome and the tactical options are decided by the rules engine — do NOT invent the result or new choices; narrate only the moment described in the player action.",
+      "The player is in combat. Narrate this combat exchange vividly and in the flavour of their pathway (a Seer divines the enemy's moves, a Spectator reads their intent, a Bard channels searing light, a Death Beyonder commands spirits). The mechanical outcome and the tactical options are decided by the rules engine — do NOT invent the result or new choices; narrate only the moment described in the player action. HONOUR the cues the player action carries: if the fight is framed as a mind-controlled comrade or a coerced ally, portray them fighting against their will (not a true enemy); if the player is trying to snap them free, talk them down, subdue, capture, or spare, let that intent shape the prose; and if the player's control is fraying, slipping, or spiralling, render them wrestling their OWN power as much as the foe.",
   };
 
   return {

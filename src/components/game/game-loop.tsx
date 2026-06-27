@@ -21,6 +21,7 @@ import {
   applyCombatResult,
   createEncounter,
   deriveEncounter,
+  deriveHuntQuarry,
   selectOpponents,
   framingLabel,
   describeFraming,
@@ -84,6 +85,8 @@ import {
   advancementRequirements,
   advancementSuccessChance,
   attemptAdvancement,
+  anchorHighRisk,
+  ADVANCEMENT_SANITY_RATIO,
   isAdvanceableSequence,
   advanceRitualStep,
   currentRitualStep,
@@ -567,25 +570,37 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // re-rolled or the legacy/journal from being written twice.
   const endingInFlight = useRef(false);
 
+  // Apply a survivable setback ON TOP of a base session — wake at a sanity
+  // sliver, lose items, displace, record the reputation fact. Shared by the
+  // zero-sanity path (base = the live session) and the combat control-spiral
+  // (base = `next`, which already carries the fight's sanity/injuries), so the
+  // setback semantics live in ONE place.
+  const applySetbackToSession = useCallback(
+    (base: GameSession) => {
+      const result = applySetback(
+        base.gameState,
+        Math.random,
+        base.turnCount,
+        base.gameState.epoch,
+      );
+      setSetbackNotes(result.notes);
+      updateSession({
+        ...base,
+        gameState: result.state,
+        memory: {
+          ...base.memory,
+          sessionFacts: [...base.memory.sessionFacts, ...result.facts],
+        },
+        updatedAt: Date.now(),
+      });
+    },
+    [updateSession],
+  );
+
   const handleSetback = useCallback(() => {
     if (!session) return;
-    const result = applySetback(
-      session.gameState,
-      Math.random,
-      session.turnCount,
-      session.gameState.epoch,
-    );
-    setSetbackNotes(result.notes);
-    updateSession({
-      ...session,
-      gameState: result.state,
-      memory: {
-        ...session.memory,
-        sessionFacts: [...session.memory.sessionFacts, ...result.facts],
-      },
-      updatedAt: Date.now(),
-    });
-  }, [session, updateSession]);
+    applySetbackToSession(session);
+  }, [session, applySetbackToSession]);
 
   // The shared ending: legacy + echo persistence, the narrated final scene,
   // the death journal entry, and the session's end. Used by loss-of-control
@@ -938,14 +953,16 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     (ambush: boolean, huntTarget?: string, opponent?: OpponentOption) => {
       if (!session) return;
       // Who you fight and WHY (issue #187): an explicitly-picked, framed target
-      // when the player chose one, else the framed engine derivation (present
-      // NPC / pursuer / generic fallback) — never the old silent `npcsPresent[0]`.
+      // when the player chose one; a HUNT tracks its quarry from the bestiary
+      // (never a present ally — `deriveHuntQuarry`); otherwise the framed engine
+      // derivation (present NPC / pursuer / generic fallback) — never the old
+      // silent `npcsPresent[0]`.
+      const trackedNpcState = resolveTrackedNpcState(session.trackedNpcState);
       const chosen =
         opponent ??
-        deriveEncounter(session.gameState, {
-          ambush,
-          trackedNpcState: resolveTrackedNpcState(session.trackedNpcState),
-        });
+        (huntTarget
+          ? deriveHuntQuarry(session.gameState, { trackedNpcState })
+          : deriveEncounter(session.gameState, { ambush, trackedNpcState }));
       // The pathway's own abilities now come from the engine combat KIT (issue
       // #187, Phase 2), so only copied/stolen powers ride as `availableAbilities`.
       // The combat-artifact pool is exactly the carried Sealed Artifacts — the
@@ -954,17 +971,31 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       const availableArtifacts = session.gameState.inventory.filter(
         (item) => item.category === "sealed-artifact",
       );
+      // Control meter (issue #187, Phase 3): seed the strain from sanity and
+      // mark the fighter `highRisk` when under-anchored at a high Sequence or
+      // already low on sanity — a spiral then fails one step worse. Same shape
+      // as `advancementHighRisk`, but gauged on the CURRENT sequence (you fight
+      // at your present rung, not a target one); `anchorHighRisk` self-gates on
+      // `requiresAnchors`, so a low-Sequence fighter is never flagged by it.
+      const { sanity, maxSanity, sequenceLevel } = session.gameState;
+      const highRisk =
+        (session.anchorState !== undefined &&
+          anchorHighRisk(session.anchorState, sequenceLevel)) ||
+        sanity < maxSanity * ADVANCEMENT_SANITY_RATIO;
       const encounter = createEncounter({
         id: crypto.randomUUID(),
         enemy: chosen.enemy,
         context: chosen.context,
         playerPathwayId: session.gameState.pathwayId,
-        playerSequence: session.gameState.sequenceLevel,
+        playerSequence: sequenceLevel,
         ambush,
         injuries: session.gameState.injuries ?? [],
         availableAbilities: combatReadyAbilities,
         availableArtifacts,
         huntTarget,
+        playerSanity: sanity,
+        playerMaxSanity: maxSanity,
+        highRisk,
       });
       setCombat(encounter);
       saveCombatToStorage(session.id, encounter);
@@ -982,7 +1013,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   );
 
   const handleCombatResult = useCallback(
-    (result: CombatResult, narratedScene?: string) => {
+    async (result: CombatResult, narratedScene?: string) => {
       if (!session || !combat) return;
       const enemyName = combat.enemy.name;
       let next: GameSession = {
@@ -990,6 +1021,41 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         gameState: applyCombatResult(session.gameState, result),
         updatedAt: Date.now(),
       };
+
+      // Loss-of-control SPIRAL (issue #187, Phase 3) is checked FIRST: a spiral
+      // OVERRIDES any positive ripple (a hunt's spoils, a freed ally) — you may
+      // have won the fight, but you lost yourself, so those rewards do not land.
+      // Route through the SAME setback / permadeath paths as a failed
+      // advancement (the combat sanity/injuries already applied to `next`); the
+      // verdict is engine-decided, the React layer only routes it.
+      if (result.lossOfControl) {
+        clearCombatFromStorage(session.id);
+        setCombat(null);
+        const verdict: FailureVerdict = {
+          cause: "loss-of-control",
+          ...result.lossOfControl,
+        };
+        if (verdict.outcome === "permadeath") {
+          await concludeChronicle(
+            verdict,
+            descentAction(
+              `The fight with ${enemyName} tears the last of the Beyonder's control away — the power turns on its wielder. This ends in`,
+              verdict.severity,
+            ),
+          );
+          return;
+        }
+        // Survivable setback: break down in place atop the combat's toll.
+        appendJournalEntries(session.id, [
+          buildJournalEntry(next.gameState, next.turnCount, {
+            eventType: "combat",
+            summary: `Lost control fighting ${enemyName}.`,
+            narrative: narratedScene ?? result.narrativeSummary,
+          }),
+        ]);
+        applySetbackToSession(next);
+        return;
+      }
 
       // A hunt (issue #84) that ended in victory yields the Beyonder
       // Characteristic it was after — the engine grants it plus spoils, and
@@ -1058,7 +1124,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       clearCombatFromStorage(session.id);
       setCombat(null);
     },
-    [session, combat, updateSession],
+    [session, combat, updateSession, concludeChronicle, applySetbackToSession],
   );
 
   const handleCombatExit = useCallback(() => {
