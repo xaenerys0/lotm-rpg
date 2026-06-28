@@ -74,6 +74,7 @@ docs/
 ├── rag-per-turn-budget.md # RAG latency/token/operator-cost budget (issue #64)
 ├── rag-ingestion.md       # RAG corpus ingestion runbook (novel + wiki → source_chunks)
 ├── anchors-design.md      # Anchors system design (issue #35) — canon + data model
+├── codex-design.md        # Story-consistency Codex — entity registry, pinned ground-truth, sheet tab
 ├── cloud-migration-research.md  # Cross-device cloud-sync research notes
 ├── scene-art-testing.md   # Scene-art / image-generation testing notes
 └── rules/                 # Shared rule files (@-imported by scoped CLAUDE.md)

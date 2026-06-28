@@ -114,6 +114,19 @@ export interface GameSession {
    */
   formulaPursuit?: import("./formula-pursuit").FormulaPursuitState;
   /**
+   * Story-consistency Codex (history-context Codex): the durable registry of the
+   * important people, places, objects, groups, and open plot threads the
+   * chronicle has established. Maintained by the narrator's per-turn
+   * `codexUpdates` deltas + engine auto-touch, pinned (scene-relevant + pivotal)
+   * into the prompt so a long story stays self-consistent, and browsable in the
+   * character sheet's Codex tab. Absent on saves that predate it (lazily backfilled
+   * from existing structured state via `seedCodexFromSession` on deserialize);
+   * strictly validated when present and preserved on the deserialize `...s`
+   * spread, exactly like `trackedNpcState`. No DB migration — it serializes
+   * inside the session blob.
+   */
+  codexState?: import("./codex").CodexState;
+  /**
    * Tracked-NPC roster (issue #101): the durable cast the player is bound to —
    * allies who follow (a party) and hostiles who follow (pursuers) — distinct
    * from the transient, scene-scoped `gameState.npcsPresent`. Followers are

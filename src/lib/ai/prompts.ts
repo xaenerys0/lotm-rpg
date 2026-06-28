@@ -5,6 +5,7 @@ import type {
   LoreContext,
   MemoryState,
   NarrativeVerbosity,
+  PinnedCodexEntity,
   PromptAssembly,
   PromptInput,
   PromptLayer,
@@ -59,6 +60,7 @@ Always respond with valid JSON matching this schema:
   "journalEntry": {"summary": "string (one sentence)", "eventType": "advancement|major-event|npc-encounter|discovery|timeline-divergence|death|combat"},
   "proposedSelfChange": {"field": "name|appearance|gender|pronouns|epithet|age|marks", "value": "string", "reason": "string"},
   "pursuers": ["string"] (names of NPCs actively hunting/pursuing the character — see Rules),
+  "codexUpdates": [{"kind": "person|location|object|group|thread", "name": "string", "status": "string (concise current state)", "importance": "pivotal|standard (OPTIONAL)", "resolved": "boolean (OPTIONAL; threads only)"}] (record important recurring entities — see Codex below),
   "runningSummary": "string - the updated 'story so far' synopsis (see Running Summary below)"
 }
 
@@ -94,6 +96,15 @@ You are given the chronicle's durable synopsis under "## Story So Far" (empty at
 - If nothing of lasting consequence happened and the prior summary still holds, you may return it unchanged or omit the field entirely.
 - The "## Ground Truth" block in the History is authoritative: if your synopsis ever disagrees with it about location, who is present, or the character's Sequence/role, correct the synopsis to match it.
 - Record ONLY what has actually happened in play or is supported by the provided lore. Never introduce a new canonical name, organization, deity, place, or piece of history into the summary that was not established in the narrative — an invented detail written here hardens into "fact" for every future turn, so keep the summary strictly faithful.
+
+## Codex (recurring entities)
+Maintain a durable record of the people, places, objects, groups, and unresolved plot threads that matter across the whole chronicle, so a figure or promise from a hundred turns ago is never contradicted when it returns. Use "codexUpdates" — an array of DELTAS, not a restatement of the whole cast.
+- Emit an entry ONLY when an entity is first introduced OR its standing materially changes (an ally turns, an NPC dies, a place is destroyed, a debt is incurred or repaid). A routine turn that establishes nothing new emits no "codexUpdates" at all.
+- "kind" is one of: "person", "location", "object", "group" (organizations, congregations, factions), or "thread" (an open promise, debt, vow, secret, or hook the story still owes a payoff).
+- "name" is the entity's stable name; "status" is a SHORT present-tense note of its current state (e.g. "alive; reluctant ally, hiding in Backlund", "destroyed in the fire", "owed a favour — unpaid"). Keep each under ~20 words.
+- Set "importance": "pivotal" for the figures, places, and threads central to the chronicle (recurring allies/enemies, the character's seat of power, a driving vow) — these are always kept in view; omit it (defaults to "standard") for minor or incidental entities.
+- For a "thread", set "resolved": true on the turn it is finally settled, so it stops being treated as an open obligation.
+- Record ONLY what play or the provided lore has established — never invent canon here (the same fidelity rule as the running summary). The "## Established Facts" block in the History is this record fed back to you: treat it as authoritative and do not contradict it.
 
 ## Canon Fidelity
 This is a Lord of the Mysteries story; stay faithful to its canon.
@@ -314,9 +325,46 @@ function buildGroundTruthAnchor(gameState: GameState): string {
   ].join("\n");
 }
 
+/** Per-kind label for an `## Established Facts` line. */
+const CODEX_KIND_LABELS: Record<string, string> = {
+  person: "Person",
+  location: "Place",
+  object: "Object",
+  group: "Group",
+  thread: "Thread",
+};
+
+/**
+ * Compact, authoritative `## Established Facts` block (history-context Codex)
+ * pinned alongside the ground-truth anchor. Built from the engine's
+ * scene-relevant + pivotal Codex entities — a stable index of who/what matters
+ * so a figure or open thread from long ago is not contradicted when it returns.
+ * The selection is already hard-capped by the engine (`selectPinnedEntities`),
+ * so this block is bounded no matter how large the full Codex grows — the
+ * per-turn budget stays flat. Returns "" when there is nothing pinned.
+ */
+function buildEstablishedFacts(entities: readonly PinnedCodexEntity[]): string {
+  if (entities.length === 0) return "";
+  const lines = entities.map((e) => {
+    const label = CODEX_KIND_LABELS[e.kind] ?? "Entity";
+    const status = e.status ? ` — ${e.status}` : "";
+    const resolved = e.kind === "thread" && e.resolved ? " (resolved)" : "";
+    const seen = Number.isFinite(e.lastSeenTurn)
+      ? ` (last seen turn ${e.lastSeenTurn})`
+      : "";
+    return `- [${label}] ${e.name}${status}${resolved}${seen}`;
+  });
+  return [
+    "## Established Facts (canon — do not contradict)",
+    "These are established people, places, objects, groups, and open threads from the chronicle so far. Keep them consistent — do not contradict a status, kill off someone already gone, or drop an unresolved thread:",
+    ...lines,
+  ].join("\n");
+}
+
 export function buildHistoryPrompt(
   memory: MemoryState,
   gameState?: GameState,
+  pinnedEntities: readonly PinnedCodexEntity[] = [],
 ): PromptLayer {
   const trimmed = trimMemoryForBudget(memory, TOKEN_BUDGET.history);
   const content = formatMemoryForPrompt(trimmed);
@@ -325,8 +373,14 @@ export function buildHistoryPrompt(
     return { role: "user", content: "" };
   }
   // Anchor only once there is history to anchor against (turn 0 has none, and the
-  // game-state layer already carries the ground truth on its own).
-  const body = gameState ? `${buildGroundTruthAnchor(gameState)}\n\n${content}` : content;
+  // game-state layer already carries the ground truth on its own). The Established
+  // Facts block rides next to the ground-truth anchor, above the synopsis.
+  const anchors = gameState
+    ? [buildGroundTruthAnchor(gameState), buildEstablishedFacts(pinnedEntities)].filter(
+        (s) => s !== "",
+      )
+    : [buildEstablishedFacts(pinnedEntities)].filter((s) => s !== "");
+  const body = anchors.length > 0 ? `${anchors.join("\n\n")}\n\n${content}` : content;
   return { role: "user", content: `## History\n${body}` };
 }
 
@@ -484,7 +538,11 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
   const gameStateLayer = buildGameStatePrompt(input.gameState);
   layers.push(gameStateLayer);
 
-  const historyLayer = buildHistoryPrompt(input.memory, input.gameState);
+  const historyLayer = buildHistoryPrompt(
+    input.memory,
+    input.gameState,
+    input.pinnedEntities,
+  );
   if (historyLayer.content) {
     layers.push(historyLayer);
   }

@@ -26,6 +26,8 @@ export type {
   LoreContext,
   PromptInput,
   RetrievedLoreChunk,
+  CodexUpdateInput,
+  PinnedCodexEntity,
   ChatMessage,
   ProviderRequest,
   ProviderResponse,

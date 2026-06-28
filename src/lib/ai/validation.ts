@@ -1,5 +1,5 @@
 import type { Item, ValidationResult, Violation } from "@/lib/types/rules";
-import type { AIResponse } from "./types";
+import type { AIResponse, CodexUpdateInput } from "./types";
 import { createMalformedOutputError } from "./errors";
 
 // Residual free-form sanity bounds (issue #95): tightened to ±5 — the engine
@@ -24,6 +24,13 @@ const VALID_ITEM_CATEGORIES = [
   "mundane",
   "uniqueness",
 ];
+// At most this many Codex deltas are carried from one turn (history-context
+// Codex). Deltas are meant to be the few entities introduced/changed this turn,
+// so a flood is a sign of a misbehaving narrator — cap it to keep output cost
+// bounded. The game-layer `applyCodexUpdates` is the single real validation
+// point (kind/importance whitelist + length caps); this is just a loose,
+// drop-not-throw boundary carry (like `journalEntry`).
+const MAX_CODEX_UPDATES = 6;
 
 /**
  * Guarantee every choice has a unique, non-empty id. Ids double as React keys —
@@ -205,6 +212,40 @@ export function parseAIResponse(raw: string): AIResponse {
     const trimmed = obj.runningSummary.trim();
     if (trimmed !== "") {
       response.runningSummary = trimmed;
+    }
+  }
+
+  // Story-consistency Codex deltas (history-context Codex) — carried through
+  // loosely, like `journalEntry`: keep only well-formed items (string kind +
+  // non-empty name), coerce optional fields, drop the rest, and cap the count.
+  // `applyCodexUpdates` (@/lib/game/codex) is the single real validation point.
+  if (Array.isArray(obj.codexUpdates)) {
+    const updates = obj.codexUpdates
+      .filter(
+        (u: unknown): u is Record<string, unknown> =>
+          typeof u === "object" && u !== null && !Array.isArray(u),
+      )
+      .map((u) => {
+        const update: CodexUpdateInput = {
+          kind: String(u.kind ?? ""),
+          name: String(u.name ?? "").trim(),
+        };
+        if (typeof u.status === "string") update.status = u.status.trim();
+        if (typeof u.importance === "string") update.importance = u.importance.trim();
+        if (typeof u.note === "string") update.note = u.note.trim();
+        if (u.resolved === true) update.resolved = true;
+        if (Array.isArray(u.aliases)) {
+          const aliases = u.aliases
+            .map((a: unknown) => String(a).trim())
+            .filter((a: string) => a !== "");
+          if (aliases.length > 0) update.aliases = aliases;
+        }
+        return update;
+      })
+      .filter((u) => u.kind !== "" && u.name !== "")
+      .slice(0, MAX_CODEX_UPDATES);
+    if (updates.length > 0) {
+      response.codexUpdates = updates;
     }
   }
 

@@ -75,6 +75,9 @@ function makeSession(overrides: Partial<GameSession> = {}): GameSession {
     activePillar: null,
     errorMessage: null,
     errorCode: null,
+    // Present (empty) so deserialize's legacy Codex backfill is a no-op and the
+    // round trip is exact (history-context Codex; backfill covered separately).
+    codexState: { entities: [] },
     createdAt: 1000,
     updatedAt: 1000,
     ...overrides,

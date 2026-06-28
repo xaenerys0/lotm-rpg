@@ -8,6 +8,7 @@ import {
 } from "@/lib/ai";
 import { isValidActingMethodStateShape } from "./acting-method";
 import { isValidAnchorStateShape } from "./anchors";
+import { emptyCodexState, isValidCodexStateShape, seedCodexFromSession } from "./codex";
 import { createDigestionState } from "./digestion";
 import { clamp } from "./math";
 import { isValidCustomLocationsShape, registerCustomLocation } from "./location";
@@ -76,6 +77,11 @@ export function createSession(
     activePillar: null,
     errorMessage: null,
     errorCode: null,
+    // A fresh character has established nothing yet — the Codex (history-context
+    // Codex) fills as the story does. Seeded empty (not absent) so a created save
+    // round-trips cleanly; a legacy save that predates the field is instead
+    // backfilled from its accumulated state on deserialize.
+    codexState: emptyCodexState(),
     createdAt: now,
     updatedAt: now,
   };
@@ -279,7 +285,7 @@ export function deserializeSession(json: string): GameSession | null {
   // the next location change. Pure + idempotent; a no-op for a bare city, a known
   // district, or an unresolvable city.
   const gameState = registerCustomLocation(gameStateBase, gameStateBase.epoch);
-  return {
+  const session = {
     ...s,
     gameState,
     errorCode: s.errorCode ?? null,
@@ -294,6 +300,15 @@ export function deserializeSession(json: string): GameSession | null {
       ? { societyState: migrateSocietyState(s.societyState as SocietyState) }
       : {}),
   } as GameSession;
+  // Story-consistency Codex (history-context Codex): a save that predates the
+  // feature has no `codexState`. Backfill it ONCE from the structured state the
+  // save already carries (roster, anchors, society, present cast, custom places),
+  // so a long-running chronicle resumes with a populated registry instead of a
+  // blank one. Pure + idempotent — a save that already has a Codex is untouched.
+  if (session.codexState === undefined) {
+    session.codexState = seedCodexFromSession(session);
+  }
+  return session;
 }
 
 /**
@@ -430,6 +445,13 @@ export function isValidSessionShape(obj: unknown): boolean {
 
   // Anchor state (issues #35, #25) is optional but strict when present.
   if (s.anchorState !== undefined && !isValidAnchorStateShape(s.anchorState)) {
+    return false;
+  }
+
+  // Story-consistency Codex (history-context Codex) is optional but strict when
+  // present — it rides the deserialize `...s` spread; absent saves are backfilled
+  // from existing structured state via `seedCodexFromSession`.
+  if (s.codexState !== undefined && !isValidCodexStateShape(s.codexState)) {
     return false;
   }
 

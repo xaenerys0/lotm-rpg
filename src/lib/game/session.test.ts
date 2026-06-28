@@ -341,3 +341,51 @@ describe("pendingTurnKind persistence + shape validation (issue #171)", () => {
     expect(isValidSessionShape(kindSession(7))).toBe(false);
   });
 });
+
+describe("Codex persistence + backfill (history-context Codex)", () => {
+  it("backfills a Codex from existing state for a save that predates it", () => {
+    const session = createSession(
+      createDefaultGameState(1, "c1", "Hero"),
+      "codex-1",
+      1000,
+    );
+    session.gameState.npcsPresent = ["Old Neil"];
+    // Simulate a legacy save: drop the codexState before serializing.
+    const raw = JSON.parse(serializeSession(session)) as Record<string, unknown>;
+    delete raw.codexState;
+    const restored = deserializeSession(JSON.stringify(raw));
+    expect(restored?.codexState).toBeDefined();
+    expect(
+      restored?.codexState?.entities.some(
+        (e) => e.kind === "person" && e.name === "Old Neil",
+      ),
+    ).toBe(true);
+  });
+
+  it("preserves an explicit codexState round-trip and rejects a malformed one", () => {
+    const session = createSession(
+      createDefaultGameState(1),
+      "codex-2",
+      1000,
+    ) as unknown as Record<string, unknown>;
+    session.codexState = {
+      entities: [
+        {
+          id: "x1",
+          kind: "person",
+          name: "Welch",
+          status: "a fence",
+          importance: "pivotal",
+          firstSeenTurn: 1,
+          lastSeenTurn: 3,
+        },
+      ],
+    };
+    expect(isValidSessionShape(session)).toBe(true);
+    const restored = deserializeSession(serializeSession(session as never));
+    expect(restored?.codexState?.entities[0].name).toBe("Welch");
+
+    session.codexState = { entities: [{ id: "x", kind: "alien", name: "X" }] };
+    expect(isValidSessionShape(session)).toBe(false);
+  });
+});

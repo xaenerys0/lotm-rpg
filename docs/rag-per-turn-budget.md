@@ -38,6 +38,17 @@ larger) narrative-generation time itself.
 > figures in this doc predate that trim (4,000 → 3,000); the retrieval mechanics
 > (curated-first, remainder-filled) are unchanged.
 
+> **Update (story-consistency Codex):** the history layer now also carries a
+> compact **`## Established Facts`** block (history-context Codex — see
+> `docs/codex-design.md`) beside the existing `## Ground Truth` anchor. It is
+> **bounded by design**: `selectPinnedEntities` hard-caps the pinned subset at
+> `MAX_PINNED_ENTITIES` (12) scene-relevant + pivotal one-line entries, so the
+> block is flat regardless of how large the Codex grows over a 200+-turn game —
+> it fits inside the existing `history` budget with no `TOKEN_BUDGET` change. The
+> only new per-turn cost is on the OUTPUT side: the narrator's `codexUpdates`
+> deltas (count-capped at `MAX_CODEX_UPDATES` = 6 short entries), a handful of
+> tokens on the turns that establish something new.
+
 ## Monthly operator floor
 
 | Item                    | Estimate       | Notes                                                                                                                                |

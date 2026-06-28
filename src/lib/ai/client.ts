@@ -6,6 +6,7 @@ import type {
   InstructionType,
   ModelOption,
   NarrativeVerbosity,
+  PinnedCodexEntity,
   ProviderConfig,
   ProviderResponse,
   ValidatedAIResponse,
@@ -125,6 +126,11 @@ export interface GenerateOptions {
   cityNarration?: string | null;
   /** Player-chosen narration length (verbosity preset); absent/"standard" = baseline. */
   verbosity?: NarrativeVerbosity;
+  /**
+   * Scene-relevant + pivotal Codex entities (history-context Codex), pinned into
+   * the `## Established Facts` block. Bounded by the engine's selection cap.
+   */
+  pinnedEntities?: PinnedCodexEntity[];
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];
@@ -148,6 +154,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     epochContext: options.epochContext,
     cityNarration: options.cityNarration,
     verbosity: options.verbosity,
+    pinnedEntities: options.pinnedEntities,
     instruction: options.instruction,
     playerAction: options.playerAction,
     abilities: options.abilities,
