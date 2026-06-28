@@ -106,6 +106,44 @@ function clampLen(s: string, max: number): string {
   return t.length <= max ? t : t.slice(0, max).trimEnd();
 }
 
+function isAlnum(ch: string): boolean {
+  return /[a-z0-9]/.test(ch);
+}
+
+/**
+ * Whether a normalized `haystack` (a scene string) mentions a normalized
+ * `needle` (an entity name/alias) at WORD BOUNDARIES — so "Backlund" matches
+ * "Backlund — Cathedral" but a short name like "Al" does NOT match inside
+ * "Alley". Mirrors the word-boundary matching `location.ts` uses to avoid the
+ * generic-substring mis-pin bug; a bare `String.includes` over-matches.
+ */
+function mentions(haystack: string, needle: string): boolean {
+  if (needle === "") return false;
+  let from = 0;
+  for (;;) {
+    const idx = haystack.indexOf(needle, from);
+    if (idx === -1) return false;
+    const before = idx === 0 ? " " : haystack[idx - 1];
+    const after =
+      idx + needle.length >= haystack.length ? " " : haystack[idx + needle.length];
+    if (!isAlnum(before) && !isAlnum(after)) return true;
+    from = idx + 1;
+  }
+}
+
+/**
+ * The single display/selection ordering for Codex entities: pivotal first, then
+ * most-recently-seen, then by name. Shared by `selectPinnedEntities` (the
+ * prompt) and `filterCodexEntities` (the player tab) so the two can't drift.
+ */
+function compareCodexEntities(a: CodexEntity, b: CodexEntity): number {
+  const ap = a.importance === "pivotal" ? 1 : 0;
+  const bp = b.importance === "pivotal" ? 1 : 0;
+  if (ap !== bp) return bp - ap;
+  if (b.lastSeenTurn !== a.lastSeenTurn) return b.lastSeenTurn - a.lastSeenTurn;
+  return a.name.localeCompare(b.name);
+}
+
 function coerceKind(raw: unknown): CodexKind | null {
   return typeof raw === "string" && (CODEX_KINDS as readonly string[]).includes(raw)
     ? (raw as CodexKind)
@@ -269,7 +307,7 @@ export function touchCodexEntities(
   const entities = state.entities.map((e) => {
     if (e.lastSeenTurn >= turn) return e;
     const norms = [e.name, ...(e.aliases ?? [])].map(normalize);
-    const hit = targets.some((t) => norms.some((n) => n === t || t.includes(n)));
+    const hit = targets.some((t) => norms.some((n) => mentions(t, n)));
     if (!hit) return e;
     changed = true;
     return { ...e, lastSeenTurn: turn };
@@ -334,13 +372,7 @@ export function filterCodexEntities(
       }
       return true;
     })
-    .sort((a, b) => {
-      const ap = a.importance === "pivotal" ? 1 : 0;
-      const bp = b.importance === "pivotal" ? 1 : 0;
-      if (ap !== bp) return bp - ap;
-      if (b.lastSeenTurn !== a.lastSeenTurn) return b.lastSeenTurn - a.lastSeenTurn;
-      return a.name.localeCompare(b.name);
-    });
+    .sort(compareCodexEntities);
 }
 
 // ─── Selection (the budget-critical function) ────────────────────────
@@ -350,9 +382,10 @@ function isPinnable(e: CodexEntity, sceneText: string): boolean {
   if (e.kind === "thread" && e.resolved) return false;
   // Pivotal entities are always in view (the durable cast / driving threads).
   if (e.importance === "pivotal") return true;
-  // Otherwise pin only when the entity is part of THIS scene.
+  // Otherwise pin only when the entity is part of THIS scene (word-boundary
+  // matched, so a short name doesn't false-match inside a longer word).
   const norms = [e.name, ...(e.aliases ?? [])].map(normalize).filter((n) => n !== "");
-  return norms.some((n) => sceneText.includes(n));
+  return norms.some((n) => mentions(sceneText, n));
 }
 
 /**
@@ -372,13 +405,7 @@ export function selectPinnedEntities(
   );
   return state.entities
     .filter((e) => isPinnable(e, sceneText))
-    .sort((a, b) => {
-      const ap = a.importance === "pivotal" ? 1 : 0;
-      const bp = b.importance === "pivotal" ? 1 : 0;
-      if (ap !== bp) return bp - ap;
-      if (b.lastSeenTurn !== a.lastSeenTurn) return b.lastSeenTurn - a.lastSeenTurn;
-      return a.name.localeCompare(b.name);
-    })
+    .sort(compareCodexEntities)
     .slice(0, MAX_PINNED_ENTITIES);
 }
 

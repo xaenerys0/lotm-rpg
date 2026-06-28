@@ -307,6 +307,21 @@ describe("touchCodexEntities", () => {
     expect(next.entities).toHaveLength(2);
   });
 
+  it("does not false-match a short entity name inside a longer word (word boundary)", () => {
+    const short = applyCodexUpdate(
+      emptyCodexState(),
+      update({ kind: "person", name: "Al" }),
+      1,
+      () => "al-1",
+    );
+    // "Al" must not match inside "Alley District".
+    expect(touchCodexEntities(short, ["Alley District"], 9)).toBe(short);
+    // But it still matches a real word-boundary occurrence.
+    expect(touchCodexEntities(short, ["Al the fence"], 9).entities[0].lastSeenTurn).toBe(
+      9,
+    );
+  });
+
   it("returns the same state when nothing matches or no names are given", () => {
     const s = seed();
     expect(touchCodexEntities(s, [], 5)).toBe(s);
@@ -394,6 +409,24 @@ describe("selectPinnedEntities / pinnedEntitiesForPrompt", () => {
   it("orders pivotal-first, then by recency, then by name", () => {
     const pinned = selectPinnedEntities(build(), scene({ npcsPresent: ["Scene B"] }));
     expect(pinned.map((e) => e.name)).toEqual(["Pivotal A", "Pivotal C", "Scene B"]);
+  });
+
+  it("does not pin a short standard entity matched only inside a longer word", () => {
+    const id = counter();
+    const s = applyCodexUpdate(
+      emptyCodexState(),
+      update({ kind: "person", name: "Al" }),
+      1,
+      id,
+    );
+    // Scene location "Alley" must not pin the standard entity "Al".
+    expect(selectPinnedEntities(s, scene({ location: "Alley District" }))).toHaveLength(
+      0,
+    );
+    // A real word-boundary mention does pin it.
+    expect(
+      selectPinnedEntities(s, scene({ npcsPresent: ["Al"] })).map((e) => e.name),
+    ).toEqual(["Al"]);
   });
 
   it("matches a standard entity named in an active quest", () => {

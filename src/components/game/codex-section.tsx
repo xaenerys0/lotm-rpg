@@ -43,7 +43,13 @@ const KIND_GLYPH: Record<CodexKind, string> = {
 type KindFilter = CodexKind | "all";
 
 export function CodexSection({ session }: { session: GameSession }) {
-  const codex = resolveCodexState(session.codexState);
+  // Memoize on the persisted field so the downstream memos don't thrash when
+  // `codexState` is absent (`resolveCodexState` would mint a new empty object
+  // each render otherwise).
+  const codex = useMemo(
+    () => resolveCodexState(session.codexState),
+    [session.codexState],
+  );
   const [kind, setKind] = useState<KindFilter>("all");
   const [text, setText] = useState("");
   const [showResolved, setShowResolved] = useState(false);
@@ -127,7 +133,7 @@ export function CodexSection({ session }: { session: GameSession }) {
                     }`}
                   >
                     <span>{chip.label}</span>
-                    <span aria-hidden="true" className="text-[10px] opacity-80">
+                    <span aria-hidden="true" className="text-[10px]">
                       {chip.count}
                     </span>
                   </button>
@@ -205,12 +211,12 @@ function CodexCard({ entity }: { entity: CodexEntity }) {
       )}
       {entity.aliases && entity.aliases.length > 0 && (
         <p className="mt-1 text-[11px] text-muted">
-          <span className="text-foreground/70">Also known as:</span>{" "}
+          <span className="text-foreground">Also known as:</span>{" "}
           {entity.aliases.join(", ")}
         </p>
       )}
       {entity.note && (
-        <p className="mt-1.5 font-serif text-xs leading-relaxed text-foreground/90 italic">
+        <p className="mt-1.5 font-serif text-xs leading-relaxed text-muted italic">
           {entity.note}
         </p>
       )}
