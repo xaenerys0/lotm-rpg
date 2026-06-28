@@ -73,6 +73,17 @@ export function anchorsRelevant(sequenceLevel: number): boolean {
   return sequenceLevel <= 4;
 }
 
+/**
+ * Whether a congregation anchor may be consecrated. Canon: the strongest anchor
+ * is a body of believers ("the faith of the mass"), so — unlike a personal mark
+ * (object/place) a Saint can simply fix upon — a congregation requires an actual
+ * following the character has gathered (a secret society's members and/or allies
+ * who travel with them). `followingSize` is that head-count; the UI passes it.
+ */
+export function canConsecrateCongregation(followingSize: number): boolean {
+  return followingSize > 0;
+}
+
 // ─── Support arithmetic ──────────────────────────────────────────────
 
 /**

@@ -328,6 +328,7 @@ export {
   anchorHighRisk,
   anchorPressure,
   anchorsRelevant,
+  canConsecrateCongregation,
   consecrateAnchor,
   damageAnchor,
   effectiveSupport,

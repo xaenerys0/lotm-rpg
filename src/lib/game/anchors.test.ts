@@ -4,6 +4,7 @@ import {
   anchorHighRisk,
   anchorPressure,
   anchorsRelevant,
+  canConsecrateCongregation,
   consecrateAnchor,
   damageAnchor,
   effectiveSupport,
@@ -42,6 +43,12 @@ describe("anchors — tier gating", () => {
     expect(anchorsRelevant(2)).toBe(true);
     expect(anchorsRelevant(5)).toBe(false);
     expect(anchorsRelevant(9)).toBe(false);
+  });
+
+  it("canConsecrateCongregation requires a following (head-count > 0)", () => {
+    expect(canConsecrateCongregation(0)).toBe(false);
+    expect(canConsecrateCongregation(1)).toBe(true);
+    expect(canConsecrateCongregation(5)).toBe(true);
   });
 });
 

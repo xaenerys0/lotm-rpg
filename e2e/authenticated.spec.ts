@@ -108,3 +108,48 @@ test("the character sheet's delete control runs the two-step confirm", async ({
   await page.getByRole("button", { name: "Delete", exact: true }).click();
   await expect(page.getByText(/No Beyonder has been recorded yet/)).toBeVisible();
 });
+
+test("a Saint can consecrate an anchor to meet the advancement requirement", async ({
+  page,
+}) => {
+  // The Anchors section only appears at the Saint tier (Seq <= 4). Seed a
+  // Sequence-4 Beyonder so the section renders, then consecrate an object anchor
+  // and confirm its support clears the Saint requirement (object weight 0.5 ×
+  // full integrity 100 = 50 >= the 40 a Saint needs).
+  const gameState = {
+    ...createDefaultGameState(1, "e2e-saint", "Klein Saint"),
+    sequenceLevel: 4,
+  };
+  const session = createSession(gameState, "e2e-anchor-1");
+  await page.addInitScript(
+    ({ indexKey, sessionKey, indexValue, sessionValue }) => {
+      localStorage.setItem(indexKey, indexValue);
+      localStorage.setItem(sessionKey, sessionValue);
+    },
+    {
+      indexKey: SESSION_INDEX_KEY,
+      sessionKey: SESSION_KEY_PREFIX + session.id,
+      indexValue: JSON.stringify([session.id]),
+      sessionValue: serializeSession(session),
+    },
+  );
+
+  await page.goto("/character");
+
+  const anchors = page.getByRole("region", { name: "Anchors" });
+  await expect(anchors).toBeVisible();
+  // Before consecrating anything, support falls short of the requirement.
+  await expect(
+    anchors.getByText(/fall short of what this Sequence demands/),
+  ).toBeVisible();
+
+  await anchors.getByRole("button", { name: "Consecrate an anchor" }).click();
+  await anchors.getByLabel("Its name").fill("Mother's pocket watch");
+  await anchors.getByRole("button", { name: "Consecrate the anchor" }).click();
+
+  // The anchor is recorded and its support now meets the Saint requirement.
+  await expect(anchors.getByText("Mother's pocket watch")).toBeVisible();
+  await expect(
+    anchors.getByText(/enough to hold your shape at this Sequence/),
+  ).toBeVisible();
+});
