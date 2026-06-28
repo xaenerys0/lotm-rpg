@@ -909,14 +909,15 @@ describe("accessibility — stub pages", () => {
     await expectNoAxeViolationsInContainer(container);
   });
 
-  it("character sheet anchors section (Saint tier) has no violations", async () => {
-    // A Saint (Sequence 4) sees the Anchors section: DEMIGOD_TRAITS flavour, the
-    // support progressbar, a seeded anchor (its integrity bar + Strengthen/
-    // Release), and the consecrate form (kind select + name input). The seeded
-    // anchor sits below full integrity so the "Strengthen" branch renders too.
+  it("character sheet anchors section (climbing into Saint tier) has no violations", async () => {
+    // A Beyonder whose next climb leads into the Saint tier (here Sequence 5 →
+    // target 4) sees the Anchors section: DEMIGOD_TRAITS flavour, the support
+    // progressbar, a seeded anchor (its integrity bar + Strengthen/Release), and
+    // the consecrate form (kind select + name input). The seeded anchor sits
+    // below full integrity so the "Strengthen" branch renders too.
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-anchor", "Klein"),
-      sequenceLevel: 4,
+      sequenceLevel: 5,
     };
     const session = {
       ...createSession(gameState, "anchor-1", 1000),

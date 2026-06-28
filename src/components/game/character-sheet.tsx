@@ -48,6 +48,7 @@ import {
   sequenceClassificationFor,
   sequenceLabel,
   switchIdentity,
+  targetSequence,
   transformationRiteFor,
   ANCHOR_INTEGRITY_MAX,
   DEMIGOD_TRAITS,
@@ -366,11 +367,15 @@ export function CharacterSheet() {
       {/* Acquired powers — copied/stolen Beyonder abilities */}
       <AcquiredPowersSection session={session} onUpdate={persistSession} />
 
-      {/* Anchors — steady the godhood pressure at the Saint tier and above
-          (issues #35/#25). Only relevant from Sequence 4 downward. */}
-      {anchorsRelevant(state.sequenceLevel) && (
-        <AnchorsSection session={session} onUpdate={persistSession} />
-      )}
+      {/* Anchors — steady the godhood pressure of the rung you're climbing into
+          (issues #35/#25). Shown only when the NEXT advancement leads into the
+          Saint tier or deeper (target Seq ≤ 4, i.e. current Seq 1–5) — the
+          requirement is gauged on the TARGET, so a Seq 5 about to become a Saint
+          sees it (the bug was gating on the current sequence). */}
+      {state.sequenceLevel >= 1 &&
+        anchorsRelevant(targetSequence(state.sequenceLevel)) && (
+          <AnchorsSection session={session} onUpdate={persistSession} />
+        )}
 
       {/* Inventory */}
       <section
@@ -911,12 +916,19 @@ function AnchorsSection({
   session: GameSession;
   onUpdate: (next: GameSession) => void;
 }) {
-  const seq = session.gameState.sequenceLevel;
+  // Everything is gauged on the TARGET rung — the sequence being climbed into —
+  // because that's what the advancement anchors requirement checks. (Gating on
+  // the current sequence hid the section from a Seq 5 about to become a Saint and
+  // sized the meter against `requiredSupport(5)` = 0.)
+  const target = targetSequence(session.gameState.sequenceLevel);
+  // `sequenceLabel` is the canonical display-name helper (handles a True God /
+  // Pillar target, not just numbered rungs) — don't re-derive from `getSequence`.
+  const targetRole = sequenceLabel(session.gameState.pathwayId, target);
   const anchorState: AnchorState = session.anchorState ?? emptyAnchorState();
   const anchors = anchorState.anchors;
   const support = effectiveSupport(anchorState);
-  const needed = requiredSupport(seq);
-  const traits = DEMIGOD_TRAITS[seq];
+  const needed = requiredSupport(target);
+  const traits = DEMIGOD_TRAITS[target];
 
   // A congregation needs a real following: a secret society's members and/or
   // allies who travel with the character (the roster's allies).
@@ -984,9 +996,9 @@ function AnchorsSection({
       </h2>
       <p className="mt-1 text-xs leading-relaxed text-muted">
         The marks and believers that hold your self in place against the pull of your
-        mythical form. Their support must meet what your Sequence demands before you can
-        climb — a Saint leans on meaningful objects and places; the strongest anchor of
-        all is a congregation of believers.
+        mythical form. Their support must meet what the climb to {targetRole} demands
+        before you can ascend — a Saint leans on meaningful objects and places; the
+        strongest anchor of all is a congregation of believers.
       </p>
 
       {traits && (
@@ -1045,8 +1057,8 @@ function AnchorsSection({
         </div>
         <p className="mt-1.5 text-xs text-muted">
           {support >= needed
-            ? "Your anchors are enough to hold your shape at this Sequence."
-            : "Your anchors fall short of what this Sequence demands."}
+            ? `Your anchors are enough to hold the shape of ${targetRole}.`
+            : `Your anchors fall short of what the climb to ${targetRole} demands.`}
         </p>
       </div>
 
