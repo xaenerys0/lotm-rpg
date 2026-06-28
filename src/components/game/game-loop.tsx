@@ -1728,6 +1728,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         );
         const next = transition(committed, {
           type: "PRESENT_NEXT_CHOICES",
+          result,
           choices: result.response.choices?.length
             ? result.response.choices
             : DEFAULT_CHOICES,
@@ -1876,26 +1877,14 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
   // the engine turn's narration and resumes with a fresh scene (→ situation).
   const handleContinue = useCallback(() => {
     if (!session) return;
-    const selectedChoice = session.currentChoices?.find(
-      (c) => c.id === session.selectedChoiceId,
-    );
-    // An engine-decided turn carries its own action text so the turn record reads
-    // as what the player did, keeping the next AI prompt aware of it.
-    const isEngineTurn = session.pendingPlayerAction != null;
-    const playerAction =
-      session.pendingPlayerAction ?? selectedChoice?.text ?? "Continue";
-
     const resolution = session.lastResolution;
-    if (resolution) {
-      const committed = applyAndCommitTurn(
-        session,
-        resolution,
-        playerAction,
-        isEngineTurn,
-      );
-      const next = transition(committed, { type: "APPLY_CONSEQUENCES" });
-      updateSession(next);
-    }
+    if (!resolution) return;
+    // Reached only by an engine-decided turn, which always carries its own action
+    // text (set by ENGINE_RESOLUTION) so the turn record reads as what the player
+    // did, keeping the next AI prompt aware of it.
+    const playerAction = session.pendingPlayerAction ?? "Continue";
+    const committed = applyAndCommitTurn(session, resolution, playerAction, true);
+    updateSession(transition(committed, { type: "APPLY_CONSEQUENCES" }));
   }, [session, updateSession, applyAndCommitTurn]);
 
   const handleRetry = useCallback(() => {
@@ -4018,16 +4007,18 @@ function ResolutionRecap({
 
       {/* Digestion complete — advancement available. Gated on discovery so the
           mechanic is never named to a player who hasn't earned the secret
-          (issue #95); completing digestion in practice implies discovery. */}
-      {knowsMethod &&
-        (digestionState?.complete ?? session.gameState.digestion?.complete) && (
-          <div className="mb-6 rounded-md border border-occult/40 bg-occult/[0.06] p-4 text-center">
-            <p className="font-serif text-sm text-occult-bright">
-              <span aria-hidden="true">✦ </span>The potion is fully digested. You may
-              undergo the advancement to the next Sequence when you are ready.
-            </p>
-          </div>
-        )}
+          (issue #95); completing digestion in practice implies discovery. The
+          committed `gameState.digestion` is the single source of truth (the recap
+          renders after the turn committed on a normal turn; engine turns don't
+          advance digestion). */}
+      {knowsMethod && session.gameState.digestion?.complete && (
+        <div className="mb-6 rounded-md border border-occult/40 bg-occult/[0.06] p-4 text-center">
+          <p className="font-serif text-sm text-occult-bright">
+            <span aria-hidden="true">✦ </span>The potion is fully digested. You may
+            undergo the advancement to the next Sequence when you are ready.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

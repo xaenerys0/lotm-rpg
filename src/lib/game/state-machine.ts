@@ -80,11 +80,12 @@ export function transition(
     case "PRESENT_NEXT_CHOICES": {
       // A normal player turn resolved: the caller has already committed every
       // consequence onto the session (applyResolution + bookkeeping), so this
-      // carries the resolution's OWN choices straight into `choices` as the next
-      // decision point — no separate forward-narration beat. The resolution is
-      // kept in `lastResolution`; the choices screen renders the outcome recap +
-      // consequences summary from it (so `currentNarrative`, which the choices
-      // screen reserves for a fresh scene, is cleared).
+      // carries the resolution's OWN result + choices straight into `choices` as
+      // the next decision point — no separate forward-narration beat. The result
+      // is set into `lastResolution` (SELECT_CHOICE cleared the prior turn's), so
+      // the choices screen renders the outcome recap + consequences summary from
+      // it — `currentNarrative`, which the choices screen reserves for a fresh
+      // scene, is cleared.
       assertTransition(session.phase, "choices");
       return {
         ...session,
@@ -92,6 +93,7 @@ export function transition(
         turnCount: session.turnCount + 1,
         currentNarrative: null,
         currentChoices: action.choices,
+        lastResolution: action.result,
         selectedChoiceId: null,
         activePillar: null,
         pendingPlayerAction: null,

@@ -160,7 +160,7 @@ export type GameLoopAction =
   | { type: "SITUATION_READY"; narrative: string; choices: Choice[] }
   | { type: "SELECT_CHOICE"; choiceId: string }
   | { type: "RESOLUTION_READY"; result: ValidatedAIResponse }
-  | { type: "PRESENT_NEXT_CHOICES"; choices: Choice[] }
+  | { type: "PRESENT_NEXT_CHOICES"; result: ValidatedAIResponse; choices: Choice[] }
   | {
       type: "ENGINE_RESOLUTION";
       result: ValidatedAIResponse;

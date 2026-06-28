@@ -416,19 +416,26 @@ describe("transition", () => {
   });
 
   describe("PRESENT_NEXT_CHOICES", () => {
-    it("transitions resolution → choices with the resolution's own choices, advancing the turn", () => {
+    it("transitions resolution → choices with the resolution's own result + choices, advancing the turn", () => {
       const choices = makeChoices();
+      const result = makeValidatedResponse();
+      // Mirror the real flow: SELECT_CHOICE already cleared lastResolution, so the
+      // input has none — PRESENT_NEXT_CHOICES must SET it from the carried result.
       const session = makeSession({
         phase: "resolution",
         turnCount: 3,
         selectedChoiceId: "c2",
         activePillar: "combat",
         currentNarrative: "stale scene text",
-        lastResolution: makeValidatedResponse(),
+        lastResolution: null,
         pendingPlayerAction: "irrelevant",
         pendingTurnKind: "combat",
       });
-      const next = transition(session, { type: "PRESENT_NEXT_CHOICES", choices }, NOW);
+      const next = transition(
+        session,
+        { type: "PRESENT_NEXT_CHOICES", result, choices },
+        NOW,
+      );
 
       expect(next.phase).toBe("choices");
       // One beat per action: the resolution's outcome + choices become the next
@@ -445,15 +452,38 @@ describe("transition", () => {
       expect(next.updatedAt).toBe(NOW);
     });
 
-    it("preserves lastResolution so the choices screen can render the outcome recap", () => {
+    it("sets lastResolution from the carried result so the choices screen can render the outcome recap", () => {
+      // Regression guard: SELECT_CHOICE clears lastResolution, so the recap is
+      // blank unless PRESENT_NEXT_CHOICES sets it from the result it carries (the
+      // bug where a resolved turn showed only choices, no outcome text).
       const result = makeValidatedResponse();
-      const session = makeSession({ phase: "resolution", lastResolution: result });
+      const session = makeSession({ phase: "resolution", lastResolution: null });
       const next = transition(
         session,
-        { type: "PRESENT_NEXT_CHOICES", choices: makeChoices() },
+        { type: "PRESENT_NEXT_CHOICES", result, choices: makeChoices() },
         NOW,
       );
       expect(next.lastResolution).toEqual(result);
+    });
+
+    it("through the real select → present sequence, the recap data is present (regression)", () => {
+      // The full normal-turn loop at the state-machine level: pick a choice
+      // (clears the prior recap), then present the resolved result.
+      const result = makeValidatedResponse();
+      const start = makeSession({
+        phase: "choices",
+        currentChoices: makeChoices(),
+        lastResolution: makeValidatedResponse(),
+      });
+      const resolving = transition(start, { type: "SELECT_CHOICE", choiceId: "c1" }, NOW);
+      expect(resolving.lastResolution).toBeNull();
+      const presented = transition(
+        resolving,
+        { type: "PRESENT_NEXT_CHOICES", result, choices: makeChoices() },
+        NOW,
+      );
+      expect(presented.phase).toBe("choices");
+      expect(presented.lastResolution).toEqual(result);
     });
 
     it("throws from consequences phase (engine turns still resume via situation)", () => {
@@ -461,7 +491,11 @@ describe("transition", () => {
       expect(() =>
         transition(
           session,
-          { type: "PRESENT_NEXT_CHOICES", choices: makeChoices() },
+          {
+            type: "PRESENT_NEXT_CHOICES",
+            result: makeValidatedResponse(),
+            choices: makeChoices(),
+          },
           NOW,
         ),
       ).toThrow(InvalidTransitionError);
