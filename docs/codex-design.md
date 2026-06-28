@@ -100,17 +100,45 @@ expensive reconciliation LLM pass.
 A save that predates the feature has no `codexState`. On deserialize, `seedCodexFromSession`
 **backfills** it from the structured state the save already carries — present NPCs and
 location, the tracked-NPC roster (companions + pursuers, seeded as pivotal followers),
-consecrated anchors, the secret society, and custom locations. Nothing is fabricated:
-every seed is real established data the player can already see elsewhere, so a 200-turn
-chronicle resumes with a populated Codex rather than a blank one. A freshly created session
-seeds an empty Codex (a new character has established nothing yet), so saves round-trip
-cleanly.
+consecrated anchors, the secret society, and custom locations — PLUS the running summary's
+`Goals:`/`Threads:` lines as thread entities, and it files a collective-named present NPC
+("…Sect") as a `group` not a `person`. Nothing is fabricated: every seed is real
+established data the player can already see elsewhere, so a 200-turn chronicle resumes with
+a populated Codex rather than a blank one. A freshly created session seeds an empty Codex,
+so saves round-trip cleanly.
+
+**The limit of the heuristic.** The backfill reads only what is _structured_ in the session
+blob. The bulk of a long chronicle's entities (people, objects, groups) live in PROSE — the
+journal's 70+ entries, the running summary, the session facts — which a heuristic can't
+reliably categorize. So for a deep history, the backfill is a baseline, not the whole answer.
+
+## Rebuild from history (AI)
+
+The opt-in deep path: a **"Rebuild from history"** action on the Codex tab runs ONE BYOK LLM
+pass over the chronicle and REPLACES the Codex with a clean, categorized, de-duplicated
+extraction. `codexRebuildDigest(session, journal)` (pure, `codex.ts`) assembles the digest
+(character, running summary, journal beats with present NPCs, recorded facts);
+`buildCodexRebuildPrompt`/`parseCodexRebuild` (pure, `src/lib/ai/codex-rebuild.ts`) build the
+archivist prompt and forgivingly parse the result; `generateCodexRebuild` (`client.ts`,
+premium model, low temperature) is the network shell. The parsed `CodexUpdateInput[]` is
+folded into a fresh `codexState` via `applyCodexUpdates`, which consolidates variants by
+name/alias. This is also the **consolidation** answer — the model merges "The Stagnation
+Entity"/"Stagnation Entity" and collapses location sprawl, listing variants as `aliases`.
+
+## Manual curation
+
+The Codex tab is also an editor. Per entity: **pin/unpin** (`setCodexImportance`), **edit**
+name/status (`updateCodexEntity`, clamped + validated), **merge** a duplicate into another
+same-kind entry (`mergeCodexEntities` — the kept entry gains the dropped name + aliases, the
+earliest `firstSeenTurn`, the latest `lastSeenTurn`), and **forget** (`removeCodexEntity`).
+All are pure ops in `codex.ts`; the component commits each via `onUpdate`.
 
 ## Player-facing Codex tab
 
 The redesigned, tabbed character sheet (`src/components/game/character-sheet.tsx`) adds a
-**Codex** tab (`codex-section.tsx`) — a read-only browser over the same registry that
-grounds the narrator: grouped by kind, with a text search, kind-filter chips, a
-"show settled threads" toggle, importance badges, one-line status, and last-seen turn.
-The pure filter (`filterCodexEntities`) lives in `codex.ts` (tested); the component is the
-thin shell, verified via the axe suite and an e2e spec.
+**Codex** tab (`codex-section.tsx`) — a browser+editor over the same registry that grounds
+the narrator: grouped by kind, with a text search, kind-filter chips, a "show settled
+threads" toggle, importance badges, status, and last-seen turn; plus the per-entity
+curation controls (pin/edit/merge/forget) and the "Rebuild from history" action above.
+The pure filter (`filterCodexEntities`) and curation ops live in `codex.ts` (tested); the
+component is the shell, verified via the axe suite and an e2e spec.

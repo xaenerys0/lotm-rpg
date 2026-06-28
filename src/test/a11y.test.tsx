@@ -988,6 +988,16 @@ describe("accessibility — stub pages", () => {
     };
     localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["cx-1"]));
     localStorage.setItem(SESSION_KEY_PREFIX + "cx-1", serializeSession(session));
+    // A provider config so the "Rebuild from history" affordance renders.
+    localStorage.setItem(
+      "lotm-rpg-provider-config",
+      JSON.stringify({
+        providerId: "openai",
+        apiKey: "sk-test",
+        routineModel: "gpt-4o-mini",
+        premiumModel: "gpt-4o",
+      }),
+    );
     const { container } = render(<CharacterPage />);
     await expectNoAxeViolationsInContainer(container);
 
@@ -998,6 +1008,14 @@ describe("accessibility — stub pages", () => {
       target: { value: "Audrey" },
     });
     fireEvent.click(within(region).getByLabelText("Show settled threads"));
+    await expectNoAxeViolationsInContainer(container);
+
+    // Open the per-entity curation editor (name/status/merge/forget).
+    fireEvent.click(within(region).getByRole("button", { name: "Edit" }));
+    await expectNoAxeViolationsInContainer(container);
+
+    // Open the rebuild confirm panel.
+    fireEvent.click(within(region).getByRole("button", { name: /Rebuild from history/ }));
     await expectNoAxeViolationsInContainer(container);
   });
 

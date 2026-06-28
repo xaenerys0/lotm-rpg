@@ -23,8 +23,14 @@
 // session-sub-state pattern: optional on `GameSession`, strictly validated,
 // preserved on the deserialize `...s` spread.
 
-import type { CodexUpdateInput, GameState, PinnedCodexEntity } from "@/lib/ai";
+import type {
+  CodexRebuildInput,
+  CodexUpdateInput,
+  GameState,
+  PinnedCodexEntity,
+} from "@/lib/ai";
 import type { GameSession } from "./types";
+import type { Journal } from "./journal";
 
 // ─── Types ───────────────────────────────────────────────────────────
 
@@ -168,6 +174,61 @@ function cleanAliases(raw: readonly string[] | undefined, exclude: string): stri
     seen.add(norm);
     out.push(name);
     if (out.length >= MAX_ALIASES) break;
+  }
+  return out;
+}
+
+// Whole-word markers that tell a collective (a faction/congregation) apart from
+// a person, so a name like "The Veiled Woman's Sect" seeds as a `group`, not a
+// `person`, during the heuristic backfill.
+const GROUP_MARKERS = [
+  "sect",
+  "church",
+  "club",
+  "order",
+  "family",
+  "squad",
+  "circle",
+  "cabal",
+  "society",
+  "guild",
+  "crew",
+  "chapter",
+  "court",
+  "clan",
+  "tribe",
+  "cult",
+  "band",
+  "company",
+  "division",
+  "team",
+  "council",
+  "brotherhood",
+  "sisterhood",
+];
+
+/** Guess whether a bare name reads as a collective (`group`) or an individual. */
+function inferPersonOrGroup(name: string): CodexKind {
+  const norm = normalize(name);
+  return GROUP_MARKERS.some((m) => mentions(norm, m)) ? "group" : "person";
+}
+
+/**
+ * Pull the open obligations out of the narrator's labelled running summary —
+ * the `Goals:` and `Threads:` lines — as discrete thread phrases (the synopsis
+ * separates them with `;`). The richest entity source a pre-feature save has in
+ * the session blob; the AI rebuild does the deeper extraction.
+ */
+function threadsFromSummary(summary: string | undefined): string[] {
+  if (!summary) return [];
+  const out: string[] = [];
+  for (const line of summary.split("\n")) {
+    const m = line.match(/^\s*(goals|threads)\s*:\s*(.+)$/i);
+    if (!m) continue;
+    for (const part of m[2].split(";")) {
+      const phrase = part.trim().replace(/\.$/, "");
+      if (phrase !== "") out.push(phrase);
+    }
   }
   return out;
 }
@@ -342,6 +403,96 @@ export function removeCodexEntity(state: CodexState, id: string): CodexState {
   return { entities: state.entities.filter((e) => e.id !== id) };
 }
 
+export interface CodexEdit {
+  name?: string;
+  status?: string;
+  kind?: CodexKind;
+  importance?: CodexImportance;
+  note?: string;
+  resolved?: boolean;
+}
+
+/**
+ * Player edit of one entity (the Codex tab). Validates `kind`/`importance`,
+ * clamps the strings, and keeps the entity's id/firstSeenTurn/lastSeenTurn. A
+ * blank/whitespace name is rejected (kept as-is); unknown id is a no-op. Pure.
+ */
+export function updateCodexEntity(
+  state: CodexState,
+  id: string,
+  edit: CodexEdit,
+): CodexState {
+  return {
+    entities: state.entities.map((e) => {
+      if (e.id !== id) return e;
+      const name = edit.name !== undefined ? clampLen(edit.name, NAME_MAX) : e.name;
+      const kind = edit.kind ? (coerceKind(edit.kind) ?? e.kind) : e.kind;
+      const importance = edit.importance
+        ? (coerceImportance(edit.importance) ?? e.importance)
+        : e.importance;
+      const note =
+        edit.note !== undefined
+          ? edit.note.trim() === ""
+            ? undefined
+            : clampLen(edit.note, NOTE_MAX)
+          : e.note;
+      return {
+        ...e,
+        name: name === "" ? e.name : name,
+        ...(edit.status !== undefined
+          ? { status: clampLen(edit.status, STATUS_MAX) }
+          : {}),
+        kind,
+        importance,
+        note,
+        ...(edit.resolved !== undefined ? { resolved: edit.resolved } : {}),
+      };
+    }),
+  };
+}
+
+/** Set (pin/unpin) an entity's importance. Pure; unknown id is a no-op. */
+export function setCodexImportance(
+  state: CodexState,
+  id: string,
+  importance: CodexImportance,
+): CodexState {
+  return updateCodexEntity(state, id, { importance });
+}
+
+/**
+ * Merge the `drop` entity into the `keep` entity (the player de-duplicating two
+ * records of the same thing). `keep` retains its fields; it gains `drop`'s name
+ * and aliases as aliases (so future matches still hit it), the earliest
+ * `firstSeenTurn`, the latest `lastSeenTurn`, and `drop` is removed. No-op when
+ * an id is unknown or the two are identical. Pure.
+ */
+export function mergeCodexEntities(
+  state: CodexState,
+  keepId: string,
+  dropId: string,
+): CodexState {
+  if (keepId === dropId) return state;
+  const keep = state.entities.find((e) => e.id === keepId);
+  const drop = state.entities.find((e) => e.id === dropId);
+  if (!keep || !drop) return state;
+  const aliases = cleanAliases(
+    [...(keep.aliases ?? []), drop.name, ...(drop.aliases ?? [])],
+    keep.name,
+  );
+  const merged: CodexEntity = {
+    ...keep,
+    ...(aliases.length > 0 ? { aliases } : {}),
+    firstSeenTurn: Math.min(keep.firstSeenTurn, drop.firstSeenTurn),
+    lastSeenTurn: Math.max(keep.lastSeenTurn, drop.lastSeenTurn),
+  };
+  return {
+    entities: state.entities
+      .filter((e) => e.id !== dropId)
+      .map((e) => (e.id === keepId ? merged : e)),
+  };
+}
+
 export interface CodexFilter {
   /** Restrict to one kind; `"all"`/absent keeps every kind. */
   kind?: CodexKind | "all";
@@ -481,7 +632,8 @@ export function seedCodexFromSession(
   }
   for (const npc of gs.npcsPresent ?? []) {
     seeds.push({
-      kind: "person",
+      // A present "NPC" whose name reads as a collective ("…Sect") is a group.
+      kind: inferPersonOrGroup(npc),
       name: npc,
       status: "Present with you when the chronicle resumed.",
       importance: "standard",
@@ -496,11 +648,22 @@ export function seedCodexFromSession(
           ? "A pursuer on your trail."
           : "Known to you.";
     seeds.push({
-      kind: "person",
+      kind: inferPersonOrGroup(npc.name),
       name: npc.name,
       status,
       // Companions and pursuers are the durable cast — keep them in view.
       importance: npc.follows ? "pivotal" : "standard",
+    });
+  }
+
+  // Open obligations from the narrator's running summary (Goals/Threads lines) —
+  // the richest entity source in the session blob for a pre-feature save.
+  for (const phrase of threadsFromSummary(session.memory?.runningSummary)) {
+    seeds.push({
+      kind: "thread",
+      name: phrase,
+      status: "An open thread carried into the chronicle.",
+      importance: "standard",
     });
   }
 
@@ -553,6 +716,45 @@ export function seedCodexFromSession(
     );
   }
   return state;
+}
+
+// ─── AI rebuild digest ───────────────────────────────────────────────
+
+/** Most journal beats + facts to feed the rebuild (bounds the prompt size). */
+const MAX_REBUILD_JOURNAL = 120;
+const MAX_REBUILD_FACTS = 60;
+
+/**
+ * Assemble the chronicle digest the AI rebuild reads (history-context Codex) —
+ * the running summary, the journal's key beats (most recent capped), and the
+ * recorded session facts. Pure; the React layer loads the journal and calls
+ * `generateCodexRebuild` with this. Mirrors how `lore-retrieval` builds its
+ * query input in the game layer while the network call stays in the shell.
+ */
+export function codexRebuildDigest(
+  session: GameSession,
+  journal: Journal,
+): CodexRebuildInput {
+  const entries = journal.entries.slice(-MAX_REBUILD_JOURNAL).map((e) => ({
+    turnNumber: e.turnNumber,
+    eventType: e.eventType,
+    summary: e.summary,
+    ...(e.involvedNpcs.length > 0 ? { npcs: e.involvedNpcs } : {}),
+  }));
+  const facts = session.memory.sessionFacts
+    .slice(-MAX_REBUILD_FACTS)
+    .map((f) => f.description);
+  return {
+    ...(session.gameState.characterName
+      ? { characterName: session.gameState.characterName }
+      : {}),
+    ...(session.memory.runningSummary
+      ? { runningSummary: session.memory.runningSummary }
+      : {}),
+    journal: entries,
+    facts,
+    currentTurn: session.turnCount,
+  };
 }
 
 // ─── Session-shape validation (mirrors anchors / tracked-npcs) ───────

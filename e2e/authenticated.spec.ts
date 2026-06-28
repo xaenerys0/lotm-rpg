@@ -223,4 +223,12 @@ test("the character sheet tabs switch sections and the Codex tab browses entitie
   await codex.getByLabel("Search the Codex").fill("Audrey");
   await expect(codex.getByText("Audrey Hall")).toBeVisible();
   await expect(codex.getByText("The Tarot Club")).toHaveCount(0);
+
+  // Curation: pin the standard entity (The Tarot Club) and confirm it sticks.
+  await codex.getByLabel("Search the Codex").fill("Tarot");
+  const pin = codex.getByRole("button", { name: /Pin The Tarot Club as pivotal/ });
+  await pin.click();
+  await expect(
+    codex.getByRole("button", { name: /Unpin The Tarot Club/ }),
+  ).toHaveAttribute("aria-pressed", "true");
 });

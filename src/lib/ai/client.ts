@@ -15,14 +15,22 @@ import type {
 import { AIError } from "./errors";
 import { createAdapter, type LLMProviderAdapter } from "./providers";
 import { assemblePrompt, promptToMessages } from "./prompts";
-import type { MemoryState, LoreContext } from "./types";
+import type { MemoryState, LoreContext, CodexUpdateInput } from "./types";
 import { parseAIResponse, sanitizeAIResponse, validateAIResponse } from "./validation";
+import {
+  buildCodexRebuildPrompt,
+  parseCodexRebuild,
+  type CodexRebuildInput,
+} from "./codex-rebuild";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [2000, 4000, 8000];
 // Sized to comfortably fit a full narrative + choices + state changes; 1500 was
 // prone to truncating mid-JSON, which surfaced as "random" malformed output.
 const MAX_OUTPUT_TOKENS = 3072;
+// The one-shot Codex rebuild emits up to MAX_REBUILD_ENTITIES compact entries —
+// a larger ceiling than a turn so the whole registry fits without truncation.
+const REBUILD_MAX_TOKENS = 4096;
 // Total attempts to obtain parseable JSON: the initial call plus corrective
 // retries that feed the bad output back with an instruction to fix it.
 const MAX_PARSE_ATTEMPTS = 3;
@@ -189,6 +197,36 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
       outputTokens: Math.ceil(JSON.stringify(aiResponse).length / 4),
     },
   };
+}
+
+/**
+ * One-shot Codex rebuild (history-context Codex): run the chronicle digest
+ * through the provider and parse a clean, categorized, de-duplicated set of
+ * entity deltas. Reuses the same adapter + retry seam as `generate()`; the
+ * caller folds the result into a fresh `codexState` via `applyCodexUpdates`.
+ * The pure prompt/parse live in `codex-rebuild.ts`.
+ */
+export async function generateCodexRebuild(
+  config: ProviderConfig,
+  input: CodexRebuildInput,
+): Promise<CodexUpdateInput[]> {
+  const adapter = createAdapter(config.providerId, config.baseUrl);
+  // Premium model: a one-time, accuracy-sensitive extraction over the whole
+  // chronicle — worth the better model, and it runs at most once per rebuild.
+  const model = selectModel(config, "premium");
+  const messages = buildCodexRebuildPrompt(input);
+  const response = await executeWithRetry(
+    adapter,
+    {
+      messages,
+      model,
+      temperature: 0.2,
+      maxTokens: REBUILD_MAX_TOKENS,
+      responseFormat: { type: "json_object" },
+    },
+    config.apiKey,
+  );
+  return parseCodexRebuild(response.content);
 }
 
 function correctiveMessage(truncated: boolean): string {

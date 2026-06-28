@@ -515,7 +515,7 @@ export function CharacterSheet() {
       {/* Codex — the durable registry of people, places, objects, groups, and
           open threads the chronicle has established (history-context Codex). */}
       <TabPanel id="codex" active={activeTab}>
-        <CodexSection session={session} />
+        <CodexSection session={session} onUpdate={persistSession} />
       </TabPanel>
     </div>
   );

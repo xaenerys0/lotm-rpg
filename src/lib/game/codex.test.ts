@@ -5,9 +5,11 @@ import {
   applyCodexUpdate,
   applyCodexUpdates,
   codexCounts,
+  codexRebuildDigest,
   filterCodexEntities,
   emptyCodexState,
   isValidCodexStateShape,
+  mergeCodexEntities,
   MAX_CODEX_ENTITIES,
   MAX_PINNED_ENTITIES,
   pinnedEntitiesForPrompt,
@@ -16,7 +18,9 @@ import {
   resolveCodexState,
   seedCodexFromSession,
   selectPinnedEntities,
+  setCodexImportance,
   touchCodexEntities,
+  updateCodexEntity,
   type CodexEntity,
   type CodexState,
 } from "./codex";
@@ -361,6 +365,152 @@ describe("removeCodexEntity", () => {
     );
     expect(removeCodexEntity(state, "x1").entities).toHaveLength(0);
     expect(removeCodexEntity(state, "nope").entities).toHaveLength(1);
+  });
+});
+
+describe("curation ops", () => {
+  const seed = () =>
+    applyCodexUpdates(
+      emptyCodexState(),
+      [
+        update({ kind: "person", name: "Klein", status: "a Seer", note: "keep" }),
+        update({ kind: "person", name: "Mr. Fool", status: "the enigma" }),
+      ],
+      1,
+      counter(),
+    );
+
+  it("updateCodexEntity edits fields, clamps, and keeps id/turns", () => {
+    const s = seed();
+    const id = s.entities[0].id;
+    const next = updateCodexEntity(s, id, {
+      status: "now a Clown",
+      importance: "pivotal",
+      kind: "person",
+      resolved: false,
+    });
+    const e = next.entities[0];
+    expect(e.id).toBe(id);
+    expect(e.status).toBe("now a Clown");
+    expect(e.importance).toBe("pivotal");
+    expect(e.firstSeenTurn).toBe(1);
+  });
+
+  it("updateCodexEntity rejects a blank name, ignores bad kind/importance, clears note", () => {
+    const s = seed();
+    const id = s.entities[0].id;
+    const next = updateCodexEntity(s, id, {
+      name: "   ",
+      kind: "alien" as never,
+      importance: "vital" as never,
+      note: "  ",
+    });
+    expect(next.entities[0].name).toBe("Klein");
+    expect(next.entities[0].kind).toBe("person");
+    expect(next.entities[0].importance).toBe("standard");
+    expect(next.entities[0].note).toBeUndefined();
+  });
+
+  it("updateCodexEntity no-ops on an unknown id", () => {
+    const s = seed();
+    expect(updateCodexEntity(s, "nope", { status: "x" })).toEqual(s);
+  });
+
+  it("setCodexImportance pins/unpins", () => {
+    const s = seed();
+    const id = s.entities[0].id;
+    expect(setCodexImportance(s, id, "pivotal").entities[0].importance).toBe("pivotal");
+  });
+
+  it("mergeCodexEntities folds drop into keep (aliases, turns) and removes drop", () => {
+    const s = applyCodexUpdates(
+      emptyCodexState(),
+      [
+        update({ kind: "person", name: "Stagnation Entity", aliases: ["the rot"] }),
+        update({ kind: "person", name: "The Stagnation Entity" }),
+      ],
+      1,
+      counter(),
+    );
+    // Bump the second one's lastSeenTurn so the max is observable.
+    const bumped = touchCodexEntities(s, ["The Stagnation Entity"], 20);
+    const [keep, drop] = bumped.entities;
+    const merged = mergeCodexEntities(bumped, keep.id, drop.id);
+    expect(merged.entities).toHaveLength(1);
+    expect(merged.entities[0].id).toBe(keep.id);
+    expect(merged.entities[0].aliases).toContain("the rot");
+    expect(merged.entities[0].aliases).toContain("The Stagnation Entity");
+    expect(merged.entities[0].lastSeenTurn).toBe(20);
+    expect(merged.entities[0].firstSeenTurn).toBe(1);
+  });
+
+  it("mergeCodexEntities no-ops on same/unknown ids", () => {
+    const s = seed();
+    const id = s.entities[0].id;
+    expect(mergeCodexEntities(s, id, id)).toBe(s);
+    expect(mergeCodexEntities(s, id, "nope")).toBe(s);
+    expect(mergeCodexEntities(s, "nope", id)).toBe(s);
+  });
+});
+
+describe("seedCodexFromSession — heuristic depth", () => {
+  it("files a collective-named present NPC as a group, not a person", () => {
+    const session = {
+      id: "s",
+      turnCount: 5,
+      gameState: {
+        characterId: "c",
+        pathwayId: 1,
+        sequenceLevel: 4,
+        sanity: 50,
+        maxSanity: 100,
+        inventory: [],
+        location: "The Golden Dream",
+        npcsPresent: ["The Veiled Woman", "The Veiled Woman's Sect"],
+        activeQuests: [],
+      },
+    } as unknown as GameSession;
+    const state = seedCodexFromSession(session, counter());
+    expect(state.entities.find((e) => e.name === "The Veiled Woman")?.kind).toBe(
+      "person",
+    );
+    expect(state.entities.find((e) => e.name === "The Veiled Woman's Sect")?.kind).toBe(
+      "group",
+    );
+  });
+
+  it("mines Goals/Threads from the running summary into thread entities", () => {
+    const session = {
+      id: "s",
+      turnCount: 9,
+      gameState: {
+        characterId: "c",
+        pathwayId: 1,
+        sequenceLevel: 4,
+        sanity: 50,
+        maxSanity: 100,
+        inventory: [],
+        location: "The Golden Dream",
+        npcsPresent: [],
+        activeQuests: [],
+      },
+      memory: {
+        immediateTurns: [],
+        recentSummaries: [],
+        sessionFacts: [],
+        runningSummary:
+          "Who: Andrew, Sequence 4.\nGoals: Establish spirit world anchors; investigate the Shattered Archive.\nThreads: Carries a sealed demigod; awaits a meeting with the Captain.",
+      },
+    } as unknown as GameSession;
+    const threads = seedCodexFromSession(session, counter()).entities.filter(
+      (e) => e.kind === "thread",
+    );
+    expect(threads.map((t) => t.name)).toEqual([
+      "Establish spirit world anchors",
+      "investigate the Shattered Archive",
+      "Carries a sealed demigod",
+      "awaits a meeting with the Captain",
+    ]);
   });
 });
 
@@ -731,6 +881,66 @@ describe("default id factory + edge turn counts", () => {
     const state = seedCodexFromSession(session);
     expect(state.entities[0].lastSeenTurn).toBe(0);
     expect(state.entities[0].id.length).toBeGreaterThan(0);
+  });
+});
+
+describe("codexRebuildDigest", () => {
+  it("assembles the synopsis, journal beats, and facts into the AI input", () => {
+    const session = {
+      turnCount: 235,
+      gameState: { characterName: "Andrew Abraham" },
+      memory: {
+        runningSummary: "Ties: Captain Edwina Edwards.",
+        sessionFacts: [
+          { type: "npc-encounter", description: "Met Danitz Dubois", turnNumber: 5 },
+          { type: "event", description: "Anchored in the Spirit World", turnNumber: 9 },
+        ],
+      },
+    } as unknown as GameSession;
+    const journal = {
+      entries: [
+        {
+          turnNumber: 12,
+          eventType: "combat",
+          summary: "Fought the Stagnation Entity",
+          involvedNpcs: ["Stagnation Entity"],
+        },
+        {
+          turnNumber: 40,
+          eventType: "discovery",
+          summary: "Found the Gilded Eye",
+          involvedNpcs: [],
+        },
+      ],
+      annotations: [],
+    } as never;
+
+    const digest = codexRebuildDigest(session, journal);
+    expect(digest.characterName).toBe("Andrew Abraham");
+    expect(digest.runningSummary).toContain("Captain Edwina Edwards");
+    expect(digest.currentTurn).toBe(235);
+    expect(digest.facts).toEqual(["Met Danitz Dubois", "Anchored in the Spirit World"]);
+    expect(digest.journal[0]).toEqual({
+      turnNumber: 12,
+      eventType: "combat",
+      summary: "Fought the Stagnation Entity",
+      npcs: ["Stagnation Entity"],
+    });
+    // An entry with no NPCs omits the npcs field.
+    expect(digest.journal[1]).not.toHaveProperty("npcs");
+  });
+
+  it("omits characterName/runningSummary when absent", () => {
+    const session = {
+      turnCount: 1,
+      gameState: {},
+      memory: { sessionFacts: [] },
+    } as unknown as GameSession;
+    const digest = codexRebuildDigest(session, { entries: [], annotations: [] } as never);
+    expect(digest).not.toHaveProperty("characterName");
+    expect(digest).not.toHaveProperty("runningSummary");
+    expect(digest.journal).toEqual([]);
+    expect(digest.facts).toEqual([]);
   });
 });
 

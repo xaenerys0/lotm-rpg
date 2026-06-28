@@ -99,6 +99,7 @@ export { parseAIResponse, validateAIResponse, sanitizeAIResponse } from "./valid
 
 export {
   generate,
+  generateCodexRebuild,
   classifyCall,
   selectModel,
   validateProviderConfig,
@@ -108,6 +109,14 @@ export {
   type GenerateOptions,
   type ModelAccessResult,
 } from "./client";
+
+export {
+  buildCodexRebuildPrompt,
+  parseCodexRebuild,
+  MAX_REBUILD_ENTITIES,
+  type CodexRebuildInput,
+  type CodexRebuildJournalEntry,
+} from "./codex-rebuild";
 
 export {
   createEmbeddingProvider,

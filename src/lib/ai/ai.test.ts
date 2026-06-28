@@ -78,6 +78,7 @@ import {
   classifyCall,
   selectModel,
   generate,
+  generateCodexRebuild,
   validateProviderConfig,
   listProviderModels,
   findUnservedModels,
@@ -4646,6 +4647,83 @@ describe("client", () => {
       const lastMessage = retryBody.messages[retryBody.messages.length - 1];
       expect(lastMessage.role).toBe("user");
       expect(lastMessage.content).toContain("cut off");
+    });
+  });
+
+  describe("generateCodexRebuild", () => {
+    beforeEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("calls the provider and parses a categorized, deduped Codex", async () => {
+      const codex = JSON.stringify({
+        entities: [
+          {
+            kind: "person",
+            name: "Captain Edwina Edwards",
+            status: "tense ally",
+            importance: "pivotal",
+          },
+          { kind: "object", name: "The Gilded Eye" },
+        ],
+      });
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content: codex } }],
+              model: "gpt-4o",
+              usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 },
+            }),
+          ),
+      } as Response);
+
+      const result = await generateCodexRebuild(makeProviderConfig(), {
+        characterName: "Andrew Abraham",
+        runningSummary: "Ties: Captain Edwina Edwards.",
+        journal: [
+          { turnNumber: 40, eventType: "discovery", summary: "Found the Gilded Eye" },
+        ],
+        facts: [],
+        currentTurn: 235,
+      });
+
+      expect(result).toEqual([
+        {
+          kind: "person",
+          name: "Captain Edwina Edwards",
+          status: "tense ally",
+          importance: "pivotal",
+        },
+        { kind: "object", name: "The Gilded Eye" },
+      ]);
+      // Used the premium model for the one-shot extraction.
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body.model).toBe(makeProviderConfig().premiumModel);
+    });
+
+    it("returns [] when the provider output is unparseable", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content: "the archivist could not comply" } }],
+              model: "gpt-4o",
+              usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+            }),
+          ),
+      } as Response);
+
+      const result = await generateCodexRebuild(makeProviderConfig(), {
+        journal: [],
+        facts: [],
+        currentTurn: 1,
+      });
+      expect(result).toEqual([]);
     });
   });
 
