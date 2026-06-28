@@ -1728,6 +1728,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         );
         const next = transition(committed, {
           type: "PRESENT_NEXT_CHOICES",
+          result,
           choices: result.response.choices?.length
             ? result.response.choices
             : DEFAULT_CHOICES,
