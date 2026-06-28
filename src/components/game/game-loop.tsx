@@ -17,7 +17,7 @@ import {
   narrationOnly,
   partitionDiscoveredItems,
   discoveredItemLeadFact,
-  applyDigestion,
+  computeProgressDelta,
   applyCombatResult,
   createEncounter,
   deriveEncounter,
@@ -483,6 +483,18 @@ function buildAICallParams(currentSession: GameSession) {
     ),
   };
 }
+
+// Fallback choices when the narrator returns none — shared by the opening-scene
+// generation and a normal resolution that presents the next decision inline.
+const DEFAULT_CHOICES: Choice[] = [
+  {
+    id: "default-1",
+    text: "Observe your surroundings carefully",
+    type: "investigation",
+  },
+  { id: "default-2", text: "Approach the nearest person", type: "dialogue" },
+  { id: "default-3", text: "Move on", type: "action" },
+];
 
 // ─── Main Component ────────────────────────────────────────────────
 
@@ -1376,6 +1388,29 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     [session, updateSession],
   );
 
+  // Transient turn notices, declared before the turn callbacks that set them
+  // (generateSituation / applyAndCommitTurn / resolveChoice / handleContinue) so
+  // those callbacks reference an already-declared binding.
+  //
+  // Free-text action (issue #19): validated by the rules engine, then wrapped as
+  // a synthetic choice so the normal resolution machinery (sanity, acting,
+  // journal) runs unchanged. Rejections are narrated, never errored.
+  const [freeTextNotice, setFreeTextNotice] = useState<string | null>(null);
+
+  // Acting-method discovery announcement (issue #95): a transient role="status"
+  // reveal shown the turn the player earns the secret.
+  const [methodNotice, setMethodNotice] = useState<string | null>(null);
+
+  // Identity exposure (issue #22) is an engine-decided "major-event" computed at
+  // commit-time — so it gets its own scene-art moment (issue #20) in the
+  // following scene, the way the death screen mounts its own illustration.
+  // Carries the turn it fired on so the cache key is stable; cleared when the
+  // next turn resolves.
+  const [exposureMoment, setExposureMoment] = useState<{
+    turn: number;
+    summary: string;
+  } | null>(null);
+
   const dispatchMissingConfig = useCallback(
     (currentSession: GameSession, gen: number) => {
       const errSession = transition(currentSession, {
@@ -1449,23 +1484,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
 
         const choices = result.response.choices?.length
           ? result.response.choices
-          : [
-              {
-                id: "default-1",
-                text: "Observe your surroundings carefully",
-                type: "investigation" as const,
-              },
-              {
-                id: "default-2",
-                text: "Approach the nearest person",
-                type: "dialogue" as const,
-              },
-              {
-                id: "default-3",
-                text: "Move on",
-                type: "action" as const,
-              },
-            ];
+          : DEFAULT_CHOICES;
 
         const next = transition(currentSession, {
           type: "SITUATION_READY",
@@ -1487,6 +1506,162 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       }
     },
     [updateSession, dispatchMissingConfig, recordUsage, preferences.narrativeVerbosity],
+  );
+
+  // Commit a resolved turn onto the session: apply the AI response (sanity,
+  // digestion, items, world-state, acting discovery), run identity / recognition
+  // / petition / journal / pursuer bookkeeping, and tick hunts / formula pursuit /
+  // acquired powers. Returns the committed session WITHOUT advancing the phase, so
+  // the caller chooses the next transition — a normal turn presents the
+  // resolution's own choices inline (PRESENT_NEXT_CHOICES), an engine-decided turn
+  // resumes with a fresh scene (APPLY_CONSEQUENCES → situation). Shared so both
+  // paths commit identically.
+  const applyAndCommitTurn = useCallback(
+    (
+      currentSession: GameSession,
+      resolution: ValidatedAIResponse,
+      playerAction: string,
+      isEngineTurn: boolean,
+    ): GameSession => {
+      // A prior turn's exposure illustration only lingers for the one scene.
+      setExposureMoment(null);
+      const result = applyResolution(
+        currentSession.gameState,
+        currentSession.memory,
+        resolution,
+        currentSession.turnCount,
+        playerAction,
+        resolveActingMethodState(currentSession.actingMethodState),
+        currentSession.gameState.epoch,
+        resolveTrackedNpcState(currentSession.trackedNpcState),
+        preferences.movementGateEnabled,
+        currentSession.pendingTurnKind ?? undefined,
+      );
+      const { gameState, memory } = result;
+      // Acting-method discovery (issue #95): the moment the player earns the
+      // secret, announce it; the meter and clearer feedback unlock thereafter.
+      if (result.discovery.discoveredThisTurn) {
+        setMethodNotice(
+          result.discovery.trigger === "taught"
+            ? "You understand now — it is by living the role that the power becomes truly yours. They call it the Acting Method."
+            : result.discovery.trigger === "completion"
+              ? "As the last of it settles into you, the truth comes plain: living the role was what made it yours all along. The Acting Method."
+              : "A pattern resolves in your mind: it is staying true to your role, turn upon turn, that has been settling the power within you. The Acting Method.",
+        );
+      }
+      // Identity bookkeeping (issue #22): a public turn in a persona teaches
+      // present NPCs that face and accrues exposure; once risk runs high, a
+      // shared witness may connect two faces.
+      let identityState = currentSession.identityState;
+      let exposureNarrative: string | null = null;
+      if (identityState && identityState.activeIdentityId) {
+        identityState = recordIdentityUse(identityState, gameState.npcsPresent);
+        const exposure = checkExposure(identityState);
+        if (exposure) {
+          identityState = applyExposure(identityState, exposure);
+          exposureNarrative = `${exposure.npc} looks at you a heartbeat too long — and you see the recognition land. Two of your faces are now one person to them.`;
+          setFreeTextNotice(exposureNarrative);
+          // A "major-event" worth illustrating (issue #20) — shown in the next scene.
+          setExposureMoment({
+            turn: currentSession.turnCount,
+            summary: `An identity unravels — ${exposure.npc} sees two faces become one`,
+          });
+        }
+      }
+
+      // Recognition gap (character-info storage): while showing the TRUE face,
+      // a present NPC who knew the prior self may deduce this is the same person
+      // (the inverse of identity exposure — it re-links rather than penalises).
+      let profileState = currentSession.profileState;
+      if (
+        profileState?.recognition &&
+        (identityState?.activeIdentityId ?? null) === null
+      ) {
+        const pierced = pierceRecognition(profileState, gameState.npcsPresent);
+        profileState = pierced.state;
+        if (pierced.pierced.length > 0) {
+          setFreeTextNotice(
+            `${pierced.pierced.join(", ")} ${pierced.pierced.length === 1 ? "studies" : "study"} your changed face — and the recognition lands. They know who you were.`,
+          );
+        }
+      }
+
+      // Divine petitions (issue #30): a True God hears worshippers — some
+      // turns a petition arrives as a memory fact the narrator weaves in.
+      let memoryAfterPetitions = memory;
+      if (gameState.sequenceLevel === 0) {
+        const petition = drawPetition(gameState.pathwayId, currentSession.turnCount);
+        if (petition) {
+          memoryAfterPetitions = {
+            ...memory,
+            sessionFacts: [...memory.sessionFacts, petition],
+          };
+        }
+      }
+
+      // Journal capture (issue #11): the AI's flag plus deterministic
+      // detections from the state delta, recorded before the phase advances. An
+      // engine turn already wrote its own explicit entry (and its before/after
+      // state are identical, so derivation would find nothing) — skip it.
+      if (!isEngineTurn) {
+        const seq = getSequence(gameState.pathwayId, gameState.sequenceLevel);
+        appendJournalEntries(
+          currentSession.id,
+          deriveJournalEntries({
+            prevState: currentSession.gameState,
+            nextState: gameState,
+            response: resolution.response,
+            turnNumber: currentSession.turnCount,
+            arc:
+              gameState.sequenceLevel <= 0
+                ? sequenceLabel(gameState.pathwayId, gameState.sequenceLevel)
+                : `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
+            // Followers travel with the player — their re-assertion into the
+            // scene on a move is not a fresh encounter (issue #101).
+            ignoreNpcs: companionsPresentOnMove(
+              resolveTrackedNpcState(currentSession.trackedNpcState),
+            ),
+          }),
+        );
+      }
+      if (exposureNarrative) {
+        appendJournalEntries(currentSession.id, [
+          buildJournalEntry(gameState, currentSession.turnCount, {
+            eventType: "major-event",
+            summary: "An identity was exposed.",
+            narrative: exposureNarrative,
+          }),
+        ]);
+      }
+      let updated: GameSession = {
+        ...currentSession,
+        gameState,
+        memory: memoryAfterPetitions,
+        actingMethodState: result.actingMethodState,
+        ...(identityState ? { identityState } : {}),
+        ...(profileState ? { profileState } : {}),
+      };
+      // Pursuers (issue #101): the narrator names who is hunting the character;
+      // the engine rosters each as a hostile follower so they reappear after
+      // travel until shaken off. `markPursuer` upserts by name — a companion the
+      // story turns hostile is CONVERTED to a pursuer, and a still-active pursuer
+      // is a no-op (no re-announcement). Companions are the player's own choice,
+      // never the AI's, so they are NOT added here.
+      for (const name of resolution.response.pursuers ?? []) {
+        updated = markPursuer(updated, name);
+      }
+      // A turn of play closes the distance on every active hunt (and keeps the
+      // AI-visible quest labels in sync).
+      const tracked = advanceActiveHunts(updated);
+      // A turn of play likewise advances the search for the next potion's
+      // formula, when one is being sought through the story (issue #171).
+      const seeking = advanceFormulaPursuit(tracked);
+      // Temporary copied/stolen powers fade by one turn; expired ones are
+      // released (acquired-powers subsystem), so a Polymath's Imitation or an
+      // artifact-stolen ability does not linger forever.
+      return tickAcquiredPowers(seeking);
+    },
+    [preferences.movementGateEnabled],
   );
 
   const resolveChoice = useCallback(
@@ -1541,11 +1716,23 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         if (generationRef.current !== gen) return;
         recordUsage(result.usage);
 
-        const next = transition(currentSession, {
-          type: "RESOLUTION_READY",
+        // One narration per player action (action-assumption fix): commit this
+        // turn's consequences now and present the resolution's OWN choices as the
+        // next decision point — no separate forward-looking scene generation that
+        // could advance the story or act for the player without a prompt.
+        const committed = applyAndCommitTurn(
+          currentSession,
           result,
+          selectedChoice.text,
+          false,
+        );
+        const next = transition(committed, {
+          type: "PRESENT_NEXT_CHOICES",
+          choices: result.response.choices?.length
+            ? result.response.choices
+            : DEFAULT_CHOICES,
         });
-        updateSession({ ...next, activePillar: pillar });
+        updateSession(next);
       } catch (err) {
         if (generationRef.current !== gen) return;
         const message = err instanceof Error ? err.message : "Failed to resolve action";
@@ -1558,7 +1745,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         updateSession(errSession);
       }
     },
-    [updateSession, dispatchMissingConfig, recordUsage, preferences.narrativeVerbosity],
+    [
+      updateSession,
+      dispatchMissingConfig,
+      recordUsage,
+      preferences.narrativeVerbosity,
+      applyAndCommitTurn,
+    ],
   );
 
   useEffect(() => {
@@ -1592,25 +1785,6 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     },
     [session, updateSession],
   );
-
-  // Free-text action (issue #19): validated by the rules engine, then wrapped
-  // as a synthetic choice so the normal resolution machinery (sanity, acting,
-  // journal) runs unchanged. Rejections are narrated, never errored.
-  const [freeTextNotice, setFreeTextNotice] = useState<string | null>(null);
-
-  // Acting-method discovery announcement (issue #95): a transient role="status"
-  // reveal shown the turn the player earns the secret.
-  const [methodNotice, setMethodNotice] = useState<string | null>(null);
-
-  // Identity exposure (issue #22) is an engine-decided "major-event" computed at
-  // Continue-time — after the consequences panel has rendered — so it gets its
-  // own scene-art moment (issue #20) in the following scene, the way the death
-  // screen mounts its own illustration. Carries the turn it fired on so the
-  // cache key is stable; cleared when the next turn resolves.
-  const [exposureMoment, setExposureMoment] = useState<{
-    turn: number;
-    summary: string;
-  } | null>(null);
 
   // In-turn true-self change (character-info storage): the AI may flag a
   // declaration the player made; it is NEVER applied without this confirm.
@@ -1695,161 +1869,34 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     updateSession(transition(withChoice, { type: "SELECT_CHOICE", choiceId: choice.id }));
   }, [session, updateSession]);
 
+  // The consequences-phase "Continue" — now reached ONLY by an engine-decided
+  // turn (advancement / apotheosis / combat, routed through ENGINE_RESOLUTION).
+  // A normal player turn no longer lands here: it commits and presents its next
+  // choices inline from `resolveChoice` (the action-assumption fix). This commits
+  // the engine turn's narration and resumes with a fresh scene (→ situation).
   const handleContinue = useCallback(() => {
     if (!session) return;
-    // A prior turn's exposure illustration only lingers for the one scene.
-    setExposureMoment(null);
     const selectedChoice = session.currentChoices?.find(
       (c) => c.id === session.selectedChoiceId,
     );
-    // An engine-decided turn (advancement / apotheosis) carries its own action
-    // text so the turn record reads as what the player did, keeping the next AI
-    // prompt aware of it.
+    // An engine-decided turn carries its own action text so the turn record reads
+    // as what the player did, keeping the next AI prompt aware of it.
     const isEngineTurn = session.pendingPlayerAction != null;
     const playerAction =
       session.pendingPlayerAction ?? selectedChoice?.text ?? "Continue";
 
     const resolution = session.lastResolution;
     if (resolution) {
-      const result = applyResolution(
-        session.gameState,
-        session.memory,
+      const committed = applyAndCommitTurn(
+        session,
         resolution,
-        session.turnCount,
         playerAction,
-        resolveActingMethodState(session.actingMethodState),
-        session.gameState.epoch,
-        resolveTrackedNpcState(session.trackedNpcState),
-        preferences.movementGateEnabled,
-        session.pendingTurnKind ?? undefined,
+        isEngineTurn,
       );
-      const { gameState, memory } = result;
-      // Acting-method discovery (issue #95): the moment the player earns the
-      // secret, announce it; the meter and clearer feedback unlock thereafter.
-      if (result.discovery.discoveredThisTurn) {
-        setMethodNotice(
-          result.discovery.trigger === "taught"
-            ? "You understand now — it is by living the role that the power becomes truly yours. They call it the Acting Method."
-            : result.discovery.trigger === "completion"
-              ? "As the last of it settles into you, the truth comes plain: living the role was what made it yours all along. The Acting Method."
-              : "A pattern resolves in your mind: it is staying true to your role, turn upon turn, that has been settling the power within you. The Acting Method.",
-        );
-      }
-      // Identity bookkeeping (issue #22): a public turn in a persona teaches
-      // present NPCs that face and accrues exposure; once risk runs high, a
-      // shared witness may connect two faces.
-      let identityState = session.identityState;
-      let exposureNarrative: string | null = null;
-      if (identityState && identityState.activeIdentityId) {
-        identityState = recordIdentityUse(identityState, gameState.npcsPresent);
-        const exposure = checkExposure(identityState);
-        if (exposure) {
-          identityState = applyExposure(identityState, exposure);
-          exposureNarrative = `${exposure.npc} looks at you a heartbeat too long — and you see the recognition land. Two of your faces are now one person to them.`;
-          setFreeTextNotice(exposureNarrative);
-          // A "major-event" worth illustrating (issue #20) — shown in the next scene.
-          setExposureMoment({
-            turn: session.turnCount,
-            summary: `An identity unravels — ${exposure.npc} sees two faces become one`,
-          });
-        }
-      }
-
-      // Recognition gap (character-info storage): while showing the TRUE face,
-      // a present NPC who knew the prior self may deduce this is the same person
-      // (the inverse of identity exposure — it re-links rather than penalises).
-      let profileState = session.profileState;
-      if (
-        profileState?.recognition &&
-        (identityState?.activeIdentityId ?? null) === null
-      ) {
-        const result = pierceRecognition(profileState, gameState.npcsPresent);
-        profileState = result.state;
-        if (result.pierced.length > 0) {
-          setFreeTextNotice(
-            `${result.pierced.join(", ")} ${result.pierced.length === 1 ? "studies" : "study"} your changed face — and the recognition lands. They know who you were.`,
-          );
-        }
-      }
-
-      // Divine petitions (issue #30): a True God hears worshippers — some
-      // turns a petition arrives as a memory fact the narrator weaves in.
-      let memoryAfterPetitions = memory;
-      if (gameState.sequenceLevel === 0) {
-        const petition = drawPetition(gameState.pathwayId, session.turnCount);
-        if (petition) {
-          memoryAfterPetitions = {
-            ...memory,
-            sessionFacts: [...memory.sessionFacts, petition],
-          };
-        }
-      }
-
-      // Journal capture (issue #11): the AI's flag plus deterministic
-      // detections from the state delta, recorded before the phase advances. An
-      // engine turn already wrote its own explicit entry (and its before/after
-      // state are identical, so derivation would find nothing) — skip it.
-      if (!isEngineTurn) {
-        const seq = getSequence(gameState.pathwayId, gameState.sequenceLevel);
-        appendJournalEntries(
-          session.id,
-          deriveJournalEntries({
-            prevState: session.gameState,
-            nextState: gameState,
-            response: resolution.response,
-            turnNumber: session.turnCount,
-            arc:
-              gameState.sequenceLevel <= 0
-                ? sequenceLabel(gameState.pathwayId, gameState.sequenceLevel)
-                : `Sequence ${gameState.sequenceLevel} — ${seq?.name ?? "Beyonder"}`,
-            // Followers travel with the player — their re-assertion into the
-            // scene on a move is not a fresh encounter (issue #101).
-            ignoreNpcs: companionsPresentOnMove(
-              resolveTrackedNpcState(session.trackedNpcState),
-            ),
-          }),
-        );
-      }
-      if (exposureNarrative) {
-        appendJournalEntries(session.id, [
-          buildJournalEntry(gameState, session.turnCount, {
-            eventType: "major-event",
-            summary: "An identity was exposed.",
-            narrative: exposureNarrative,
-          }),
-        ]);
-      }
-      let updated: GameSession = {
-        ...session,
-        gameState,
-        memory: memoryAfterPetitions,
-        actingMethodState: result.actingMethodState,
-        ...(identityState ? { identityState } : {}),
-        ...(profileState ? { profileState } : {}),
-      };
-      // Pursuers (issue #101): the narrator names who is hunting the character;
-      // the engine rosters each as a hostile follower so they reappear after
-      // travel until shaken off. `markPursuer` upserts by name — a companion the
-      // story turns hostile is CONVERTED to a pursuer, and a still-active pursuer
-      // is a no-op (no re-announcement). Companions are the player's own choice,
-      // never the AI's, so they are NOT added here.
-      for (const name of resolution.response.pursuers ?? []) {
-        updated = markPursuer(updated, name);
-      }
-      // A turn of play closes the distance on every active hunt (and keeps the
-      // AI-visible quest labels in sync).
-      const tracked = advanceActiveHunts(updated);
-      // A turn of play likewise advances the search for the next potion's
-      // formula, when one is being sought through the story (issue #171).
-      const seeking = advanceFormulaPursuit(tracked);
-      // Temporary copied/stolen powers fade by one turn; expired ones are
-      // released (acquired-powers subsystem), so a Polymath's Imitation or an
-      // artifact-stolen ability does not linger forever.
-      const ticked = tickAcquiredPowers(seeking);
-      const next = transition(ticked, { type: "APPLY_CONSEQUENCES" });
+      const next = transition(committed, { type: "APPLY_CONSEQUENCES" });
       updateSession(next);
     }
-  }, [session, updateSession, preferences]);
+  }, [session, updateSession, applyAndCommitTurn]);
 
   const handleRetry = useCallback(() => {
     if (!session) return;
@@ -2058,6 +2105,33 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             {session.phase === "situation" && <SituationPhase />}
             {session.phase === "choices" && (
               <>
+                {/* One narration per action (action-assumption fix): after a
+                    normal player turn the resolution's outcome + consequences
+                    recap renders here, and the SAME response's choices render
+                    below — so the turn ends at the next decision point instead of
+                    generating a second, forward-looking scene that could assume
+                    actions the player never chose. A fresh scene (turn 0 / after
+                    an engine turn) has no `lastResolution` and reads as before. */}
+                {session.lastResolution && (
+                  <div className="animate-fade-in-up">
+                    {selfChangeHandledTurn !== session.turnCount && (
+                      <SelfChangeConfirm
+                        session={session}
+                        onConfirm={handleConfirmSelfChange}
+                        onDismiss={() => setSelfChangeHandledTurn(session.turnCount)}
+                      />
+                    )}
+                    <ResolutionRecap
+                      session={session}
+                      artTurn={session.turnCount - 1}
+                      imageConfig={imageConfig}
+                      sceneArtEnabled={preferences.sceneArtEnabled}
+                      knowsMethod={knowsMethod}
+                      digestionMeterVisible={preferences.digestionMeterVisible}
+                      sanityMeterVisible={preferences.sanityMeterVisible}
+                    />
+                  </div>
+                )}
                 <ChoicesPhase
                   narrative={session.currentNarrative ?? ""}
                   choices={session.currentChoices ?? []}
@@ -2067,8 +2141,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                   freeTextNotice={freeTextNotice}
                 />
                 {/* Identity-exposure illustration (issues #22/#20): an engine
-                    major-event computed at Continue, illustrated in the scene
-                    that follows it. */}
+                    major-event computed when the turn commits, illustrated on
+                    this same merged choices screen (keyed to the committed turn). */}
                 {exposureMoment && (
                   <SceneArt
                     artKey={`${session.id}:exposure:${exposureMoment.turn}`}
@@ -2131,25 +2205,21 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               </>
             )}
             {session.phase === "resolution" && <ResolutionPhase />}
+            {/* Reached ONLY by an engine-decided turn (advancement / apotheosis /
+                combat via ENGINE_RESOLUTION): show its narration + a Continue that
+                resumes with a fresh scene. A normal player turn no longer lands
+                here — it presents its next choices inline (see the choices recap
+                above). */}
             {session.phase === "consequences" && (
-              <>
-                {selfChangeHandledTurn !== session.turnCount && (
-                  <SelfChangeConfirm
-                    session={session}
-                    onConfirm={handleConfirmSelfChange}
-                    onDismiss={() => setSelfChangeHandledTurn(session.turnCount)}
-                  />
-                )}
-                <ConsequencesPhase
-                  session={session}
-                  onContinue={handleContinue}
-                  imageConfig={imageConfig}
-                  sceneArtEnabled={preferences.sceneArtEnabled}
-                  knowsMethod={knowsMethod}
-                  digestionMeterVisible={preferences.digestionMeterVisible}
-                  sanityMeterVisible={preferences.sanityMeterVisible}
-                />
-              </>
+              <ConsequencesPhase
+                session={session}
+                onContinue={handleContinue}
+                imageConfig={imageConfig}
+                sceneArtEnabled={preferences.sceneArtEnabled}
+                knowsMethod={knowsMethod}
+                digestionMeterVisible={preferences.digestionMeterVisible}
+                sanityMeterVisible={preferences.sanityMeterVisible}
+              />
             )}
             {session.phase === "error" && (
               <ErrorPhase
@@ -2718,21 +2788,24 @@ function ChoicesPhase({
   const mode = detectInputMode(choices, narrative);
   return (
     <div className="animate-fade-in-up">
-      {/* Narrative */}
-      <div className="mb-8">
-        <div className="mx-auto mb-4 flex items-center gap-3">
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-          <span className="text-[10px] tracking-[0.3em] text-muted uppercase">
-            narrative
-          </span>
-          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+      {/* Narrative — omitted after a normal player turn, where the outcome is
+          already shown in the resolution recap above the choices. */}
+      {narrative && (
+        <div className="mb-8">
+          <div className="mx-auto mb-4 flex items-center gap-3">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+            <span className="text-[10px] tracking-[0.3em] text-muted uppercase">
+              narrative
+            </span>
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
+          </div>
+          <div className="parchment rounded-xl border border-border px-6 py-6 sm:px-8 sm:py-7">
+            <p className="font-serif text-base leading-[1.85] text-foreground sm:text-lg">
+              {narrative}
+            </p>
+          </div>
         </div>
-        <div className="parchment rounded-xl border border-border px-6 py-6 sm:px-8 sm:py-7">
-          <p className="font-serif text-base leading-[1.85] text-foreground sm:text-lg">
-            {narrative}
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Choices */}
       <div className="space-y-3">
@@ -3734,9 +3807,15 @@ function PillarAscensionPanel({
   );
 }
 
-function ConsequencesPhase({
+// The outcome narrative + consequences summary (sanity / acting-digestion /
+// world-state / items) for a resolved turn. Shared by the merged choices screen
+// (a normal player turn — shown above its own next choices, no Continue) and the
+// engine-turn `ConsequencesPhase` (advancement / combat — shown with a Continue).
+// `artTurn` keys the key-moment scene art to the turn the resolution belongs to
+// (the committed turn), which is also the journal entry's `turnNumber`.
+function ResolutionRecap({
   session,
-  onContinue,
+  artTurn,
   imageConfig,
   sceneArtEnabled,
   knowsMethod,
@@ -3744,7 +3823,7 @@ function ConsequencesPhase({
   sanityMeterVisible,
 }: {
   session: GameSession;
-  onContinue: () => void;
+  artTurn: number;
   imageConfig: ImageProviderConfig | null;
   sceneArtEnabled: boolean;
   knowsMethod: boolean;
@@ -3782,14 +3861,19 @@ function ConsequencesPhase({
   const hasSanityImpact = sanityTotal !== 0;
   const hasActingEval = response.actingEvaluation !== undefined;
 
-  // Preview the digestion change this acting evaluation will apply on Continue.
-  // Reuses applyDigestion (the same engine call applyResolution makes) so the
-  // preview always matches reality, including its re-seed-on-mismatch logic.
-  const digestionPreview = response.actingEvaluation
-    ? applyDigestion(session.gameState, response.actingEvaluation)
+  // Digestion display. The recap renders AFTER the turn was committed on a normal
+  // turn (resolveChoice → applyAndCommitTurn → applyResolution already advanced
+  // gameState.digestion), so it shows the COMMITTED state directly — re-running
+  // applyDigestion here would double-count it, since applyDigestionProgress is
+  // additive. The per-turn change is the acting eval's own progress delta
+  // (`computeProgressDelta`, the same value applyResolution applied, modulo the
+  // 0/100 clamp). The engine-turn ConsequencesPhase has no actingEvaluation, so
+  // the whole digestion display is skipped.
+  const digestionDelta = response.actingEvaluation
+    ? computeProgressDelta(response.actingEvaluation.alignment)
     : null;
-  const digestionState = digestionPreview?.state.digestion;
-  const seq = digestionPreview
+  const digestionState = hasActingEval ? session.gameState.digestion : undefined;
+  const seq = hasActingEval
     ? getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel)
     : null;
 
@@ -3811,7 +3895,7 @@ function ConsequencesPhase({
         </div>
         {illustrate && artFlag && (
           <SceneArt
-            artKey={sceneArtKey(session.id, session.turnCount)}
+            artKey={sceneArtKey(session.id, artTurn)}
             context={{
               summary: artFlag.summary,
               location: session.gameState.location,
@@ -3865,16 +3949,14 @@ function ConsequencesPhase({
                   <span className="text-gaslight">
                     {Math.round(response.actingEvaluation!.alignment * 100)}% alignment
                   </span>
-                  {digestionPreview && digestionPreview.delta !== 0 && (
+                  {digestionDelta !== null && digestionDelta !== 0 && (
                     <span
                       className={`ml-2 font-medium ${
-                        digestionPreview.delta > 0
-                          ? "text-occult-bright"
-                          : "text-sanity-low"
+                        digestionDelta > 0 ? "text-occult-bright" : "text-sanity-low"
                       }`}
                     >
-                      {digestionPreview.delta > 0 ? "+" : ""}
-                      {digestionPreview.delta}% digestion
+                      {digestionDelta > 0 ? "+" : ""}
+                      {digestionDelta}% digestion
                     </span>
                   )}
                 </>
@@ -3884,12 +3966,12 @@ function ConsequencesPhase({
                   {response.actingEvaluation!.reasoning}
                 </p>
               )}
-              {digestionPreview && digestionState && (
+              {digestionDelta !== null && digestionState && (
                 <p className="mt-1 text-xs italic text-occult-bright">
                   {digestionFeedback(
                     seq?.name ?? "Beyonder",
                     digestionState,
-                    digestionPreview.delta,
+                    digestionDelta,
                     knowsMethod,
                   )}
                 </p>
@@ -3941,12 +4023,47 @@ function ConsequencesPhase({
         (digestionState?.complete ?? session.gameState.digestion?.complete) && (
           <div className="mb-6 rounded-md border border-occult/40 bg-occult/[0.06] p-4 text-center">
             <p className="font-serif text-sm text-occult-bright">
-              <span aria-hidden="true">✦ </span>The potion is fully digested. Continue,
-              and you may undergo the advancement to the next Sequence when you are ready.
+              <span aria-hidden="true">✦ </span>The potion is fully digested. You may
+              undergo the advancement to the next Sequence when you are ready.
             </p>
           </div>
         )}
+    </div>
+  );
+}
 
+// Engine-decided turn screen (advancement / apotheosis / combat via
+// ENGINE_RESOLUTION): the committed narration recap + a Continue that resumes
+// with a fresh scene. A normal player turn no longer uses this — it presents its
+// next choices inline above the resolution recap on the choices screen.
+function ConsequencesPhase({
+  session,
+  onContinue,
+  imageConfig,
+  sceneArtEnabled,
+  knowsMethod,
+  digestionMeterVisible,
+  sanityMeterVisible,
+}: {
+  session: GameSession;
+  onContinue: () => void;
+  imageConfig: ImageProviderConfig | null;
+  sceneArtEnabled: boolean;
+  knowsMethod: boolean;
+  digestionMeterVisible: boolean;
+  sanityMeterVisible: boolean;
+}) {
+  return (
+    <div className="animate-fade-in-up">
+      <ResolutionRecap
+        session={session}
+        artTurn={session.turnCount}
+        imageConfig={imageConfig}
+        sceneArtEnabled={sceneArtEnabled}
+        knowsMethod={knowsMethod}
+        digestionMeterVisible={digestionMeterVisible}
+        sanityMeterVisible={sanityMeterVisible}
+      />
       {/* Continue */}
       <div className="flex justify-center pt-2">
         <button

@@ -160,6 +160,7 @@ export type GameLoopAction =
   | { type: "SITUATION_READY"; narrative: string; choices: Choice[] }
   | { type: "SELECT_CHOICE"; choiceId: string }
   | { type: "RESOLUTION_READY"; result: ValidatedAIResponse }
+  | { type: "PRESENT_NEXT_CHOICES"; choices: Choice[] }
   | {
       type: "ENGINE_RESOLUTION";
       result: ValidatedAIResponse;
@@ -189,16 +190,32 @@ export const VALID_TRANSITIONS: Record<GamePhase, GamePhase[]> = {
   // apotheosis) via ENGINE_RESOLUTION — the outcome is already committed, so it
   // skips the AI resolution-generation step and renders inline like any turn.
   choices: ["resolution", "consequences", "error"],
-  resolution: ["consequences", "error"],
+  // A normal player turn loops `resolution → choices` (PRESENT_NEXT_CHOICES): the
+  // resolution narrates the outcome AND presents the next decision in one beat, so
+  // the turn no longer regenerates a separate forward-looking scene that could
+  // assume actions the player never chose. `consequences` stays reachable for an
+  // engine-decided turn (advancement / apotheosis / combat) whose narration-only
+  // response carries no player choices and resumes via `situation`.
+  resolution: ["consequences", "choices", "error"],
   consequences: ["situation", "error"],
   error: ["situation", "idle"],
 };
 
+// The instruction each gameplay pillar resolves under. NOTE the "combat" pillar
+// (a plain `action`-type choice — physical/decisive moves in ordinary play) maps
+// to the pacing-bound "narrative" instruction, NOT the engine-driven "combat" one:
+// real combat is a separate state machine (CombatLauncher → CombatEncounterView,
+// which calls generate() with instruction "combat" directly). The "combat"
+// instruction is pacing-EXEMPT and tells the narrator to invent no new choices —
+// correct for an active encounter, wrong for an ordinary action choice, which
+// must end at the next decision point and present choices like any other turn
+// (the action-assumption fix). Keeping it on "combat" would over-narrate action
+// choices and drop their inline next-choices to the default fallback.
 export const PILLAR_INSTRUCTION_MAP: Record<GameplayPillar, InstructionType> = {
   investigation: "narrative",
   social: "narrative",
   divination: "evaluation",
-  combat: "combat",
+  combat: "narrative",
 };
 
 export const CHOICE_PILLAR_MAP: Record<Choice["type"], GameplayPillar> = {

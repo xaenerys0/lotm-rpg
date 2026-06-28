@@ -277,6 +277,50 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="choices-1" />);
   });
 
+  it("merged choices screen (resolution recap + inline next choices) has no violations", async () => {
+    // The action-assumption fix: after a normal turn the choices screen renders a
+    // ResolutionRecap (outcome narrative + consequences summary) above the next
+    // choices, driven by `lastResolution`. `currentNarrative` is cleared (the
+    // recap owns the prose). knowsMethod=true exercises the acting/digestion prose.
+    const gameState: GameState = createDefaultGameState(1, "char-recap", "Klein");
+    const session = {
+      ...createSession(gameState, "recap-1", 1000),
+      phase: "choices" as const,
+      turnCount: 2,
+      currentNarrative: null,
+      currentChoices: [
+        { id: "c1", text: "Slip out quietly", type: "action" as const },
+        { id: "c2", text: "Ask the clerk about the ledger", type: "dialogue" as const },
+      ],
+      actingMethodState: { knowsMethod: true, alignedStreak: 3 },
+      lastResolution: {
+        response: {
+          narrative: "You ease the drawer shut; the ledger sits back in its place.",
+          choices: [
+            { id: "c1", text: "Slip out quietly", type: "action" as const },
+            {
+              id: "c2",
+              text: "Ask the clerk about the ledger",
+              type: "dialogue" as const,
+            },
+          ],
+          actingEvaluation: { alignment: 0.7, reasoning: "You stayed in character." },
+          sanityEventTags: ["routine"],
+          itemsDiscovered: [
+            {
+              name: "Brass key",
+              description: "A small tarnished key.",
+              category: "mundane" as const,
+            },
+          ],
+        },
+        validation: { valid: true, violations: [] },
+      },
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "recap-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="recap-1" />);
+  });
+
   it("assume-identity panel (prepared persona, active) has no violations", async () => {
     const gameState: GameState = createDefaultGameState(1, "char-id", "Klein");
     const session = {

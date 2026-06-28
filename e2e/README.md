@@ -61,7 +61,12 @@ the chronicle. `combat.spec.ts` (issue #187) seeds a session plus an in-progress
 combat encounter (persisted under the `lotm:combat:` key, re-hydrated on mount),
 enters the game loop, and asserts the framed clarity surfaces render — the
 mind-controlled framing card, the threat-assessment card, and the loss-of-control
-meter `progressbar`.
+meter `progressbar`. `turn-flow.spec.ts` (action-assumption fix) seeds a session
+parked in the `choices` phase with a `lastResolution` (a just-resolved turn) and
+asserts the merged single-narration screen: the outcome recap and the
+resolution's own next choices both render inline, with **no** "Continue" step —
+i.e. a turn no longer generates a second, forward-looking narration that could
+assume actions the player never chose.
 
 Enable it by exporting:
 
