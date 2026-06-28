@@ -109,16 +109,17 @@ test("the character sheet's delete control runs the two-step confirm", async ({
   await expect(page.getByText(/No Beyonder has been recorded yet/)).toBeVisible();
 });
 
-test("a Saint can consecrate an anchor to meet the advancement requirement", async ({
+test("a Beyonder climbing into the Saint tier can consecrate an anchor", async ({
   page,
 }) => {
-  // The Anchors section only appears at the Saint tier (Seq <= 4). Seed a
-  // Sequence-4 Beyonder so the section renders, then consecrate an object anchor
-  // and confirm its support clears the Saint requirement (object weight 0.5 ×
-  // full integrity 100 = 50 >= the 40 a Saint needs).
+  // The Anchors section appears when the NEXT advancement leads into the Saint
+  // tier or deeper (target Seq <= 4). Seed a Sequence-5 Beyonder (about to become
+  // a Seq-4 Saint) — the exact case that was previously hidden — then consecrate
+  // an object anchor and confirm its support clears the requirement (object
+  // weight 0.5 × full integrity 100 = 50 >= the 40 the climb needs).
   const gameState = {
-    ...createDefaultGameState(1, "e2e-saint", "Klein Saint"),
-    sequenceLevel: 4,
+    ...createDefaultGameState(1, "e2e-saint", "Klein Climber"),
+    sequenceLevel: 5,
   };
   const session = createSession(gameState, "e2e-anchor-1");
   await page.addInitScript(
@@ -140,16 +141,14 @@ test("a Saint can consecrate an anchor to meet the advancement requirement", asy
   await expect(anchors).toBeVisible();
   // Before consecrating anything, support falls short of the requirement.
   await expect(
-    anchors.getByText(/fall short of what this Sequence demands/),
+    anchors.getByText(/fall short of what the climb to .+ demands/),
   ).toBeVisible();
 
   await anchors.getByRole("button", { name: "Consecrate an anchor" }).click();
   await anchors.getByLabel("Its name").fill("Mother's pocket watch");
   await anchors.getByRole("button", { name: "Consecrate the anchor" }).click();
 
-  // The anchor is recorded and its support now meets the Saint requirement.
+  // The anchor is recorded and its support now meets the climb requirement.
   await expect(anchors.getByText("Mother's pocket watch")).toBeVisible();
-  await expect(
-    anchors.getByText(/enough to hold your shape at this Sequence/),
-  ).toBeVisible();
+  await expect(anchors.getByText(/enough to hold the shape of /)).toBeVisible();
 });

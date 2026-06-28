@@ -227,7 +227,9 @@ export function isUnderAnchored(state: AnchorState, sequenceLevel: number): bool
 
 > **UI status:** the acquisition path below is surfaced to the player by the
 > character-sheet `AnchorsSection` (`src/components/game/character-sheet.tsx`),
-> shown at the Saint tier (Seq ≤ 4). Object and place anchors are consecrated by
+> shown — and sized — on the rung the character is climbing INTO: it appears when
+> the next advancement target needs anchors (`anchorsRelevant(targetSequence(seq))`,
+> current Seq 1–5), so a Seq 5 Beyonder about to become a Saint sees it. Object and place anchors are consecrated by
 > name as a Saint's "meaningful marks"; a **congregation** anchor is gated on the
 > character having an actual following (secret-society members + rostered allies),
 > via the pure `canConsecrateCongregation(followingSize)` helper — believers are
