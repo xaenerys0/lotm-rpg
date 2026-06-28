@@ -2173,6 +2173,21 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                         busy={advancing || facingFate}
                         onAttempt={() => void handleAdvancement()}
                       />
+                      {advancementRequirements(session).some(
+                        (req) => req.id === "anchors" && !req.met,
+                      ) && (
+                        <p className="mt-3 text-xs text-muted">
+                          Your anchors fall short of what the next Sequence demands.
+                          Consecrate anchors on your{" "}
+                          <Link
+                            href="/character"
+                            className="text-amber underline-offset-2 hover:underline"
+                          >
+                            character sheet
+                          </Link>{" "}
+                          to steady your new shape.
+                        </p>
+                      )}
                     </TheClimb>
                   )}
                 {session.gameState.sequenceLevel === 1 && (

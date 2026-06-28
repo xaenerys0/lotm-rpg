@@ -225,6 +225,15 @@ then clamps with `applySanityImpact`. A convenience helper is exported:
 export function isUnderAnchored(state: AnchorState, sequenceLevel: number): boolean;
 ```
 
+> **UI status:** the acquisition path below is surfaced to the player by the
+> character-sheet `AnchorsSection` (`src/components/game/character-sheet.tsx`),
+> shown at the Saint tier (Seq ≤ 4). Object and place anchors are consecrated by
+> name as a Saint's "meaningful marks"; a **congregation** anchor is gated on the
+> character having an actual following (secret-society members + rostered allies),
+> via the pure `canConsecrateCongregation(followingSize)` helper — believers are
+> the strongest anchor and cannot be conjured from nothing. This is what makes the
+> Saint-tier anchors requirement in `advancement.ts` reachable in normal play.
+
 ### 2.6 Acquisition, damage, repair
 
 ```ts

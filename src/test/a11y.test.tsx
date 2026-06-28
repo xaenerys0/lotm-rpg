@@ -909,6 +909,43 @@ describe("accessibility — stub pages", () => {
     await expectNoAxeViolationsInContainer(container);
   });
 
+  it("character sheet anchors section (Saint tier) has no violations", async () => {
+    // A Saint (Sequence 4) sees the Anchors section: DEMIGOD_TRAITS flavour, the
+    // support progressbar, a seeded anchor (its integrity bar + Strengthen/
+    // Release), and the consecrate form (kind select + name input). The seeded
+    // anchor sits below full integrity so the "Strengthen" branch renders too.
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-anchor", "Klein"),
+      sequenceLevel: 4,
+    };
+    const session = {
+      ...createSession(gameState, "anchor-1", 1000),
+      anchorState: {
+        anchors: [
+          {
+            id: "anchor-watch",
+            kind: "object" as const,
+            name: "Mother's pocket watch",
+            integrity: 60,
+          },
+        ],
+      },
+    };
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["anchor-1"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "anchor-1", serializeSession(session));
+    const { container } = render(<CharacterPage />);
+    await expectNoAxeViolationsInContainer(container);
+
+    const region = screen.getByRole("region", { name: "Anchors" });
+    // Open the consecrate form and select the congregation kind so its
+    // following-required hint renders.
+    fireEvent.click(within(region).getByRole("button", { name: "Consecrate an anchor" }));
+    fireEvent.change(within(region).getByLabelText("What you anchor on"), {
+      target: { value: "congregation" },
+    });
+    await expectNoAxeViolationsInContainer(container);
+  });
+
   it("map page has no violations", async () => {
     await expectNoAxeViolations(<MapPage />);
   });

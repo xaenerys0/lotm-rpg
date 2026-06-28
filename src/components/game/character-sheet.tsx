@@ -20,17 +20,25 @@ import {
   updateAcquiredPower,
   activeIdentity,
   addProfileNote,
+  anchorsRelevant,
   applyProfileChange,
+  canConsecrateCongregation,
+  consecrateAnchor,
   createIdentity,
   createIdentityState,
   discardIdentity,
+  effectiveSupport,
+  emptyAnchorState,
   identityCapability,
   isDrasticChange,
   isFateProof,
   joinRoster,
   leaveRoster,
   locationLabel,
+  loseAnchor,
   removeProfileNote,
+  repairAnchor,
+  requiredSupport,
   resolveLocation,
   resolveActingMethodState,
   resolveProfileState,
@@ -41,8 +49,12 @@ import {
   sequenceLabel,
   switchIdentity,
   transformationRiteFor,
+  ANCHOR_INTEGRITY_MAX,
+  DEMIGOD_TRAITS,
   type AcquiredPower,
   type AcquisitionCapability,
+  type AnchorKind,
+  type AnchorState,
   type DemeanorTrait,
   type GameSession,
   type IdentityCapability,
@@ -353,6 +365,12 @@ export function CharacterSheet() {
 
       {/* Acquired powers — copied/stolen Beyonder abilities */}
       <AcquiredPowersSection session={session} onUpdate={persistSession} />
+
+      {/* Anchors — steady the godhood pressure at the Saint tier and above
+          (issues #35/#25). Only relevant from Sequence 4 downward. */}
+      {anchorsRelevant(state.sequenceLevel) && (
+        <AnchorsSection session={session} onUpdate={persistSession} />
+      )}
 
       {/* Inventory */}
       <section
@@ -866,6 +884,319 @@ function AcquiredPowersSection({
           className="mt-5 inline-flex min-h-[24px] items-center rounded-lg border border-amber/40 px-4 py-1.5 text-xs font-medium text-amber transition-colors hover:bg-amber/10"
         >
           Take a power
+        </button>
+      )}
+    </section>
+  );
+}
+
+const ANCHOR_KIND_LABEL: Record<AnchorKind, string> = {
+  object: "Significant object",
+  place: "Consecrated place",
+  congregation: "Congregation of believers",
+};
+
+// Anchors (issues #35/#25) — the tier-gated stabilising resource a Saint+ leans
+// on to hold their self-image against the godhood pressure of the mythical-
+// creature form. Surfaces the otherwise-unreachable engine acquisition path:
+// without it, the Saint-tier anchors requirement in `advancementRequirements`
+// could never be met and the climb past Sequence 5 stayed blocked. Canon: a
+// Saint anchors on "personally meaningful marks" (object/place) and a small
+// following, while the strongest anchor — a congregation of believers — needs an
+// actual following, gated here on the character's society members + allies.
+function AnchorsSection({
+  session,
+  onUpdate,
+}: {
+  session: GameSession;
+  onUpdate: (next: GameSession) => void;
+}) {
+  const seq = session.gameState.sequenceLevel;
+  const anchorState: AnchorState = session.anchorState ?? emptyAnchorState();
+  const anchors = anchorState.anchors;
+  const support = effectiveSupport(anchorState);
+  const needed = requiredSupport(seq);
+  const traits = DEMIGOD_TRAITS[seq];
+
+  // A congregation needs a real following: a secret society's members and/or
+  // allies who travel with the character (the roster's allies).
+  const allies = resolveTrackedNpcState(session.trackedNpcState).roster.filter(
+    (n) => n.disposition === "ally",
+  ).length;
+  const societyMembers = session.societyState?.members.length ?? 0;
+  const followingSize = allies + societyMembers;
+
+  const [adding, setAdding] = useState(false);
+  const [kind, setKind] = useState<AnchorKind>("object");
+  const [name, setName] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // Plain functions wired straight to events — the React Compiler memoizes the
+  // component automatically. (Manual useCallback here trips the compiler's
+  // manual-memoization preservation check.)
+  function resetForm() {
+    setAdding(false);
+    setKind("object");
+    setName("");
+    setError(null);
+  }
+
+  function handleConsecrate() {
+    const base = session.anchorState ?? emptyAnchorState();
+    const trimmed = name.trim();
+    // Pre-validate so the engine's `consecrateAnchor` never has to throw (it
+    // guards blank/duplicate names too — this surfaces the same in-world copy).
+    if (kind === "congregation" && !canConsecrateCongregation(followingSize)) {
+      setError(
+        "You have gathered no believers to anchor upon — found a society or draw allies to your side first.",
+      );
+      return;
+    }
+    if (trimmed === "") {
+      setError("An anchor needs a name.");
+      return;
+    }
+    if (base.anchors.some((a) => a.name.toLowerCase() === trimmed.toLowerCase())) {
+      setError(`"${trimmed}" is already one of your anchors.`);
+      return;
+    }
+    onUpdate({
+      ...session,
+      anchorState: consecrateAnchor(base, { kind, name: trimmed }),
+      updatedAt: Date.now(),
+    });
+    resetForm();
+  }
+
+  // Round for display: a `place` anchor (weight 0.75) at a non-multiple-of-4
+  // integrity yields a fractional `effectiveSupport` that would otherwise read
+  // as an ugly float.
+  const shownSupport = Math.round(support);
+  const supportLabel = `${shownSupport} of ${needed} support`;
+
+  return (
+    <section
+      aria-labelledby="sheet-anchors"
+      className="rounded-xl border border-border bg-surface p-6"
+    >
+      <h2 id="sheet-anchors" className="font-serif text-lg font-semibold text-foreground">
+        Anchors
+      </h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted">
+        The marks and believers that hold your self in place against the pull of your
+        mythical form. Their support must meet what your Sequence demands before you can
+        climb — a Saint leans on meaningful objects and places; the strongest anchor of
+        all is a congregation of believers.
+      </p>
+
+      {traits && (
+        <dl className="mt-4 grid gap-3 rounded-lg border border-border bg-surface-raised p-4 text-xs sm:grid-cols-2">
+          <div>
+            <dt className="font-semibold tracking-[0.18em] text-amber uppercase">Tier</dt>
+            <dd className="mt-0.5 text-foreground">{traits.title}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold tracking-[0.18em] text-amber uppercase">
+              Lifespan
+            </dt>
+            <dd className="mt-0.5 text-muted">{traits.lifespan}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold tracking-[0.18em] text-amber uppercase">
+              Mythical form
+            </dt>
+            <dd className="mt-0.5 text-muted">{traits.mythicalForm}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold tracking-[0.18em] text-amber uppercase">
+              Prayer response
+            </dt>
+            <dd className="mt-0.5 text-muted">{traits.prayerResponse}</dd>
+          </div>
+        </dl>
+      )}
+
+      <div className="mt-4">
+        <div className="flex items-baseline justify-between gap-2">
+          <h3 className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+            Anchor support
+          </h3>
+          <span className="text-xs text-foreground">{supportLabel}</span>
+        </div>
+        <div
+          role="progressbar"
+          // Clamp to the requirement: support can exceed what's needed (an
+          // object anchor is 50 vs the Saint's 40), but ARIA requires
+          // valuenow <= valuemax; the true figure stays in aria-valuetext.
+          aria-valuenow={Math.min(shownSupport, needed)}
+          aria-valuemin={0}
+          aria-valuemax={needed}
+          aria-valuetext={supportLabel}
+          aria-label="Anchor support"
+          className="mt-1.5 h-2 overflow-hidden rounded-full border border-border bg-surface-raised"
+        >
+          <div
+            aria-hidden="true"
+            className={`h-full ${support >= needed ? "bg-amber" : "bg-occult"}`}
+            style={{
+              width: `${needed > 0 ? Math.min(100, (support / needed) * 100) : 100}%`,
+            }}
+          />
+        </div>
+        <p className="mt-1.5 text-xs text-muted">
+          {support >= needed
+            ? "Your anchors are enough to hold your shape at this Sequence."
+            : "Your anchors fall short of what this Sequence demands."}
+        </p>
+      </div>
+
+      {error && (
+        <p role="alert" className="mt-3 text-xs text-crimson">
+          {error}
+        </p>
+      )}
+
+      {anchors.length === 0 ? (
+        <p className="mt-4 text-sm text-muted">You have consecrated no anchors yet.</p>
+      ) : (
+        <ul className="mt-4 space-y-3">
+          {anchors.map((anchor) => {
+            const integrityLabel = `${anchor.integrity} of ${ANCHOR_INTEGRITY_MAX} holding strength`;
+            return (
+              <li
+                key={anchor.id}
+                className="rounded-lg border border-border bg-surface-raised p-4"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">{anchor.name}</p>
+                    <p className="mt-0.5 text-[11px] text-muted">
+                      {ANCHOR_KIND_LABEL[anchor.kind]}
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-2">
+                    {anchor.integrity < ANCHOR_INTEGRITY_MAX && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onUpdate({
+                            ...session,
+                            anchorState: repairAnchor(anchorState, anchor.id, 25),
+                            updatedAt: Date.now(),
+                          })
+                        }
+                        className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-amber/40 hover:text-amber"
+                        aria-label={`Strengthen ${anchor.name}`}
+                      >
+                        Strengthen
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        onUpdate({
+                          ...session,
+                          anchorState: loseAnchor(anchorState, anchor.id),
+                          updatedAt: Date.now(),
+                        })
+                      }
+                      className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:border-crimson/50 hover:text-crimson"
+                      aria-label={`Release ${anchor.name}`}
+                    >
+                      Release
+                    </button>
+                  </div>
+                </div>
+                <div
+                  role="progressbar"
+                  aria-valuenow={anchor.integrity}
+                  aria-valuemin={0}
+                  aria-valuemax={ANCHOR_INTEGRITY_MAX}
+                  aria-valuetext={integrityLabel}
+                  aria-label={`${anchor.name} holding strength`}
+                  className="mt-2 h-1.5 overflow-hidden rounded-full border border-border bg-surface"
+                >
+                  <div
+                    aria-hidden="true"
+                    className="h-full bg-amber"
+                    style={{ width: `${anchor.integrity}%` }}
+                  />
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+
+      {adding ? (
+        <div className="mt-5 space-y-3 rounded-lg border border-amber/30 bg-amber/5 p-4">
+          <div>
+            <label
+              htmlFor="anchor-kind"
+              className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
+              What you anchor on
+            </label>
+            <select
+              id="anchor-kind"
+              value={kind}
+              onChange={(e) => setKind(e.target.value as AnchorKind)}
+              className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            >
+              <option value="object">{ANCHOR_KIND_LABEL.object}</option>
+              <option value="place">{ANCHOR_KIND_LABEL.place}</option>
+              <option value="congregation">{ANCHOR_KIND_LABEL.congregation}</option>
+            </select>
+          </div>
+          <div>
+            <label
+              htmlFor="anchor-name"
+              className="block text-xs font-semibold tracking-[0.18em] text-amber uppercase"
+            >
+              Its name
+            </label>
+            <input
+              id="anchor-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. your mother's pocket watch"
+              className="mt-1 w-full rounded-lg border border-border bg-surface-raised px-3 py-2 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            />
+          </div>
+          {kind === "congregation" && (
+            <p className="text-[11px] text-muted">
+              A congregation needs believers — your society&rsquo;s members and the allies
+              at your side ({followingSize} so far).
+            </p>
+          )}
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleConsecrate}
+              className="inline-flex min-h-[24px] items-center rounded-lg border border-amber/50 bg-amber/10 px-4 py-1.5 text-xs font-medium text-amber transition-colors hover:bg-amber/20"
+            >
+              Consecrate the anchor
+            </button>
+            <button
+              type="button"
+              onClick={resetForm}
+              className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-4 py-1.5 text-xs font-medium text-muted transition-colors hover:text-foreground"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => {
+            setAdding(true);
+            setError(null);
+          }}
+          className="mt-5 inline-flex min-h-[24px] items-center rounded-lg border border-amber/40 px-4 py-1.5 text-xs font-medium text-amber transition-colors hover:bg-amber/10"
+        >
+          Consecrate an anchor
         </button>
       )}
     </section>
