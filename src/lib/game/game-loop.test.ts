@@ -160,8 +160,11 @@ describe("VALID_TRANSITIONS", () => {
     expect(VALID_TRANSITIONS.choices).toEqual(["resolution", "consequences", "error"]);
   });
 
-  it("resolution can transition to consequences or error", () => {
-    expect(VALID_TRANSITIONS.resolution).toEqual(["consequences", "error"]);
+  it("resolution can transition to consequences, choices, or error", () => {
+    // A normal player turn loops `resolution → choices` (PRESENT_NEXT_CHOICES),
+    // presenting its own next decision inline; `consequences` stays for the
+    // engine-decided turn path (action-assumption fix).
+    expect(VALID_TRANSITIONS.resolution).toEqual(["consequences", "choices", "error"]);
   });
 
   it("consequences can transition to situation or error", () => {
@@ -195,8 +198,13 @@ describe("PILLAR_INSTRUCTION_MAP", () => {
     expect(PILLAR_INSTRUCTION_MAP.divination).toBe("evaluation");
   });
 
-  it("maps combat to combat", () => {
-    expect(PILLAR_INSTRUCTION_MAP.combat).toBe("combat");
+  it("maps the combat pillar (plain action choices) to the pacing-bound narrative instruction", () => {
+    // Real combat is a separate state machine that calls generate() with the
+    // "combat" instruction directly; an ordinary action choice must end at the
+    // next decision point and present choices like any narrative turn
+    // (action-assumption fix), so the pacing-exempt "combat" instruction is wrong
+    // for it.
+    expect(PILLAR_INSTRUCTION_MAP.combat).toBe("narrative");
   });
 });
 
@@ -342,6 +350,20 @@ describe("transition", () => {
       expect(next.updatedAt).toBe(NOW);
     });
 
+    it("clears the prior turn's resolution recap (lastResolution) when a next action is picked", () => {
+      // On the merged choices screen the prior turn's outcome recap reads from
+      // `lastResolution`; picking the next action moves to the resolution loading
+      // state, so the recap must drop (action-assumption fix).
+      const choices = makeChoices();
+      const session = makeSession({
+        phase: "choices",
+        currentChoices: choices,
+        lastResolution: makeValidatedResponse(),
+      });
+      const next = transition(session, { type: "SELECT_CHOICE", choiceId: "c1" }, NOW);
+      expect(next.lastResolution).toBeNull();
+    });
+
     it("throws for invalid choice ID", () => {
       const session = makeSession({
         phase: "choices",
@@ -387,6 +409,59 @@ describe("transition", () => {
         transition(
           session,
           { type: "RESOLUTION_READY", result: makeValidatedResponse() },
+          NOW,
+        ),
+      ).toThrow(InvalidTransitionError);
+    });
+  });
+
+  describe("PRESENT_NEXT_CHOICES", () => {
+    it("transitions resolution → choices with the resolution's own choices, advancing the turn", () => {
+      const choices = makeChoices();
+      const session = makeSession({
+        phase: "resolution",
+        turnCount: 3,
+        selectedChoiceId: "c2",
+        activePillar: "combat",
+        currentNarrative: "stale scene text",
+        lastResolution: makeValidatedResponse(),
+        pendingPlayerAction: "irrelevant",
+        pendingTurnKind: "combat",
+      });
+      const next = transition(session, { type: "PRESENT_NEXT_CHOICES", choices }, NOW);
+
+      expect(next.phase).toBe("choices");
+      // One beat per action: the resolution's outcome + choices become the next
+      // decision point inline — no separate forward-narration turn.
+      expect(next.turnCount).toBe(4);
+      // The choices screen renders the outcome from `lastResolution`; the
+      // fresh-scene `currentNarrative` slot is cleared.
+      expect(next.currentNarrative).toBeNull();
+      expect(next.currentChoices).toEqual(choices);
+      expect(next.selectedChoiceId).toBeNull();
+      expect(next.activePillar).toBeNull();
+      expect(next.pendingPlayerAction).toBeNull();
+      expect(next.pendingTurnKind).toBeNull();
+      expect(next.updatedAt).toBe(NOW);
+    });
+
+    it("preserves lastResolution so the choices screen can render the outcome recap", () => {
+      const result = makeValidatedResponse();
+      const session = makeSession({ phase: "resolution", lastResolution: result });
+      const next = transition(
+        session,
+        { type: "PRESENT_NEXT_CHOICES", choices: makeChoices() },
+        NOW,
+      );
+      expect(next.lastResolution).toEqual(result);
+    });
+
+    it("throws from consequences phase (engine turns still resume via situation)", () => {
+      const session = makeSession({ phase: "consequences" });
+      expect(() =>
+        transition(
+          session,
+          { type: "PRESENT_NEXT_CHOICES", choices: makeChoices() },
           NOW,
         ),
       ).toThrow(InvalidTransitionError);
