@@ -215,21 +215,38 @@ export async function generateCodexRebuild(
   // chronicle — worth the better model, and it runs at most once per rebuild.
   const model = selectModel(config, "premium");
   const messages = buildCodexRebuildPrompt(input);
-  const response = await executeWithRetry(
-    adapter,
-    {
-      messages,
-      model,
-      // Deterministic extraction: temperature 0 so a re-run over the same
-      // history yields a stable entity set (providers that reject an explicit
-      // temperature — newer Claude — ignore it; the adapter omits it for them).
-      temperature: 0,
-      maxTokens: REBUILD_MAX_TOKENS,
-      responseFormat: { type: "json_object" },
-    },
-    config.apiKey,
-  );
-  return parseCodexRebuild(response.content);
+
+  // Parse-retry loop (mirrors the main turn's `requestAndParse`): the rebuild
+  // must survive a provider that wraps the JSON in prose, truncates it, or
+  // returns a degenerate empty completion. The FIRST attempt is deterministic
+  // (temperature 0) so a clean run is stable/repeatable; a failed parse then
+  // re-prompts with a corrective instruction AND a small temperature so a
+  // degenerate temp-0 output isn't reproduced verbatim (which would make the
+  // retry pointless). Browser-direct BYOK has no server log, so each unparseable
+  // attempt is surfaced to the console for diagnosis (the key is never logged).
+  const convo = [...messages];
+  for (let attempt = 0; attempt < MAX_PARSE_ATTEMPTS; attempt++) {
+    const response = await executeWithRetry(
+      adapter,
+      {
+        messages: convo,
+        model,
+        temperature: attempt === 0 ? 0 : 0.4,
+        maxTokens: REBUILD_MAX_TOKENS,
+        responseFormat: { type: "json_object" },
+      },
+      config.apiKey,
+    );
+    const updates = parseCodexRebuild(response.content);
+    if (updates.length > 0) return updates;
+    logUnparseableOutput(config.providerId, model, attempt + 1, response);
+    // Feed the bad reply back with a corrective instruction for the next pass.
+    convo.push(
+      { role: "assistant", content: response.content },
+      { role: "user", content: correctiveMessage(response.truncated ?? false) },
+    );
+  }
+  return [];
 }
 
 function correctiveMessage(truncated: boolean): string {
