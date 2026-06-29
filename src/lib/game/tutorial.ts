@@ -16,7 +16,7 @@ export interface TutorialScene {
   /** The single takeaway, stated plainly after the fiction. */
   lesson: string;
   /** Concept tags, used by tests to prove coverage of the required topics. */
-  teaches: ("beyonders" | "potions" | "acting" | "pathways")[];
+  teaches: ("beyonders" | "potions" | "acting" | "pathways" | "advancement")[];
 }
 
 export const TUTORIAL_SCENES: readonly TutorialScene[] = [
@@ -88,6 +88,28 @@ export const TUTORIAL_SCENES: readonly TutorialScene[] = [
       "story. The prologue ahead will help reveal which one fits you.",
     teaches: ["pathways"],
   },
+  {
+    id: "the-long-climb",
+    title: "The Long Climb",
+    body:
+      "No one stays where they begin. Above every rung waits another, and the " +
+      "way up never changes its shape. First the recipe — a formula hoarded in a " +
+      "church vault, bought from a fence who asks too many questions, or prised " +
+      "from the cold hands of someone who climbed before you. Then the " +
+      "ingredients it names, one by one: some lie on a shelf if your purse is " +
+      "deep enough, others must be run down and taken from things that do not " +
+      "wish to be hunted. From the fifth rung on, a rite must be performed before " +
+      "the draught will so much as wet your lips. Only then do you drink — and " +
+      "learn, in that swallow, whether the climb lifts you or unmakes you where " +
+      "you stand. The histories of every pathway are crowded with those who " +
+      "reached for the next rung a season too soon.",
+    lesson:
+      "Rising a Sequence is deliberate: secure the formula, gather its " +
+      "ingredients (bought or hunted), perform the rite from the fifth rung " +
+      "onward, then drink — each step in order. Reach too far, too fast, and the " +
+      "attempt can break you.",
+    teaches: ["advancement"],
+  },
 ];
 
 /** The concepts the tutorial must cover (acceptance criteria, issue #14). */
@@ -96,4 +118,5 @@ export const TUTORIAL_REQUIRED_TOPICS = [
   "potions",
   "acting",
   "pathways",
+  "advancement",
 ] as const;

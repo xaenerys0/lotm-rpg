@@ -28,6 +28,12 @@ describe("TUTORIAL_SCENES", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it("introduces the advancement climb", () => {
+    const climb = TUTORIAL_SCENES.find((s) => s.id === "the-long-climb");
+    expect(climb).toBeDefined();
+    expect(climb!.teaches).toContain("advancement");
+  });
+
   it("does not tutorialize the acting-method mechanic (issue #95)", () => {
     const acting = TUTORIAL_SCENES.find((s) => s.id === "the-method-of-acting");
     expect(acting).toBeDefined();

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Route } from "next";
+import type { CSSProperties, ReactNode } from "react";
 
 // The Guide (onboarding reference): an always-available, browsable manual that
 // orients a new player to where things live in the interface and how a turn
@@ -61,7 +62,7 @@ const DESTINATIONS: Destination[] = [
   {
     title: "Character",
     blurb:
-      "Your dossier. Powers earned across the Sequences, the role your Sequence demands, your condition, your True Self and the false faces you wear, the companions and pursuers at your heels, and everything in your pockets.",
+      "Your dossier, kept in tabs — Overview, Self & Allies, Powers, Holdings, and a Codex. The powers earned across the Sequences and the role each demands, your condition, your True Self and the false faces you wear, the companions and pursuers at your heels, powers copied or stolen from other Beyonders, the anchors that steady a rising god, and everything in your pockets. The Codex keeps a running register of the people, places, and threads your story has raised, so a long chronicle never loses the thread.",
     href: "/character",
   },
   {
@@ -73,7 +74,7 @@ const DESTINATIONS: Destination[] = [
   {
     title: "Map",
     blurb:
-      "A street-level gazetteer of your current city, marking where you stand and where you might travel. More of the world unfolds as your story moves.",
+      "A street-level gazetteer of your current city, marking where you stand and the districts and farther cities you can set out for — your companions and pursuers travel with you when you move. More of the world, and the atlases of earlier eras, unfold as your story does.",
     href: "/map",
   },
   {
@@ -107,9 +108,15 @@ const DESTINATIONS: Destination[] = [
     href: "/society",
   },
   {
+    title: "Guide",
+    blurb:
+      "This almanac. The first steps, how a turn unfolds, a map of every screen, and the core concepts of the world — always one click away in the sidebar.",
+    href: "/guide",
+  },
+  {
     title: "Settings",
     blurb:
-      "Bind your AI narrator (provider, key, model) and tune what you see — the sanity and digestion meters, scene art, movement realism, and high-contrast mode.",
+      "Bind your AI narrator (provider, key, model) and — separately — an image provider for optional scene art. Then tune what you see: narration length, the sanity and digestion meters, scene art, movement realism, and high-contrast mode. Every key stays in this browser, never on our servers.",
     href: "/settings",
   },
 ];
@@ -130,71 +137,157 @@ const CONCEPTS: Concept[] = [
   {
     term: "Advancement",
     meaning:
-      "Climbing a Sequence needs the right potion fully digested, its ingredients in hand, and — from Sequence 5 — a ritual. Reach too far unprepared and the attempt can break you.",
+      "Climbing a Sequence is a deliberate ascent — secure the potion's formula (trade for it or seek it through the story), gather its ingredients (bought or hunted), perform the ritual from Sequence 5 on, then drink. Reach too far unprepared and the attempt can break you.",
   },
   {
     term: "Secrecy",
     meaning:
       "Beyonders hide in plain sight. Craft identities, switch faces, and mind who might recognise the self beneath the mask — exposure has consequences.",
   },
+  {
+    term: "Combat",
+    meaning:
+      "Fights are half-won before the first blow. Gather intel, ready the right ground, abilities, and artifacts, then trade tactical decisions. Push too hard and you risk losing control — but a measured line can subdue, free, or talk a foe down instead of killing.",
+  },
+  {
+    term: "Anchors",
+    meaning:
+      "As you near godhood your power strains against your mind. Anchors — a treasured object, a place, or a congregation of believers — hold you steady. The higher Sequences demand them before you can rise.",
+  },
+  {
+    term: "Acquired powers",
+    meaning:
+      "Some pathways and sealed relics let you copy, borrow, or outright steal another Beyonder's power. Most copies fade with time; a rare few can be bound for good. Manage them on the Character sheet.",
+  },
+  {
+    term: "Companions & pursuers",
+    meaning:
+      "You never travel alone. Allies you recruit follow you across the map; pursuers the story sets on your trail follow too — until you shake them off. Tend the cast on the Character sheet.",
+  },
 ];
 
+// A small diamond glyph used as a list/summary marker — purely decorative.
 function Ornament() {
   return (
-    <span className="text-muted/40" aria-hidden="true">
+    <span className="text-amber/70" aria-hidden="true">
       ◆
     </span>
   );
 }
 
+// The almanac's table of contents — also the in-page jump nav in the lede.
+const CONTENTS: { id: string; numeral: string; label: string }[] = [
+  { id: "guide-first-steps", numeral: "I", label: "First steps" },
+  { id: "guide-turn", numeral: "II", label: "How a turn works" },
+  { id: "guide-where", numeral: "III", label: "Where to find things" },
+  { id: "guide-active", numeral: "IV", label: "One active character" },
+  { id: "guide-concepts", numeral: "V", label: "Concepts & tips" },
+];
+
+// One consistent editorial section heading: a roman-numeral plate, a serif
+// title, and the shared gilt hairline — matching the page's PageHeader voice.
+function SectionHeading({
+  id,
+  numeral,
+  children,
+}: {
+  id: string;
+  numeral: string;
+  children: ReactNode;
+}) {
+  return (
+    <header className="mb-6 flex items-end gap-3.5">
+      <span
+        aria-hidden="true"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-amber/40 font-serif text-sm font-semibold text-amber"
+      >
+        {numeral}
+      </span>
+      <h2
+        id={id}
+        className="font-serif text-2xl font-semibold tracking-tight text-foreground"
+      >
+        {children}
+      </h2>
+      <span aria-hidden="true" className="gilt-rule mb-2.5 flex-1" />
+    </header>
+  );
+}
+
+// Stagger the page-load reveal: each section fades up a beat after the last,
+// on the shared expo curve. Reduced-motion is neutralised globally (globals.css).
+function revealAt(ms: number): CSSProperties {
+  return { animationDelay: `${ms}ms` };
+}
+
 export function GuidePanel() {
   return (
-    <div className="space-y-14">
-      {/* Lede — a gaslit page of the almanac. */}
-      <section className="parchment gaslit rounded-lg border border-amber/15 px-6 py-7 sm:px-8 sm:py-8">
-        <p className="font-serif text-lg leading-relaxed text-foreground sm:text-xl">
+    <div className="space-y-16">
+      {/* Lede — the almanac's frontispiece, with a jump-to-section nav. */}
+      <section
+        className="parchment gaslit animate-fade-in-up relative overflow-hidden rounded-xl border border-border px-6 py-8 sm:px-10 sm:py-10"
+        style={revealAt(40)}
+      >
+        <p className="mb-3 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+          An almanac for the newly awakened
+        </p>
+        <p className="max-w-2xl font-serif text-xl leading-relaxed text-foreground sm:text-2xl">
           Welcome, would-be Beyonder. This is a single-player, AI-narrated descent into
           the world of the Mysteries — your choices spin an alternative timeline all your
           own.
         </p>
-        <p className="mt-3 text-muted">
+        <p className="mt-4 max-w-2xl leading-relaxed text-muted">
           The pages below show where everything lives and how a turn unfolds. Keep this
           guide bookmarked from the sidebar — it is always one click away.
         </p>
+        <nav aria-label="In this guide" className="mt-7">
+          <ul className="flex flex-wrap gap-2" role="list">
+            {CONTENTS.map((c) => (
+              <li key={c.id}>
+                <a
+                  href={`#${c.id}`}
+                  className="inline-flex min-h-[24px] items-center gap-1.5 rounded-full border border-border bg-surface px-3.5 py-1.5 text-sm text-muted transition-colors hover:border-amber/40 hover:text-amber"
+                >
+                  <span aria-hidden="true" className="font-serif text-amber/80">
+                    {c.numeral}
+                  </span>
+                  {c.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </section>
 
       {/* First steps — illuminated, numbered. */}
-      <section aria-labelledby="guide-first-steps">
-        <header className="mb-5 flex items-center gap-3">
-          <h2
-            id="guide-first-steps"
-            className="font-serif text-2xl font-bold tracking-tight text-amber"
-          >
-            First steps
-          </h2>
-          <span
-            className="h-px flex-1 bg-gradient-to-r from-border to-transparent"
-            aria-hidden="true"
-          />
-        </header>
+      <section
+        aria-labelledby="guide-first-steps"
+        className="animate-fade-in-up"
+        style={revealAt(120)}
+      >
+        <SectionHeading id="guide-first-steps" numeral="I">
+          First steps
+        </SectionHeading>
         <ol className="space-y-3" role="list">
           {FIRST_STEPS.map((step, i) => (
             <li
               key={step.title}
-              className="flex gap-4 rounded-lg border border-border bg-surface/40 p-4 sm:p-5"
+              className="grimoire-frame flex gap-4 rounded-xl p-4 transition-[transform,border-color] duration-200 hover:-translate-y-0.5 hover:border-amber/40 sm:p-5"
             >
               <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-amber/40 font-serif text-lg font-bold text-gaslight"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-amber/40 font-serif text-lg font-semibold text-gaslight"
                 aria-hidden="true"
               >
                 {i + 1}
               </span>
               <div className="min-w-0">
-                <h3 className="font-serif text-lg text-foreground">{step.title}</h3>
+                <h3 className="font-serif text-lg font-semibold text-foreground">
+                  {step.title}
+                </h3>
                 <p className="mt-1 text-sm leading-relaxed text-muted">{step.body}</p>
                 <Link
                   href={step.href}
-                  className="mt-2 inline-flex min-h-[24px] items-center gap-1 text-sm font-medium text-amber hover:text-gold hover:underline"
+                  className="mt-2.5 inline-flex min-h-[24px] items-center gap-1 text-sm font-medium text-amber hover:text-gold hover:underline"
                 >
                   {step.cta}
                   <span aria-hidden="true">→</span>
@@ -206,29 +299,30 @@ export function GuidePanel() {
       </section>
 
       {/* How a turn works — a three-beat flow. */}
-      <section aria-labelledby="guide-turn">
-        <header className="mb-5 flex items-center gap-3">
-          <h2
-            id="guide-turn"
-            className="font-serif text-2xl font-bold tracking-tight text-amber"
-          >
-            How a turn works
-          </h2>
-          <span
-            className="h-px flex-1 bg-gradient-to-r from-border to-transparent"
-            aria-hidden="true"
-          />
-        </header>
+      <section
+        aria-labelledby="guide-turn"
+        className="animate-fade-in-up"
+        style={revealAt(200)}
+      >
+        <SectionHeading id="guide-turn" numeral="II">
+          How a turn works
+        </SectionHeading>
         <ol className="grid gap-3 sm:grid-cols-3" role="list">
           {TURN_PHASES.map((phase, i) => (
             <li
               key={phase.name}
-              className="relative rounded-lg border border-border bg-surface/40 p-5"
+              className="grimoire-frame relative overflow-hidden rounded-xl p-5"
             >
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-amber/60 to-transparent"
+              />
               <span className="text-xs tracking-widest text-muted uppercase">
                 Phase {i + 1}
               </span>
-              <h3 className="mt-1 font-serif text-lg text-gaslight">{phase.name}</h3>
+              <h3 className="mt-1 font-serif text-lg font-semibold text-gaslight">
+                {phase.name}
+              </h3>
               <p className="mt-2 text-sm leading-relaxed text-muted">{phase.body}</p>
             </li>
           ))}
@@ -244,19 +338,14 @@ export function GuidePanel() {
       </section>
 
       {/* Where to find things — the screen-by-screen map. */}
-      <section aria-labelledby="guide-where">
-        <header className="mb-5 flex items-center gap-3">
-          <h2
-            id="guide-where"
-            className="font-serif text-2xl font-bold tracking-tight text-amber"
-          >
-            Where to find things
-          </h2>
-          <span
-            className="h-px flex-1 bg-gradient-to-r from-border to-transparent"
-            aria-hidden="true"
-          />
-        </header>
+      <section
+        aria-labelledby="guide-where"
+        className="animate-fade-in-up"
+        style={revealAt(280)}
+      >
+        <SectionHeading id="guide-where" numeral="III">
+          Where to find things
+        </SectionHeading>
         <p className="mb-4 text-sm text-muted">
           Every destination in the sidebar, in order. Expand a page to learn what it
           holds, then step into it.
@@ -265,15 +354,15 @@ export function GuidePanel() {
           {DESTINATIONS.map((dest) => (
             <details
               key={dest.href}
-              className="group rounded-lg border border-border bg-surface/40 [&[open]]:border-amber/30"
+              className="group rounded-xl border border-border bg-surface transition-colors [&[open]]:border-amber/30"
             >
-              <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-serif text-lg text-foreground">
+              <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 font-serif text-lg font-semibold text-foreground">
                 <span className="flex items-center gap-2.5">
                   <Ornament />
                   {dest.title}
                 </span>
                 <span
-                  className="text-muted transition-transform duration-200 group-open:rotate-90"
+                  className="text-amber transition-transform duration-200 group-open:rotate-90"
                   aria-hidden="true"
                 >
                   ›
@@ -295,20 +384,19 @@ export function GuidePanel() {
       </section>
 
       {/* Active character — the single most common point of confusion. */}
-      <section aria-labelledby="guide-active">
-        <header className="mb-5 flex items-center gap-3">
-          <h2
-            id="guide-active"
-            className="font-serif text-2xl font-bold tracking-tight text-amber"
-          >
-            One active character
-          </h2>
+      <section
+        aria-labelledby="guide-active"
+        className="animate-fade-in-up"
+        style={revealAt(360)}
+      >
+        <SectionHeading id="guide-active" numeral="IV">
+          One active character
+        </SectionHeading>
+        <div className="relative overflow-hidden rounded-xl border border-occult-bright/30 bg-occult/[0.06] p-5 sm:p-6">
           <span
-            className="h-px flex-1 bg-gradient-to-r from-border to-transparent"
             aria-hidden="true"
+            className="absolute inset-y-0 left-0 w-1 bg-occult-bright/50"
           />
-        </header>
-        <div className="rounded-lg border border-occult-bright/30 bg-occult/[0.06] p-5">
           <p className="leading-relaxed text-foreground">
             The selector near the top of the sidebar sets your{" "}
             <strong className="text-occult-bright">active character</strong>. Every page —
@@ -320,26 +408,21 @@ export function GuidePanel() {
       </section>
 
       {/* Concepts & tips. */}
-      <section aria-labelledby="guide-concepts">
-        <header className="mb-5 flex items-center gap-3">
-          <h2
-            id="guide-concepts"
-            className="font-serif text-2xl font-bold tracking-tight text-amber"
-          >
-            Concepts &amp; tips
-          </h2>
-          <span
-            className="h-px flex-1 bg-gradient-to-r from-border to-transparent"
-            aria-hidden="true"
-          />
-        </header>
+      <section
+        aria-labelledby="guide-concepts"
+        className="animate-fade-in-up"
+        style={revealAt(440)}
+      >
+        <SectionHeading id="guide-concepts" numeral="V">
+          Concepts &amp; tips
+        </SectionHeading>
         <dl className="grid gap-3 sm:grid-cols-2">
           {CONCEPTS.map((c) => (
             <div
               key={c.term}
-              className="rounded-lg border border-border bg-surface/40 p-4"
+              className="rounded-xl border border-border border-l-2 border-l-amber/40 bg-surface p-4 transition-colors hover:border-l-amber"
             >
-              <dt className="font-serif text-lg text-gaslight">{c.term}</dt>
+              <dt className="font-serif text-lg font-semibold text-gaslight">{c.term}</dt>
               <dd className="mt-1 text-sm leading-relaxed text-muted">{c.meaning}</dd>
             </div>
           ))}
