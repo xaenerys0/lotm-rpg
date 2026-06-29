@@ -736,20 +736,33 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             const isLast = tutorialIndex === TUTORIAL_SCENES.length - 1;
             return (
               <div className="mx-auto max-w-2xl">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
+                <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
                   An Introduction — {tutorialIndex + 1} of {TUTORIAL_SCENES.length}
                 </p>
-                <h1 className="mb-6 font-serif text-2xl font-semibold text-foreground">
+                <div aria-hidden="true" className="mb-6 flex gap-1.5">
+                  {TUTORIAL_SCENES.map((s, i) => (
+                    <span
+                      key={s.id}
+                      className={`h-1 flex-1 rounded-full transition-colors duration-300 ${
+                        i <= tutorialIndex ? "bg-amber" : "bg-border"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <h1 className="mb-6 font-serif text-2xl font-semibold text-foreground sm:text-3xl">
                   {scene.title}
                 </h1>
-                <div className="parchment rounded-xl px-6 py-5 sm:px-8 sm:py-6">
-                  <p className="font-serif text-base leading-[1.85] text-foreground">
+                <div className="parchment gaslit rounded-xl px-6 py-5 sm:px-8 sm:py-7">
+                  <p className="font-serif text-base leading-[1.85] text-foreground sm:text-lg">
                     {scene.body}
                   </p>
                 </div>
-                <p className="mt-4 border-l-2 border-border pl-4 text-sm leading-relaxed text-muted italic">
-                  {scene.lesson}
-                </p>
+                <div className="mt-5 border-l-2 border-amber/40 pl-4">
+                  <p className="mb-1 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
+                    The lesson
+                  </p>
+                  <p className="text-sm leading-relaxed text-muted">{scene.lesson}</p>
+                </div>
                 <div className="mt-8 flex items-center justify-between">
                   <button
                     type="button"
@@ -840,8 +853,8 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
             <span className="font-semibold text-amber">
               New to Lord of the Mysteries?
             </span>{" "}
-            Begin with a short introduction to Beyonders, potions, and the acting method
-            (~3 minutes, skippable at any point).
+            Begin with a short introduction to Beyonders, potions, the acting method, and
+            the long climb ahead (~4 minutes, skippable at any point).
           </button>
 
           <p className="mb-2.5 text-xs font-semibold uppercase tracking-[0.18em] text-amber">
