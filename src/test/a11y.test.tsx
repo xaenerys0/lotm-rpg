@@ -1010,9 +1010,16 @@ describe("accessibility — stub pages", () => {
     fireEvent.click(within(region).getByLabelText("Show settled threads"));
     await expectNoAxeViolationsInContainer(container);
 
-    // Open the per-entity curation editor (name/status/merge/forget).
+    // Open the per-entity curation editor (name/status/merge/forget), then close
+    // it so its toggle reverts from "Close" to "Edit".
     fireEvent.click(within(region).getByRole("button", { name: "Edit" }));
     await expectNoAxeViolationsInContainer(container);
+    fireEvent.click(within(region).getByRole("button", { name: "Close" }));
+
+    // Open the manual "Add entry" form (name/kind/status/pivotal), then close it.
+    fireEvent.click(within(region).getByRole("button", { name: /Add entry/ }));
+    await expectNoAxeViolationsInContainer(container);
+    fireEvent.click(within(region).getByRole("button", { name: "Close" }));
 
     // Open the rebuild confirm panel.
     fireEvent.click(within(region).getByRole("button", { name: /Rebuild from history/ }));

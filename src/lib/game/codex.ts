@@ -728,7 +728,10 @@ const MAX_REBUILD_FACTS = 60;
 // scene NARRATIVE. Include a clipped narrative for the most-recent window of
 // beats so the rebuild can find them, bounded so a very long save stays cheap.
 const MAX_REBUILD_NARRATIVES = 80;
-const REBUILD_NARRATIVE_CLIP = 320;
+// Wider than a turn bullet: a secondary character ("the guarded Fors") needs
+// surrounding context for the archivist to recognize them as a person, not a
+// place — too tight a clip strands the cue.
+const REBUILD_NARRATIVE_CLIP = 500;
 
 /**
  * Assemble the chronicle digest the AI rebuild reads (history-context Codex) —

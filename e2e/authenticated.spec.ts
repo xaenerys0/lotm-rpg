@@ -231,4 +231,13 @@ test("the character sheet tabs switch sections and the Codex tab browses entitie
   await expect(
     codex.getByRole("button", { name: /Unpin The Tarot Club/ }),
   ).toHaveAttribute("aria-pressed", "true");
+
+  // Manual add: a character the AI rebuild might miss can be added by hand.
+  await codex.getByLabel("Search the Codex").fill("");
+  await codex.getByRole("button", { name: /Add entry/ }).click();
+  await codex.getByLabel("Name").fill("Fors");
+  await codex.getByLabel("Status").fill("a guarded ally");
+  await codex.getByRole("button", { name: "Add to Codex" }).click();
+  await codex.getByLabel("Search the Codex").fill("Fors");
+  await expect(codex.getByText("Fors", { exact: true })).toBeVisible();
 });

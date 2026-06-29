@@ -127,11 +127,15 @@ Entity"/"Stagnation Entity" and collapses location sprawl, listing variants as `
 
 ## Manual curation
 
-The Codex tab is also an editor. Per entity: **pin/unpin** (`setCodexImportance`), **edit**
-name/status (`updateCodexEntity`, clamped + validated), **merge** a duplicate into another
-same-kind entry (`mergeCodexEntities` — the kept entry gains the dropped name + aliases, the
-earliest `firstSeenTurn`, the latest `lastSeenTurn`), and **forget** (`removeCodexEntity`).
-All are pure ops in `codex.ts`; the component commits each via `onUpdate`.
+The Codex tab is also an editor. An **Add entry** form (`applyCodexUpdate`) lets the player
+add anything the AI rebuild missed — the deterministic fallback for a borderline secondary
+character (e.g. an escorted companion the model keeps cutting). Per entity: **pin/unpin**
+(`setCodexImportance`), **edit** name/status (`updateCodexEntity`, clamped + validated),
+**merge** a duplicate into another same-kind entry (`mergeCodexEntities` — the kept entry
+gains the dropped name + aliases, the earliest `firstSeenTurn`, the latest `lastSeenTurn`),
+and **forget** (`removeCodexEntity`). All are pure ops in `codex.ts`; the component commits
+each via `onUpdate`. (LLM extraction is best-effort and can miss a minor named entity even
+with recall-tuned prompting; manual add/edit makes the Codex authoritative-by-player.)
 
 ## Player-facing Codex tab
 

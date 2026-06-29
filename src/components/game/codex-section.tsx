@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
+  applyCodexUpdate,
   applyCodexUpdates,
   codexCounts,
   codexRebuildDigest,
@@ -109,6 +110,13 @@ export function CodexSection({
   const [rebuildError, setRebuildError] = useState<string | null>(null);
   const [rebuildNotice, setRebuildNotice] = useState<string | null>(null);
 
+  // Manual add — the deterministic fallback for anything the AI rebuild missed.
+  const [addingEntry, setAddingEntry] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newKind, setNewKind] = useState<CodexKind>("person");
+  const [newStatus, setNewStatus] = useState("");
+  const [newPivotal, setNewPivotal] = useState(false);
+
   const counts = useMemo(() => codexCounts(codex), [codex]);
   const total = useMemo(() => CODEX_KINDS.reduce((s, k) => s + counts[k], 0), [counts]);
 
@@ -149,6 +157,27 @@ export function CodexSection({
     onUpdate({ ...session, codexState: next });
   }
 
+  function handleAdd() {
+    if (newName.trim() === "") return;
+    commit(
+      applyCodexUpdate(
+        codex,
+        {
+          kind: newKind,
+          name: newName,
+          status: newStatus,
+          importance: newPivotal ? "pivotal" : "standard",
+        },
+        session.turnCount,
+      ),
+    );
+    setAddingEntry(false);
+    setNewName("");
+    setNewStatus("");
+    setNewPivotal(false);
+    setNewKind("person");
+  }
+
   async function handleRebuild() {
     const config = loadProviderConfig();
     if (!config) {
@@ -186,19 +215,111 @@ export function CodexSection({
           Codex
         </h2>
         {!confirmingRebuild && (
-          <button
-            type="button"
-            onClick={() => {
-              setConfirmingRebuild(true);
-              setRebuildError(null);
-              setRebuildNotice(null);
-            }}
-            className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:text-foreground"
-          >
-            Rebuild from history…
-          </button>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              aria-expanded={addingEntry}
+              onClick={() => setAddingEntry((v) => !v)}
+              className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:text-foreground"
+            >
+              {addingEntry ? "Close" : "Add entry…"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmingRebuild(true);
+                setRebuildError(null);
+                setRebuildNotice(null);
+              }}
+              className="inline-flex min-h-[24px] items-center rounded-lg border border-border px-3 py-1 text-xs font-medium text-muted transition-colors hover:text-foreground"
+            >
+              Rebuild from history…
+            </button>
+          </div>
         )}
       </div>
+
+      {addingEntry && (
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleAdd();
+          }}
+          className="mt-4 space-y-3 rounded-lg border border-border bg-surface-raised p-4"
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="codex-add-name"
+                className="mb-1 block text-[11px] font-medium text-muted"
+              >
+                Name
+              </label>
+              <input
+                id="codex-add-name"
+                type="text"
+                value={newName}
+                onChange={(e) => setNewName(e.target.value)}
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-amber focus:ring-2 focus:ring-amber/30 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="codex-add-kind"
+                className="mb-1 block text-[11px] font-medium text-muted"
+              >
+                Kind
+              </label>
+              <select
+                id="codex-add-kind"
+                value={newKind}
+                onChange={(e) => setNewKind(e.target.value as CodexKind)}
+                className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground focus:border-amber focus:ring-2 focus:ring-amber/30 focus:outline-none"
+              >
+                {CODEX_KINDS.map((k) => (
+                  <option key={k} value={k}>
+                    {KIND_SINGULAR[k]}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label
+              htmlFor="codex-add-status"
+              className="mb-1 block text-[11px] font-medium text-muted"
+            >
+              Status
+            </label>
+            <input
+              id="codex-add-status"
+              type="text"
+              value={newStatus}
+              onChange={(e) => setNewStatus(e.target.value)}
+              placeholder="e.g. a guarded ally rescued in Backlund"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-muted focus:border-amber focus:ring-2 focus:ring-amber/30 focus:outline-none"
+            />
+          </div>
+          <label className="inline-flex cursor-pointer items-center gap-2 text-xs text-muted">
+            <input
+              type="checkbox"
+              checked={newPivotal}
+              onChange={(e) => setNewPivotal(e.target.checked)}
+              className="h-4 w-4 rounded border-border bg-surface text-amber focus:ring-2 focus:ring-amber/30"
+            />
+            Pivotal (always kept in the narrator&rsquo;s view)
+          </label>
+          <div>
+            <button
+              type="submit"
+              disabled={newName.trim() === ""}
+              className="inline-flex min-h-[24px] items-center rounded-lg border border-amber/50 bg-amber/10 px-3 py-1 text-xs font-medium text-amber transition-colors hover:bg-amber/20 disabled:opacity-60"
+            >
+              Add to Codex
+            </button>
+          </div>
+        </form>
+      )}
       <p className="mt-1 text-xs leading-relaxed text-muted">
         The figures, places, relics, factions, and unfinished business your chronicle has
         gathered — the same record that keeps the narrator consistent across a long story.

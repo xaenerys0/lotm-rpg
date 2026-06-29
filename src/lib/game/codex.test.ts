@@ -953,7 +953,7 @@ describe("codexRebuildDigest", () => {
     expect(digest.journal[0]).not.toHaveProperty("narrative");
     const last = digest.journal[digest.journal.length - 1];
     expect(last.narrative).toBeDefined();
-    expect(last.narrative!.length).toBeLessThanOrEqual(320);
+    expect(last.narrative!.length).toBeLessThanOrEqual(500);
   });
 
   it("handles a journal entry missing its narrative field", () => {
