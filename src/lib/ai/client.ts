@@ -27,6 +27,9 @@ const MAX_RETRIES = 3;
 const RETRY_DELAYS = [2000, 4000, 8000];
 // Sized to comfortably fit a full narrative + choices + state changes; 1500 was
 // prone to truncating mid-JSON, which surfaced as "random" malformed output.
+// Shared with the prologue path (prologue-client.ts) via the export block below,
+// so it reuses the exact cap rather than duplicating the magic number — both hit
+// the same mid-JSON truncation.
 const MAX_OUTPUT_TOKENS = 3072;
 // The one-shot Codex rebuild emits up to MAX_REBUILD_ENTITIES compact entries —
 // a larger ceiling than a turn so the whole registry fits without truncation.
@@ -249,14 +252,14 @@ export async function generateCodexRebuild(
   return [];
 }
 
-function correctiveMessage(truncated: boolean): string {
+export function correctiveMessage(truncated: boolean): string {
   if (truncated) {
     return "Your previous response was cut off before the JSON was complete. Respond with a COMPLETE but more concise JSON object matching the required schema — shorten the narrative if needed. Output ONLY the JSON, no markdown or commentary.";
   }
   return "Your previous response was not valid JSON. Please respond with ONLY a valid JSON object matching the required schema. No markdown, no code blocks, just the JSON object.";
 }
 
-function logUnparseableOutput(
+export function logUnparseableOutput(
   provider: string,
   model: string,
   attempt: number,
