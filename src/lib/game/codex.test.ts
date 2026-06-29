@@ -904,12 +904,14 @@ describe("codexRebuildDigest", () => {
           eventType: "combat",
           summary: "Fought the Stagnation Entity",
           involvedNpcs: ["Stagnation Entity"],
+          narrative: "The clockwork rot lunged.",
         },
         {
           turnNumber: 40,
           eventType: "discovery",
-          summary: "Found the Gilded Eye",
+          summary: "Travelled to Fors's Refuge",
           involvedNpcs: [],
+          narrative: "Fors waited in the back room with the Gilded Eye.",
         },
       ],
       annotations: [],
@@ -925,9 +927,48 @@ describe("codexRebuildDigest", () => {
       eventType: "combat",
       summary: "Fought the Stagnation Entity",
       npcs: ["Stagnation Entity"],
+      narrative: "The clockwork rot lunged.",
     });
-    // An entry with no NPCs omits the npcs field.
+    // An entry with no NPCs still carries the recent-window narrative — that's
+    // where characters behind possessive place-names (Fors) surface.
     expect(digest.journal[1]).not.toHaveProperty("npcs");
+    expect(digest.journal[1].narrative).toContain("Fors");
+  });
+
+  it("clips narratives and attaches them only to the most-recent window", () => {
+    const entries = Array.from({ length: 100 }, (_, i) => ({
+      turnNumber: i,
+      eventType: "discovery",
+      summary: `Travelled, beat ${i}`,
+      involvedNpcs: [],
+      narrative: "N".repeat(500),
+    }));
+    const session = {
+      turnCount: 100,
+      gameState: { characterName: "X" },
+      memory: { sessionFacts: [] },
+    } as unknown as GameSession;
+    const digest = codexRebuildDigest(session, { entries, annotations: [] } as never);
+    // The oldest of the 100-entry tail is outside the 80-entry narrative window.
+    expect(digest.journal[0]).not.toHaveProperty("narrative");
+    const last = digest.journal[digest.journal.length - 1];
+    expect(last.narrative).toBeDefined();
+    expect(last.narrative!.length).toBeLessThanOrEqual(320);
+  });
+
+  it("handles a journal entry missing its narrative field", () => {
+    const session = {
+      turnCount: 3,
+      gameState: { characterName: "X" },
+      memory: { sessionFacts: [] },
+    } as unknown as GameSession;
+    const digest = codexRebuildDigest(session, {
+      entries: [
+        { turnNumber: 1, eventType: "combat", summary: "A clash", involvedNpcs: [] },
+      ],
+      annotations: [],
+    } as never);
+    expect(digest.journal[0]).not.toHaveProperty("narrative");
   });
 
   it("omits characterName/runningSummary when absent", () => {

@@ -723,6 +723,12 @@ export function seedCodexFromSession(
 /** Most journal beats + facts to feed the rebuild (bounds the prompt size). */
 const MAX_REBUILD_JOURNAL = 120;
 const MAX_REBUILD_FACTS = 60;
+// The journal SUMMARY is often boilerplate (auto travel logs); the characters
+// behind possessive place-names ("Dorian's Residence") only surface in the
+// scene NARRATIVE. Include a clipped narrative for the most-recent window of
+// beats so the rebuild can find them, bounded so a very long save stays cheap.
+const MAX_REBUILD_NARRATIVES = 80;
+const REBUILD_NARRATIVE_CLIP = 320;
 
 /**
  * Assemble the chronicle digest the AI rebuild reads (history-context Codex) —
@@ -735,11 +741,22 @@ export function codexRebuildDigest(
   session: GameSession,
   journal: Journal,
 ): CodexRebuildInput {
-  const entries = journal.entries.slice(-MAX_REBUILD_JOURNAL).map((e) => ({
+  const recent = journal.entries.slice(-MAX_REBUILD_JOURNAL);
+  // Attach the clipped narrative only to the most-recent window (the active arc
+  // where recurring characters appear); older beats stay summary-only.
+  const narrativeFrom = Math.max(0, recent.length - MAX_REBUILD_NARRATIVES);
+  const entries = recent.map((e, i) => ({
     turnNumber: e.turnNumber,
     eventType: e.eventType,
     summary: e.summary,
     ...(e.involvedNpcs.length > 0 ? { npcs: e.involvedNpcs } : {}),
+    ...(i >= narrativeFrom && typeof e.narrative === "string" && e.narrative.trim() !== ""
+      ? {
+          // Collapse to one line so the clip stays a tidy bullet under the
+          // summary in the rebuild digest (the narrative is multi-line prose).
+          narrative: clampLen(e.narrative.replace(/\s+/g, " "), REBUILD_NARRATIVE_CLIP),
+        }
+      : {}),
   }));
   const facts = session.memory.sessionFacts
     .slice(-MAX_REBUILD_FACTS)

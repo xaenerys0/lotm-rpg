@@ -19,6 +19,14 @@ export interface CodexRebuildJournalEntry {
   eventType: string;
   summary: string;
   npcs?: string[];
+  /**
+   * A clipped slice of the beat's NARRATIVE prose, included for the recent
+   * window (`codexRebuildDigest`). The summaries alone are often boilerplate —
+   * auto-generated travel logs like "Travelled to Dorian's Residence" — so the
+   * characters (Dorian, Fors, …) only surface in the scene text. This is where
+   * the archivist finds the people behind possessive place-names.
+   */
+  narrative?: string;
 }
 
 export interface CodexRebuildInput {
@@ -43,6 +51,7 @@ Rules:
 - "status": a concise present-tense note of its current state (e.g. "alive; tense ally aboard the Golden Dream"). Under ~20 words.
 - "importance": "pivotal" for the figures, places, objects, and threads central to the chronicle (recurring allies/enemies, the protagonist's base, a driving vow); "standard" for everything else.
 - "resolved": true ONLY for a thread whose obligation is already settled. Omit otherwise.
+- A place named after a person or role — "Dorian's Residence", "Fors's Refuge", "the Clockmaker's Shop" — signals that the named person/role is a CHARACTER. Record BOTH the location AND that person (as a person entity) when the records show the character interacting with them, even if their name only ever appears inside the place name or in passing scene text.
 - Record ONLY what the provided records establish — never invent canon. Prefer fewer, well-chosen entities. Return at most ${MAX_REBUILD_ENTITIES} entities, most important first.`;
 
 function clip(s: string, max: number): string {
@@ -59,7 +68,12 @@ export function buildCodexRebuildPrompt(input: CodexRebuildInput): ChatMessage[]
   if (input.journal.length > 0) {
     const lines = input.journal.map((j) => {
       const who = j.npcs && j.npcs.length > 0 ? ` [present: ${j.npcs.join(", ")}]` : "";
-      return `- Turn ${j.turnNumber} (${j.eventType}): ${clip(j.summary, 200)}${who}`;
+      const head = `- Turn ${j.turnNumber} (${j.eventType}): ${clip(j.summary, 200)}${who}`;
+      // The scene prose (where characters behind place-names actually appear)
+      // rides under the boilerplate summary on its own indented line.
+      return j.narrative && j.narrative.trim() !== ""
+        ? `${head}\n    ${clip(j.narrative, 400)}`
+        : head;
     });
     parts.push(`# Journal (key events)\n${lines.join("\n")}`);
   }

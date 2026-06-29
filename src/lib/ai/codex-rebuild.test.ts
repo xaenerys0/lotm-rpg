@@ -16,7 +16,12 @@ const baseInput = (over: Partial<CodexRebuildInput> = {}): CodexRebuildInput => 
       summary: "Fought the Stagnation Entity",
       npcs: ["Stagnation Entity"],
     },
-    { turnNumber: 40, eventType: "discovery", summary: "Found the Gilded Eye" },
+    {
+      turnNumber: 40,
+      eventType: "discovery",
+      summary: "Travelled to Dorian's Residence",
+      narrative: "Dorian met them at the door, wary but civil.",
+    },
   ],
   facts: ["Met Danitz Dubois at the docks"],
   currentTurn: 235,
@@ -34,8 +39,12 @@ describe("buildCodexRebuildPrompt", () => {
     expect(user).toContain("Captain Edwina Edwards");
     expect(user).toContain("Turn 12 (combat)");
     expect(user).toContain("present: Stagnation Entity");
-    expect(user).toContain("Found the Gilded Eye");
+    expect(user).toContain("Travelled to Dorian's Residence");
     expect(user).toContain("Danitz Dubois");
+    // The scene narrative rides under the (boilerplate) travel summary.
+    expect(user).toContain("Dorian met them at the door");
+    // The system prompt nudges extracting the person behind a possessive place.
+    expect(messages[0].content).toContain("Dorian's Residence");
   });
 
   it("omits empty sections gracefully", () => {
