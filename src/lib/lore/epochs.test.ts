@@ -17,6 +17,14 @@ describe("EPOCHS", () => {
       expect(epoch.summary.length).toBeGreaterThan(40);
       expect(epoch.startingLocation.length).toBeGreaterThan(0);
       expect(epoch.dangerModifier).toBeGreaterThanOrEqual(1);
+      // concealment/register are authored for every entry (empty only for the Fifth).
+      expect(typeof epoch.concealment).toBe("string");
+      expect(typeof epoch.register).toBe("string");
+    }
+    // The four pre-Iron-Age eras carry the richer per-turn frame (issue #201).
+    for (const epoch of EPOCHS.filter((e) => e.id !== 5)) {
+      expect(epoch.concealment.length).toBeGreaterThan(0);
+      expect(epoch.register.length).toBeGreaterThan(0);
     }
   });
 
@@ -56,6 +64,23 @@ describe("narration & openings", () => {
       expect(epochNarrationDirective(id)).toContain("tone:");
     }
     expect(epochNarrationDirective(2)).toContain("inhuman");
+  });
+
+  it("composes tone + concealment + register for non-Fifth eras (issue #201)", () => {
+    for (const id of [1, 2, 3, 4] as const) {
+      const directive = epochNarrationDirective(id);
+      expect(directive).toContain("Concealment:");
+      expect(directive).toContain("Daily life:");
+      // Each is its own line under the tone sentence.
+      expect(directive!.split("\n").length).toBeGreaterThanOrEqual(3);
+    }
+    // Era-specific concealment frames replace the Fifth's hidden-world assumption.
+    expect(epochNarrationDirective(2)).toContain("SOVEREIGN");
+  });
+
+  it("the Fifth carries no concealment/register (baseline adds nothing)", () => {
+    expect(getEpoch(5).concealment).toBe("");
+    expect(getEpoch(5).register).toBe("");
   });
 });
 

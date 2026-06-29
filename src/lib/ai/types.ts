@@ -32,7 +32,7 @@ export const PROVIDER_MODELS: Record<ProviderId, ModelOption[]> = {
   anthropic: [
     { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5", tier: "routine" },
     { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6", tier: "routine" },
-    { id: "claude-opus-4-7", name: "Claude Opus 4.7", tier: "premium" },
+    { id: "claude-opus-4-8", name: "Claude Opus 4.8", tier: "premium" },
   ],
   openai: [
     { id: "gpt-4o-mini", name: "GPT-4o Mini", tier: "routine" },
@@ -576,6 +576,15 @@ export interface ProviderRequest {
   temperature: number;
   maxTokens: number;
   responseFormat?: { type: "json_object" };
+  /**
+   * Optional JSON Schema for server-side structured output (issue #201, item 3).
+   * Only the Anthropic adapter consumes it (via `output_config.format`) and only
+   * when the model/base URL supports it; other adapters ignore it and keep their
+   * native JSON mode (`response_format` / `format: "json"`). When set, it enforces
+   * the response shape server-side, so the system-directive + corrective-retry
+   * path is a fallback rather than the primary mechanism.
+   */
+  jsonSchema?: Record<string, unknown>;
 }
 
 export interface ProviderResponse {

@@ -13,10 +13,15 @@ import type {
   RetrievedLoreChunk,
 } from "./types";
 import { AIError } from "./errors";
-import { createAdapter, type LLMProviderAdapter } from "./providers";
+import {
+  createAdapter,
+  anthropicSupportsStructuredOutput,
+  type LLMProviderAdapter,
+} from "./providers";
 import { assemblePrompt, promptToMessages } from "./prompts";
 import type { MemoryState, LoreContext, CodexUpdateInput } from "./types";
 import { parseAIResponse, sanitizeAIResponse, validateAIResponse } from "./validation";
+import { AI_RESPONSE_JSON_SCHEMA } from "./response-schema";
 import {
   buildCodexRebuildPrompt,
   parseCodexRebuild,
@@ -174,12 +179,22 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
 
   const messages = promptToMessages(assembly);
 
+  // Server-side structured output (issue #201, item 3): only the Anthropic path,
+  // and only for models/base URLs known to support `output_config.format`. Other
+  // providers and unsupported Anthropic configs keep their native JSON mode.
+  const jsonSchema =
+    options.config.providerId === "anthropic" &&
+    anthropicSupportsStructuredOutput(model, options.config.baseUrl)
+      ? (AI_RESPONSE_JSON_SCHEMA as unknown as Record<string, unknown>)
+      : undefined;
+
   let aiResponse = await requestAndParse(
     adapter,
     messages,
     model,
     temperature,
     options.config.apiKey,
+    jsonSchema,
   );
 
   const validation = validateAIResponse(aiResponse);
@@ -291,21 +306,38 @@ async function requestAndParse(
   model: string,
   temperature: number,
   apiKey: string,
+  jsonSchema?: Record<string, unknown>,
 ): Promise<AIResponse> {
   let messages = baseMessages;
+  // Use server-side structured output when a schema was supplied (Anthropic only,
+  // gated by the caller). If the provider rejects it with a 400 — an unexpected
+  // model/proxy that doesn't support `output_config` — drop the schema and fall
+  // back to the system-directive path once, so a BYOK edge case never hard-fails.
+  let useSchema = jsonSchema !== undefined;
 
   for (let attempt = 0; attempt < MAX_PARSE_ATTEMPTS; attempt++) {
-    const providerResponse = await executeWithRetry(
-      adapter,
-      {
-        messages,
-        model,
-        temperature: attempt === 0 ? temperature : temperature * 0.5,
-        maxTokens: MAX_OUTPUT_TOKENS,
-        responseFormat: { type: "json_object" },
-      },
-      apiKey,
-    );
+    let providerResponse: ProviderResponse;
+    try {
+      providerResponse = await executeWithRetry(
+        adapter,
+        {
+          messages,
+          model,
+          temperature: attempt === 0 ? temperature : temperature * 0.5,
+          maxTokens: MAX_OUTPUT_TOKENS,
+          responseFormat: { type: "json_object" },
+          ...(useSchema ? { jsonSchema } : {}),
+        },
+        apiKey,
+      );
+    } catch (err) {
+      if (useSchema && err instanceof AIError && err.status === 400) {
+        useSchema = false;
+        attempt--; // the format fallback does not consume a parse attempt
+        continue;
+      }
+      throw err;
+    }
 
     try {
       return parseAIResponse(providerResponse.content);

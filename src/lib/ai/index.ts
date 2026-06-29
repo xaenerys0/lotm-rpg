@@ -82,6 +82,7 @@ export {
   estimateMemoryTokens,
   trimMemoryForBudget,
   formatMemoryForPrompt,
+  formatRunningSummary,
   buildTurnRecord,
   capRunningSummary,
   capWithEllipsis,

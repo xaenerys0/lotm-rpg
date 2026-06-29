@@ -30,7 +30,9 @@ import {
   inferModelTier,
   ollamaNumCtx,
   OLLAMA_MIN_NUM_CTX,
+  anthropicSupportsStructuredOutput,
 } from "./providers";
+import { AI_RESPONSE_JSON_SCHEMA } from "./response-schema";
 import {
   buildSystemPrompt,
   buildLoreContext,
@@ -63,6 +65,7 @@ import {
   estimateMemoryTokens,
   trimMemoryForBudget,
   formatMemoryForPrompt,
+  formatRunningSummary,
   buildTurnRecord,
   capRunningSummary,
   RUNNING_SUMMARY_CHAR_CAP,
@@ -1602,6 +1605,132 @@ describe("providers", () => {
       expect(body.messages[body.messages.length - 1].role).toBe("user");
       expect(body.system).toBeUndefined();
     });
+
+    it("uses output_config.format and drops the directive when a jsonSchema is supplied", async () => {
+      const fetchSpy = mockOnce({
+        content: [{ type: "text", text: '{"narrative":"hi"}' }],
+        model: "claude-opus-4-8",
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+      await new AnthropicAdapter().makeRequest(
+        {
+          messages: [
+            { role: "system", content: "You narrate." },
+            { role: "user", content: "go" },
+          ],
+          model: "claude-opus-4-8",
+          temperature: 0.7,
+          maxTokens: 100,
+          responseFormat: { type: "json_object" },
+          jsonSchema: AI_RESPONSE_JSON_SCHEMA as unknown as Record<string, unknown>,
+        },
+        "sk-ant",
+      );
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      // Server-side schema enforcement is sent...
+      expect(body.output_config.format.type).toBe("json_schema");
+      expect(body.output_config.format.schema.required).toContain("narrative");
+      // ...and the prose JSON directive is NOT appended (the schema enforces shape).
+      expect(body.system[0].text).toBe("You narrate.");
+      expect(body.system[0].text).not.toContain("single valid JSON object");
+    });
+
+    it("ignores a jsonSchema when responseFormat is absent (no output_config)", async () => {
+      const fetchSpy = mockOnce({
+        content: [{ type: "text", text: "freeform" }],
+        model: "claude-opus-4-8",
+        usage: { input_tokens: 1, output_tokens: 1 },
+      });
+      await new AnthropicAdapter().makeRequest(
+        {
+          messages: [{ role: "user", content: "go" }],
+          model: "claude-opus-4-8",
+          temperature: 0.7,
+          maxTokens: 100,
+          jsonSchema: AI_RESPONSE_JSON_SCHEMA as unknown as Record<string, unknown>,
+        },
+        "sk-ant",
+      );
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body).not.toHaveProperty("output_config");
+    });
+  });
+
+  // ── anthropicSupportsStructuredOutput (capability gate) ──
+  describe("anthropicSupportsStructuredOutput", () => {
+    it("is true for known models on the default base URL", () => {
+      for (const model of [
+        "claude-opus-4-8",
+        "claude-opus-4-7",
+        "claude-sonnet-4-6",
+        "claude-haiku-4-5-20251001",
+        "claude-fable-5",
+      ]) {
+        expect(anthropicSupportsStructuredOutput(model)).toBe(true);
+      }
+    });
+
+    it("is false for an unknown / older model id", () => {
+      expect(anthropicSupportsStructuredOutput("claude-3-opus-20240229")).toBe(false);
+      expect(anthropicSupportsStructuredOutput("some-random-model")).toBe(false);
+    });
+
+    it("does not let a two-digit minor version match a single-digit branch", () => {
+      // `claude-opus-4-10` must NOT match the `4-1` branch (regex end-anchoring).
+      expect(anthropicSupportsStructuredOutput("claude-opus-4-10")).toBe(false);
+      expect(anthropicSupportsStructuredOutput("claude-opus-4-15")).toBe(false);
+      // A dated snapshot of a supported minor still passes.
+      expect(anthropicSupportsStructuredOutput("claude-opus-4-5-20251101")).toBe(true);
+    });
+
+    it("is false for a custom (non-default) base URL", () => {
+      expect(
+        anthropicSupportsStructuredOutput("claude-opus-4-8", "https://proxy.example/v1"),
+      ).toBe(false);
+    });
+  });
+
+  // ── AI_RESPONSE_JSON_SCHEMA (structured output) ──
+  describe("AI_RESPONSE_JSON_SCHEMA", () => {
+    it("is a closed object requiring only narrative", () => {
+      expect(AI_RESPONSE_JSON_SCHEMA.type).toBe("object");
+      expect(AI_RESPONSE_JSON_SCHEMA.additionalProperties).toBe(false);
+      expect(AI_RESPONSE_JSON_SCHEMA.required).toEqual(["narrative"]);
+    });
+
+    it("declares every field the parser reads", () => {
+      const props = Object.keys(AI_RESPONSE_JSON_SCHEMA.properties);
+      for (const field of [
+        "narrative",
+        "choices",
+        "worldStateChanges",
+        "actingEvaluation",
+        "sanityImpact",
+        "sanityEventTags",
+        "actingMethodTaught",
+        "itemsDiscovered",
+        "fundsDiscovered",
+        "journalEntry",
+        "proposedSelfChange",
+        "pursuers",
+        "codexUpdates",
+        "runningSummary",
+      ]) {
+        expect(props).toContain(field);
+      }
+    });
+
+    it("accepts a representative response that parseAIResponse also parses", () => {
+      const sample = {
+        narrative: "The gaslight flickers.",
+        choices: [{ id: "1", text: "Wait", type: "action" }],
+        sanityEventTags: ["routine"],
+        codexUpdates: [{ kind: "person", name: "Sien", status: "ally" }],
+      };
+      const parsed = parseAIResponse(JSON.stringify(sample));
+      expect(parsed.narrative).toBe("The gaslight flickers.");
+      expect(parsed.choices?.[0]?.type).toBe("action");
+    });
   });
 
   // ── inferModelTier ──
@@ -1803,6 +1932,30 @@ describe("prompts", () => {
       expect(layer.content).toContain("Do NOT force a ritual");
     });
 
+    it("states the hard boundaries up front, before the full ## Rules (issue #201)", () => {
+      const layer = buildSystemPrompt([], []);
+      expect(layer.content).toContain("## Hard Boundaries (never violate)");
+      // The boundaries block leads the rules region so the model attends to it.
+      expect(layer.content.indexOf("## Hard Boundaries")).toBeLessThan(
+        layer.content.indexOf("## Rules"),
+      );
+      // The three safety-critical invariants are named.
+      expect(layer.content).toContain(
+        "Sequence advancement is OWNED BY THE RULES ENGINE",
+      );
+      expect(layer.content).toContain("involuntaryCause");
+      expect(layer.content).toContain("Never fabricate Beyonder-tier canon");
+    });
+
+    it("consolidates anti-fabrication in Canon Fidelity and references it elsewhere", () => {
+      const layer = buildSystemPrompt([], []);
+      expect(layer.content).toContain("## Canon Fidelity");
+      // The Running Summary and Codex rules point back to the one Canon Fidelity rule
+      // rather than restating the full anti-fabrication wording.
+      expect(layer.content).toContain("same anti-fabrication rule as ## Canon Fidelity");
+      expect(layer.content).toContain("the same ## Canon Fidelity rule");
+    });
+
     it("documents the hybrid sanity channel and the new fields (issue #95)", () => {
       const layer = buildSystemPrompt([], []);
       expect(layer.content).toContain("sanityEventTags");
@@ -1824,8 +1977,8 @@ describe("prompts", () => {
       for (const label of ["Who:", "Situation:", "Goals:", "Ties:", "Threads:"]) {
         expect(layer.content).toContain(label);
       }
-      // It defers to the authoritative Ground Truth anchor on conflict.
-      expect(layer.content).toContain("## Ground Truth");
+      // It defers to the authoritative Ground Truth anchor (under ## Canon) on conflict.
+      expect(layer.content).toContain("### Ground Truth");
     });
   });
 
@@ -2035,11 +2188,15 @@ describe("prompts", () => {
         mem,
         makeGameState({ location: "Backlund — Empress Borough", npcsPresent: ["Welch"] }),
       );
-      expect(layer.content).toContain("## Ground Truth (authoritative)");
+      // Folded under the unified ## Canon section (issue #201), precedence stated once.
+      expect(layer.content).toContain(
+        "## Canon (authoritative — Ground Truth > Established Facts > synopsis)",
+      );
+      expect(layer.content).toContain("### Ground Truth (engine facts)");
       expect(layer.content).toContain("Current location: Backlund — Empress Borough");
       expect(layer.content).toContain("Present this scene: Welch");
       // Anchor precedes the turn history it governs.
-      expect(layer.content.indexOf("Ground Truth")).toBeLessThan(
+      expect(layer.content.indexOf("### Ground Truth")).toBeLessThan(
         layer.content.indexOf("Turn 1"),
       );
     });
@@ -2055,7 +2212,7 @@ describe("prompts", () => {
       let mem = makeMemoryState();
       mem = addTurn(mem, makeTurnRecord(1));
       const layer = buildHistoryPrompt(mem);
-      expect(layer.content).not.toContain("Ground Truth");
+      expect(layer.content).not.toContain("### Ground Truth");
     });
 
     it("pins an Established Facts block from the Codex entities", () => {
@@ -2078,7 +2235,9 @@ describe("prompts", () => {
           resolved: false,
         },
       ]);
-      expect(layer.content).toContain("## Established Facts (canon — do not contradict)");
+      expect(layer.content).toContain(
+        "### Established Facts (canon — do not contradict)",
+      );
       expect(layer.content).toContain(
         "[Person] Sien — reluctant ally (last seen turn 142)",
       );
@@ -2086,7 +2245,7 @@ describe("prompts", () => {
         "[Thread] Owes Dunn a favour — unpaid (last seen turn 60)",
       );
       // It rides next to the ground-truth anchor, above the turn history.
-      expect(layer.content.indexOf("Established Facts")).toBeLessThan(
+      expect(layer.content.indexOf("### Established Facts")).toBeLessThan(
         layer.content.indexOf("Turn 1"),
       );
     });
@@ -2107,7 +2266,7 @@ describe("prompts", () => {
       expect(resolved.content).toContain("[Thread] Debt repaid — settled (resolved)");
 
       const none = buildHistoryPrompt(mem, makeGameState(), []);
-      expect(none.content).not.toContain("Established Facts");
+      expect(none.content).not.toContain("### Established Facts");
     });
 
     it("renders Established Facts even without a ground-truth anchor", () => {
@@ -2122,8 +2281,34 @@ describe("prompts", () => {
           lastSeenTurn: 3,
         },
       ]);
-      expect(layer.content).not.toContain("Ground Truth");
+      expect(layer.content).not.toContain("### Ground Truth");
       expect(layer.content).toContain("[Group] The Tarot Club");
+    });
+
+    it("folds the synopsis into ## Canon as the lowest-precedence sub-section", () => {
+      let mem = makeMemoryState();
+      mem = addTurn(mem, makeTurnRecord(1));
+      const withSummary = { ...mem, runningSummary: "Who: Klein, a Seer." };
+      const layer = buildHistoryPrompt(withSummary, makeGameState(), [
+        {
+          kind: "person",
+          name: "Sien",
+          status: "ally",
+          importance: "standard",
+          lastSeenTurn: 2,
+        },
+      ]);
+      expect(layer.content).toContain(
+        "## Canon (authoritative — Ground Truth > Established Facts > synopsis)",
+      );
+      expect(layer.content).toContain("### Story So Far");
+      expect(layer.content).toContain("Who: Klein, a Seer.");
+      // Precedence order in the rendered block: Ground Truth → Established Facts → synopsis.
+      const gt = layer.content.indexOf("### Ground Truth");
+      const ef = layer.content.indexOf("### Established Facts");
+      const ss = layer.content.indexOf("### Story So Far");
+      expect(gt).toBeLessThan(ef);
+      expect(ef).toBeLessThan(ss);
     });
   });
 
@@ -2576,6 +2761,13 @@ describe("sanity tiers", () => {
       expect(sanityNarrationDirective("medium")).toContain("Strained");
       expect(sanityNarrationDirective("low")).toContain("Unreliable");
       expect(sanityNarrationDirective("critical")).toContain("Shattering");
+    });
+
+    it("low/critical tiers state they override the grounded-choice rule (issue #201)", () => {
+      expect(sanityNarrationDirective("low")).toContain("OVERRIDES");
+      expect(sanityNarrationDirective("critical")).toContain("OVERRIDES");
+      // The medium tier keeps choices grounded, so it must NOT claim an override.
+      expect(sanityNarrationDirective("medium")).not.toContain("OVERRIDES");
     });
   });
 });
@@ -3235,6 +3427,36 @@ describe("memory", () => {
       const formatted = formatMemoryForPrompt(state);
       expect(formatted).toContain("## Story So Far");
       expect(formatted).toContain("Origin: a clerk.");
+    });
+
+    it("excludes the synopsis when includeRunningSummary is false", () => {
+      // The prompt assembler renders the synopsis inside ## Canon instead (issue #201).
+      let state = createMemoryState();
+      const turn = makeTurnRecord(1);
+      turn.aiResponse.runningSummary = "Klein joined the Nighthawks.";
+      state = addTurn(state, turn);
+      const excluded = formatMemoryForPrompt(state, { includeRunningSummary: false });
+      expect(excluded).not.toContain("Story So Far");
+      expect(excluded).not.toContain("Klein joined the Nighthawks.");
+      // The rest of the memory body is still present.
+      expect(excluded).toContain("Turn 1");
+    });
+  });
+
+  describe("formatRunningSummary", () => {
+    it("returns the trimmed synopsis", () => {
+      const state = {
+        ...createMemoryState(),
+        runningSummary: "  Klein joined the Nighthawks.  ",
+      };
+      expect(formatRunningSummary(state)).toBe("Klein joined the Nighthawks.");
+    });
+
+    it("returns empty for a blank or absent synopsis", () => {
+      expect(formatRunningSummary(createMemoryState())).toBe("");
+      expect(
+        formatRunningSummary({ ...createMemoryState(), runningSummary: "   " }),
+      ).toBe("");
     });
   });
 
@@ -4232,6 +4454,120 @@ describe("client", () => {
 
       expect(result.response.narrative).toBeTruthy();
       expect(fetch).toHaveBeenCalledTimes(2);
+    });
+
+    it("uses Anthropic structured output (output_config.format) for a supported model", async () => {
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              content: [{ type: "text", text: JSON.stringify(makeValidAIResponse()) }],
+              model: "claude-haiku-4-5-20251001",
+              usage: { input_tokens: 100, output_tokens: 50 },
+            }),
+          ),
+      } as Response);
+
+      const result = await generate({
+        config: makeProviderConfig({
+          providerId: "anthropic",
+          apiKey: "sk-ant",
+          routineModel: "claude-haiku-4-5-20251001",
+          premiumModel: "claude-opus-4-8",
+        }),
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: makeLoreContext(),
+        instruction: "narrative",
+        playerAction: "test",
+        abilities: [],
+        actingRequirements: [],
+      });
+
+      expect(result.response.narrative).toBeTruthy();
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body.output_config.format.type).toBe("json_schema");
+    });
+
+    it("falls back to the system-directive path when structured output 400s", async () => {
+      const validResponse = JSON.stringify(makeValidAIResponse());
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          text: () => Promise.resolve("output_config not supported here"),
+        } as Response)
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          text: () =>
+            Promise.resolve(
+              JSON.stringify({
+                content: [{ type: "text", text: validResponse }],
+                model: "claude-haiku-4-5-20251001",
+                usage: { input_tokens: 100, output_tokens: 50 },
+              }),
+            ),
+        } as Response);
+
+      const result = await generate({
+        config: makeProviderConfig({
+          providerId: "anthropic",
+          apiKey: "sk-ant",
+          routineModel: "claude-haiku-4-5-20251001",
+          premiumModel: "claude-opus-4-8",
+        }),
+        gameState: makeGameState(),
+        memory: makeMemoryState(),
+        loreContext: makeLoreContext(),
+        instruction: "narrative",
+        playerAction: "test",
+        abilities: [],
+        actingRequirements: [],
+      });
+
+      expect(result.response.narrative).toBeTruthy();
+      expect(fetch).toHaveBeenCalledTimes(2);
+      const first = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      const second = JSON.parse(fetchSpy.mock.calls[1][1]!.body as string);
+      // First attempt used structured output; the retry dropped it for the directive.
+      expect(first.output_config.format.type).toBe("json_schema");
+      expect(second).not.toHaveProperty("output_config");
+      expect(second.system[0].text).toContain("single valid JSON object");
+    });
+
+    it("does NOT fall back on a non-400 error from the structured-output path", async () => {
+      // A 401 is not a 'this model can't do output_config' signal, so it must
+      // propagate rather than silently retry without the schema.
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValue({
+        ok: false,
+        status: 401,
+        text: () => Promise.resolve("Invalid or expired API key"),
+      } as Response);
+
+      await expect(
+        generate({
+          config: makeProviderConfig({
+            providerId: "anthropic",
+            apiKey: "bad-key",
+            routineModel: "claude-haiku-4-5-20251001",
+            premiumModel: "claude-opus-4-8",
+          }),
+          gameState: makeGameState(),
+          memory: makeMemoryState(),
+          loreContext: makeLoreContext(),
+          instruction: "narrative",
+          playerAction: "test",
+          abilities: [],
+          actingRequirements: [],
+        }),
+      ).rejects.toThrow();
+      // The structured-output attempt was made and not retried as a directive call.
+      const first = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(first.output_config.format.type).toBe("json_schema");
     });
 
     it("sanitizes invalid AI response values", async () => {

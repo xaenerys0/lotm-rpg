@@ -216,14 +216,45 @@ interface AnthropicMessage {
   content: string;
 }
 
-// Anthropic has no `response_format` JSON mode. Newer Claude models (Opus 4.6+,
-// Sonnet 4.6, Fable 5) also reject the old assistant-prefill trick — prefilling
-// the assistant turn with "{" returns HTTP 400 ("does not support assistant
-// message prefill"). The portable replacement that works on every model is a
-// system-prompt directive; the layered system prompt already asks for JSON, and
-// the client's forgiving parser + corrective retry loop back it up.
+// Anthropic has no `response_format` JSON mode and rejects the old assistant-
+// prefill trick — prefilling the assistant turn with "{" returns HTTP 400 ("does
+// not support assistant message prefill") on Opus 4.6+, Sonnet 4.6, and Fable 5.
+// Two JSON paths remain (issue #201, item 3):
+//  1. Server-side structured output (`output_config.format`) — preferred. The API
+//     enforces the schema, so no directive and (almost) no corrective retries.
+//     Used only when the caller passes `request.jsonSchema` (the client gates it
+//     to supported models on the default base URL).
+//  2. A system-prompt directive — the portable fallback for custom base URLs,
+//     older/unknown models, or a 400 on the structured path. Backed by the
+//     client's forgiving parser + corrective retry loop.
 const ANTHROPIC_JSON_DIRECTIVE =
   "Respond with only a single valid JSON object. Do not wrap it in markdown code fences, and do not write any prose before or after the JSON.";
+
+export const ANTHROPIC_DEFAULT_BASE_URL = "https://api.anthropic.com/v1";
+
+// Models known to support Anthropic server-side structured outputs
+// (`output_config.format`). Restricted to the first-party API on the default base
+// URL — a custom base URL may be a proxy or older gateway that doesn't, so those
+// keep the system-directive path. The client's 400 fallback covers any miss.
+// The `(?![\d.])` after the version guards against a single-digit minor matching
+// a two-digit one (e.g. `claude-opus-4-10` must NOT match the `4-1` branch); a
+// date suffix like `claude-haiku-4-5-20251001` still passes (next char is "-").
+const STRUCTURED_OUTPUT_MODEL =
+  /^claude-(?:opus-4-(?:8|7|6|5|1)|sonnet-4-6|haiku-4-5|fable-5|mythos-5)(?![\d.])/i;
+
+/**
+ * Whether the Anthropic structured-output path (`output_config.format`) should be
+ * used for this model + base URL. Pure; the client consults it to decide whether
+ * to thread a `jsonSchema` into the request.
+ */
+export function anthropicSupportsStructuredOutput(
+  model: string,
+  baseUrl?: string,
+): boolean {
+  const base = baseUrl ?? ANTHROPIC_DEFAULT_BASE_URL;
+  if (base !== ANTHROPIC_DEFAULT_BASE_URL) return false;
+  return STRUCTURED_OUTPUT_MODEL.test(model.trim());
+}
 
 export class AnthropicAdapter implements LLMProviderAdapter {
   readonly name: ProviderId = "anthropic";
@@ -234,7 +265,7 @@ export class AnthropicAdapter implements LLMProviderAdapter {
   }
 
   getDefaultBaseUrl(): string {
-    return "https://api.anthropic.com/v1";
+    return ANTHROPIC_DEFAULT_BASE_URL;
   }
 
   formatMessages(messages: ChatMessage[]): {
@@ -277,13 +308,18 @@ export class AnthropicAdapter implements LLMProviderAdapter {
 
   async makeRequest(request: ProviderRequest, apiKey: string): Promise<ProviderResponse> {
     const { system, messages } = this.formatMessages(request.messages);
-    // Force JSON via a system directive rather than an assistant prefill, which
-    // newer Claude models reject with a 400. The conversation must end with a
-    // user turn, so we leave `messages` untouched.
     const wantsJson = request.responseFormat?.type === "json_object";
-    const systemText = wantsJson
-      ? [system, ANTHROPIC_JSON_DIRECTIVE].filter(Boolean).join("\n\n")
-      : system;
+    // Prefer server-side structured output when the client supplied a schema (it
+    // only does so for supported models on the default base URL). The schema
+    // enforces the shape, so the JSON directive is not also appended. Otherwise
+    // force JSON via the system directive — never an assistant prefill, which
+    // current Claude models reject with a 400. The conversation must end with a
+    // user turn, so `messages` is left untouched either way.
+    const useStructured = wantsJson && request.jsonSchema !== undefined;
+    const systemText =
+      wantsJson && !useStructured
+        ? [system, ANTHROPIC_JSON_DIRECTIVE].filter(Boolean).join("\n\n")
+        : system;
     const raw = await fetchWithErrorHandling(`${this.baseUrl}/messages`, {
       method: "POST",
       headers: {
@@ -302,6 +338,13 @@ export class AnthropicAdapter implements LLMProviderAdapter {
             }
           : {}),
         messages,
+        ...(useStructured
+          ? {
+              output_config: {
+                format: { type: "json_schema", schema: request.jsonSchema },
+              },
+            }
+          : {}),
         // `temperature` is deliberately omitted. Newer Claude models (Opus 4.7+,
         // Fable 5) reject any sampling parameter with HTTP 400 ("temperature is
         // deprecated for this model"), and it is optional (defaulted) on every
