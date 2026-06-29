@@ -1,9 +1,30 @@
 import { createAdapter } from "./providers";
 import { AIError } from "./errors";
-import { executeWithRetry } from "./client";
+import {
+  correctiveMessage,
+  executeWithRetry,
+  logUnparseableOutput,
+  MAX_OUTPUT_TOKENS,
+} from "./client";
 import { ensureUniqueChoiceIds } from "./validation";
 import { VERBOSITY_GUIDANCE } from "./prompts";
 import type { ProviderConfig, ChatMessage, NarrativeVerbosity } from "./types";
+
+// Output cap for prologue calls. The finale is the prologue's heaviest call — a
+// full narrative PLUS every candidate potion described evocatively, all in one
+// JSON object — and the old 800-token cap routinely stopped the model mid-JSON,
+// surfacing to the player as "Prologue AI returned invalid JSON" and blocking
+// the end of character creation. Reuses the main loop's MAX_OUTPUT_TOKENS rather
+// than re-stating the number, so the two caps can never drift (its own comment
+// records that even 1500 truncated mid-JSON).
+const PROLOGUE_MAX_TOKENS = MAX_OUTPUT_TOKENS;
+// The prologue keeps its creative temperature on the first attempt; corrective
+// retries halve it (like the main loop) so a degenerate reply isn't reproduced.
+const PROLOGUE_TEMPERATURE = 0.85;
+// Total tries to obtain parseable JSON: the initial call plus corrective retries
+// that feed the bad output back with a fix-it instruction (mirrors the main
+// loop's MAX_PARSE_ATTEMPTS in client.ts).
+const MAX_PROLOGUE_PARSE_ATTEMPTS = 3;
 
 // Player verbosity preset → an optional scene-length line woven into the
 // prologue WRITING GUIDELINES. The prologue runs on its OWN system prompt (not
@@ -391,28 +412,78 @@ function requireNarrative(obj: Record<string, unknown>): string {
   return narrative;
 }
 
-// Shared request path for both prologue generators: identical provider config,
+// Shared request path for every prologue generator: identical provider config,
 // JSON parse, and narrative requirement. Returns the raw content (for
 // rawResponse), the parsed object, and the validated narrative.
+//
+// Mirrors the main loop's `requestAndParse` (client.ts): the provider call goes
+// through `executeWithRetry` (network/5xx backoff), and a malformed/truncated
+// 2xx body — the "Prologue AI returned invalid JSON" failure that blocked the
+// end of the prologue, especially on the heavier finale call — is fed back with
+// a corrective instruction for another pass instead of hard-failing on the
+// first bad reply. The retry is scoped to the PROVIDER-OUTPUT parse (bad JSON or
+// a missing narrative); the per-generator structural contract (choice count,
+// region span, candidate coverage) is validated by the callers AFTER this
+// returns and still fails fast — that JSON is well-formed, so a generic
+// "respond with valid JSON" retry would not address it. Each unparseable
+// attempt is logged for the browser-direct BYOK path (no server log; key never
+// logged).
 async function executePrologueRequest(
   config: ProviderConfig,
-  messages: ChatMessage[],
+  baseMessages: ChatMessage[],
 ): Promise<{ content: string; obj: Record<string, unknown>; narrative: string }> {
   const adapter = createAdapter(config.providerId, config.baseUrl);
-  const providerResponse = await executeWithRetry(
-    adapter,
-    {
-      messages,
-      model: config.routineModel,
-      temperature: 0.85,
-      maxTokens: 800,
-      responseFormat: { type: "json_object" },
-    },
-    config.apiKey,
+  let messages = baseMessages;
+
+  for (let attempt = 0; attempt < MAX_PROLOGUE_PARSE_ATTEMPTS; attempt++) {
+    const providerResponse = await executeWithRetry(
+      adapter,
+      {
+        messages,
+        model: config.routineModel,
+        temperature: attempt === 0 ? PROLOGUE_TEMPERATURE : PROLOGUE_TEMPERATURE * 0.5,
+        maxTokens: PROLOGUE_MAX_TOKENS,
+        responseFormat: { type: "json_object" },
+      },
+      config.apiKey,
+    );
+
+    try {
+      const obj = parseObject(providerResponse.content);
+      const narrative = requireNarrative(obj);
+      return { content: providerResponse.content, obj, narrative };
+    } catch (parseError) {
+      if (parseError instanceof AIError && parseError.code === "MALFORMED_OUTPUT") {
+        logUnparseableOutput(
+          config.providerId,
+          config.routineModel,
+          attempt,
+          providerResponse,
+        );
+      }
+      if (
+        !(parseError instanceof AIError) ||
+        parseError.code !== "MALFORMED_OUTPUT" ||
+        attempt === MAX_PROLOGUE_PARSE_ATTEMPTS - 1
+      ) {
+        throw parseError;
+      }
+      messages = [
+        ...baseMessages,
+        { role: "assistant", content: providerResponse.content.slice(0, 4000) },
+        {
+          role: "user",
+          content: correctiveMessage(providerResponse.truncated ?? false),
+        },
+      ];
+    }
+  }
+
+  // Unreachable: the final attempt always returns or rethrows above.
+  throw new AIError(
+    "MALFORMED_OUTPUT",
+    "Failed to parse prologue response after retries",
   );
-  const obj = parseObject(providerResponse.content);
-  const narrative = requireNarrative(obj);
-  return { content: providerResponse.content, obj, narrative };
 }
 
 /**

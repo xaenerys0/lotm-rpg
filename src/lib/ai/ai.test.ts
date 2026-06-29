@@ -5018,6 +5018,24 @@ describe("generatePrologueScene", () => {
     } as Response);
   }
 
+  // Persistent variant: every provider call returns the same body. Used by the
+  // parse-failure cases, which now exercise the corrective parse-retry loop and
+  // therefore call the provider more than once before throwing.
+  function mockOpenAIFetchAlways(content: string): void {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+          }),
+        ),
+    } as Response);
+  }
+
   it("sends correct system message and initial user message for first turn (empty history)", async () => {
     const content = makePrologueApiResponse();
     const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
@@ -5141,8 +5159,11 @@ describe("generatePrologueScene", () => {
     expect(result.rawResponse).toBe(rawContent);
   });
 
-  it("throws AIError with MALFORMED_OUTPUT on invalid JSON response", async () => {
-    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+  it("throws AIError with MALFORMED_OUTPUT after exhausting parse retries on invalid JSON", async () => {
+    // Persistent (not -Once): the corrective parse-retry loop re-calls the
+    // provider, and every attempt returns the same non-JSON body, so it
+    // exhausts the retries and rethrows the parse error.
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
       ok: true,
       status: 200,
       text: () =>
@@ -5162,6 +5183,60 @@ describe("generatePrologueScene", () => {
       expect(err).toBeInstanceOf(AIError);
       expect((err as AIError).code).toBe("MALFORMED_OUTPUT");
     }
+  });
+
+  it("recovers when a malformed first reply is followed by valid JSON (parse retry)", async () => {
+    const valid = makePrologueApiResponse({ narrative: "The fog parts at last." });
+    const wrap = (content: string): Response =>
+      ({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content } }],
+              model: "gpt-4o-mini",
+              usage: { prompt_tokens: 10, completion_tokens: 5, total_tokens: 15 },
+            }),
+          ),
+      }) as Response;
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(wrap("not json — truncated{"))
+      .mockResolvedValueOnce(wrap(valid));
+
+    const result = await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+
+    // Recovered on the second attempt, so two provider calls were made.
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(result.narrative).toBe("The fog parts at last.");
+    // The retry fed the bad reply back with a corrective instruction.
+    const retryBody = JSON.parse(fetchSpy.mock.calls[1]![1]!.body as string);
+    const retryMessages = retryBody.messages as ChatMessage[];
+    expect(retryMessages[retryMessages.length - 1]!.role).toBe("user");
+    expect(retryMessages[retryMessages.length - 1]!.content).toContain("valid JSON");
+  });
+
+  it("requests the raised output-token cap so the finale does not truncate mid-JSON", async () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content: makePrologueApiResponse() } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+          }),
+        ),
+    } as Response);
+
+    await generatePrologueScene(makeProviderConfig(), "Klein", "", []);
+
+    const body = JSON.parse(fetchSpy.mock.calls[0]![1]!.body as string);
+    // Matches the main loop's MAX_OUTPUT_TOKENS (3072); the old 800 truncated.
+    expect(body.max_tokens).toBe(3072);
   });
 
   it("defaults readyToConclude to false when missing from response", async () => {
@@ -5278,7 +5353,9 @@ describe("generatePrologueScene", () => {
   it("throws MALFORMED_OUTPUT when narrative is missing", async () => {
     const parsed = JSON.parse(makePrologueApiResponse()) as Record<string, unknown>;
     delete parsed["narrative"];
-    mockOpenAIFetch(JSON.stringify(parsed));
+    // A missing narrative is a provider-output failure, so it retries; every
+    // attempt returns the same body, exhausting the loop before it throws.
+    mockOpenAIFetchAlways(JSON.stringify(parsed));
 
     await expect(
       generatePrologueScene(makeProviderConfig(), "Klein", "", []),
@@ -5497,7 +5574,9 @@ describe("generatePrologueScene", () => {
   });
 
   it("throws AIError with MALFORMED_OUTPUT when the response is a JSON array", async () => {
-    mockOpenAIFetch(JSON.stringify([1, 2, 3]));
+    // "not an object" is a provider-output failure, so it retries; persist the
+    // body across attempts so the loop exhausts and rethrows.
+    mockOpenAIFetchAlways(JSON.stringify([1, 2, 3]));
 
     await expect(
       generatePrologueScene(makeProviderConfig(), "Klein", "", []),
@@ -5699,6 +5778,23 @@ describe("generatePrologueFinale", () => {
     } as Response);
   }
 
+  // Persistent variant for the parse-failure cases, which now exercise the
+  // corrective parse-retry loop and call the provider more than once.
+  function mockOpenAIFetchAlways(content: string): void {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue({
+      ok: true,
+      status: 200,
+      text: () =>
+        Promise.resolve(
+          JSON.stringify({
+            choices: [{ message: { content } }],
+            model: "gpt-4o-mini",
+            usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+          }),
+        ),
+    } as Response);
+  }
+
   function makeHistory(): PrologueTurn[] {
     return [
       {
@@ -5785,7 +5881,8 @@ describe("generatePrologueFinale", () => {
   });
 
   it("throws when the finale narrative is missing", async () => {
-    mockOpenAIFetch(
+    // A missing narrative retries; persist the body so the loop exhausts.
+    mockOpenAIFetchAlways(
       JSON.stringify({ choices: [{ id: "p1", text: "x", affinities: { 1: 1 } }] }),
     );
 
@@ -5809,6 +5906,57 @@ describe("generatePrologueFinale", () => {
     await expect(
       generatePrologueFinale(makeProviderConfig(), "Klein", "", makeHistory(), [1]),
     ).rejects.toMatchObject({ code: "MALFORMED_OUTPUT" });
+  });
+
+  it("requests the raised output-token cap (the finale is the heaviest call)", async () => {
+    mockOpenAIFetch(makeFinaleApiResponse([1, 2, 3]));
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+    await generatePrologueFinale(
+      makeProviderConfig(),
+      "Klein",
+      "",
+      makeHistory(),
+      [1, 2, 3],
+    );
+
+    const body = JSON.parse(fetchSpy.mock.calls[0]![1]!.body as string);
+    // The finale narrates a full scene PLUS every candidate potion in one JSON
+    // object; the old 800-token cap truncated it. Now matches MAX_OUTPUT_TOKENS.
+    expect(body.max_tokens).toBe(3072);
+  });
+
+  it("recovers when a malformed first reply is followed by valid JSON (parse retry)", async () => {
+    const valid = makeFinaleApiResponse([1, 2]);
+    const wrap = (content: string): Response =>
+      ({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content } }],
+              model: "gpt-4o-mini",
+              usage: { prompt_tokens: 100, completion_tokens: 50, total_tokens: 150 },
+            }),
+          ),
+      }) as Response;
+
+    const fetchSpy = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValueOnce(wrap('{"narrative":"the vials shimmer and then'))
+      .mockResolvedValueOnce(wrap(valid));
+
+    const result = await generatePrologueFinale(
+      makeProviderConfig(),
+      "Klein",
+      "",
+      makeHistory(),
+      [1, 2],
+    );
+
+    expect(fetchSpy).toHaveBeenCalledTimes(2);
+    expect(result.choices).toHaveLength(2);
   });
 });
 
