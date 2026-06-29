@@ -52,7 +52,8 @@ Rules:
 - "importance": "pivotal" for the figures, places, objects, and threads central to the chronicle (recurring allies/enemies, the protagonist's base, a driving vow); "standard" for everything else.
 - "resolved": true ONLY for a thread whose obligation is already settled. Omit otherwise.
 - A place named after a person or role — "Dorian's Residence", "Fors's Refuge", "the Clockmaker's Shop" — signals that the named person/role is a CHARACTER. Record BOTH the location AND that person (as a person entity) when the records show the character interacting with them, even if their name only ever appears inside the place name or in passing scene text.
-- Record ONLY what the provided records establish — never invent canon. Prefer fewer, well-chosen entities. Return at most ${MAX_REBUILD_ENTITIES} entities, most important first.`;
+- Be COMPLETE and consistent. Include EVERY named entity the records establish: every person the character speaks to, travels with, escorts, protects, or fights (a rescued or secondary companion counts), every place they spend real time, every faction, every significant object, and every open thread. Do NOT drop a named character for seeming minor — rank it "standard" instead. Use "importance" only to RANK entities, never to omit them.
+- Record ONLY what the provided records establish — never invent canon. Return at most ${MAX_REBUILD_ENTITIES} entities; if you must cut to fit, cut unnamed or incidental detail, never a named recurring person, place, or group.`;
 
 function clip(s: string, max: number): string {
   return s.length <= max ? s : s.slice(0, max);

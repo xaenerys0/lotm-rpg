@@ -220,7 +220,10 @@ export async function generateCodexRebuild(
     {
       messages,
       model,
-      temperature: 0.2,
+      // Deterministic extraction: temperature 0 so a re-run over the same
+      // history yields a stable entity set (providers that reject an explicit
+      // temperature — newer Claude — ignore it; the adapter omits it for them).
+      temperature: 0,
       maxTokens: REBUILD_MAX_TOKENS,
       responseFormat: { type: "json_object" },
     },
