@@ -98,6 +98,10 @@ test("the character sheet's delete control runs the two-step confirm", async ({
 
   await page.goto("/character");
 
+  // The sheet is tabbed (history-context sheet UI): the delete danger zone lives
+  // on the "Holdings" tab.
+  await page.getByRole("tab", { name: "Holdings" }).click();
+
   // Step 1: the delete control is present and reachable (not clipped).
   const deleteButton = page.getByRole("button", { name: "Delete Klein E2E" });
   await expect(deleteButton).toBeVisible();
@@ -137,6 +141,9 @@ test("a Beyonder climbing into the Saint tier can consecrate an anchor", async (
 
   await page.goto("/character");
 
+  // Anchors live on the "Powers" tab (history-context sheet UI).
+  await page.getByRole("tab", { name: "Powers" }).click();
+
   const anchors = page.getByRole("region", { name: "Anchors" });
   await expect(anchors).toBeVisible();
   // Before consecrating anything, support falls short of the requirement.
@@ -151,4 +158,86 @@ test("a Beyonder climbing into the Saint tier can consecrate an anchor", async (
   // The anchor is recorded and its support now meets the climb requirement.
   await expect(anchors.getByText("Mother's pocket watch")).toBeVisible();
   await expect(anchors.getByText(/enough to hold the shape of /)).toBeVisible();
+});
+
+test("the character sheet tabs switch sections and the Codex tab browses entities", async ({
+  page,
+}) => {
+  // Seed a save with a populated Codex (history-context Codex) so the new tab
+  // renders its entity cards and filters. The Codex registry serializes inside
+  // the session blob, so it round-trips through the same seed path.
+  const session = {
+    ...createSession(createDefaultGameState(1, "e2e-cx", "Klein Codex"), "e2e-codex-1"),
+    codexState: {
+      entities: [
+        {
+          id: "cx-1",
+          kind: "person" as const,
+          name: "Audrey Hall",
+          status: "a steadfast ally in Backlund",
+          importance: "pivotal" as const,
+          firstSeenTurn: 3,
+          lastSeenTurn: 42,
+        },
+        {
+          id: "cx-2",
+          kind: "location" as const,
+          name: "The Tarot Club",
+          status: "your secret circle's meeting ground",
+          importance: "standard" as const,
+          firstSeenTurn: 5,
+          lastSeenTurn: 40,
+        },
+      ],
+    },
+  };
+  await page.addInitScript(
+    ({ indexKey, sessionKey, indexValue, sessionValue }) => {
+      localStorage.setItem(indexKey, indexValue);
+      localStorage.setItem(sessionKey, sessionValue);
+    },
+    {
+      indexKey: SESSION_INDEX_KEY,
+      sessionKey: SESSION_KEY_PREFIX + session.id,
+      indexValue: JSON.stringify([session.id]),
+      sessionValue: serializeSession(session),
+    },
+  );
+
+  await page.goto("/character");
+
+  // The Overview tab is selected by default; the Codex panel is hidden.
+  const tablist = page.getByRole("tablist", { name: "Character sheet sections" });
+  await expect(tablist).toBeVisible();
+  const codexTab = tablist.getByRole("tab", { name: /Codex/ });
+  await expect(codexTab).toHaveAttribute("aria-selected", "false");
+
+  // Activating the Codex tab reveals its registry of entities.
+  await codexTab.click();
+  await expect(codexTab).toHaveAttribute("aria-selected", "true");
+  const codex = page.getByRole("region", { name: "Codex" });
+  await expect(codex.getByText("Audrey Hall")).toBeVisible();
+  await expect(codex.getByText("The Tarot Club")).toBeVisible();
+
+  // The search filters the registry by name.
+  await codex.getByLabel("Search the Codex").fill("Audrey");
+  await expect(codex.getByText("Audrey Hall")).toBeVisible();
+  await expect(codex.getByText("The Tarot Club")).toHaveCount(0);
+
+  // Curation: pin the standard entity (The Tarot Club) and confirm it sticks.
+  await codex.getByLabel("Search the Codex").fill("Tarot");
+  const pin = codex.getByRole("button", { name: /Pin The Tarot Club as pivotal/ });
+  await pin.click();
+  await expect(
+    codex.getByRole("button", { name: /Unpin The Tarot Club/ }),
+  ).toHaveAttribute("aria-pressed", "true");
+
+  // Manual add: a character the AI rebuild might miss can be added by hand.
+  await codex.getByLabel("Search the Codex").fill("");
+  await codex.getByRole("button", { name: /Add entry/ }).click();
+  await codex.getByLabel("Name").fill("Fors");
+  await codex.getByLabel("Status").fill("a guarded ally");
+  await codex.getByRole("button", { name: "Add to Codex" }).click();
+  await codex.getByLabel("Search the Codex").fill("Fors");
+  await expect(codex.getByText("Fors", { exact: true })).toBeVisible();
 });

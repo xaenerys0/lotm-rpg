@@ -78,6 +78,7 @@ import {
   classifyCall,
   selectModel,
   generate,
+  generateCodexRebuild,
   validateProviderConfig,
   listProviderModels,
   findUnservedModels,
@@ -2056,6 +2057,74 @@ describe("prompts", () => {
       const layer = buildHistoryPrompt(mem);
       expect(layer.content).not.toContain("Ground Truth");
     });
+
+    it("pins an Established Facts block from the Codex entities", () => {
+      let mem = makeMemoryState();
+      mem = addTurn(mem, makeTurnRecord(1));
+      const layer = buildHistoryPrompt(mem, makeGameState(), [
+        {
+          kind: "person",
+          name: "Sien",
+          status: "reluctant ally",
+          importance: "pivotal",
+          lastSeenTurn: 142,
+        },
+        {
+          kind: "thread",
+          name: "Owes Dunn a favour",
+          status: "unpaid",
+          importance: "pivotal",
+          lastSeenTurn: 60,
+          resolved: false,
+        },
+      ]);
+      expect(layer.content).toContain("## Established Facts (canon — do not contradict)");
+      expect(layer.content).toContain(
+        "[Person] Sien — reluctant ally (last seen turn 142)",
+      );
+      expect(layer.content).toContain(
+        "[Thread] Owes Dunn a favour — unpaid (last seen turn 60)",
+      );
+      // It rides next to the ground-truth anchor, above the turn history.
+      expect(layer.content.indexOf("Established Facts")).toBeLessThan(
+        layer.content.indexOf("Turn 1"),
+      );
+    });
+
+    it("marks a resolved thread and omits the block when no entities are pinned", () => {
+      let mem = makeMemoryState();
+      mem = addTurn(mem, makeTurnRecord(1));
+      const resolved = buildHistoryPrompt(mem, makeGameState(), [
+        {
+          kind: "thread",
+          name: "Debt repaid",
+          status: "settled",
+          importance: "pivotal",
+          lastSeenTurn: 9,
+          resolved: true,
+        },
+      ]);
+      expect(resolved.content).toContain("[Thread] Debt repaid — settled (resolved)");
+
+      const none = buildHistoryPrompt(mem, makeGameState(), []);
+      expect(none.content).not.toContain("Established Facts");
+    });
+
+    it("renders Established Facts even without a ground-truth anchor", () => {
+      let mem = makeMemoryState();
+      mem = addTurn(mem, makeTurnRecord(1));
+      const layer = buildHistoryPrompt(mem, undefined, [
+        {
+          kind: "group",
+          name: "The Tarot Club",
+          status: "your circle",
+          importance: "pivotal",
+          lastSeenTurn: 3,
+        },
+      ]);
+      expect(layer.content).not.toContain("Ground Truth");
+      expect(layer.content).toContain("[Group] The Tarot Club");
+    });
   });
 
   describe("buildInstructionPrompt", () => {
@@ -3418,6 +3487,70 @@ describe("validation", () => {
       ).toBeUndefined();
     });
 
+    it("carries sanitized codexUpdates (history-context Codex)", () => {
+      const result = parseAIResponse(
+        JSON.stringify({
+          narrative: "x",
+          codexUpdates: [
+            {
+              kind: "person",
+              name: "  Klein  ",
+              status: " a wary Seer ",
+              importance: "pivotal",
+              resolved: true,
+              aliases: ["Mr. Fool", ""],
+            },
+            { kind: "location", name: "Backlund" },
+          ],
+        }),
+      );
+      expect(result.codexUpdates).toHaveLength(2);
+      expect(result.codexUpdates![0]).toEqual({
+        kind: "person",
+        name: "Klein",
+        status: "a wary Seer",
+        importance: "pivotal",
+        resolved: true,
+        aliases: ["Mr. Fool"],
+      });
+      expect(result.codexUpdates![1]).toEqual({ kind: "location", name: "Backlund" });
+    });
+
+    it("drops malformed codexUpdates entries and caps the count", () => {
+      const many = Array.from({ length: 12 }, (_, i) => ({
+        kind: "person",
+        name: `P${i}`,
+      }));
+      const result = parseAIResponse(
+        JSON.stringify({
+          narrative: "x",
+          codexUpdates: [
+            "not an object",
+            { kind: "person" }, // no name → dropped
+            { name: "Nameless" }, // no kind → dropped
+            ...many,
+          ],
+        }),
+      );
+      // Capped at MAX_CODEX_UPDATES (6); malformed entries dropped first.
+      expect(result.codexUpdates).toHaveLength(6);
+      expect(result.codexUpdates!.every((u) => u.kind === "person")).toBe(true);
+    });
+
+    it("omits codexUpdates when absent, non-array, or all-malformed", () => {
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x" })).codexUpdates,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", codexUpdates: "nope" }))
+          .codexUpdates,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", codexUpdates: [{ kind: "p" }] }))
+          .codexUpdates,
+      ).toBeUndefined();
+    });
+
     it("defaults NaN alignment to 0", () => {
       const json = JSON.stringify({
         narrative: "x",
@@ -4514,6 +4647,83 @@ describe("client", () => {
       const lastMessage = retryBody.messages[retryBody.messages.length - 1];
       expect(lastMessage.role).toBe("user");
       expect(lastMessage.content).toContain("cut off");
+    });
+  });
+
+  describe("generateCodexRebuild", () => {
+    beforeEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("calls the provider and parses a categorized, deduped Codex", async () => {
+      const codex = JSON.stringify({
+        entities: [
+          {
+            kind: "person",
+            name: "Captain Edwina Edwards",
+            status: "tense ally",
+            importance: "pivotal",
+          },
+          { kind: "object", name: "The Gilded Eye" },
+        ],
+      });
+      const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content: codex } }],
+              model: "gpt-4o",
+              usage: { prompt_tokens: 200, completion_tokens: 80, total_tokens: 280 },
+            }),
+          ),
+      } as Response);
+
+      const result = await generateCodexRebuild(makeProviderConfig(), {
+        characterName: "Andrew Abraham",
+        runningSummary: "Ties: Captain Edwina Edwards.",
+        journal: [
+          { turnNumber: 40, eventType: "discovery", summary: "Found the Gilded Eye" },
+        ],
+        facts: [],
+        currentTurn: 235,
+      });
+
+      expect(result).toEqual([
+        {
+          kind: "person",
+          name: "Captain Edwina Edwards",
+          status: "tense ally",
+          importance: "pivotal",
+        },
+        { kind: "object", name: "The Gilded Eye" },
+      ]);
+      // Used the premium model for the one-shot extraction.
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body.model).toBe(makeProviderConfig().premiumModel);
+    });
+
+    it("returns [] when the provider output is unparseable", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content: "the archivist could not comply" } }],
+              model: "gpt-4o",
+              usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+            }),
+          ),
+      } as Response);
+
+      const result = await generateCodexRebuild(makeProviderConfig(), {
+        journal: [],
+        facts: [],
+        currentTurn: 1,
+      });
+      expect(result).toEqual([]);
     });
   });
 

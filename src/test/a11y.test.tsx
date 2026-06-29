@@ -863,10 +863,15 @@ describe("accessibility — stub pages", () => {
     const { container } = render(<CharacterPage />);
     await expectNoAxeViolationsInContainer(container);
 
+    // The sheet is tabbed (history-context sheet UI). The True Self editor lives
+    // on the "Self & Allies" tab — activate it first.
+    fireEvent.click(screen.getByRole("tab", { name: "Self & Allies" }));
     // Open the True Self editor and re-check the form fields + recognition toggle.
     fireEvent.click(screen.getByRole("button", { name: "Edit true self" }));
     await expectNoAxeViolationsInContainer(container);
 
+    // The delete danger zone lives on the "Holdings" tab.
+    fireEvent.click(screen.getByRole("tab", { name: "Holdings" }));
     // Open the two-step delete confirm and re-check the live region + buttons.
     fireEvent.click(screen.getByRole("button", { name: /Delete Klein/ }));
     await expectNoAxeViolationsInContainer(container);
@@ -898,6 +903,8 @@ describe("accessibility — stub pages", () => {
     const { container } = render(<CharacterPage />);
     await expectNoAxeViolationsInContainer(container);
 
+    // Acquired powers live on the "Powers" tab (history-context sheet UI).
+    fireEvent.click(screen.getByRole("tab", { name: "Powers" }));
     const region = screen.getByRole("region", { name: "Acquired powers" });
     // Open the per-power edit form (name/description/source + permanence select
     // + turns-left number input).
@@ -937,6 +944,8 @@ describe("accessibility — stub pages", () => {
     const { container } = render(<CharacterPage />);
     await expectNoAxeViolationsInContainer(container);
 
+    // Anchors live on the "Powers" tab (history-context sheet UI).
+    fireEvent.click(screen.getByRole("tab", { name: "Powers" }));
     const region = screen.getByRole("region", { name: "Anchors" });
     // Open the consecrate form and select the congregation kind so its
     // following-required hint renders.
@@ -944,6 +953,76 @@ describe("accessibility — stub pages", () => {
     fireEvent.change(within(region).getByLabelText("What you anchor on"), {
       target: { value: "congregation" },
     });
+    await expectNoAxeViolationsInContainer(container);
+  });
+
+  it("character sheet Codex tab (filters + entity cards) has no violations", async () => {
+    // A seeded Codex (history-context Codex) so the tab renders its search,
+    // kind-filter chips, the resolved-threads checkbox, and grouped entity cards
+    // (one pivotal person, one open thread) — the new interactive surface.
+    const session = {
+      ...createSession(createDefaultGameState(1, "char-cx", "Klein"), "cx-1", 1000),
+      codexState: {
+        entities: [
+          {
+            id: "cx-person",
+            kind: "person" as const,
+            name: "Audrey Hall",
+            status: "a steadfast ally in Backlund",
+            importance: "pivotal" as const,
+            firstSeenTurn: 3,
+            lastSeenTurn: 42,
+            aliases: ["Miss Hall"],
+          },
+          {
+            id: "cx-thread",
+            kind: "thread" as const,
+            name: "A debt owed to Dunn Smith",
+            status: "unpaid",
+            importance: "standard" as const,
+            firstSeenTurn: 10,
+            lastSeenTurn: 10,
+          },
+        ],
+      },
+    };
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["cx-1"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "cx-1", serializeSession(session));
+    // A provider config so the "Rebuild from history" affordance renders.
+    localStorage.setItem(
+      "lotm-rpg-provider-config",
+      JSON.stringify({
+        providerId: "openai",
+        apiKey: "sk-test",
+        routineModel: "gpt-4o-mini",
+        premiumModel: "gpt-4o",
+      }),
+    );
+    const { container } = render(<CharacterPage />);
+    await expectNoAxeViolationsInContainer(container);
+
+    // Activate the Codex tab and exercise its controls.
+    fireEvent.click(screen.getByRole("tab", { name: /Codex/ }));
+    const region = screen.getByRole("region", { name: "Codex" });
+    fireEvent.change(within(region).getByLabelText("Search the Codex"), {
+      target: { value: "Audrey" },
+    });
+    fireEvent.click(within(region).getByLabelText("Show settled threads"));
+    await expectNoAxeViolationsInContainer(container);
+
+    // Open the per-entity curation editor (name/status/merge/forget), then close
+    // it so its toggle reverts from "Close" to "Edit".
+    fireEvent.click(within(region).getByRole("button", { name: "Edit" }));
+    await expectNoAxeViolationsInContainer(container);
+    fireEvent.click(within(region).getByRole("button", { name: "Close" }));
+
+    // Open the manual "Add entry" form (name/kind/status/pivotal), then close it.
+    fireEvent.click(within(region).getByRole("button", { name: /Add entry/ }));
+    await expectNoAxeViolationsInContainer(container);
+    fireEvent.click(within(region).getByRole("button", { name: "Close" }));
+
+    // Open the rebuild confirm panel.
+    fireEvent.click(within(region).getByRole("button", { name: /Rebuild from history/ }));
     await expectNoAxeViolationsInContainer(container);
   });
 

@@ -194,6 +194,58 @@ export interface AIResponse {
    * auto Story Summary, NovelAI's pinned Memory, MemGPT's recursive summary.
    */
   runningSummary?: string;
+  /**
+   * Story-consistency Codex deltas (history-context Codex). When the narrator
+   * introduces or materially changes an important person, location, object,
+   * group, or plot thread, it emits a compact delta here; the engine folds it
+   * into the durable `GameSession.codexState` registry. Loosely typed at the
+   * boundary like `journalEntry` — `parseAIResponse` carries through a sanitized
+   * array (count-capped, non-empty name) and `applyCodexUpdates`
+   * (@/lib/game/codex) is the single real validation point (kind/importance
+   * whitelist + length caps). Deltas only (introduced/changed), never a
+   * restatement of the whole cast, so the per-turn output cost stays small.
+   */
+  codexUpdates?: CodexUpdateInput[];
+}
+
+/**
+ * A single narrator-emitted Codex delta (history-context Codex), loosely typed
+ * at the AI boundary. `applyCodexUpdates` (@/lib/game/codex) validates `kind`
+ * against the known `CodexKind` set, `importance` against its whitelist, and
+ * clamps the string fields — exactly as `validateJournalFlag` is the single
+ * validation point for `journalEntry`.
+ */
+export interface CodexUpdateInput {
+  /** "person" | "location" | "object" | "group" | "thread" (validated downstream). */
+  kind: string;
+  /** Entity display name (the match key). Dropped at parse when blank. */
+  name: string;
+  /** Concise current state, e.g. "alive; wary ally in Backlund". */
+  status?: string;
+  /** "pivotal" | "standard" (validated downstream). */
+  importance?: string;
+  /** Optional longer detail for the player-facing Codex view. */
+  note?: string;
+  /** Threads only: the promise/debt/hook has been settled. */
+  resolved?: boolean;
+  /** Alternate names the narrator may also refer to this entity by. */
+  aliases?: string[];
+}
+
+/**
+ * A Codex entity as the prompt assembler consumes it (history-context Codex) —
+ * a structural slice of `CodexEntity` from `@/lib/game/codex`, declared here so
+ * the AI layer never imports the game layer (mirrors `RetrievedLoreChunk`). The
+ * game layer maps its selected, scene-relevant entities into this shape and
+ * threads them through `PromptInput.pinnedEntities`.
+ */
+export interface PinnedCodexEntity {
+  kind: string;
+  name: string;
+  status: string;
+  importance: string;
+  lastSeenTurn: number;
+  resolved?: boolean;
 }
 
 export interface ValidatedAIResponse {
@@ -498,6 +550,15 @@ export interface PromptInput {
    * no directive; "concise"/"rich" add a `## Narration Length` system layer.
    */
   verbosity?: NarrativeVerbosity;
+  /**
+   * Scene-relevant + pivotal Codex entities (history-context Codex), selected
+   * by the engine (`selectPinnedEntities`/`pinnedEntitiesForPrompt`) and pinned
+   * into the `## Established Facts` block of the history layer as canon the
+   * narrator must not contradict. Bounded (hard-capped) regardless of how large
+   * the full Codex grows, so the per-turn budget stays flat. Absent/empty drops
+   * the block.
+   */
+  pinnedEntities?: PinnedCodexEntity[];
   instruction: InstructionType;
   playerAction: string;
   abilities: string[];

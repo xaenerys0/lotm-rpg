@@ -34,6 +34,9 @@ import {
   evaluateLossOfControl,
   resolveActingMethodState,
   resolveTrackedNpcState,
+  resolveCodexState,
+  recordCodexTurn,
+  pinnedEntitiesForPrompt,
   companionsPresentOnMove,
   markPursuer,
   previewSanityImpact,
@@ -457,6 +460,14 @@ function buildAICallParams(currentSession: GameSession) {
     seq,
     abilities: allAbilities,
     actingReqs: acting,
+    // Story-consistency Codex (history-context Codex): the scene-relevant +
+    // pivotal entities pinned into the `## Established Facts` block. Bounded by
+    // the engine's selection cap, so the per-turn cost stays flat. Empty on a
+    // fresh save (no entities yet) — the block is then dropped.
+    pinnedEntities: pinnedEntitiesForPrompt(
+      resolveCodexState(currentSession.codexState),
+      currentSession.gameState,
+    ),
     // Persona / true-self / recognition narrator contexts (shared helper).
     ...personaPromptContexts(currentSession),
     // Epoch + per-city narrator tone (shared helper, also used by combat).
@@ -1441,6 +1452,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         recognitionContext,
         epochContext,
         cityNarration,
+        pinnedEntities,
       } = buildAICallParams(currentSession);
 
       const instruction: InstructionType = currentSession.activePillar
@@ -1473,6 +1485,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           epochContext,
           cityNarration,
           verbosity: preferences.narrativeVerbosity,
+          pinnedEntities,
           instruction,
           playerAction,
           abilities,
@@ -1659,7 +1672,19 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // Temporary copied/stolen powers fade by one turn; expired ones are
       // released (acquired-powers subsystem), so a Polymath's Imitation or an
       // artifact-stolen ability does not linger forever.
-      return tickAcquiredPowers(seeking);
+      const powered = tickAcquiredPowers(seeking);
+      // Story-consistency Codex (history-context Codex): fold the narrator's
+      // entity deltas into the registry and auto-touch the entities the engine
+      // knows are present (current location + present NPCs), so a recurring
+      // figure or open thread stays consistent across a long chronicle. Applied
+      // last so it sees the final `gameState` (location/cast after the move gate).
+      const codexState = recordCodexTurn(
+        resolveCodexState(powered.codexState),
+        resolution.response.codexUpdates ?? [],
+        gameState,
+        currentSession.turnCount,
+      );
+      return { ...powered, codexState };
     },
     [preferences.movementGateEnabled],
   );
@@ -1689,6 +1714,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         recognitionContext,
         epochContext,
         cityNarration,
+        pinnedEntities,
       } = buildAICallParams(currentSession);
 
       const retrievedChunks = await retrieveLoreForTurn(currentSession, config);
@@ -1707,6 +1733,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           epochContext,
           cityNarration,
           verbosity: preferences.narrativeVerbosity,
+          pinnedEntities,
           instruction,
           playerAction: selectedChoice.text,
           abilities,

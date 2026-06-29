@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 
 import {
   persistSession as writeSession,
@@ -12,8 +12,13 @@ import {
 import { useStoredPreferences } from "./use-stored-preferences";
 import { getCumulativeAbilityGroups, getPathway, getSequence } from "@/lib/rules";
 import { getEpoch } from "@/lib/lore";
+import { TabBar, tabButtonId, tabPanelId, type TabDef } from "./tabs";
+import { CodexSection } from "./codex-section";
 import {
   isUndeletableCharacter,
+  CODEX_KINDS,
+  codexCounts,
+  resolveCodexState,
   acquirePower,
   powerAcquisitionCapabilities,
   releasePower,
@@ -90,6 +95,35 @@ const ITEM_CATEGORY_GLYPHS: Record<Item["category"], string> = {
   mundane: "❀",
 };
 
+// Tab identity base — the TabBar generates `${SHEET_TAB_BASE}-${id}-tab/-panel`
+// ids that each TabPanel below mirrors (history-context sheet UI).
+const SHEET_TAB_BASE = "sheet-tab";
+
+/** One tab's panel — all panels stay mounted (form state survives a tab switch);
+ * the inactive ones are `hidden` (the textbook ARIA tabs pattern). */
+function TabPanel({
+  id,
+  active,
+  children,
+}: {
+  id: string;
+  active: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      role="tabpanel"
+      id={tabPanelId(SHEET_TAB_BASE, id)}
+      aria-labelledby={tabButtonId(SHEET_TAB_BASE, id)}
+      hidden={active !== id}
+      tabIndex={0}
+      className="space-y-8 pt-6 focus:outline-none"
+    >
+      {children}
+    </div>
+  );
+}
+
 export function CharacterSheet() {
   // The shared active character drives the sheet (active-character sync): the
   // selector below writes the same pointer the Map/Journal/sidebar read, and an
@@ -101,6 +135,10 @@ export function CharacterSheet() {
   // Display preferences (issue #95): the digestion-meter toggle gates whether
   // the numeric digestion is shown — but only once the method is discovered.
   const preferences = useStoredPreferences();
+
+  // Active sheet tab (history-context sheet UI). Declared before the early
+  // returns to honour the rules of hooks.
+  const [activeTab, setActiveTab] = useState("overview");
 
   const persistSession = useCallback((next: GameSession) => {
     writeSession(next);
@@ -150,6 +188,20 @@ export function CharacterSheet() {
     category,
     items: state.inventory.filter((item) => item.category === category),
   }));
+
+  // Tabbed sheet (history-context sheet UI): a long game piles ~11 sections into
+  // one tall scroll, so they are grouped under tabs. Sections stay where they
+  // were authored; the panels just gate their visibility.
+  const codex = resolveCodexState(session.codexState);
+  const codexCount = codexCounts(codex);
+  const codexTotal = CODEX_KINDS.reduce((sum, k) => sum + codexCount[k], 0);
+  const tabs: TabDef[] = [
+    { id: "overview", label: "Overview" },
+    { id: "self", label: "Self & Allies" },
+    { id: "powers", label: "Powers" },
+    { id: "holdings", label: "Holdings" },
+    { id: "codex", label: "Codex", badge: codexTotal },
+  ];
 
   return (
     <div className="space-y-8">
@@ -220,223 +272,251 @@ export function CharacterSheet() {
         )}
       </section>
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        {/* Abilities & acting */}
-        <section
-          aria-labelledby="sheet-abilities"
-          className="rounded-xl border border-border bg-surface p-6"
-        >
-          <h2
-            id="sheet-abilities"
-            className="font-serif text-lg font-semibold text-foreground"
+      <TabBar
+        tabs={tabs}
+        activeId={activeTab}
+        onSelect={setActiveTab}
+        idBase={SHEET_TAB_BASE}
+        label="Character sheet sections"
+      />
+
+      {/* Overview — abilities & current condition */}
+      <TabPanel id="overview" active={activeTab}>
+        <div className="grid gap-8 lg:grid-cols-2">
+          {/* Abilities & acting */}
+          <section
+            aria-labelledby="sheet-abilities"
+            className="rounded-xl border border-border bg-surface p-6"
           >
-            Abilities
-          </h2>
-          <p className="mt-1 text-xs leading-relaxed text-muted">
-            Every power from the rungs you have climbed is yours — those drawn from
-            earlier Sequences are enhanced as you advance.
-          </p>
-          {abilityGroups.length === 0 ? (
-            <p className="mt-4 text-sm text-muted">None recorded.</p>
-          ) : (
-            <div className="mt-4 space-y-5">
-              {abilityGroups.map((group) => (
-                <div key={group.level}>
-                  <h3 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-                    <span>
-                      Sequence {group.level} · {group.name}
-                    </span>
-                    {group.enhanced && (
-                      <span className="rounded-md border border-amber/30 bg-amber/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.1em] text-amber normal-case">
-                        Enhanced
+            <h2
+              id="sheet-abilities"
+              className="font-serif text-lg font-semibold text-foreground"
+            >
+              Abilities
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              Every power from the rungs you have climbed is yours — those drawn from
+              earlier Sequences are enhanced as you advance.
+            </p>
+            {abilityGroups.length === 0 ? (
+              <p className="mt-4 text-sm text-muted">None recorded.</p>
+            ) : (
+              <div className="mt-4 space-y-5">
+                {abilityGroups.map((group) => (
+                  <div key={group.level}>
+                    <h3 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                      <span>
+                        Sequence {group.level} · {group.name}
                       </span>
-                    )}
-                  </h3>
-                  <ul className="mt-2 space-y-3">
-                    {group.abilities.map((ability) => (
-                      <li key={ability.name} className="text-sm">
-                        <span className="font-medium text-foreground">
-                          {ability.name}
+                      {group.enhanced && (
+                        <span className="rounded-md border border-amber/30 bg-amber/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.1em] text-amber normal-case">
+                          Enhanced
                         </span>
-                        <span className="mt-0.5 block text-xs leading-relaxed text-muted">
-                          {ability.description}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          )}
-          {/* Pre-discovery (issue #95) the secret that living the role digests
+                      )}
+                    </h3>
+                    <ul className="mt-2 space-y-3">
+                      {group.abilities.map((ability) => (
+                        <li key={ability.name} className="text-sm">
+                          <span className="font-medium text-foreground">
+                            {ability.name}
+                          </span>
+                          <span className="mt-0.5 block text-xs leading-relaxed text-muted">
+                            {ability.description}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+            {/* Pre-discovery (issue #95) the secret that living the role digests
               the potion is hidden: the role guidance still shows, but under a
               neutral heading that names neither the mechanic nor digestion. The
               heading flips to "Acting Method" once the character discovers it. */}
-          <h3 className="mt-6 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-            {knowsMethod ? "Acting Method" : "Your Role"}
-          </h3>
-          <ul className="mt-2 list-inside space-y-1.5">
-            {(sequence?.actingRequirements ?? []).map((req) => (
-              <li key={req} className="text-sm leading-relaxed text-foreground">
-                {req}
-              </li>
-            ))}
-          </ul>
-        </section>
+            <h3 className="mt-6 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+              {knowsMethod ? "Acting Method" : "Your Role"}
+            </h3>
+            <ul className="mt-2 list-inside space-y-1.5">
+              {(sequence?.actingRequirements ?? []).map((req) => (
+                <li key={req} className="text-sm leading-relaxed text-foreground">
+                  {req}
+                </li>
+              ))}
+            </ul>
+          </section>
 
-        {/* Condition */}
-        <section
-          aria-labelledby="sheet-condition"
-          className="rounded-xl border border-border bg-surface p-6"
-        >
-          <h2
-            id="sheet-condition"
-            className="font-serif text-lg font-semibold text-foreground"
+          {/* Condition */}
+          <section
+            aria-labelledby="sheet-condition"
+            className="rounded-xl border border-border bg-surface p-6"
           >
-            Condition
-          </h2>
-          <dl className="mt-4 space-y-3 text-sm">
-            <div>
-              <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-                Mind
-              </dt>
-              <dd className="mt-0.5 font-serif italic text-foreground">
-                {sanityDescriptor(state.sanity, state.maxSanity)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-                {knowsMethod ? "Potion digestion" : "Within"}
-              </dt>
-              <dd className="mt-0.5 text-foreground">
-                {!state.digestion
-                  ? "No potion taken."
-                  : !knowsMethod
-                    ? // Pre-discovery: the character does not know what is
-                      // happening, so no number and no mechanic named. (Once a
-                      // potion is fully digested the method is always discovered,
-                      // so this branch only ever describes in-progress digestion.)
-                      "Something taken in stirs and settles by turns you cannot yet name."
-                    : state.digestion.complete
-                      ? "Fully digested — ready to advance."
-                      : showDigestionNumber
-                        ? `${state.digestion.progress}% assimilated through acting.`
-                        : "Assimilating through the acting method."}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-                Injuries
-              </dt>
-              <dd className="mt-0.5 text-foreground">
-                {state.injuries && state.injuries.length > 0 ? (
-                  <ul className="space-y-1">
-                    {state.injuries.map((injury) => (
-                      <li key={injury.id}>
-                        {injury.description}{" "}
-                        <span className="text-xs text-muted">({injury.severity})</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  "Unhurt."
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-                Active quests
-              </dt>
-              <dd className="mt-0.5 text-foreground">
-                {state.activeQuests.length > 0 ? state.activeQuests.join("; ") : "None."}
-              </dd>
-            </div>
-          </dl>
-        </section>
-      </div>
+            <h2
+              id="sheet-condition"
+              className="font-serif text-lg font-semibold text-foreground"
+            >
+              Condition
+            </h2>
+            <dl className="mt-4 space-y-3 text-sm">
+              <div>
+                <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                  Mind
+                </dt>
+                <dd className="mt-0.5 font-serif italic text-foreground">
+                  {sanityDescriptor(state.sanity, state.maxSanity)}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                  {knowsMethod ? "Potion digestion" : "Within"}
+                </dt>
+                <dd className="mt-0.5 text-foreground">
+                  {!state.digestion
+                    ? "No potion taken."
+                    : !knowsMethod
+                      ? // Pre-discovery: the character does not know what is
+                        // happening, so no number and no mechanic named. (Once a
+                        // potion is fully digested the method is always discovered,
+                        // so this branch only ever describes in-progress digestion.)
+                        "Something taken in stirs and settles by turns you cannot yet name."
+                      : state.digestion.complete
+                        ? "Fully digested — ready to advance."
+                        : showDigestionNumber
+                          ? `${state.digestion.progress}% assimilated through acting.`
+                          : "Assimilating through the acting method."}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                  Injuries
+                </dt>
+                <dd className="mt-0.5 text-foreground">
+                  {state.injuries && state.injuries.length > 0 ? (
+                    <ul className="space-y-1">
+                      {state.injuries.map((injury) => (
+                        <li key={injury.id}>
+                          {injury.description}{" "}
+                          <span className="text-xs text-muted">({injury.severity})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    "Unhurt."
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                  Active quests
+                </dt>
+                <dd className="mt-0.5 text-foreground">
+                  {state.activeQuests.length > 0
+                    ? state.activeQuests.join("; ")
+                    : "None."}
+                </dd>
+              </div>
+            </dl>
+          </section>
+        </div>
+      </TabPanel>
 
-      {/* True self (character-info storage) */}
-      <TrueSelfSection session={session} onUpdate={persistSession} />
+      {/* Self & Allies — true self, personas, companions */}
+      <TabPanel id="self" active={activeTab}>
+        {/* True self (character-info storage) */}
+        <TrueSelfSection session={session} onUpdate={persistSession} />
 
-      {/* Identities (issue #22) */}
-      <IdentitySection session={session} onUpdate={persistSession} />
+        {/* Identities (issue #22) */}
+        <IdentitySection session={session} onUpdate={persistSession} />
 
-      {/* Companions & pursuers (issue #101) */}
-      <CompanionsSection session={session} onUpdate={persistSession} />
+        {/* Companions & pursuers (issue #101) */}
+        <CompanionsSection session={session} onUpdate={persistSession} />
+      </TabPanel>
 
-      {/* Acquired powers — copied/stolen Beyonder abilities */}
-      <AcquiredPowersSection session={session} onUpdate={persistSession} />
+      {/* Powers — copied/stolen abilities and godhood anchors */}
+      <TabPanel id="powers" active={activeTab}>
+        {/* Acquired powers — copied/stolen Beyonder abilities */}
+        <AcquiredPowersSection session={session} onUpdate={persistSession} />
 
-      {/* Anchors — steady the godhood pressure of the rung you're climbing into
+        {/* Anchors — steady the godhood pressure of the rung you're climbing into
           (issues #35/#25). Shown only when the NEXT advancement leads into the
           Saint tier or deeper (target Seq ≤ 4, i.e. current Seq 1–5) — the
           requirement is gauged on the TARGET, so a Seq 5 about to become a Saint
           sees it (the bug was gating on the current sequence). */}
-      {state.sequenceLevel >= 1 &&
-        anchorsRelevant(targetSequence(state.sequenceLevel)) && (
-          <AnchorsSection session={session} onUpdate={persistSession} />
-        )}
+        {state.sequenceLevel >= 1 &&
+          anchorsRelevant(targetSequence(state.sequenceLevel)) && (
+            <AnchorsSection session={session} onUpdate={persistSession} />
+          )}
+      </TabPanel>
 
-      {/* Inventory */}
-      <section
-        aria-labelledby="sheet-inventory"
-        className="rounded-xl border border-border bg-surface p-6"
-      >
-        <h2
-          id="sheet-inventory"
-          className="font-serif text-lg font-semibold text-foreground"
+      {/* Holdings — inventory and the danger zone */}
+      <TabPanel id="holdings" active={activeTab}>
+        {/* Inventory */}
+        <section
+          aria-labelledby="sheet-inventory"
+          className="rounded-xl border border-border bg-surface p-6"
         >
-          Inventory
-        </h2>
-        {state.inventory.length === 0 ? (
-          <p className="mt-3 text-sm text-muted">
-            Empty pockets — the city has not yielded its secrets yet.
-          </p>
-        ) : (
-          <div className="mt-4 space-y-6">
-            {inventoryByCategory
-              .filter((group) => group.items.length > 0)
-              .map((group) => (
-                <div key={group.category}>
-                  <h3 className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-                    {ITEM_CATEGORY_LABELS[group.category]}
-                  </h3>
-                  <ul className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {group.items.map((item, index) => (
-                      <li
-                        key={`${item.name}-${index}`}
-                        className="parchment rounded-lg p-4"
-                      >
-                        <p className="text-sm font-medium text-foreground">
-                          <span aria-hidden="true" className="mr-2 text-amber">
-                            {ITEM_CATEGORY_GLYPHS[group.category]}
-                          </span>
-                          {item.name}
-                        </p>
-                        {item.description && (
-                          <p className="mt-1 text-xs leading-relaxed text-muted">
-                            {item.description}
+          <h2
+            id="sheet-inventory"
+            className="font-serif text-lg font-semibold text-foreground"
+          >
+            Inventory
+          </h2>
+          {state.inventory.length === 0 ? (
+            <p className="mt-3 text-sm text-muted">
+              Empty pockets — the city has not yielded its secrets yet.
+            </p>
+          ) : (
+            <div className="mt-4 space-y-6">
+              {inventoryByCategory
+                .filter((group) => group.items.length > 0)
+                .map((group) => (
+                  <div key={group.category}>
+                    <h3 className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                      {ITEM_CATEGORY_LABELS[group.category]}
+                    </h3>
+                    <ul className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {group.items.map((item, index) => (
+                        <li
+                          key={`${item.name}-${index}`}
+                          className="parchment rounded-lg p-4"
+                        >
+                          <p className="text-sm font-medium text-foreground">
+                            <span aria-hidden="true" className="mr-2 text-amber">
+                              {ITEM_CATEGORY_GLYPHS[group.category]}
+                            </span>
+                            {item.name}
                           </p>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-          </div>
-        )}
-      </section>
+                          {item.description && (
+                            <p className="mt-1 text-xs leading-relaxed text-muted">
+                              {item.description}
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+            </div>
+          )}
+        </section>
 
-      {/* Delete character — two-step confirm so it is never a single misclick.
+        {/* Delete character — two-step confirm so it is never a single misclick.
           Keyed by session id so switching Beyonders resets any pending state.
           The premade dev test character is protected from deletion. */}
-      {!isUndeletableCharacter(session.id) && (
-        <DeleteCharacter
-          key={session.id}
-          name={state.characterName ?? "Unnamed Beyonder"}
-          onDelete={() => handleDelete(session.id)}
-        />
-      )}
+        {!isUndeletableCharacter(session.id) && (
+          <DeleteCharacter
+            key={session.id}
+            name={state.characterName ?? "Unnamed Beyonder"}
+            onDelete={() => handleDelete(session.id)}
+          />
+        )}
+      </TabPanel>
+
+      {/* Codex — the durable registry of people, places, objects, groups, and
+          open threads the chronicle has established (history-context Codex). */}
+      <TabPanel id="codex" active={activeTab}>
+        <CodexSection session={session} onUpdate={persistSession} />
+      </TabPanel>
     </div>
   );
 }
