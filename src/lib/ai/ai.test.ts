@@ -4704,19 +4704,26 @@ describe("client", () => {
       expect(body.model).toBe(makeProviderConfig().premiumModel);
     });
 
-    it("returns [] when the provider output is unparseable", async () => {
-      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce({
+    const openAiReply = (content: string): Response =>
+      ({
         ok: true,
         status: 200,
         text: () =>
           Promise.resolve(
             JSON.stringify({
-              choices: [{ message: { content: "the archivist could not comply" } }],
+              choices: [{ message: { content } }],
               model: "gpt-4o",
               usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
             }),
           ),
-      } as Response);
+      }) as Response;
+
+    it("returns [] when every attempt is unparseable", async () => {
+      // Always-unparseable → the corrective loop exhausts and yields []. (Uses
+      // mockResolvedValue, not Once, since the loop now retries on bad parse.)
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(openAiReply("the archivist could not comply"));
 
       const result = await generateCodexRebuild(makeProviderConfig(), {
         journal: [],
@@ -4724,6 +4731,32 @@ describe("client", () => {
         currentTurn: 1,
       });
       expect(result).toEqual([]);
+      // It retried rather than giving up after one bad parse.
+      expect(fetchSpy.mock.calls.length).toBeGreaterThan(1);
+    });
+
+    it("recovers via a corrective retry when the first reply doesn't parse", async () => {
+      const good = JSON.stringify({
+        entities: [{ kind: "person", name: "Fors", status: "a guarded ally" }],
+      });
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(openAiReply("Sorry, here is the codex:")) // unparseable
+        .mockResolvedValueOnce(openAiReply(good)); // corrective pass
+
+      const result = await generateCodexRebuild(makeProviderConfig(), {
+        journal: [],
+        facts: [],
+        currentTurn: 1,
+      });
+      expect(result).toEqual([
+        { kind: "person", name: "Fors", status: "a guarded ally" },
+      ]);
+      // The corrective pass fed the bad reply + a fix-it instruction back.
+      const secondBody = JSON.parse(fetchSpy.mock.calls[1][1]!.body as string);
+      const lastMsg = secondBody.messages[secondBody.messages.length - 1];
+      expect(lastMsg.role).toBe("user");
+      expect(lastMsg.content).toMatch(/valid JSON|cut off/);
     });
   });
 
