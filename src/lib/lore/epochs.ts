@@ -17,6 +17,20 @@ export interface Epoch {
   summary: string;
   /** One narrator directive line: tone, vocabulary, power structures. */
   toneDirective: string;
+  /**
+   * How the supernatural READS in this era — the concealment frame the narrator
+   * should hold per turn (e.g. "hidden beneath industry" vs. "the gods rule
+   * openly"). Empty for the Fifth: the main system prompt already assumes its
+   * hidden-world Iron-Age frame, so the baseline adds nothing. Promoted from the
+   * prologue's per-epoch table so running narration matches the era as well as
+   * the prologue does (issue #201).
+   */
+  concealment: string;
+  /**
+   * The everyday REGISTER of the era — the texture of ordinary life and manner of
+   * speech the narration should ground scenes in. Empty for the Fifth baseline.
+   */
+  register: string;
   /** Where a new character wakes. */
   startingLocation: string;
   /** The first scene's seed action. */
@@ -34,6 +48,10 @@ export const EPOCHS: readonly Epoch[] = [
       "The pathways have only just differentiated. No churches, no law — power belongs to whoever survives drinking it.",
     toneDirective:
       "FIRST EPOCH tone: primal and lawless. No churches, no nations, no gas lamps — scattered settlements, raw wilderness, and Beyonders as walking calamities. Vocabulary is elemental and superstitious; power structures are warbands and lone monsters; technology is bronze and bone.",
+    concealment:
+      "There is no hidden world to conceal: power is raw and open, and Beyonders are walking calamities everyone fears — no church or law polices the supernatural, because none exists yet.",
+    register:
+      "Ordinary life is bare survival — hide tents, foraging, blood-feuds, omens read in weather and beasts; speech is blunt, concrete, and superstitious.",
     startingLocation: "a nameless settlement in the wild lands",
     openingBeat:
       "I wake in a settlement of hide tents at the edge of the wild lands, the taste of a crude potion still burning in my throat. Describe the opening scene and give me choices.",
@@ -47,6 +65,10 @@ export const EPOCHS: readonly Epoch[] = [
       "Ancient, inhuman gods rule openly. Humanity survives in their shadow — enslaved, hidden, or worse.",
     toneDirective:
       "SECOND EPOCH tone: oppression under inhuman rule. The old gods are REAL and present; humans are property, prey, or quiet rebels. Vocabulary is fearful and liturgical; power structures are inhuman courts and their overseers; hope is contraband.",
+    concealment:
+      "The supernatural is not hidden but SOVEREIGN: the inhuman gods rule in the open and their overseers watch for defiance. What a human conceals is their own budding power, never the gods' existence.",
+    register:
+      "Ordinary life is subjugation — labour under inhuman masters, whispered worship, rationed hope; speech is fearful, deferential, and liturgical.",
     startingLocation: "a human enclave beneath an inhuman dominion",
     openingBeat:
       "I keep my eyes down in the enclave as the overseers pass, hiding what I have just become. Describe the opening scene and give me choices.",
@@ -60,6 +82,10 @@ export const EPOCHS: readonly Epoch[] = [
       "The Ancient Sun God rises and humanity revolts. A world of war-camps, crusades, and falling thrones.",
     toneDirective:
       "THIRD EPOCH tone: revolt and crusade. Humanity fights upward behind the Ancient Sun God's banner; the old order is burning. Vocabulary is martial and fervent; power structures are armies, prophets, and collapsing dominions.",
+    concealment:
+      "The supernatural is a banner, not a secret: the Ancient Sun God's faith is openly preached and miracles march with the armies. Concealment here is military secrecy, not metaphysical disguise.",
+    register:
+      "Ordinary life is the war-camp — drills, sermons, requisitions, the wounded and the dead; speech is martial, fervent, and prophetic.",
     startingLocation: "a war-camp of the uprising",
     openingBeat:
       "I stand at the edge of a war-camp at dawn, my first potion settling in my blood, the horns about to sound. Describe the opening scene and give me choices.",
@@ -73,6 +99,10 @@ export const EPOCHS: readonly Epoch[] = [
       "The Solomon Empire spans the continent and gods intervene in person. Divine politics decide mortal fates.",
     toneDirective:
       "FOURTH EPOCH tone: high divinity. Gods intervene visibly; the Solomon Empire administers miracles like taxes. Vocabulary is imperial and theological; power structures are divine courts, imperial bureaus, and angel-blooded houses.",
+    concealment:
+      "The gods are administrators, not rumours: divine power is visible, licensed, and bureaucratic across the Solomon Empire. What must stay hidden is the UNSANCTIONED — illicit power outside the temples — not the supernatural itself.",
+    register:
+      "Ordinary life is imperial — temples and bureaus, pilgrim crowds, sanctioned miracles beside a black market in forbidden ones; speech is imperial and theological.",
     startingLocation: "the outskirts of the Solomon Empire's capital",
     openingBeat:
       "I arrive at the capital's outskirts among pilgrims and petitioners, carrying a power I must not declare. Describe the opening scene and give me choices.",
@@ -85,6 +115,8 @@ export const EPOCHS: readonly Epoch[] = [
     summary:
       "Steam, gaslight, and secrecy — the classic setting. The churches police the hidden world and Beyonders walk unseen.",
     toneDirective: "",
+    concealment: "",
+    register: "",
     startingLocation: "Tingen City",
     openingBeat:
       "The strange potion still burns on my tongue as I move through Tingen City's gaslit fog, certain of only one thing: whatever I have just become, I must keep it hidden. Describe the opening scene and give me choices.",
@@ -109,10 +141,24 @@ export function getEpoch(id: number | undefined): Epoch {
   return EPOCHS.find((epoch) => epoch.id === id) ?? EPOCHS[4];
 }
 
-/** Narrator directive for the epoch; empty for the Fifth (the baseline). */
+/**
+ * Narrator directive for the epoch; `null` for the Fifth (the baseline, whose
+ * tone/concealment/register are all empty because the main system prompt already
+ * assumes the hidden-world Iron Age). For non-Fifth eras this composes the tone
+ * line with the per-turn concealment frame and everyday register (issue #201) so
+ * running narration matches the era as richly as the prologue does. (The prologue
+ * keeps its own fuller per-epoch table in `@/lib/ai/prologue-client.ts`; the two
+ * could be reconciled into one source later — kept separate here so this lore
+ * module imports neither the AI nor the rules layer.)
+ */
 export function epochNarrationDirective(epochId: number | undefined): string | null {
-  const directive = getEpoch(epochId).toneDirective;
-  return directive === "" ? null : directive;
+  const epoch = getEpoch(epochId);
+  const lines = [
+    epoch.toneDirective,
+    epoch.concealment ? `Concealment: ${epoch.concealment}` : "",
+    epoch.register ? `Daily life: ${epoch.register}` : "",
+  ].filter((line) => line !== "");
+  return lines.length > 0 ? lines.join("\n") : null;
 }
 
 /**

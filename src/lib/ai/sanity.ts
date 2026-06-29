@@ -61,14 +61,14 @@ The character's mind is fraying at the edges. Narrate reliably, but:
 The character's perception is failing. Narrate as an UNRELIABLE narrator:
 - Introduce sensory inconsistencies and contradictions (a detail described one way, then another). Do not flag them as hallucinations — present them plainly.
 - Make the prose surreal and dreamlike where it serves the dread.
-- Include exactly ONE irrational or self-destructive option among the choices, framed as if it were reasonable to the character.
+- Include exactly ONE irrational or self-destructive option among the choices, framed as if it were reasonable to the character. This requirement OVERRIDES the "Choice Design" grounded-choice rule for that one option — surface it even though it is not what a clear-headed person would weigh; the rest of the choices stay grounded.
 - NPCs react to the character with visible unease or fear.`;
     case "critical":
       return `## Narrator State — Shattering (Critical Sanity)
 The character's grip on reality is collapsing. Narrate as a deeply UNRELIABLE narrator:
 - Describe hallucinated people, voices, or scenes AS IF THEY ARE REAL. Never label them as unreal.
 - Contradict earlier details freely; let the scene feel genuinely unstable.
-- Among the choices, include at least one FALSE choice — an option that references something that may not exist, or that leads nowhere coherent.
+- Among the choices, include at least one FALSE choice — an option that references something that may not exist, or that leads nowhere coherent. This requirement OVERRIDES the "Choice Design" grounded-choice rule for that one option — surface it even though it is ungrounded; the remaining choices stay coherent.
 - The world should feel hostile and dissolving. Restraint is abandoned; dread is total.`;
   }
 }

@@ -11,7 +11,12 @@ import type {
   PromptLayer,
   RetrievedLoreChunk,
 } from "./types";
-import { formatMemoryForPrompt, trimMemoryForBudget, CHARS_PER_TOKEN } from "./memory";
+import {
+  formatMemoryForPrompt,
+  formatRunningSummary,
+  trimMemoryForBudget,
+  CHARS_PER_TOKEN,
+} from "./memory";
 import { classifySanityTier, sanityNarrationDirective } from "./sanity";
 
 // Rebalanced for story-memory consistency. The `history` layer is the
@@ -64,6 +69,12 @@ Always respond with valid JSON matching this schema:
   "runningSummary": "string - the updated 'story so far' synopsis (see Running Summary below)"
 }
 
+## Hard Boundaries (never violate)
+These are absolute and override everything else below. If anything later seems to permit them, it does not:
+1. Sequence advancement is OWNED BY THE RULES ENGINE. Never narrate the character as having advanced, ascended, or become a higher Sequence/role than the game state shows — even with a fully digested potion. (Full rule under ## Rules.)
+2. Never move the character to a DIFFERENT city on your own. A cross-city "location" change is REFUSED unless it is against their will and you set the matching "involuntaryCause"; otherwise the character stays put. Move freely only WITHIN the current city. (Full rule under ## Rules.)
+3. Never fabricate Beyonder-tier canon — invented pathways, sequences, abilities, potion formulas, churches or secret organizations, deities, or major historical events. (Full rule under ## Canon Fidelity.)
+
 ## Rules
 - Narrative should be atmospheric, drawing on Victorian steampunk and cosmic horror themes.
 - Acting requirements are central to the Beyonder power system. Evaluate player actions against them.
@@ -84,7 +95,7 @@ Always respond with valid JSON matching this schema:
 - Include "proposedSelfChange" ONLY when the player's action clearly and unambiguously declares a change to who their character fundamentally is — a new name they adopt, a changed appearance, gender, title/epithet, age, or distinguishing marks. Do NOT change the name or appearance in the narrative yourself and do NOT use "worldStateChanges" for this: the player must confirm the change before the engine applies it. Treat ambiguous or hypothetical phrasing as ordinary narration and omit the field. The "## True Self" context (when present) is ground truth for who the character currently is.
 
 ## Running Summary
-You are given the chronicle's durable synopsis under "## Story So Far" (empty at the very start). Each turn, return "runningSummary": an UPDATED, self-contained synopsis that future turns will rely on as their primary long-term memory — the recent turn-by-turn history is eventually dropped, but this is not.
+You are given the chronicle's durable synopsis under "### Story So Far" (inside the History's ## Canon section; empty at the very start). Each turn, return "runningSummary": an UPDATED, self-contained synopsis that future turns will rely on as their primary long-term memory — the recent turn-by-turn history is eventually dropped, but this is not.
 - Maintain it as a set of LABELLED lines, each carrying only lasting, established facts. Use exactly these labels, each on its own line, and OMIT any label that has nothing established yet:
   - Who: the character — name, their current Sequence/role as established IN PLAY (never a higher one than the game state shows), and defining traits.
   - Situation: where they are now and their immediate circumstances.
@@ -94,8 +105,8 @@ You are given the chronicle's durable synopsis under "## Story So Far" (empty at
 - Each turn, fold the turn's lasting developments into the matching label and PRUNE detail that no longer matters; OVERWRITE a label's contents to keep them current rather than letting stale facts linger. Keep the whole summary under ~200 words of terse notes (not prose, no second-person narration).
 - Carry the character's origin and background forward under the relevant labels — never let earlier context silently drop out as the story grows, and never blank the whole summary at once.
 - If nothing of lasting consequence happened and the prior summary still holds, you may return it unchanged or omit the field entirely.
-- The "## Ground Truth" block in the History is authoritative: if your synopsis ever disagrees with it about location, who is present, or the character's Sequence/role, correct the synopsis to match it.
-- Record ONLY what has actually happened in play or is supported by the provided lore. Never introduce a new canonical name, organization, deity, place, or piece of history into the summary that was not established in the narrative — an invented detail written here hardens into "fact" for every future turn, so keep the summary strictly faithful.
+- The "### Ground Truth" facts under ## Canon in the History are authoritative: if your synopsis ever disagrees with them about location, who is present, or the character's Sequence/role, correct the synopsis to match.
+- The same anti-fabrication rule as ## Canon Fidelity applies here, and especially so: an invented name, organization, deity, place, or event written into the summary hardens into "fact" for every future turn — record ONLY what play or the provided lore established.
 
 ## Codex (recurring entities)
 Maintain a durable record of the people, places, objects, groups, and unresolved plot threads that matter across the whole chronicle, so a figure or promise from a hundred turns ago is never contradicted when it returns. Use "codexUpdates" — an array of DELTAS, not a restatement of the whole cast.
@@ -104,7 +115,7 @@ Maintain a durable record of the people, places, objects, groups, and unresolved
 - "name" is the entity's stable name; "status" is a SHORT present-tense note of its current state (e.g. "alive; reluctant ally, hiding in Backlund", "destroyed in the fire", "owed a favour — unpaid"). Keep each under ~20 words.
 - Set "importance": "pivotal" for the figures, places, and threads central to the chronicle (recurring allies/enemies, the character's seat of power, a driving vow) — these are always kept in view; omit it (defaults to "standard") for minor or incidental entities.
 - For a "thread", set "resolved": true on the turn it is finally settled, so it stops being treated as an open obligation.
-- Record ONLY what play or the provided lore has established — never invent canon here (the same fidelity rule as the running summary). The "## Established Facts" block in the History is this record fed back to you: treat it as authoritative and do not contradict it.
+- Record ONLY what play or the provided lore has established — never invent canon here (the same ## Canon Fidelity rule). The "### Established Facts" block under ## Canon is this record fed back to you: treat it as authoritative and do not contradict it.
 
 ## Canon Fidelity
 This is a Lord of the Mysteries story; stay faithful to its canon.
@@ -303,14 +314,23 @@ export function buildGameStatePrompt(gameState: GameState): PromptLayer {
 }
 
 /**
- * Compact, authoritative anchor pinned at the TOP of the history layer — right
- * above the AI-maintained "## Story So Far" synopsis. The running summary can
- * drift from the engine's ground truth (a recursive-summarization failure mode),
- * so this restates the few most drift-prone facts (current location, who is
- * present) and tells the narrator that THESE win over any conflicting detail in
- * the notes below. Terse on purpose (~30 tokens): the full state is already in
- * the never-trimmed `## Current Game State` layer; this is a local reminder
- * placed next to the synopsis where the model attends to it.
+ * The header + once-stated precedence for the unified `## Canon` history section
+ * (issue #201). Ground Truth, Established Facts, and the synopsis used to be three
+ * separate "this is true" blocks, each restating its own authority; folding them
+ * under one header lets the narrator hold a single authority frame and states the
+ * precedence ONCE here.
+ */
+const CANON_HEADER = [
+  "## Canon (authoritative — Ground Truth > Established Facts > synopsis)",
+  "Everything in this section is authoritative, in that order of precedence: where two sources disagree, the higher one wins (engine Ground Truth over the pinned Established Facts, those over the AI-maintained synopsis). Keep the story consistent with all of it, and correct the synopsis to match the facts above it.",
+].join("\n");
+
+/**
+ * Compact engine-ground-truth sub-block for the `## Canon` section — the few most
+ * drift-prone facts (current location, who is present), restated so the synopsis
+ * can't override them. Terse on purpose (~30 tokens): the full state is already in
+ * the never-trimmed `## Current Game State` layer. Precedence is stated once in
+ * `CANON_HEADER`, so this no longer carries its own "these win" sentence.
  */
 function buildGroundTruthAnchor(gameState: GameState): string {
   const present =
@@ -318,8 +338,7 @@ function buildGroundTruthAnchor(gameState: GameState): string {
       ? gameState.npcsPresent.join(", ")
       : "no specific named NPCs";
   return [
-    "## Ground Truth (authoritative)",
-    "These engine facts override any conflicting detail in the story notes below — if the synopsis or a past turn disagrees with these, THESE are correct:",
+    "### Ground Truth (engine facts)",
     `- Current location: ${gameState.location}`,
     `- Present this scene: ${present}`,
   ].join("\n");
@@ -335,13 +354,14 @@ const CODEX_KIND_LABELS: Record<string, string> = {
 };
 
 /**
- * Compact, authoritative `## Established Facts` block (history-context Codex)
- * pinned alongside the ground-truth anchor. Built from the engine's
- * scene-relevant + pivotal Codex entities — a stable index of who/what matters
- * so a figure or open thread from long ago is not contradicted when it returns.
- * The selection is already hard-capped by the engine (`selectPinnedEntities`),
- * so this block is bounded no matter how large the full Codex grows — the
- * per-turn budget stays flat. Returns "" when there is nothing pinned.
+ * Compact Established-Facts sub-block (history-context Codex) for the `## Canon`
+ * section. Built from the engine's scene-relevant + pivotal Codex entities — a
+ * stable index of who/what matters so a figure or open thread from long ago is
+ * not contradicted when it returns. The selection is already hard-capped by the
+ * engine (`selectPinnedEntities`), so this block is bounded no matter how large
+ * the full Codex grows — the per-turn budget stays flat. Returns "" when there is
+ * nothing pinned. (Precedence is stated once in `CANON_HEADER`; this keeps only
+ * the content-specific "don't contradict" instruction.)
  */
 function buildEstablishedFacts(entities: readonly PinnedCodexEntity[]): string {
   if (entities.length === 0) return "";
@@ -355,8 +375,8 @@ function buildEstablishedFacts(entities: readonly PinnedCodexEntity[]): string {
     return `- [${label}] ${e.name}${status}${resolved}${seen}`;
   });
   return [
-    "## Established Facts (canon — do not contradict)",
-    "These are established people, places, objects, groups, and open threads from the chronicle so far. Keep them consistent — do not contradict a status, kill off someone already gone, or drop an unresolved thread:",
+    "### Established Facts (canon — do not contradict)",
+    "Established people, places, objects, groups, and open threads from the chronicle so far — do not contradict a status, kill off someone already gone, or drop an unresolved thread:",
     ...lines,
   ].join("\n");
 }
@@ -367,21 +387,34 @@ export function buildHistoryPrompt(
   pinnedEntities: readonly PinnedCodexEntity[] = [],
 ): PromptLayer {
   const trimmed = trimMemoryForBudget(memory, TOKEN_BUDGET.history);
-  const content = formatMemoryForPrompt(trimmed);
+  // The synopsis is rendered inside `## Canon` below (issue #201), so the rest of
+  // the memory body (facts, recent history, recent turns) is formatted without it.
+  const synopsis = formatRunningSummary(trimmed);
+  const rest = formatMemoryForPrompt(trimmed, { includeRunningSummary: false });
 
-  if (!content) {
+  // Turn 0 has no history to anchor against, and the game-state layer already
+  // carries the ground truth on its own.
+  if (!synopsis && !rest) {
     return { role: "user", content: "" };
   }
-  // Anchor only once there is history to anchor against (turn 0 has none, and the
-  // game-state layer already carries the ground truth on its own). The Established
-  // Facts block rides next to the ground-truth anchor, above the synopsis.
-  const anchors = gameState
-    ? [buildGroundTruthAnchor(gameState), buildEstablishedFacts(pinnedEntities)].filter(
-        (s) => s !== "",
-      )
-    : [buildEstablishedFacts(pinnedEntities)].filter((s) => s !== "");
-  const body = anchors.length > 0 ? `${anchors.join("\n\n")}\n\n${content}` : content;
-  return { role: "user", content: `## History\n${body}` };
+
+  // The unified ## Canon section: engine Ground Truth, then pinned Established
+  // Facts, then the AI-maintained synopsis — one authority frame, precedence
+  // stated once in CANON_HEADER. Each sub-block is dropped when empty.
+  const canonParts = [
+    gameState ? buildGroundTruthAnchor(gameState) : "",
+    buildEstablishedFacts(pinnedEntities),
+    synopsis ? ["### Story So Far", synopsis].join("\n") : "",
+  ].filter((s) => s !== "");
+
+  const sections: string[] = [];
+  if (canonParts.length > 0) {
+    sections.push([CANON_HEADER, ...canonParts].join("\n\n"));
+  }
+  if (rest) {
+    sections.push(rest);
+  }
+  return { role: "user", content: `## History\n${sections.join("\n\n")}` };
 }
 
 export function buildInstructionPrompt(

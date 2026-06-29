@@ -8,9 +8,11 @@ import { createMalformedOutputError } from "./errors";
 const SANITY_IMPACT_MIN = -5;
 const SANITY_IMPACT_MAX = 5;
 const MAX_CHOICES = 6;
-const VALID_CHOICE_TYPES = ["action", "dialogue", "investigation", "ritual"];
+// Exported so `response-schema.ts` reuses the exact same lists in its structured-
+// output enums rather than re-declaring them (single source of truth).
+export const VALID_CHOICE_TYPES = ["action", "dialogue", "investigation", "ritual"];
 // The sanity event tags the AI may emit (issue #95); unknown tags are dropped.
-const VALID_SANITY_EVENT_TAGS = [
+export const VALID_SANITY_EVENT_TAGS = [
   "rest",
   "human-connection",
   "routine",

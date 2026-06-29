@@ -345,14 +345,34 @@ export function trimMemoryForBudget(
   return trimmed;
 }
 
-export function formatMemoryForPrompt(state: MemoryState): string {
+/**
+ * The durable synopsis body (no header), or "" when none. Pulled out of
+ * `formatMemoryForPrompt` so the prompt assembler can place the synopsis inside
+ * the unified `## Canon` history section (issue #201) — as the lowest-precedence
+ * source, below the engine Ground Truth and pinned Established Facts — rather than
+ * as its own standalone `## Story So Far` block.
+ */
+export function formatRunningSummary(state: MemoryState): string {
+  return state.runningSummary && state.runningSummary.trim() !== ""
+    ? state.runningSummary.trim()
+    : "";
+}
+
+export function formatMemoryForPrompt(
+  state: MemoryState,
+  options: { includeRunningSummary?: boolean } = {},
+): string {
+  const { includeRunningSummary = true } = options;
   const sections: string[] = [];
 
   // Pinned at the top, before facts and recent turns: the durable synopsis the
   // narrator both reads (to stay consistent) and rewrites (to keep it current).
-  if (state.runningSummary && state.runningSummary.trim() !== "") {
+  // The prompt assembler renders it inside `## Canon` instead, so it opts out via
+  // `includeRunningSummary: false` and the synopsis is left out here.
+  const summary = formatRunningSummary(state);
+  if (includeRunningSummary && summary !== "") {
     sections.push("## Story So Far");
-    sections.push(state.runningSummary.trim());
+    sections.push(summary);
   }
 
   if (state.sessionFacts.length > 0) {
