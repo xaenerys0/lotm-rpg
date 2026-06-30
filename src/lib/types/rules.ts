@@ -42,9 +42,34 @@ export interface Item {
   consumable?: boolean;
 }
 
+/** Whether a ritual step is a tangible material or a lived condition/deed. */
+export type RitualRequirementKind = "material" | "condition";
+
+/**
+ * A single tagged step of an Advancement Ritual (issue #209): a **material**
+ * (a tangible reagent the rite consumes — reconciled with the potion's
+ * `prerequisiteItems`) or a **condition** (a lived deed/place/time the Beyonder
+ * must endure — "amidst the singing of mermaids", "buried for sixty days").
+ */
+export interface RitualStep {
+  kind: RitualRequirementKind;
+  text: string;
+}
+
 export interface Ritual {
   description: string;
+  /**
+   * Legacy flat requirement list (back-compat). Hand-authored fallback rituals
+   * in `pathways.ts` keep this; the engine treats each entry as a `condition`
+   * step when `steps` is absent.
+   */
   requirements: string[];
+  /**
+   * Corpus-generated tagged steps (issue #209) — materials drawn from the canon
+   * ingredient list + conditions split from the ritual description. When
+   * present, supersedes `requirements` for the rite's step derivation.
+   */
+  steps?: RitualStep[];
 }
 
 export type SequenceClassification = "Low" | "Mid" | "High" | "Demigod" | "True God";

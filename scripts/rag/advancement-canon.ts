@@ -138,9 +138,37 @@ function field(body: string, key: string): string | null {
   return null;
 }
 
+/** Most condition beats a single rite contributes (issue #209). */
+const MAX_CONDITION_BEATS = 3;
+
+/**
+ * Split a ritual's prose description into the lived CONDITION beats the Beyonder
+ * must endure (issue #209) — the deeds/places/times distinct from the tangible
+ * materials. Sentence-segmented, trimmed, non-empty, capped at
+ * `MAX_CONDITION_BEATS` so a long multi-clause rite stays a proportionate
+ * symbolic ordeal rather than a wall of micro-steps. Always at least one beat
+ * when the description carries any text (the whole line collapses to one).
+ */
+function splitConditions(description: string): string[] {
+  const beats = description
+    .split(/(?<=[.!?])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  const capped = beats.slice(0, MAX_CONDITION_BEATS);
+  // A description with no sentence breaks still yields the single whole line.
+  return capped.length > 0 ? capped : description.trim() ? [description.trim()] : [];
+}
+
+type RitualRequirementKind = "material" | "condition";
+interface RitualStep {
+  kind: RitualRequirementKind;
+  text: string;
+}
+
 interface RitualEntry {
   description: string;
   requirements: string[];
+  steps: RitualStep[];
 }
 
 function main(): void {
@@ -202,9 +230,21 @@ function main(): void {
       ...extractIngredients(field(body, "main_ingr")),
       ...extractIngredients(field(body, "supp_ingr")),
     ];
+    // Tagged steps (issue #209): the canon materials (cleaned, as for the
+    // main-ingredient overlay) plus the lived condition beats split from the
+    // ritual text — so the engine can require/consume materials while enforcing
+    // the conditions symbolically.
+    const steps: RitualStep[] = [
+      ...requirements.map(
+        (text): RitualStep => ({ kind: "material", text: cleanIngredientName(text) }),
+      ),
+      ...splitConditions(description).map(
+        (text): RitualStep => ({ kind: "condition", text }),
+      ),
+    ];
 
     if (!byPathway.has(pathwayId)) byPathway.set(pathwayId, new Map());
-    byPathway.get(pathwayId)!.set(level, { description, requirements });
+    byPathway.get(pathwayId)!.set(level, { description, requirements, steps });
   }
 
   const lines: string[] = [];
@@ -219,7 +259,12 @@ function main(): void {
     "// Canon: an Advancement Ritual is required from Sequence 5 onward, so only",
   );
   lines.push("// levels 5-1 carry an entry. Each holds the in-world ritual text and the");
-  lines.push("// material list drawn from the same source sequence.");
+  lines.push(
+    "// material list drawn from the same source sequence. Each rung also carries",
+  );
+  lines.push(
+    "// `steps`: the materials + the lived condition beats, tagged (issue #209).",
+  );
   lines.push("");
   lines.push('import type { Ritual } from "@/lib/types/rules";');
   lines.push("");
@@ -238,6 +283,7 @@ function main(): void {
       lines.push(`    ${level}: {`);
       lines.push(`      description: ${JSON.stringify(r.description)},`);
       lines.push(`      requirements: ${JSON.stringify(r.requirements)},`);
+      lines.push(`      steps: ${JSON.stringify(r.steps)},`);
       lines.push("    },");
     }
     lines.push("  },");

@@ -64,7 +64,10 @@ model without re-parsing or re-chunking.
   the committed wiki dump's `Module:Sequence/standard` and writes **three**
   generated rules-engine files: `src/lib/rules/advancement-canon.ts`
   (`ADVANCEMENT_RITUALS`, pathway id → sequence level 5-1 — a ritual is mandatory
-  only from Sequence 5), `src/lib/rules/sequence-names-canon.ts` (`SEQUENCE_NAMES`,
+  only from Sequence 5; each rung emits `description` + flat `requirements` AND
+  **tagged `steps`** — the ingredients as `material` steps + the description's
+  sentence beats as `condition` steps via `splitConditions`, capped at
+  `MAX_CONDITION_BEATS`, issue #209), `src/lib/rules/sequence-names-canon.ts` (`SEQUENCE_NAMES`,
   every rung's canon name 9 → 0), and `src/lib/rules/main-ingredients-canon.ts`
   (`MAIN_INGREDIENTS`, the canon main-ingredient materials for the rungs the wiki
   documents one for, cleaned of wiki cruft via `cleanIngredientName`). Run a

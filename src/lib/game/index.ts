@@ -176,16 +176,20 @@ export {
   type ArtifactPowerGrant,
 } from "./artifact-effects";
 
-// Advancement rituals performed across turns (issue #99 Part C).
+// Advancement rituals — a lived ordeal across turns (issue #209; was #99 Part C).
 export {
-  advanceRitualStep,
+  advanceRitual,
   beginRitual,
   clearRitual,
-  currentRitualStep,
   isRitualComplete,
   isValidRitualStateShape,
+  ritualFidelity,
+  ritualInProgress,
   ritualProgress,
+  ritualQuestLabel,
   ritualStepsFor,
+  ritualTurns,
+  skipRitual,
   type RitualState,
 } from "./ritual";
 

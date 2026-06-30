@@ -12,7 +12,7 @@ import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
 import { hasItemMatching, removeItemsByName } from "./inventory";
 import { clamp } from "./math";
-import { isRitualComplete } from "./ritual";
+import { ritualFidelity, ritualQuestLabel } from "./ritual";
 import { sanityDelta } from "./sanity";
 import type { GameSession } from "./types";
 import { applySanityImpact } from "./world-state";
@@ -30,10 +30,12 @@ import { applySanityImpact } from "./world-state";
 //
 // Canon (novel + wiki): each potion needs its formula, a main ingredient (a
 // Beyonder characteristic) and supplementary ingredients; **from Sequence 5
-// onward an Advancement Ritual is also mandatory** — without it the chance of
-// losing control is extreme. We model that as a *hard* requirement: the rite is
-// performed as part of the attempt (and narrated), so reaching Seq ≤ 5 demands
-// the pathway define one. The key to the Acting Method is to "remember you're
+// onward an Advancement Ritual is canon** — without it "the likelihood of
+// success plummets to a dangerous point." We model the rite as a SOFT,
+// fidelity-weighted factor (issue #209, `ritual.ts`): it no longer hard-gates
+// the climb (skipping is allowed but canon-dangerous), but how faithfully it was
+// lived out (`ritualFidelity`) feeds `advancementSuccessChance` and
+// `advancementHighRisk`. The key to the Acting Method is to "remember you're
 // only acting" — over-immersion (a frayed mind) makes losing control far more
 // likely. Advancement is therefore never certain: there is always a chance of
 // losing control, and it plays out here.
@@ -54,6 +56,19 @@ export const RITUAL_REQUIRED_AT_OR_BELOW = 5;
 
 /** Sanity floor (as a ratio of max) demanded before advancement may be tried. */
 export const ADVANCEMENT_SANITY_RATIO = 0.25;
+
+/**
+ * How far a fully-forgone Advancement Ritual drags down the climb's success
+ * chance (issue #209). A faithfully-performed rite costs nothing; skipping it
+ * subtracts the full penalty — canon: the odds "plummet to a dangerous point."
+ */
+export const RITUAL_INFIDELITY_PENALTY = 0.5;
+
+/**
+ * Ritual fidelity at or below which the climb is a fragile, high-risk moment —
+ * a rushed or skipped rite escalates a loss of control by one step.
+ */
+export const RITUAL_HIGH_RISK_FIDELITY = 0.5;
 
 /** True when the character occupies a sequence this module can advance from. */
 export function isAdvanceableSequence(sequenceLevel: number): boolean {
@@ -77,12 +92,11 @@ export interface AdvancementRequirement {
   label: string;
   met: boolean;
   /**
-   * A requirement that is satisfied by *reaching* this point but is enacted
-   * later, during the attempt itself — not a prerequisite the player ticks off
-   * beforehand. The Advancement Ritual is performed and narrated as the climb
-   * happens, so it must not render as an already-completed item. `met` still
-   * gates `canAdvance` (the pathway must define the ritual); `forthcoming` only
-   * changes how the row is presented.
+   * An advisory row that does NOT gate `canAdvance` — it is presented as still
+   * pending rather than a satisfied checkbox. The Advancement Ritual uses this
+   * (issue #209): its `met` is always `true` (the rite is a soft, fidelity-
+   * weighted factor on the odds, never a hard gate), and `forthcoming` is set
+   * while the rite has not yet been performed faithfully.
    */
   forthcoming?: boolean;
 }
@@ -127,21 +141,26 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
     });
   }
 
-  // From Sequence 5 onward an Advancement Ritual is canon and mandatory, and
-  // (issue #99 Part C) it must actually be PERFORMED step by step across turns
-  // before the climb unlocks — no longer auto-satisfied by merely defining one.
-  // The gate is met when the pathway defines no ritual, or the rite for this
-  // target has been fully performed (`ritualState`, via the ritual panel).
+  // From Sequence 5 onward an Advancement Ritual is canon. It is no longer a HARD
+  // gate (issue #209): the climb is always attemptable, but how faithfully the
+  // rite was lived out feeds `advancementSuccessChance` — skipping it is allowed
+  // but canon-dangerous. So this row is ADVISORY (`met: true`); `forthcoming`
+  // reflects whether the rite is still unperformed, and the label warns that a
+  // forgone rite makes losing control the likely outcome.
   if (ritualRequiredFor(target)) {
     const ritual = targetSeq?.advancementRitual;
-    const performed = ritual === undefined || isRitualComplete(session, target);
-    requirements.push({
-      id: "ritual",
-      label: ritual
-        ? `Perform the Advancement Ritual across the coming turns: ${ritual.description}`
-        : "The Sequence's Advancement Ritual must be performed",
-      met: performed,
-    });
+    if (ritual) {
+      const fidelity = ritualFidelity(session, target);
+      requirements.push({
+        id: "ritual",
+        label:
+          fidelity >= 1
+            ? `Advancement Ritual performed: ${ritual.description}`
+            : `Perform the Advancement Ritual to steady the climb — skipping it is perilous: ${ritual.description}`,
+        met: true,
+        forthcoming: fidelity < 1,
+      });
+    }
   }
 
   // Anchors steady a high-Sequence form (Saint tier and above).
@@ -197,6 +216,14 @@ export function advancementSuccessChance(session: GameSession): number {
       effectiveSupport(session.anchorState) - requiredSupport(target),
     );
     chance += Math.min(0.1, surplus / 400);
+  }
+
+  // The Advancement Ritual is what survives the surge of the new characteristic
+  // (issue #209): a faithfully-lived rite costs nothing, while a rushed or
+  // forgone one drags the odds down toward the canon "dangerous point."
+  const ritual = getSequence(state.pathwayId, target)?.advancementRitual;
+  if (ritualRequiredFor(target) && ritual) {
+    chance -= RITUAL_INFIDELITY_PENALTY * (1 - ritualFidelity(session, target));
   }
 
   // Always leave a real chance of losing control, and never a sure thing.
@@ -281,9 +308,18 @@ export function attemptAdvancement(
     },
   ];
   if (ritual) {
+    // Note how faithfully the rite was lived out so the narrator frames the
+    // climb accordingly (issue #209): faithful, rushed, or forgone.
+    const fidelity = ritualFidelity(session, target);
+    const manner =
+      fidelity >= 1
+        ? "performed faithfully"
+        : fidelity <= 0
+          ? "forgone — survived the surge by sheer luck"
+          : "rushed";
     facts.push({
       type: "event",
-      description: `Completed the advancement ritual to become a ${roleName}: ${ritual.description}`,
+      description: `The advancement ritual to become a ${roleName} was ${manner}: ${ritual.description}`,
       turnNumber: session.turnCount,
     });
   }
@@ -300,6 +336,10 @@ export function attemptAdvancement(
         sequenceLevel: target,
         inventory: removeItemsByName(state.inventory, prerequisiteItems),
         digestion: createDigestionState(state.pathwayId, target),
+        // Drop the rite's quest label too — normally `advanceRitual` removed it
+        // on completion, but a climb taken with a rite still in progress would
+        // otherwise leave it stranded in `activeQuests` (issue #209).
+        activeQuests: drained.activeQuests.filter((q) => q !== ritualQuestLabel(target)),
       },
       memory: {
         ...session.memory,
@@ -315,8 +355,10 @@ export function attemptAdvancement(
 
 /**
  * Whether the attempt is a fragile, high-risk moment that escalates a loss of
- * control by one step — an under-anchored high form, or a frayed mind from
- * over-immersion in the role ("remember you're only acting").
+ * control by one step — an under-anchored high form, a frayed mind from
+ * over-immersion in the role ("remember you're only acting"), or a rushed /
+ * forgone Advancement Ritual (issue #209): without the rite there is nothing to
+ * steady the surge of the new characteristic.
  */
 export function advancementHighRisk(session: GameSession): boolean {
   const state = session.gameState;
@@ -325,6 +367,13 @@ export function advancementHighRisk(session: GameSession): boolean {
     anchorsRelevant(target) &&
     session.anchorState &&
     anchorHighRisk(session.anchorState, target)
+  ) {
+    return true;
+  }
+  if (
+    ritualRequiredFor(target) &&
+    getSequence(state.pathwayId, target)?.advancementRitual &&
+    ritualFidelity(session, target) < RITUAL_HIGH_RISK_FIDELITY
   ) {
     return true;
   }

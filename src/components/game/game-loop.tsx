@@ -92,9 +92,12 @@ import {
   anchorHighRisk,
   ADVANCEMENT_SANITY_RATIO,
   isAdvanceableSequence,
-  advanceRitualStep,
-  currentRitualStep,
+  advanceRitual,
+  beginRitual,
+  clearRitual,
+  skipRitual,
   isRitualComplete,
+  ritualInProgress,
   ritualProgress,
   ritualStepsFor,
   ritualRequiredFor,
@@ -952,7 +955,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         );
         return;
       }
-      handleSetback();
+      // The failed attempt consumed the rite — clear it so the retry performs a
+      // fresh rite rather than re-using the stranded (possibly skipped) one
+      // (issue #209). `clearRitual` is a no-op when no rite is in progress.
+      applySetbackToSession(clearRitual(session));
     } finally {
       advancingRef.current = false;
     }
@@ -962,7 +968,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     recordUsage,
     updateSession,
     concludeChronicle,
-    handleSetback,
+    applySetbackToSession,
     preferences.narrativeVerbosity,
   ]);
 
@@ -1682,10 +1688,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // A turn of play likewise advances the search for the next potion's
       // formula, when one is being sought through the story (issue #171).
       const seeking = advanceFormulaPursuit(tracked);
+      // And it lives out one turn of the Advancement Ritual, when one is under
+      // way (issue #209) — the rite spans turns rather than per-step clicks.
+      const riting = advanceRitual(seeking);
       // Temporary copied/stolen powers fade by one turn; expired ones are
       // released (acquired-powers subsystem), so a Polymath's Imitation or an
       // artifact-stolen ability does not linger forever.
-      const powered = tickAcquiredPowers(seeking);
+      const powered = tickAcquiredPowers(riting);
       // Story-consistency Codex (history-context Codex): fold the narrator's
       // entity deltas into the registry and auto-touch the entities the engine
       // knows are present (current location + present NPCs), so a recurring
@@ -1894,22 +1903,23 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     [session, updateSession],
   );
 
-  // Advancement ritual performed across turns (issue #99 Part C): enacting a step
-  // marks engine progress first (the engine owns the rite's truth), then narrates
-  // the step as a normal player action through the validated turn pipeline — so
-  // the rite plays out over several turns before the climb unlocks.
-  const handleEnactRitualStep = useCallback(() => {
+  // Advancement ritual — one trigger that spans turns (issue #209). "Perform the
+  // rite" begins the tracked rite (the engine owns its truth); it then lives out
+  // over the following turns of play (advanced in the per-turn tick chain like a
+  // hunt / formula pursuit), with the narrator weaving the pathway's own canon
+  // rite into the scene. The player does not click per step.
+  const handleBeginRite = useCallback(() => {
     if (!session) return;
     const target = targetSequence(session.gameState.sequenceLevel);
-    const step = currentRitualStep(session, target);
-    if (step === null) return;
-    const advanced = advanceRitualStep(session, target);
-    const choice = freeTextToChoice(composeRitualAction([], step));
-    const withChoice = {
-      ...advanced,
-      currentChoices: [...(advanced.currentChoices ?? []), choice],
-    };
-    updateSession(transition(withChoice, { type: "SELECT_CHOICE", choiceId: choice.id }));
+    updateSession(beginRitual(session, target));
+  }, [session, updateSession]);
+
+  // Deliberately forgo the rite (canon-dangerous): the climb unlocks but its
+  // odds plummet and a loss of control becomes the likely outcome.
+  const handleSkipRite = useCallback(() => {
+    if (!session) return;
+    const target = targetSequence(session.gameState.sequenceLevel);
+    updateSession(skipRitual(session, target));
   }, [session, updateSession]);
 
   // The consequences-phase "Continue" — now reached ONLY by an engine-decided
@@ -2208,13 +2218,19 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                       <RitualPerformancePanel
                         session={session}
                         busy={advancing || facingFate}
-                        onEnactStep={handleEnactRitualStep}
+                        onBeginRite={handleBeginRite}
+                        onSkipRite={handleSkipRite}
                       />
-                      <AdvancementPanel
-                        session={session}
-                        busy={advancing || facingFate}
-                        onAttempt={() => void handleAdvancement()}
-                      />
+                      {/* The climb attempt waits on the rite: a Seq ≤5 ascent
+                          must be performed or deliberately forgone first, so the
+                          panel above resolves before this one appears. */}
+                      {!ritualPending(session) && (
+                        <AdvancementPanel
+                          session={session}
+                          busy={advancing || facingFate}
+                          onAttempt={() => void handleAdvancement()}
+                        />
+                      )}
                       {advancementRequirements(session).some(
                         (req) => req.id === "anchors" && !req.met,
                       ) && (
@@ -3642,20 +3658,37 @@ function PotionPreparationPanel({
   );
 }
 
-// Advancement ritual performed across turns (issue #99 Part C): between potion
-// preparation and the climb, the Beyonder must enact the canon Advancement Ritual
-// step by step. Each "Enact this step" is a narrated turn; the engine marks
-// progress; the panel hides once the rite is complete and the AdvancementPanel's
-// ritual gate reads met. Renders nothing until the potion is prepared, the target
-// needs a ritual, and the rite is unfinished.
+// True while a Seq ≤5 ascent still needs its Advancement Ritual resolved — the
+// potion is in hand, the rung defines a rite, and it has been neither performed
+// to its end nor deliberately forgone. The climb attempt waits on this so the
+// player consciously performs or skips the rite first (issue #209).
+function ritualPending(session: GameSession): boolean {
+  const target = targetSequence(session.gameState.sequenceLevel);
+  if (!ritualRequiredFor(target)) return false;
+  const ritual = getSequence(session.gameState.pathwayId, target)?.advancementRitual;
+  if (!ritual) return false;
+  if (!potionPreparationPlan(session).allOwned) return false;
+  return !isRitualComplete(session, target);
+}
+
+// Advancement ritual — one trigger that spans turns (issue #209). Between potion
+// preparation and the climb, the Beyonder lives out the canon Advancement Ritual:
+// "Perform the rite" begins it, and it then plays out over the following turns of
+// play (advanced in the per-turn tick), the narrator weaving the pathway's OWN
+// canon rite into each scene — no per-step clicking, no generic template. A
+// progress + fidelity meter tracks it; "Skip the rite" is the canon-dangerous
+// shortcut. Renders nothing until the potion is prepared, the rung needs a rite,
+// and it's defined; hides once the rite is performed or forgone.
 function RitualPerformancePanel({
   session,
   busy,
-  onEnactStep,
+  onBeginRite,
+  onSkipRite,
 }: {
   session: GameSession;
   busy: boolean;
-  onEnactStep: () => void;
+  onBeginRite: () => void;
+  onSkipRite: () => void;
 }) {
   const target = targetSequence(session.gameState.sequenceLevel);
   const targetSeq = getSequence(session.gameState.pathwayId, target);
@@ -3666,8 +3699,13 @@ function RitualPerformancePanel({
   if (isRitualComplete(session, target)) return null;
 
   const steps = ritualStepsFor(session, target);
-  const completed = ritualProgress(session, target);
+  const materials = steps.filter((s) => s.kind === "material");
+  const conditions = steps.filter((s) => s.kind === "condition");
   const roleName = targetSeq?.name ?? `Sequence ${target}`;
+  const inProgress = ritualInProgress(session, target);
+  const state = session.ritualState;
+  const totalTurns = state?.targetSeq === target ? state.totalTurns : 0;
+  const performed = ritualProgress(session, target);
 
   return (
     <section
@@ -3681,56 +3719,84 @@ function RitualPerformancePanel({
         Perform the rite to become a {roleName}
       </h2>
       <p className="mt-1 text-sm leading-relaxed text-muted">{ritual.description}</p>
-      <div
-        role="progressbar"
-        aria-label="Advancement ritual progress"
-        aria-valuenow={completed}
-        aria-valuemin={0}
-        aria-valuemax={steps.length}
-        aria-valuetext={`${completed} of ${steps.length} steps performed`}
-        className="mt-3 h-2 overflow-hidden rounded-full bg-surface"
-      >
-        <div
-          className="h-full bg-occult/60"
-          style={{ width: `${steps.length > 0 ? (completed / steps.length) * 100 : 0}%` }}
-        />
-      </div>
-      <ol className="mt-4 space-y-2 text-sm">
-        {steps.map((step, i) => {
-          const done = i < completed;
-          const current = i === completed;
-          return (
-            <li key={`${step}-${i}`} className="flex flex-wrap items-center gap-2">
-              <span
-                aria-hidden="true"
-                className={done ? "text-occult-bright" : "text-muted"}
-              >
-                {done ? "✦" : "◇"}
+
+      {conditions.length > 0 && (
+        <ul className="mt-3 space-y-1 text-sm text-foreground/85">
+          {conditions.map((c, i) => (
+            <li key={`cond-${i}`} className="flex gap-2">
+              <span aria-hidden="true" className="text-occult-bright">
+                ◆
               </span>
-              <span
-                className={
-                  done ? "text-foreground/60 line-through" : "text-foreground/85"
-                }
-              >
-                {step}
-                <span className="sr-only">
-                  {done ? " — performed" : " — not yet performed"}
-                </span>
-              </span>
-              {current && (
-                <button
-                  type="button"
-                  onClick={onEnactStep}
-                  disabled={busy}
-                  className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-3 py-1 text-xs font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Enact this step
-                </button>
-              )}
+              <span>{c.text}</span>
             </li>
-          );
-        })}
-      </ol>
+          ))}
+        </ul>
+      )}
+
+      {materials.length > 0 && (
+        <p className="mt-3 text-xs leading-relaxed text-muted">
+          Laid out for the rite: {materials.map((m) => m.text).join(", ")}.
+        </p>
+      )}
+
+      {inProgress ? (
+        <>
+          <div
+            role="progressbar"
+            aria-label="Advancement ritual progress"
+            aria-valuenow={performed}
+            aria-valuemin={0}
+            aria-valuemax={totalTurns}
+            aria-valuetext={`${performed} of ${totalTurns} turns of the rite lived out`}
+            className="mt-4 h-2 overflow-hidden rounded-full bg-surface"
+          >
+            <div
+              className="h-full bg-occult/60"
+              style={{
+                width: `${totalTurns > 0 ? (performed / totalTurns) * 100 : 0}%`,
+              }}
+            />
+          </div>
+          <p className="mt-2 text-sm text-foreground/85">
+            The rite is under way — {performed} of {totalTurns} turns endured. Live out
+            the coming turns to see it through; a steady mind keeps it faithful.
+          </p>
+          <button
+            type="button"
+            onClick={onSkipRite}
+            disabled={busy}
+            className="mt-3 min-h-[24px] rounded-md border border-crimson/50 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-crimson transition-colors hover:border-crimson/70 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Skip the rite (perilous)
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="mt-4 text-sm text-foreground/85">
+            Begin the rite and live it out over the turns it demands. Forgoing it is
+            possible, but the surge of the new characteristic is far more likely to take
+            you.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={onBeginRite}
+              disabled={busy}
+              className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-3 py-1 text-xs font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Perform the rite
+            </button>
+            <button
+              type="button"
+              onClick={onSkipRite}
+              disabled={busy}
+              className="min-h-[24px] rounded-md border border-crimson/50 bg-crimson/[0.08] px-3 py-1 text-xs font-medium text-crimson transition-colors hover:border-crimson/70 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Skip the rite (perilous)
+            </button>
+          </div>
+        </>
+      )}
     </section>
   );
 }
