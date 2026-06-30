@@ -1,7 +1,6 @@
 import type { GameState, MemoryState } from "@/lib/ai";
-import { getPathway, getSequence, siblingPathwayIds } from "@/lib/rules";
+import { getSequence, siblingPathwayIds } from "@/lib/rules";
 import type { Item } from "@/lib/types/rules";
-import { pickRandom } from "@/lib/lore/random";
 
 import type {
   AcquiredPower,
@@ -296,57 +295,4 @@ export function lossOfControlPreview(session: GameSession): LossOfControlSeverit
     gs.sequenceLevel,
   );
   return evaluateLossOfControl({ sequenceLevel: gs.sequenceLevel, highRisk });
-}
-
-// ─── Name + background generator ─────────────────────────────────────
-
-/** A pool of Loen-flavoured names for quick test characters. */
-const ADMIN_NAMES: readonly string[] = [
-  "Klein Probe",
-  "Audrey Testwell",
-  "Leonard Quill",
-  "Roselle Mock",
-  "Benson Drill",
-  "Maric Sample",
-  "Dunn Trial",
-  "Cattleya Vex",
-  "Emlyn Proof",
-  "Forsythe Dummy",
-  "Naya Cipher",
-  "Tarot Stand-in",
-];
-
-const BACKGROUND_OPENERS: readonly string[] = [
-  "Raised in the soot and gaslight of a Loen industrial borough,",
-  "Once a quiet clerk who stumbled onto a half-burned formula,",
-  "A wanderer who washed up on the docks with no memory and one coin,",
-  "Born to a family that whispered of the Mysteries behind locked doors,",
-  "A disgraced scholar chased out of the university for forbidden reading,",
-];
-
-const BACKGROUND_HOOKS: readonly string[] = [
-  "they drank the potion to settle an old debt with fate.",
-  "they advance carefully, terrified of losing themselves to the role.",
-  "they keep the churches at arm's length and trust only the fog.",
-  "they hunt the truth behind their predecessor's disappearance.",
-  "they wear their composure like a mask over a long, patient hunger.",
-];
-
-/** A quick Loen-flavoured name for a test character. */
-export function generateAdminName(random: () => number = Math.random): string {
-  return pickRandom(ADMIN_NAMES, random);
-}
-
-/** A short, pathway-appropriate backstory for a test character (capped length). */
-export function generateAdminBackground(
-  pathwayId: number,
-  sequenceLevel: number,
-  name: string,
-  random: () => number = Math.random,
-): string {
-  const pathway = getPathway(pathwayId)?.name ?? "unknown";
-  const role = getSequence(pathwayId, sequenceLevel)?.name ?? "Beyonder";
-  const opener = pickRandom(BACKGROUND_OPENERS, random);
-  const hook = pickRandom(BACKGROUND_HOOKS, random);
-  return `${name} walks the ${pathway} pathway as a ${role}. ${opener} ${hook}`;
 }
