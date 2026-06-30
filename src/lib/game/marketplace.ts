@@ -1,5 +1,10 @@
 import type { GameState } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
+import {
+  type ArtifactGrade,
+  gradeForArtifactItem,
+  isArtifactTradeable,
+} from "@/lib/lore";
 
 import { isReagentCategory } from "./inventory";
 
@@ -66,12 +71,58 @@ export const PRICE_GUIDANCE: Record<
 };
 
 /**
- * Categories a non-player vendor (a fence/pawnbroker) will buy for a fixed,
- * modest sum — `mundane` belongings only. Kept low and AI-loot-only on purpose:
- * fencing is "sell to the world, not to other players", and the small valuation
- * keeps it from becoming a funds-laundering route into deep-Sequence reagents.
+ * Grade-scaled price bands (pence) for a TRADEABLE Sealed Artifact (individually-
+ * owned or player-crafted; church-custodied ones never reach a price). A Grade 0
+ * relic is the most valuable. Used for the listing price cap and the fence value.
  */
-export const VENDOR_SALE_CATEGORIES = new Set<Item["category"]>(["mundane"]);
+export const ARTIFACT_PRICE_BY_GRADE: Record<
+  ArtifactGrade,
+  { min: number; suggested: number; max: number }
+> = {
+  3: { min: 200, suggested: 800, max: 4000 },
+  2: { min: 800, suggested: 3000, max: 15000 },
+  1: { min: 3000, suggested: 10000, max: 50000 },
+  0: { min: 10000, suggested: 40000, max: 200000 },
+};
+
+/** The price band for a carried artifact item by its recovered grade (Grade 3 default). */
+export function artifactPriceGuidance(item: Item): {
+  min: number;
+  suggested: number;
+  max: number;
+} {
+  const grade = gradeForArtifactItem(item);
+  return ARTIFACT_PRICE_BY_GRADE[grade ?? 3];
+}
+
+/**
+ * Categories a non-player vendor (a fence/pawnbroker) will buy. `mundane`
+ * belongings (pocket change) and a TRADEABLE Sealed Artifact (individual/crafted,
+ * gated in `canFenceItem` — a church relic is never fenced). Reagents go to the
+ * player market; the Uniqueness is never sold.
+ */
+export const VENDOR_SALE_CATEGORIES = new Set<Item["category"]>([
+  "mundane",
+  "sealed-artifact",
+]);
+
+/**
+ * Whether an item is market-tradeable on the player-to-player market: the
+ * advancement reagents, OR a non-church Sealed Artifact (individually-owned /
+ * crafted). `mundane` is fenced, not listed; `uniqueness` is never sold. Pure.
+ */
+export function isMarketTradeable(item: Item): boolean {
+  if (isReagentCategory(item.category)) return true;
+  if (item.category === "sealed-artifact") return isArtifactTradeable(item);
+  return false;
+}
+
+/** Whether a fence will buy an item (a church-custody artifact never is). Pure. */
+export function canFenceItem(item: Item): boolean {
+  if (!VENDOR_SALE_CATEGORIES.has(item.category)) return false;
+  if (item.category === "sealed-artifact") return isArtifactTradeable(item);
+  return true;
+}
 
 export interface ListingValidation {
   ok: boolean;
@@ -93,17 +144,23 @@ export function validateListing(
   if (!item) {
     return { ok: false, reason: "You can only list items you actually carry." };
   }
-  // The player-to-player market trades the rules-engine reagent kinds only:
-  // `mundane` loot is fenced instead (sellItemToVendor) and `uniqueness` is
-  // never sold. Keeping AI-mintable mundane off the open market matters because
+  // The player-to-player market trades the rules-engine reagent kinds AND a
+  // non-church Sealed Artifact (individually-owned / player-crafted): `mundane`
+  // loot is fenced instead (sellItemToVendor), `uniqueness` is never sold, and a
+  // CHURCH-custodied artifact is locked away (stolen or earned by affiliation,
+  // never sold). Keeping AI-mintable mundane off the open market matters because
   // a player-set listing price is unbounded (a fence pays only pocket change).
-  if (!isReagentCategory(item.category)) {
+  if (!isMarketTradeable(item)) {
     return { ok: false, reason: "That is not a tradable kind of thing." };
   }
   if (!Number.isInteger(price) || price <= 0) {
     return { ok: false, reason: "Set an honest price in whole pence." };
   }
-  if (price > PRICE_GUIDANCE[item.category].max * 10) {
+  const maxBand =
+    item.category === "sealed-artifact"
+      ? artifactPriceGuidance(item).max
+      : PRICE_GUIDANCE[item.category].max;
+  if (price > maxBand * 10) {
     return { ok: false, reason: "No one in the city would pay that." };
   }
   return { ok: true };
@@ -140,9 +197,9 @@ export function addItemToInventory(state: GameState, item: Item): GameState {
  * (reagents go to the player market; the Uniqueness is never sold), so 0.
  */
 export function vendorSaleValue(item: Item): number {
-  return VENDOR_SALE_CATEGORIES.has(item.category)
-    ? PRICE_GUIDANCE[item.category].suggested
-    : 0;
+  if (!canFenceItem(item)) return 0;
+  if (item.category === "sealed-artifact") return artifactPriceGuidance(item).suggested;
+  return PRICE_GUIDANCE[item.category].suggested;
 }
 
 export interface VendorSaleResult {
@@ -165,7 +222,7 @@ export function sellItemToVendor(state: GameState, itemName: string): VendorSale
   if (!item) {
     return { ok: false, reason: "You are not carrying that." };
   }
-  if (!VENDOR_SALE_CATEGORIES.has(item.category)) {
+  if (!canFenceItem(item)) {
     return { ok: false, reason: "No fence would give you a penny for that." };
   }
   const proceeds = vendorSaleValue(item);

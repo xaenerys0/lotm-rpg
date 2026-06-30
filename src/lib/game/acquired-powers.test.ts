@@ -61,6 +61,36 @@ function samplePower(over: Partial<AcquiredPower> = {}): AcquiredPower {
   };
 }
 
+describe("powerAcquisitionCapabilities — crafted artifacts", () => {
+  it("a crafted artifact with a copy/steal effect grants the imitation means", () => {
+    const crafted = {
+      code: "C2-001",
+      name: "Mimic Stone",
+      grade: 2 as const,
+      sourcePathwayId: 8,
+      sourceSequence: 6,
+      effects: [
+        { label: "Copy", description: "Mimic a power.", hook: "acquired-power" as const },
+      ],
+      drawback: "frays",
+      craftedAtTurn: 0,
+    };
+    const item: Item = {
+      name: "Sealed Artifact C2-001 — Mimic Stone",
+      description: "",
+      category: "sealed-artifact",
+    };
+    const base = atRung(1, 9, [item]); // a Fool with no native acquisition means
+    const session: GameSession = {
+      ...base,
+      customArtifactState: { artifacts: [crafted], nextOrdinal: 2 },
+    };
+    const caps = powerAcquisitionCapabilities(session);
+    expect(caps.map((c) => c.method)).toContain("imitation");
+    expect(caps.find((c) => c.method === "imitation")?.source).toBe("artifact");
+  });
+});
+
 describe("powerAcquisitionCapabilities", () => {
   it("offers Prometheus theft to an Error Beyonder at Sequence 6 (not 7)", () => {
     expect(powerAcquisitionCapabilities(atRung(8, 7)).map((c) => c.method)).toEqual([]);

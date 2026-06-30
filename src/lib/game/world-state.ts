@@ -3,10 +3,17 @@ import type { AIResponse } from "@/lib/ai";
 import type { Item } from "@/lib/types/rules";
 import type { ActingEvaluation, StateChange } from "@/lib/ai";
 import { addSessionFact, addTurn, buildTurnRecord } from "@/lib/ai";
+import type { GameSession } from "./types";
 import { applyDigestionProgress, createDigestionState } from "./digestion";
 import { tickInjuries } from "./combat";
 import { hasItem, isReagentCategory } from "./inventory";
-import { getSealedArtifact, mintArtifactItem } from "@/lib/lore";
+import {
+  custodyForArtifactItem,
+  getArtifactCustody,
+  getSealedArtifact,
+  mintArtifactItem,
+  ownerNameForArtifactItem,
+} from "@/lib/lore";
 import { adjustFunds, FUNDS_DISCOVERED_CAP } from "./marketplace";
 import { clamp } from "./math";
 import { previewSanityImpact, type SanityBreakdown } from "./sanity";
@@ -272,13 +279,34 @@ export function partitionDiscoveredItems(items: Item[]): {
 export function discoveredItemLeadFact(item: Item, turnNumber: number): SessionFact {
   const description =
     item.category === "sealed-artifact"
-      ? `Word of the ${item.name} surfaced — such a thing is catalogued and locked away by the churches; it can only be earned through the story, never simply found.`
+      ? sealedArtifactLead(item)
       : item.category === "potion-formula"
         ? `A lead surfaced toward the formula "${item.name}" — it must still be obtained through the proper channels for the next potion.`
         : item.category === "main-ingredient"
           ? `Word of the ${item.name} surfaced — it must still be hunted or bought for the next potion.`
           : `Learned where ${item.name} might be acquired for the next potion.`;
   return { type: "quest-progress", description, turnNumber };
+}
+
+/**
+ * The story-lead text for a Sealed Artifact the AI surfaced, branched on custody:
+ * a church-custodied relic is locked away (stolen or earned by affiliation), but
+ * an individually-owned one points at its holder and an unowned one reads as
+ * findable. Either way the artifact never enters inventory through narration —
+ * only the trusted engine grant / combat loot does. Pure.
+ */
+function sealedArtifactLead(item: Item): string {
+  const custody = custodyForArtifactItem(item);
+  if (custody === "church") {
+    return `Word of the ${item.name} surfaced — such a thing is catalogued and locked away by the churches; it can only be taken by force or earned by working with the church that holds it, never simply found.`;
+  }
+  if (custody === "individual") {
+    const owner = ownerNameForArtifactItem(item);
+    return owner
+      ? `Word of the ${item.name} surfaced — it is held by ${owner}; obtaining it means dealing with them.`
+      : `Word of the ${item.name} surfaced — it is held by someone; obtaining it means dealing with its owner.`;
+  }
+  return `Word of the ${item.name} surfaced — it has no current keeper; it might be found and claimed through the story.`;
 }
 
 /**
@@ -467,6 +495,75 @@ export function grantSealedArtifact(state: GameState, artifactNumber: string): G
   const item = mintArtifactItem(artifact);
   if (hasItem(state.inventory, item.name)) return state;
   return { ...state, inventory: [...state.inventory, item] };
+}
+
+/**
+ * Whether the character is affiliated with a church or Nighthawk order — the
+ * signal that lets a church-custodied artifact be granted by "working with that
+ * church" (vs. stealing it). Reads the secret-society membership: a
+ * `church-division` or `nighthawk-squad` society counts. Pure.
+ */
+export function isChurchAffiliated(session: GameSession): boolean {
+  const kind = session.societyState?.kind;
+  return kind === "church-division" || kind === "nighthawk-squad";
+}
+
+/** Why a church-custody grant was refused (for the caller to narrate). */
+export type ChurchArtifactGrantOutcome =
+  | "granted"
+  | "unknown-code"
+  | "not-church-custody"
+  | "not-affiliated"
+  | "already-held";
+
+export interface ChurchArtifactGrantResult {
+  outcome: ChurchArtifactGrantOutcome;
+  session?: GameSession;
+}
+
+/**
+ * The affiliation path by which a church-custodied Sealed Artifact is legitimately
+ * granted: a character who `isChurchAffiliated` may be entrusted with a relic the
+ * church holds. Refuses an unknown code, a non-church-custody artifact (those are
+ * acquired from their owner / found, not church-granted), an unaffiliated
+ * character, and one already carrying it. The non-affiliation route to a church
+ * relic is theft (combat loot). Pure.
+ */
+export function grantChurchArtifact(
+  session: GameSession,
+  artifactNumber: string,
+  now: number = Date.now(),
+): ChurchArtifactGrantResult {
+  const artifact = getSealedArtifact(artifactNumber);
+  if (!artifact) return { outcome: "unknown-code" };
+  if (getArtifactCustody(artifactNumber)?.custody !== "church") {
+    return { outcome: "not-church-custody" };
+  }
+  if (!isChurchAffiliated(session)) return { outcome: "not-affiliated" };
+  const item = mintArtifactItem(artifact);
+  if (hasItem(session.gameState.inventory, item.name)) {
+    return { outcome: "already-held" };
+  }
+  const fact: SessionFact = {
+    type: "event",
+    description: `Entrusted with the Sealed Artifact ${artifact.number} — ${artifact.name} by the church you serve.`,
+    turnNumber: session.turnCount,
+  };
+  return {
+    outcome: "granted",
+    session: {
+      ...session,
+      gameState: {
+        ...session.gameState,
+        inventory: [...session.gameState.inventory, item],
+      },
+      memory: {
+        ...session.memory,
+        sessionFacts: [...session.memory.sessionFacts, fact],
+      },
+      updatedAt: now,
+    },
+  };
 }
 
 /**

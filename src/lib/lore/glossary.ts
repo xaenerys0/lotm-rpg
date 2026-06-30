@@ -337,7 +337,7 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     term: "Sealed Artifacts",
     category: "Mechanics",
     definition:
-      "Items the churches catalogue, grade, and lock away — powers too dangerous or too opinionated to circulate. Using one is borrowing from a lender with unusual collection practices.",
+      "Mystical items dangerous enough to be sealed — powers too volatile or too opinionated to circulate freely. Some the churches catalogue and lock away (taken only by theft or by serving the church that holds them); others rest in private hands, to be won from their owner; a few are masterless, waiting to be found. Whoever holds one carries its drawback with it.",
     revealAtSequence: 7,
   },
   {
@@ -346,6 +346,14 @@ export const GLOSSARY_TERMS: readonly GlossaryTerm[] = [
     category: "Mechanics",
     definition:
       "The churches grade a sealed artifact by danger, naming it with its grade and a number (0-08, 2-049, 3-0782). Grade 0 rivals an Angel and rests only in a cathedral basement; Grade 1 a Saint; Grade 2 a mid-Sequence Beyonder; Grade 3 a low one, and the most freely handled. Whatever the grade, the drawback is the price — and it seldom spares the one who wields it.",
+    revealAtSequence: 6,
+  },
+  {
+    slug: "artifice",
+    term: "Artifice",
+    category: "Mechanics",
+    definition:
+      "The craft of binding a Beyonder Characteristic into an object to make a sealed artifact. The work of a Paragon-pathway artisan — those of the right craft and rung may forge their own; everyone else commissions one, for a price. The artifact's powers follow the characteristic's pathway and Sequence, its danger grade follows that Sequence, and its drawback is unavoidable; a god's characteristic cannot be bound at all.",
     revealAtSequence: 6,
   },
   {

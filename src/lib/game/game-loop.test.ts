@@ -5,6 +5,8 @@ import {
   applySanityImpact,
   addDiscoveredItems,
   grantSealedArtifact,
+  grantChurchArtifact,
+  isChurchAffiliated,
   partitionDiscoveredItems,
   discoveredItemLeadFact,
   applyDigestion,
@@ -1693,7 +1695,7 @@ describe("discoveredItemLeadFact", () => {
     expect(fact.description).toContain("Rabies Virus");
   });
 
-  it("phrases a Sealed Artifact lead as church-locked, earned-not-found", () => {
+  it("phrases a church-custodied Sealed Artifact lead as church-locked", () => {
     const fact = discoveredItemLeadFact(
       {
         name: "Sealed Artifact 2-049 — Antigonus Family Puppet",
@@ -1705,6 +1707,88 @@ describe("discoveredItemLeadFact", () => {
     expect(fact.type).toBe("quest-progress");
     expect(fact.description).toContain("Antigonus Family Puppet");
     expect(fact.description.toLowerCase()).toContain("churches");
+  });
+
+  it("phrases an individually-held artifact lead by naming its owner", () => {
+    const fact = discoveredItemLeadFact(
+      {
+        name: "Sealed Artifact 2-081 — Ring of Mimicry",
+        description: "d",
+        category: "sealed-artifact",
+      },
+      5,
+    );
+    // 2-081 is held by Isengard Stanton — the lead points at the holder.
+    expect(fact.description).toContain("Isengard Stanton");
+    expect(fact.description.toLowerCase()).not.toContain("churches");
+  });
+
+  it("phrases an unowned artifact lead as findable", () => {
+    // A synthetic crafted/individual code with no catalogue owner reads as held
+    // by someone; an unrecoverable artifact name resolves as unowned/findable.
+    const fact = discoveredItemLeadFact(
+      { name: "Sealed Artifact ???", description: "d", category: "sealed-artifact" },
+      6,
+    );
+    expect(fact.description).toContain("might be found");
+  });
+});
+
+// ─── isChurchAffiliated / grantChurchArtifact ──────────────────────
+
+describe("church-affiliation acquisition", () => {
+  const churchSociety = {
+    kind: "church-division" as const,
+    name: "A Sun Division",
+    members: [],
+    gatheringCount: 0,
+    lastGatheringTurn: -999,
+  };
+
+  it("isChurchAffiliated reads a church or Nighthawk society membership", () => {
+    expect(isChurchAffiliated(makeSession())).toBe(false);
+    expect(isChurchAffiliated(makeSession({ societyState: churchSociety }))).toBe(true);
+    expect(
+      isChurchAffiliated(
+        makeSession({ societyState: { ...churchSociety, kind: "nighthawk-squad" } }),
+      ),
+    ).toBe(true);
+    expect(
+      isChurchAffiliated(
+        makeSession({ societyState: { ...churchSociety, kind: "scholars-circle" } }),
+      ),
+    ).toBe(false);
+  });
+
+  it("grants a church artifact to an affiliated character and seeds a fact", () => {
+    const session = makeSession({
+      gameState: makeGameState({ inventory: [] }),
+      societyState: churchSociety,
+    });
+    const result = grantChurchArtifact(session, "2-049", 42);
+    expect(result.outcome).toBe("granted");
+    expect(result.session!.gameState.inventory[0].name).toContain(
+      "Antigonus Family Puppet",
+    );
+    expect(
+      result.session!.memory.sessionFacts.at(-1)?.description.toLowerCase(),
+    ).toContain("entrusted");
+    expect(result.session!.updatedAt).toBe(42);
+  });
+
+  it("refuses every other church-grant case", () => {
+    const affiliated = makeSession({
+      gameState: makeGameState({ inventory: [] }),
+      societyState: churchSociety,
+    });
+    expect(grantChurchArtifact(affiliated, "9-999").outcome).toBe("unknown-code");
+    // 2-081 is individual-custody, not church — not church-grantable.
+    expect(grantChurchArtifact(affiliated, "2-081").outcome).toBe("not-church-custody");
+    // Unaffiliated character cannot be entrusted.
+    expect(grantChurchArtifact(makeSession(), "2-049").outcome).toBe("not-affiliated");
+    // Already holding it.
+    const holding = grantChurchArtifact(affiliated, "2-049").session!;
+    expect(grantChurchArtifact(holding, "2-049").outcome).toBe("already-held");
   });
 });
 

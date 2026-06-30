@@ -23,10 +23,15 @@ export {
   gateLocationChange,
   isInvoluntaryMoveCause,
   INVOLUNTARY_MOVE_CAUSES,
+  grantSealedArtifact,
+  grantChurchArtifact,
+  isChurchAffiliated,
   type ApplyWorldStateOptions,
   type GateLocationChangeInput,
   type GateLocationChangeResult,
   type InvoluntaryMoveCause,
+  type ChurchArtifactGrantOutcome,
+  type ChurchArtifactGrantResult,
 } from "./world-state";
 
 export { cityForLocation, isReachable, type ReachableResult } from "./place-graph";
@@ -118,6 +123,58 @@ export {
   type UpdateAcquiredPowerOutcome,
   type UpdateAcquiredPowerResult,
 } from "./acquired-powers";
+
+// Artifice — crafting Sealed Artifacts + the player-created artifact registry.
+export {
+  type CustomArtifact,
+  type CustomArtifactState,
+  MAX_CUSTOM_ARTIFACTS,
+  emptyCustomArtifactState,
+  resolveCustomArtifactState,
+  mintCustomArtifactItem,
+  findCustomArtifact,
+  customArtifactForItem,
+  registerCustomArtifact,
+  forgetCustomArtifact,
+  craftedArtifactFact,
+  isValidCustomArtifactShape,
+  isValidCustomArtifactStateShape,
+} from "./custom-artifacts";
+export {
+  PARAGON_PATHWAY_ID,
+  ARTISAN_SEQUENCE,
+  COMMISSION_FEE_BY_GRADE,
+  SELF_CRAFT_MATERIALS_COST_BY_GRADE,
+  craftCapability,
+  canCraftArtifact,
+  gradeForCharacteristicSequence,
+  parseCharacteristicItem,
+  craftFee,
+  craftArtifact,
+  type CraftMode,
+  type CraftCapability,
+  type CraftArtifactInput,
+  type CraftOutcome,
+  type CraftResult,
+} from "./artifice";
+export {
+  deriveArtifactEffects,
+  deriveArtifactDrawback,
+  effectHookForAbility,
+  carriedArtifactEffects,
+  carriedEffectsByHook,
+  artifactIdentityCapabilities,
+  artifactSanityActions,
+  artifactCombatEffects,
+  artifactPowerAcquisitions,
+  artifactNarratorContext,
+  MAX_DERIVED_EFFECTS,
+  type CarriedArtifactEffects,
+  type ArtifactIdentityGrant,
+  type ArtifactSanityAction,
+  type ArtifactCombatEffect,
+  type ArtifactPowerGrant,
+} from "./artifact-effects";
 
 // Advancement rituals performed across turns (issue #99 Part C).
 export {
@@ -227,6 +284,10 @@ export {
   PRICE_GUIDANCE,
   VENDOR_SALE_CATEGORIES,
   STARTING_FUNDS,
+  ARTIFACT_PRICE_BY_GRADE,
+  artifactPriceGuidance,
+  isMarketTradeable,
+  canFenceItem,
   type ListingFilter,
   type ListingStatus,
   type MarketListing,

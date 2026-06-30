@@ -97,6 +97,15 @@ export interface GameSession {
    */
   acquiredPowers?: import("./acquired-powers").AcquiredPower[];
   /**
+   * Player-crafted (artifice) Sealed Artifacts — the durable descriptors for the
+   * artifacts the character has forged, keyed by a synthetic `C<grade>-<NNN>`
+   * code embedded in the carried item's name. Absent on saves that never
+   * crafted one; strictly validated when present
+   * (`isValidCustomArtifactStateShape`), NEVER AI-mutable, and preserved on the
+   * deserialize `...s` spread (no seeding), exactly like `acquiredPowers`.
+   */
+  customArtifactState?: import("./custom-artifacts").CustomArtifactState;
+  /**
    * Advancement ritual in progress (issue #99 Part C). From Sequence 5 the rite
    * is performed STEP BY STEP across turns before the climb unlocks; this tracks
    * the progress. Absent when no rite is under way; strictly validated when

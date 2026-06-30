@@ -2530,6 +2530,19 @@ describe("prompts", () => {
       ).toBe(true);
     });
 
+    it("includes the artifact-effects layer only when context is present", () => {
+      expect(
+        hasLayer(
+          { artifactEffectsContext: "- Relic: does a thing" },
+          "## Artifact Effects",
+        ),
+      ).toBe(true);
+      expect(hasLayer({}, "## Artifact Effects")).toBe(false);
+      expect(hasLayer({ artifactEffectsContext: null }, "## Artifact Effects")).toBe(
+        false,
+      );
+    });
+
     it("includes the pacing rule for player-driven turns and omits it for engine-committed ones", () => {
       expect(hasLayer({ instruction: "narrative" }, "Pacing & Agency")).toBe(true);
       expect(hasLayer({ instruction: "choices" }, "Pacing & Agency")).toBe(true);

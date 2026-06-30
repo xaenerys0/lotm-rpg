@@ -74,6 +74,7 @@ import {
   drawPetition,
   sequenceAbilities,
   acquiredPowerAbilityLabels,
+  artifactNarratorContext,
   tickAcquiredPowers,
   sequenceLabel,
   trueGodName,
@@ -472,6 +473,10 @@ function buildAICallParams(currentSession: GameSession) {
     ...personaPromptContexts(currentSession),
     // Epoch + per-city narrator tone (shared helper, also used by combat).
     ...worldTonePromptContexts(currentSession),
+    // Carried Sealed Artifact effects (Sealed Artifacts subsystem): the binding
+    // list of powers the character's artifacts grant, so the narrator enforces
+    // them (the real path for an effect with no engine subsystem). "" → dropped.
+    artifactEffectsContext: artifactNarratorContext(currentSession) || null,
     // Curated guardrail selection lives in @/lib/lore (tested); the component
     // stays a thin caller (issue #63).
     loreContext: selectCuratedLore(
@@ -674,6 +679,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             recognitionContext,
             epochContext,
             cityNarration,
+            artifactEffectsContext,
           } = buildAICallParams(session);
           const result = await generate({
             config: providerConfig,
@@ -685,6 +691,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             recognitionContext,
             epochContext,
             cityNarration,
+            artifactEffectsContext,
             verbosity: preferences.narrativeVerbosity,
             instruction: "narrative",
             playerAction: descentAction,
@@ -868,6 +875,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               recognitionContext,
               epochContext,
               cityNarration,
+              artifactEffectsContext,
             } = buildAICallParams(advanced);
             const res = await generate({
               config: providerConfig,
@@ -879,6 +887,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               recognitionContext,
               epochContext,
               cityNarration,
+              artifactEffectsContext,
               verbosity: preferences.narrativeVerbosity,
               instruction: "advancement",
               playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
@@ -1198,6 +1207,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             recognitionContext,
             epochContext,
             cityNarration,
+            artifactEffectsContext,
           } = buildAICallParams(next);
           const res = await generate({
             config: providerConfig,
@@ -1209,6 +1219,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             recognitionContext,
             epochContext,
             cityNarration,
+            artifactEffectsContext,
             verbosity: preferences.narrativeVerbosity,
             instruction: "advancement",
             playerAction: viaTrade
@@ -1452,6 +1463,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         recognitionContext,
         epochContext,
         cityNarration,
+        artifactEffectsContext,
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
@@ -1484,6 +1496,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           recognitionContext,
           epochContext,
           cityNarration,
+          artifactEffectsContext,
           verbosity: preferences.narrativeVerbosity,
           pinnedEntities,
           instruction,
@@ -1714,6 +1727,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         recognitionContext,
         epochContext,
         cityNarration,
+        artifactEffectsContext,
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
@@ -1732,6 +1746,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           recognitionContext,
           epochContext,
           cityNarration,
+          artifactEffectsContext,
           verbosity: preferences.narrativeVerbosity,
           pinnedEntities,
           instruction,

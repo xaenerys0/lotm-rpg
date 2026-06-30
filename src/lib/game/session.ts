@@ -16,6 +16,7 @@ import { cityIdFromLocation, isValidAccessFlagsShape } from "./travel";
 import { isValidFormulaPursuitShape } from "./formula-pursuit";
 import { isValidHuntsShape } from "./hunt";
 import { isValidAcquiredPowersShape } from "./acquired-powers";
+import { isValidCustomArtifactStateShape } from "./custom-artifacts";
 import { isValidRitualStateShape } from "./ritual";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
@@ -480,6 +481,16 @@ export function isValidSessionShape(obj: unknown): boolean {
   // when present — they ride the deserialize `...s` spread (no seeding); absent
   // means the character has taken none.
   if (s.acquiredPowers !== undefined && !isValidAcquiredPowersShape(s.acquiredPowers)) {
+    return false;
+  }
+
+  // Crafted (artifice) Sealed Artifacts are optional but strict when present —
+  // they ride the deserialize `...s` spread (no seeding); absent means the
+  // character has forged none.
+  if (
+    s.customArtifactState !== undefined &&
+    !isValidCustomArtifactStateShape(s.customArtifactState)
+  ) {
     return false;
   }
 

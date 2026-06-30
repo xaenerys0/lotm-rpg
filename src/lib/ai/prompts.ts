@@ -543,6 +543,17 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     });
   }
 
+  // Carried Sealed Artifact effects (Sealed Artifacts subsystem): the binding
+  // list of powers the character's artifacts grant. Effects routed to an engine
+  // subsystem are applied there; this layer makes EVERY effect real in the
+  // fiction (and is the only enforcement for an effect with no game system).
+  if (input.artifactEffectsContext) {
+    layers.push({
+      role: "system",
+      content: `## Artifact Effects\n${input.artifactEffectsContext}`,
+    });
+  }
+
   // True self (character-info storage): ground-truth self facts the narrator must
   // honour — pronouns, gender, appearance, demeanor. Dropped when the profile is
   // empty.

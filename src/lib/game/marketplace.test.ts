@@ -12,6 +12,10 @@ import {
   sellItemToVendor,
   validateListing,
   vendorSaleValue,
+  ARTIFACT_PRICE_BY_GRADE,
+  artifactPriceGuidance,
+  canFenceItem,
+  isMarketTradeable,
   PRICE_GUIDANCE,
   STARTING_FUNDS,
   type MarketListing,
@@ -105,8 +109,24 @@ describe("validateListing", () => {
     );
   });
 
-  it("refuses a Sealed Artifact on the player market (church-gated)", () => {
-    const withArtifact = state({
+  it("refuses a church-custodied artifact but allows an individual or crafted one", () => {
+    // 2-049 Antigonus Family Puppet is church-custodied — never listable.
+    const churchRelic = state({
+      inventory: [
+        {
+          name: "Sealed Artifact 2-049 — Antigonus Family Puppet",
+          description: "dangerous",
+          category: "sealed-artifact",
+        },
+      ],
+    });
+    expect(
+      validateListing(churchRelic, "Sealed Artifact 2-049 — Antigonus Family Puppet", 10)
+        .reason,
+    ).toMatch(/not a tradable kind/);
+
+    // 0-08 Quill of Alzuhod is individually held (Ince Zangwill) — tradeable.
+    const individual = state({
       inventory: [
         {
           name: "Sealed Artifact 0-08 — Quill of Alzuhod",
@@ -116,14 +136,86 @@ describe("validateListing", () => {
       ],
     });
     expect(
-      validateListing(withArtifact, "Sealed Artifact 0-08 — Quill of Alzuhod", 10).reason,
-    ).toMatch(/not a tradable kind/);
-    // And it has a (zero) price band so the exhaustive Record stays total.
-    expect(PRICE_GUIDANCE["sealed-artifact"]).toEqual({
-      min: 0,
-      suggested: 0,
-      max: 0,
+      validateListing(individual, "Sealed Artifact 0-08 — Quill of Alzuhod", 100).ok,
+    ).toBe(true);
+
+    // A player-crafted artifact (synthetic C-code) is always tradeable.
+    const crafted = state({
+      inventory: [
+        {
+          name: "Sealed Artifact C2-001 — Maker's Mask",
+          description: "crafted",
+          category: "sealed-artifact",
+        },
+      ],
     });
+    expect(
+      validateListing(crafted, "Sealed Artifact C2-001 — Maker's Mask", 100).ok,
+    ).toBe(true);
+
+    // The neutral default band keeps the exhaustive Record total.
+    expect(PRICE_GUIDANCE["sealed-artifact"]).toEqual({ min: 0, suggested: 0, max: 0 });
+  });
+});
+
+describe("artifact tradeability helpers", () => {
+  const artifact = (name: string) => ({
+    name,
+    description: "",
+    category: "sealed-artifact" as const,
+  });
+
+  it("isMarketTradeable: reagents and non-church artifacts only", () => {
+    expect(
+      isMarketTradeable({
+        name: "Night Vanilla",
+        description: "",
+        category: "supplementary-ingredient",
+      }),
+    ).toBe(true);
+    expect(
+      isMarketTradeable({ name: "Honey", description: "", category: "mundane" }),
+    ).toBe(false);
+    // 2-049 church → not tradeable; 0-08 individual + crafted → tradeable.
+    expect(
+      isMarketTradeable(artifact("Sealed Artifact 2-049 — Antigonus Family Puppet")),
+    ).toBe(false);
+    expect(isMarketTradeable(artifact("Sealed Artifact 0-08 — Quill of Alzuhod"))).toBe(
+      true,
+    );
+    expect(isMarketTradeable(artifact("Sealed Artifact C1-001 — Made"))).toBe(true);
+  });
+
+  it("canFenceItem: mundane and non-church artifacts only", () => {
+    expect(canFenceItem({ name: "Honey", description: "", category: "mundane" })).toBe(
+      true,
+    );
+    expect(canFenceItem({ name: "x", description: "", category: "potion-formula" })).toBe(
+      false,
+    );
+    expect(
+      canFenceItem(artifact("Sealed Artifact 2-049 — Antigonus Family Puppet")),
+    ).toBe(false);
+    expect(canFenceItem(artifact("Sealed Artifact 0-08 — Quill of Alzuhod"))).toBe(true);
+  });
+
+  it("artifactPriceGuidance reads the grade, defaulting to Grade 3", () => {
+    expect(
+      artifactPriceGuidance(artifact("Sealed Artifact 0-08 — Quill of Alzuhod")),
+    ).toEqual(ARTIFACT_PRICE_BY_GRADE[0]);
+    // An unrecoverable artifact name defaults to the Grade 3 band.
+    expect(artifactPriceGuidance(artifact("nonsense"))).toEqual(
+      ARTIFACT_PRICE_BY_GRADE[3],
+    );
+  });
+
+  it("vendorSaleValue prices a tradeable artifact by grade, zero for a church one", () => {
+    expect(vendorSaleValue(artifact("Sealed Artifact 0-08 — Quill of Alzuhod"))).toBe(
+      ARTIFACT_PRICE_BY_GRADE[0].suggested,
+    );
+    expect(
+      vendorSaleValue(artifact("Sealed Artifact 2-049 — Antigonus Family Puppet")),
+    ).toBe(0);
   });
 });
 
@@ -171,8 +263,24 @@ describe("vendorSaleValue / sellItemToVendor", () => {
     expect(sellItemToVendor(loot(), "Phantom").reason).toMatch(/not carrying/i);
   });
 
-  it("refuses to fence a Sealed Artifact", () => {
-    const withArtifact = state({
+  it("refuses to fence a church artifact but fences an individual/crafted one", () => {
+    const churchRelic = state({
+      funds: 50,
+      inventory: [
+        {
+          name: "Sealed Artifact 2-049 — Antigonus Family Puppet",
+          description: "dangerous",
+          category: "sealed-artifact",
+        },
+      ],
+    });
+    expect(
+      sellItemToVendor(churchRelic, "Sealed Artifact 2-049 — Antigonus Family Puppet")
+        .reason,
+    ).toMatch(/no fence/i);
+
+    // 0-08 is individual (Grade 0) — fenced for its grade band's suggested value.
+    const individual = state({
       funds: 50,
       inventory: [
         {
@@ -183,11 +291,12 @@ describe("vendorSaleValue / sellItemToVendor", () => {
       ],
     });
     const result = sellItemToVendor(
-      withArtifact,
+      individual,
       "Sealed Artifact 0-08 — Quill of Alzuhod",
     );
-    expect(result.ok).toBe(false);
-    expect(result.reason).toMatch(/no fence/i);
+    expect(result.ok).toBe(true);
+    expect(result.proceeds).toBe(ARTIFACT_PRICE_BY_GRADE[0].suggested);
+    expect(getFunds(result.state!)).toBe(50 + ARTIFACT_PRICE_BY_GRADE[0].suggested);
   });
 });
 
