@@ -27,6 +27,54 @@ import type { Item } from "@/lib/types/rules";
 /** Danger grade: 0 (≈ Angel) … 3 (≈ low-Sequence Beyonder). */
 export type ArtifactGrade = 0 | 1 | 2 | 3;
 
+/**
+ * Custody class — who canonically holds an artifact, which drives how it can be
+ * acquired and whether it may be traded:
+ *   - `church`      — held by a church/cathedral, or a guarded dynasty/royal line.
+ *                     Obtained only by STEALING or CHURCH AFFILIATION. NEVER tradeable.
+ *   - `individual`  — held by a named character. Obtained from the owner
+ *                     (combat/theft/gift/purchase). Tradeable.
+ *   - `unowned`     — no current holder; a player may own/find it. Tradeable.
+ * Player-CRAFTED artifacts have no catalogue entry; they are always treated as
+ * non-church (tradeable) — see `custodyForArtifactItem`.
+ */
+export type ArtifactCustody = "church" | "individual" | "unowned";
+
+/**
+ * Which engine system makes an artifact effect REAL. Effects whose hook maps to
+ * a subsystem are mechanically enforced there (identity/sanity/combat/…); a
+ * `narrator` effect is passed to the AI narrator as a BINDING rule it must
+ * honour (the game is AI-narrated, so this is a real, enforced effect — never
+ * mere flavour). This is a pure DATA tag on the lore layer; the game layer
+ * (`@/lib/game/artifact-effects`) interprets it.
+ */
+export type EffectHook =
+  | "identity"
+  | "sanity"
+  | "combat"
+  | "acquired-power"
+  | "funds"
+  | "access"
+  | "narrator";
+
+/**
+ * One real effect an artifact grants. The defining downside stays on
+ * `SealedArtifact.drawback` (the "loss of control" cost); these are the POWERS.
+ * For catalogue artifacts the effects are authored (corpus-verified) in
+ * `ARTIFACT_EFFECTS`; for crafted artifacts they are derived from the source
+ * Beyonder Characteristic's pathway + sequence (`deriveArtifactEffects`).
+ */
+export interface ArtifactEffect {
+  /** Short player- and narrator-facing label. */
+  label: string;
+  /** What the effect does, in player-safe terms. */
+  description: string;
+  /** Which engine system enforces it (or `narrator` for a binding-fiction rule). */
+  hook: EffectHook;
+  /** Hook-specific parameters (e.g. persona tier, sanity delta, flag id, pathway id). */
+  params?: Record<string, string | number | boolean>;
+}
+
 export interface SealedArtifact {
   /** Church catalogue code, e.g. "0-08", "2-049", "3-0782". Unique. */
   number: string;
@@ -525,5 +573,409 @@ export function gradeForArtifactItem(item: Item): ArtifactGrade | undefined {
   if (item.category !== "sealed-artifact") return undefined;
   const number = sealedArtifactNumberFromItemName(item.name);
   if (number === undefined) return undefined;
-  return getSealedArtifact(number)?.grade;
+  const catalogue = getSealedArtifact(number);
+  if (catalogue) return catalogue.grade;
+  // Crafted artifacts carry a synthetic code "C<grade>-<NNN>"; the grade is the
+  // leading digit, self-describing so combat backlash + prep weighting work for
+  // a crafted artifact WITHOUT the lore layer importing the game-layer registry.
+  const crafted = CRAFTED_CODE_RE.exec(number);
+  if (crafted) return Number(crafted[1]) as ArtifactGrade;
+  return undefined;
+}
+
+/** A crafted artifact's synthetic catalogue code, e.g. "C3-001" (grade-leading). */
+export const CRAFTED_CODE_RE = /^C([0-3])-/;
+
+/** Whether a recovered catalogue code denotes a player-crafted artifact. */
+export function isCraftedArtifactCode(code: string): boolean {
+  return CRAFTED_CODE_RE.test(code);
+}
+
+// ── Custody: who canonically holds each catalogue artifact ──────────────────
+//
+// Authored per-entry (keyed by the unique catalogue `number`), the single
+// source of truth for acquisition + tradeability. `classifyHolder` derives the
+// same answer from the free-text `holder` string and is asserted to AGREE in
+// `lore.test.ts` — so the table can't silently drift from the prose. Dynasty /
+// royal-line holders (e.g. the Augustus line) are `church` (a locked heirloom,
+// non-tradeable), matching "Church of the Fool (Abraham Family)".
+type CustodyRecord = { custody: ArtifactCustody; ownerName?: string };
+
+const ARTIFACT_CUSTODY: Record<string, CustodyRecord> = {
+  // Grade 0
+  "0-01": { custody: "church" },
+  "0-02": { custody: "church" },
+  "0-05": { custody: "individual", ownerName: "Bernadette Gustav" },
+  "0-08": { custody: "individual", ownerName: "Ince Zangwill" },
+  "0-13": { custody: "church" },
+  "0-15": { custody: "church" },
+  "0-17": { custody: "church" },
+  "0-32": { custody: "church" },
+  "0-36": { custody: "church" }, // The Augustus royal line — locked dynasty heirloom
+  "0-59": { custody: "church" },
+  "0-61": { custody: "church" },
+  "0-62": { custody: "church" },
+  // Grade 1
+  "1-29": { custody: "church" },
+  "1-42": { custody: "church" },
+  "1-63": { custody: "church" },
+  "1-80": { custody: "church" },
+  "1-82": { custody: "church" },
+  "2-111": { custody: "individual", ownerName: "Klein Moretti" }, // Arrodes
+  // Grade 2
+  "2-030": { custody: "church" },
+  "2-037": { custody: "church" },
+  "2-049": { custody: "church" },
+  "2-078": { custody: "church" },
+  "2-081": { custody: "individual", ownerName: "Isengard Stanton" }, // Ring of Mimicry
+  "2-105": { custody: "church" },
+  "2-166": { custody: "church" },
+  "2-217": { custody: "church" },
+  "2-247": { custody: "church" },
+  // Grade 3
+  "3-0217": { custody: "church" },
+  "3-0611": { custody: "church" },
+  "3-0625": { custody: "church" },
+  "3-0782": { custody: "church" },
+  "3-1328": { custody: "church" },
+};
+
+// Institution markers that make a holder church-custodied (incl. guarded
+// dynasties/royal lines and the Abraham Family parenthetical).
+const CHURCH_HOLDER_RE = /church|cathedral|royal line|abraham family|augustus/i;
+// "Held/Wielded/Carried/Kept by <Name>" — an individual holder.
+const INDIVIDUAL_HOLDER_RE = /\b(?:held|wielded|carried|kept) by\b/i;
+
+/**
+ * Pure classifier from a `holder` string — the authoring aid + integrity check
+ * + runtime fallback for an artifact with no `ARTIFACT_CUSTODY` row. Order
+ * matters: church/institution markers win first, so "Sealed by the Church of …"
+ * is `church`, not `individual`.
+ */
+export function classifyHolder(holder: string | undefined): CustodyRecord {
+  if (!holder || holder.trim() === "") return { custody: "unowned" };
+  if (CHURCH_HOLDER_RE.test(holder)) return { custody: "church" };
+  if (INDIVIDUAL_HOLDER_RE.test(holder)) {
+    const ownerName = parseHolderName(holder);
+    return ownerName ? { custody: "individual", ownerName } : { custody: "individual" };
+  }
+  return { custody: "unowned" };
+}
+
+/** Parse the owner's name from a "… by <Name>" holder string ("… by the Fool, Klein Moretti" → "Klein Moretti"). */
+function parseHolderName(holder: string): string | undefined {
+  const afterBy = holder.replace(/^.*\bby\s+/i, "").trim();
+  if (afterBy === "" || afterBy === holder) return undefined;
+  // A trailing ", <Name>" names the person behind a title ("the Fool, Klein Moretti").
+  const comma = afterBy.lastIndexOf(",");
+  const name = comma === -1 ? afterBy : afterBy.slice(comma + 1).trim();
+  return name === "" ? undefined : name;
+}
+
+/** Custody of a catalogue artifact by code (authored table, else `classifyHolder` fallback). */
+export function getArtifactCustody(number: string): CustodyRecord | undefined {
+  const authored = ARTIFACT_CUSTODY[number];
+  if (authored) return authored;
+  const artifact = getSealedArtifact(number);
+  return artifact ? classifyHolder(artifact.holder) : undefined;
+}
+
+/**
+ * Custody of a carried sealed-artifact `Item`. A crafted artifact (synthetic
+ * `C<d>-` code) is always `individual` (non-church → tradeable); a catalogue
+ * code resolves via `getArtifactCustody`; a non-artifact item is `undefined`.
+ */
+export function custodyForArtifactItem(item: Item): ArtifactCustody | undefined {
+  if (item.category !== "sealed-artifact") return undefined;
+  const number = sealedArtifactNumberFromItemName(item.name);
+  if (number === undefined) return undefined;
+  if (isCraftedArtifactCode(number)) return "individual";
+  return getArtifactCustody(number)?.custody ?? "individual";
+}
+
+/** The canonical owner name of a carried catalogue artifact, when one is known. */
+export function ownerNameForArtifactItem(item: Item): string | undefined {
+  if (item.category !== "sealed-artifact") return undefined;
+  const number = sealedArtifactNumberFromItemName(item.name);
+  if (number === undefined) return undefined;
+  return getArtifactCustody(number)?.ownerName;
+}
+
+/** Whether a carried artifact may change hands (everything but church-custodied). */
+export function isArtifactTradeable(item: Item): boolean {
+  const custody = custodyForArtifactItem(item);
+  return custody !== undefined && custody !== "church";
+}
+
+// ── Effects: the POWERS each catalogue artifact grants ──────────────────────
+//
+// Authored per-entry (corpus-verified), the structured form of each artifact's
+// powers so they can be MADE REAL (routed to identity/sanity/combat/…, or
+// enforced as a binding narrator rule). The defining downside stays on
+// `drawback`; these are the upside. `lore.test.ts` asserts every catalogue
+// number has at least one effect. Crafted artifacts derive their effects from
+// the source pathway+sequence (`@/lib/game/artifact-effects`).
+const ARTIFACT_EFFECTS: Record<string, ArtifactEffect[]> = {
+  "0-01": [
+    {
+      label: "Banner of Slaughter",
+      description:
+        "Commands the power of death and the slain — a relic of the Death god-emperor Salinger that has witnessed the deaths of True Gods.",
+      hook: "combat",
+    },
+  ],
+  "0-02": [
+    {
+      label: "Writ of Law",
+      description:
+        "Writes a law into the world; once set, violating it becomes impossible and offenders are punished automatically.",
+      hook: "narrator",
+    },
+  ],
+  "0-05": [
+    {
+      label: "Ten Wishes",
+      description:
+        "Grants the holder up to ten wishes — though each manifests distorted.",
+      hook: "narrator",
+    },
+  ],
+  "0-08": [
+    {
+      label: "Quill of Coincidence",
+      description:
+        "What the quill writes comes to pass, so long as it is possible and the participants do not notice the coincidences.",
+      hook: "narrator",
+    },
+  ],
+  "0-13": [
+    {
+      label: "Borrowed Miracle",
+      description:
+        "Invokes miracles on the order of a Sequence 2 Miracle Invoker, drawn from the Ancient Sun God's legacy.",
+      hook: "narrator",
+    },
+  ],
+  "0-15": [
+    {
+      label: "Solar Fragment",
+      description:
+        "Looses a fragment of sealed solar divinity — light that warms and burns without distinction.",
+      hook: "combat",
+    },
+  ],
+  "0-17": [
+    {
+      label: "Concealment",
+      description:
+        "Erases people from existence into a foggy pocket-dimension from which they cannot be found; can serve as a descent-vessel for the Evernight Goddess.",
+      hook: "combat",
+    },
+  ],
+  "0-32": [
+    {
+      label: "The Endless Performance",
+      description:
+        "Stages a sealed performance whose effects resemble a Sequence 2 Miracle Invoker's once set in motion.",
+      hook: "narrator",
+    },
+  ],
+  "0-36": [
+    {
+      label: "Crown of Apotheosis",
+      description:
+        "Channels the power of a Sequence 2 Lightseeker; worn by King George III of Loen in an apotheosis ritual.",
+      hook: "combat",
+    },
+  ],
+  "0-59": [
+    {
+      label: "Kingdom of the Dead",
+      description:
+        "Turns the living into the undead, emptying whatever it touches of life.",
+      hook: "combat",
+    },
+  ],
+  "0-61": [
+    {
+      label: "Box of Transposition",
+      description:
+        "First layer turns a place into a toy and swaps it with an internal space; second teleports between recorded locations; the third is a mystery.",
+      hook: "access",
+    },
+  ],
+  "0-62": [
+    {
+      label: "Star Descent",
+      description:
+        "Lets the holder descend directly to any destination they can picture in perfect detail.",
+      hook: "access",
+    },
+  ],
+  "1-29": [
+    {
+      label: "Memory Erasure",
+      description: "Erases selected memories from a target.",
+      hook: "narrator",
+    },
+  ],
+  "1-42": [
+    {
+      label: "Bloodthirster's Might",
+      description:
+        "Grants the strength, defence, and tracking of a Sequence 3 Silver Knight of the Twilight Giant path.",
+      hook: "combat",
+    },
+  ],
+  "1-63": [
+    {
+      label: "Mirror-World Passage",
+      description:
+        "Whatever it reflects becomes a mirror-world accessible only to Beyonders.",
+      hook: "access",
+    },
+  ],
+  "1-80": [
+    {
+      label: "Dream Threshold",
+      description:
+        "Shifts a target — body or mind — into a dream between reality and illusion.",
+      hook: "combat",
+    },
+  ],
+  "1-82": [
+    {
+      label: "Obsession & Plague",
+      description:
+        "Draws nearby creatures into obsession with it and spreads both common and mystical illness.",
+      hook: "combat",
+    },
+  ],
+  "2-111": [
+    {
+      label: "All-Seeing Mirror",
+      description:
+        "A powerful diviner that answers questions about the world, the gods, and the spirit realm, extending its power into other mirrors and into lightning.",
+      hook: "narrator",
+    },
+  ],
+  "2-030": [
+    {
+      label: "Inexhaustible Poison",
+      description:
+        "Tempts those near it to drink; the poison is strong enough to kill a Sequence 5 Beyonder.",
+      hook: "combat",
+    },
+  ],
+  "2-037": [
+    {
+      label: "Shared Dream",
+      description: "Draws several people at once into a shared dream.",
+      hook: "combat",
+    },
+  ],
+  "2-049": [
+    {
+      label: "Pall of Lethargy",
+      description:
+        "Slows everyone nearby in body and mind, with effects resembling a Sequence 5 of the Fool pathway.",
+      hook: "combat",
+    },
+  ],
+  "2-078": [
+    {
+      label: "Lethal Threshold",
+      description:
+        "Disguises itself as any existing door; whoever walks through it dies.",
+      hook: "combat",
+    },
+  ],
+  "2-081": [
+    {
+      label: "Mimicry",
+      description:
+        "Imitates Beyonder abilities the wearer has witnessed, and identifies abilities and items.",
+      hook: "acquired-power",
+      params: { acquisition: "ring-of-mimicry" },
+    },
+  ],
+  "2-105": [
+    {
+      label: "Ability Theft",
+      description:
+        "Steals an ability from a target — usable for about ten minutes while the victim needs days to recover.",
+      hook: "acquired-power",
+      params: { acquisition: "blood-vessel-thief" },
+    },
+  ],
+  "2-166": [
+    {
+      label: "Tempering Vault",
+      description:
+        "Holds its internal temperature indefinitely and brings a fall of Sun Holy Water to the area around it.",
+      hook: "narrator",
+    },
+  ],
+  "2-217": [
+    {
+      label: "Erasure Field",
+      description: "Erases people within a thirty-metre radius.",
+      hook: "combat",
+    },
+  ],
+  "2-247": [
+    {
+      label: "Dawn Paladin's Aegis",
+      description: "Grants the wearer the powers of a Sequence 7 Dawn Paladin.",
+      hook: "combat",
+    },
+  ],
+  "3-0217": [
+    {
+      label: "Lure of Peril",
+      description: "Whoever looks into it is drawn toward danger.",
+      hook: "narrator",
+    },
+  ],
+  "3-0611": [
+    {
+      label: "Pacifying Calm",
+      description: "Any living thing it touches becomes serene and loses all drive.",
+      hook: "combat",
+    },
+  ],
+  "3-0625": [
+    {
+      label: "Gathering Misfortune",
+      description: "Brings misfortune to those who linger near it.",
+      hook: "narrator",
+    },
+  ],
+  "3-0782": [
+    {
+      label: "Sun's Purification",
+      description:
+        "Purifies sentient beings within a fifteen-metre radius and is potent against evil spirits.",
+      hook: "sanity",
+      params: { purify: true },
+    },
+  ],
+  "3-1328": [
+    {
+      label: "Spirit Sight",
+      description:
+        "Lets the wearer see spiritual bodies directly — ghosts, shadows, and the like.",
+      hook: "narrator",
+    },
+  ],
+};
+
+/** The authored effects of a catalogue artifact by code (empty array if unknown). */
+export function effectsForArtifactNumber(number: string): ArtifactEffect[] {
+  return ARTIFACT_EFFECTS[number] ?? [];
+}
+
+/** Whether a catalogue number has at least one authored effect (integrity check). */
+export function hasAuthoredEffects(number: string): boolean {
+  return (ARTIFACT_EFFECTS[number]?.length ?? 0) > 0;
 }

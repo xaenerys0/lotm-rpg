@@ -132,6 +132,8 @@ export interface GenerateOptions {
   retrievedChunks?: RetrievedLoreChunk[];
   /** Active-persona context (issue #22), from `identityPromptContext`. */
   identityContext?: string | null;
+  /** Carried Sealed Artifact effects, from `artifactNarratorContext`. */
+  artifactEffectsContext?: string | null;
   /** True-self ground-truth context, from `profilePromptContext`. */
   profileContext?: string | null;
   /** Recognition-gap context, from `recognitionPromptContext`. */
@@ -165,6 +167,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     loreContext: options.loreContext,
     retrievedChunks: options.retrievedChunks,
     identityContext: options.identityContext,
+    artifactEffectsContext: options.artifactEffectsContext,
     profileContext: options.profileContext,
     recognitionContext: options.recognitionContext,
     epochContext: options.epochContext,

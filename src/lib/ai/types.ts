@@ -521,6 +521,14 @@ export interface PromptInput {
    */
   identityContext?: string | null;
   /**
+   * Carried Sealed Artifact effects (Sealed Artifacts subsystem) — the binding
+   * `## Artifact Effects` block from `artifactNarratorContext`, listing every
+   * effect the character's artifacts grant so the narrator enforces them in the
+   * fiction (the real path for an effect with no engine subsystem); null/absent
+   * when the character carries no artifact.
+   */
+  artifactEffectsContext?: string | null;
+  /**
    * True-self ground-truth context (character-info storage) — one narrator-facing
    * line from `profilePromptContext` (pronouns, gender, appearance, demeanor);
    * null/absent when the profile is empty.

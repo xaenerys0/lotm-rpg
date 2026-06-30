@@ -1,6 +1,7 @@
 import type { SessionFact } from "@/lib/ai";
 import { sealedArtifactNumberFromItemName } from "@/lib/lore";
 
+import { customArtifactForItem } from "./custom-artifacts";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -312,6 +313,27 @@ export function powerAcquisitionCapabilities(
         defaultDuration: artifact.defaultDuration,
         source: "artifact",
       });
+    }
+  }
+
+  // A player-CRAFTED artifact whose derived effect copies/steals a power grants
+  // the generic imitation means (a temporary copy) — so artifice can produce a
+  // power-acquisition relic just as the canon Ring of Mimicry does. Only added
+  // when no other means already covers it.
+  if (!seenMethods.has("imitation")) {
+    for (const item of state.inventory) {
+      if (item.category !== "sealed-artifact") continue;
+      const crafted = customArtifactForItem(item, session.customArtifactState);
+      if (crafted?.effects.some((e) => e.hook === "acquired-power")) {
+        capabilities.push({
+          method: "imitation",
+          label: "Crafted relic — copy a Beyonder ability you have witnessed",
+          permanence: "temporary",
+          defaultDuration: IMITATION_DURATION_TURNS,
+          source: "artifact",
+        });
+        break;
+      }
     }
   }
 

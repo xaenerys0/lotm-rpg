@@ -14,6 +14,7 @@ import { getCumulativeAbilityGroups, getPathway, getSequence } from "@/lib/rules
 import { getEpoch } from "@/lib/lore";
 import { TabBar, tabButtonId, tabPanelId, type TabDef } from "./tabs";
 import { CodexSection } from "./codex-section";
+import { ArtificePanel } from "./artifice-panel";
 import {
   isUndeletableCharacter,
   CODEX_KINDS,
@@ -436,6 +437,9 @@ export function CharacterSheet() {
       <TabPanel id="powers" active={activeTab}>
         {/* Acquired powers — copied/stolen Beyonder abilities */}
         <AcquiredPowersSection session={session} onUpdate={persistSession} />
+
+        {/* Artifice — craft a Sealed Artifact from a Beyonder Characteristic */}
+        <ArtificePanel session={session} onUpdate={persistSession} />
 
         {/* Anchors — steady the godhood pressure of the rung you're climbing into
           (issues #35/#25). Shown only when the NEXT advancement leads into the

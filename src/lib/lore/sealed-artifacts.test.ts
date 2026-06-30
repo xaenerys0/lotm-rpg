@@ -4,13 +4,31 @@ import {
   GRADE_POWER_BAND,
   SEALED_ARTIFACTS,
   type ArtifactGrade,
+  classifyHolder,
+  custodyForArtifactItem,
+  effectsForArtifactNumber,
+  getArtifactCustody,
   getSealedArtifact,
   gradeForArtifactItem,
+  hasAuthoredEffects,
+  isArtifactTradeable,
+  isCraftedArtifactCode,
   mintArtifactItem,
+  ownerNameForArtifactItem,
   sealedArtifactNumberFromItemName,
   sealedArtifactsForGrade,
   sealedArtifactsForPathway,
 } from "./sealed-artifacts";
+
+const EFFECT_HOOKS = new Set([
+  "identity",
+  "sanity",
+  "combat",
+  "acquired-power",
+  "funds",
+  "access",
+  "narrator",
+]);
 
 const GRADES: ArtifactGrade[] = [0, 1, 2, 3];
 
@@ -142,5 +160,135 @@ describe("sealedArtifactNumberFromItemName / gradeForArtifactItem", () => {
         category: "sealed-artifact",
       }),
     ).toBeUndefined();
+  });
+
+  it("gradeForArtifactItem reads the grade from a crafted synthetic code", () => {
+    for (const grade of GRADES) {
+      expect(
+        gradeForArtifactItem({
+          name: `Sealed Artifact C${grade}-001 — A Player Relic`,
+          description: "",
+          category: "sealed-artifact",
+        }),
+      ).toBe(grade);
+    }
+  });
+});
+
+describe("custody classification", () => {
+  it("every catalogue entry has an authored custody record", () => {
+    for (const artifact of SEALED_ARTIFACTS) {
+      const record = getArtifactCustody(artifact.number);
+      expect(record).toBeDefined();
+      expect(["church", "individual", "unowned"]).toContain(record!.custody);
+    }
+  });
+
+  it("the authored custody agrees with classifyHolder(holder)", () => {
+    for (const artifact of SEALED_ARTIFACTS) {
+      const authored = getArtifactCustody(artifact.number)!;
+      const derived = classifyHolder(artifact.holder);
+      expect(derived.custody).toBe(authored.custody);
+      if (authored.custody === "individual") {
+        expect(authored.ownerName).toBeDefined();
+        expect(derived.ownerName).toBe(authored.ownerName);
+      }
+    }
+  });
+
+  it("classifyHolder maps churches, dynasties, individuals, and the unowned", () => {
+    expect(classifyHolder("Church of the Evernight Goddess").custody).toBe("church");
+    expect(classifyHolder("Sealed by the Church of the Evernight Goddess").custody).toBe(
+      "church",
+    );
+    expect(classifyHolder("Church of the Fool (Abraham Family)").custody).toBe("church");
+    expect(classifyHolder("The Augustus royal line").custody).toBe("church");
+    expect(classifyHolder("Held by Isengard Stanton")).toEqual({
+      custody: "individual",
+      ownerName: "Isengard Stanton",
+    });
+    expect(classifyHolder("Carried by the Fool, Klein Moretti")).toEqual({
+      custody: "individual",
+      ownerName: "Klein Moretti",
+    });
+    expect(classifyHolder(undefined).custody).toBe("unowned");
+    expect(classifyHolder("   ").custody).toBe("unowned");
+    // An individual holder with no parseable name → individual, no ownerName.
+    expect(classifyHolder("Held by")).toEqual({ custody: "individual" });
+    // A non-empty holder that is neither a church nor a "by <name>" form.
+    expect(classifyHolder("A masterless wandering relic").custody).toBe("unowned");
+  });
+
+  it("getArtifactCustody falls back to classifyHolder for an unknown code", () => {
+    // An unknown code is not in the authored table and has no catalogue entry.
+    expect(getArtifactCustody("9-999")).toBeUndefined();
+  });
+
+  it("custodyForArtifactItem resolves catalogue, crafted, and non-artifact items", () => {
+    const ring = mintArtifactItem(getSealedArtifact("2-081")!);
+    expect(custodyForArtifactItem(ring)).toBe("individual");
+    expect(ownerNameForArtifactItem(ring)).toBe("Isengard Stanton");
+
+    const churchRelic = mintArtifactItem(getSealedArtifact("2-049")!);
+    expect(custodyForArtifactItem(churchRelic)).toBe("church");
+    expect(ownerNameForArtifactItem(churchRelic)).toBeUndefined();
+
+    const crafted = {
+      name: "Sealed Artifact C2-007 — A Made Thing",
+      description: "",
+      category: "sealed-artifact" as const,
+    };
+    expect(custodyForArtifactItem(crafted)).toBe("individual");
+    expect(isCraftedArtifactCode("C2-007")).toBe(true);
+    expect(isCraftedArtifactCode("2-049")).toBe(false);
+
+    expect(
+      custodyForArtifactItem({ name: "Honey", description: "", category: "mundane" }),
+    ).toBeUndefined();
+  });
+
+  it("isArtifactTradeable allows non-church custody only", () => {
+    expect(isArtifactTradeable(mintArtifactItem(getSealedArtifact("2-081")!))).toBe(true);
+    expect(isArtifactTradeable(mintArtifactItem(getSealedArtifact("2-049")!))).toBe(
+      false,
+    );
+    expect(
+      isArtifactTradeable({
+        name: "Sealed Artifact C0-001 — A Made Thing",
+        description: "",
+        category: "sealed-artifact",
+      }),
+    ).toBe(true);
+    expect(
+      isArtifactTradeable({ name: "Honey", description: "", category: "mundane" }),
+    ).toBe(false);
+  });
+});
+
+describe("artifact effects", () => {
+  it("every catalogue entry has at least one well-formed authored effect", () => {
+    for (const artifact of SEALED_ARTIFACTS) {
+      expect(hasAuthoredEffects(artifact.number)).toBe(true);
+      const effects = effectsForArtifactNumber(artifact.number);
+      expect(effects.length).toBeGreaterThan(0);
+      for (const effect of effects) {
+        expect(effect.label.trim().length).toBeGreaterThan(0);
+        expect(effect.description.trim().length).toBeGreaterThan(0);
+        expect(EFFECT_HOOKS.has(effect.hook)).toBe(true);
+      }
+    }
+  });
+
+  it("effectsForArtifactNumber returns an empty list for an unknown code", () => {
+    expect(effectsForArtifactNumber("9-999")).toEqual([]);
+    expect(hasAuthoredEffects("9-999")).toBe(false);
+  });
+
+  it("the copy-steal canon relics carry an acquired-power effect with a method", () => {
+    for (const number of ["2-081", "2-105"]) {
+      const effect = effectsForArtifactNumber(number)[0];
+      expect(effect.hook).toBe("acquired-power");
+      expect(typeof effect.params?.acquisition).toBe("string");
+    }
   });
 });

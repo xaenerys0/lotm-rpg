@@ -17,6 +17,7 @@ import { MobileNav } from "@/components/game/mobile-nav";
 import { GameLoop } from "@/components/game/game-loop";
 import { CombatEncounterView } from "@/components/game/combat-encounter";
 import { StoryChronicle } from "@/components/game/story-chronicle";
+import { ArtificePanel } from "@/components/game/artifice-panel";
 import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
 import MapPage from "@/app/(game)/map/page";
@@ -107,6 +108,27 @@ describe("accessibility — game shell", () => {
 
   it("sanity preferences toggle has no violations", async () => {
     await expectNoAxeViolations(<SanityPreferences />);
+  });
+
+  it("artifice crafting panel has no violations", async () => {
+    // A Paragon (id 19) with a fuseable Characteristic so the form renders.
+    const gs = createDefaultGameState(19, "char-artisan", "Artisan");
+    const session = createSession(
+      {
+        ...gs,
+        sequenceLevel: 6,
+        funds: 100_000,
+        inventory: [
+          {
+            name: "Sequence 6 Paragon Beyonder Characteristic",
+            description: "A precipitated characteristic.",
+            category: "main-ingredient",
+          },
+        ],
+      },
+      "artisan-1",
+    );
+    await expectNoAxeViolations(<ArtificePanel session={session} onUpdate={() => {}} />);
   });
 
   it("dev scene-art harness has no violations", async () => {
