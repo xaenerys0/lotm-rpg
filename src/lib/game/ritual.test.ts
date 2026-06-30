@@ -1,26 +1,23 @@
 import { describe, expect, it } from "vitest";
 
-import { getSequence } from "@/lib/rules";
-
 import {
   advanceRitual,
   beginRitual,
   clearRitual,
-  isRitualComplete,
   isValidRitualStateShape,
+  ritualCircumstanceFidelity,
   ritualFidelity,
   ritualInProgress,
-  ritualProgress,
   ritualQuestLabel,
   ritualStepsFor,
-  ritualTurns,
-  skipRitual,
+  RITUAL_FIDELITY_CAP,
+  RITUAL_WITNESS_PENALTY,
 } from "./ritual";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
 
 // A Fool at Sequence 6 — the target rung (Seq 5, Marionettist) carries a canon
-// Advancement Ritual, so the rite has turns to live out.
+// Advancement Ritual, so the rite has materials/conditions and matures over play.
 function sessionAt(sequenceLevel = 6, pathwayId = 1): GameSession {
   const gameState = {
     ...createDefaultGameState(pathwayId, "char-1", "Klein"),
@@ -29,19 +26,16 @@ function sessionAt(sequenceLevel = 6, pathwayId = 1): GameSession {
   return createSession(gameState, "session-1");
 }
 
-// Run the rite all the way to completion (the turn-based per-turn tick).
-function performRitual(session: GameSession): GameSession {
+// Mature the rite over `n` turns of play (the per-turn tick).
+function matureRitual(session: GameSession, n: number): GameSession {
   let s = session;
-  let guard = 0;
-  while (s.ritualState && !s.ritualState.complete && guard++ < 100) {
-    s = advanceRitual(s);
-  }
+  for (let i = 0; i < n; i++) s = advanceRitual(s);
   return s;
 }
 
 const TARGET = 5;
 
-describe("ritualStepsFor / ritualTurns", () => {
+describe("ritualStepsFor", () => {
   it("derives tagged steps (materials + conditions) from the target ritual", () => {
     const steps = ritualStepsFor(sessionAt(), TARGET);
     expect(steps.length).toBeGreaterThan(0);
@@ -60,176 +54,125 @@ describe("ritualStepsFor / ritualTurns", () => {
     expect(steps.length).toBeGreaterThan(0);
     expect(steps.every((s) => s.kind === "condition")).toBe(true);
   });
+});
 
-  it("scales turns with rung depth (a deeper rite is a longer ordeal)", () => {
-    // Fool Seq 5 vs Seq 1 — the deeper rung spans more turns.
-    const shallow = ritualTurns(5, getSequence(1, 5)?.advancementRitual);
-    const deep = ritualTurns(1, getSequence(1, 1)?.advancementRitual);
-    expect(deep).toBeGreaterThan(shallow);
-    expect(shallow).toBeGreaterThanOrEqual(2);
+describe("ritualCircumstanceFidelity", () => {
+  it("is 1 in a private, unhurt, unhunted moment", () => {
+    expect(ritualCircumstanceFidelity(sessionAt())).toBe(1);
+  });
+
+  it("drops with witnesses present (a crowd)", () => {
+    const session = sessionAt();
+    session.gameState.npcsPresent = ["A curious onlooker"];
+    expect(ritualCircumstanceFidelity(session)).toBeCloseTo(
+      1 - RITUAL_WITNESS_PENALTY,
+      5,
+    );
+  });
+
+  it("stalls (toward 0) amid wounds + pursuers + witnesses", () => {
+    const session = sessionAt();
+    session.gameState.npcsPresent = ["A crowd"];
+    session.gameState.injuries = [
+      { id: "i1", description: "A gash", severity: "major", recoveryTurns: 3 },
+    ];
+    session.trackedNpcState = {
+      roster: [{ name: "A Nighthawk", disposition: "hostile", follows: true }],
+    };
+    expect(ritualCircumstanceFidelity(session)).toBe(0);
   });
 });
 
 describe("beginRitual", () => {
-  it("seeds a turn-based rite, a quest label, and a quest-progress fact", () => {
+  it("opens the rite with a first turn of progress, a quest label, and a fact", () => {
     const session = beginRitual(sessionAt(), TARGET);
-    const total = ritualTurns(TARGET, getSequence(1, TARGET)?.advancementRitual);
-    expect(session.ritualState).toEqual({
-      pathwayId: 1,
-      targetSeq: TARGET,
-      totalTurns: total,
-      turnsRemaining: total,
-      fidelityScore: 0,
-      skipped: false,
-      complete: false,
-    });
+    expect(session.ritualState?.pathwayId).toBe(1);
+    expect(session.ritualState?.targetSeq).toBe(TARGET);
+    // A private opening accrues the first slice of fidelity (0 < f < 1).
+    expect(session.ritualState!.fidelity).toBeGreaterThan(0);
+    expect(session.ritualState!.fidelity).toBeLessThan(1);
     expect(session.gameState.activeQuests).toContain(ritualQuestLabel(TARGET));
     expect(
       session.memory.sessionFacts.some(
-        (f) =>
-          f.type === "quest-progress" &&
-          /Began the Advancement Ritual/.test(f.description),
+        (f) => f.type === "event" && /Began the Advancement Ritual/.test(f.description),
       ),
     ).toBe(true);
   });
 
-  it("is idempotent for the same target", () => {
+  it("is idempotent once a rite for the target is under way", () => {
     const once = beginRitual(sessionAt(), TARGET);
-    const twice = beginRitual(once, TARGET);
-    expect(twice).toBe(once);
+    expect(beginRitual(once, TARGET)).toBe(once);
   });
 
-  it("re-targets (resets) when the target changed", () => {
-    const begun = advanceRitual(beginRitual(sessionAt(), TARGET));
+  it("re-targets (resets progress) when the target changed", () => {
+    const begun = matureRitual(beginRitual(sessionAt(), TARGET), 3);
     const retargeted = beginRitual(begun, 4);
     expect(retargeted.ritualState?.targetSeq).toBe(4);
-    expect(retargeted.ritualState?.turnsRemaining).toBe(
-      retargeted.ritualState?.totalTurns,
+    expect(retargeted.ritualState!.fidelity).toBeLessThan(begun.ritualState!.fidelity);
+  });
+});
+
+describe("advanceRitual / ritualFidelity", () => {
+  it("matures the rite toward 1 over turns of play (no fixed length)", () => {
+    let session = beginRitual(sessionAt(), TARGET);
+    const start = ritualFidelity(session, TARGET);
+    session = advanceRitual(session);
+    expect(ritualFidelity(session, TARGET)).toBeGreaterThan(start);
+    // Many turns asymptotically approach a fully-formed rite.
+    session = matureRitual(session, 40);
+    expect(ritualFidelity(session, TARGET)).toBeGreaterThanOrEqual(RITUAL_FIDELITY_CAP);
+    expect(ritualFidelity(session, TARGET)).toBeLessThanOrEqual(1);
+  });
+
+  it("matures slower in poor circumstances than in solitude", () => {
+    const privateRite = advanceRitual(beginRitual(sessionAt(), TARGET));
+
+    const crowded = sessionAt();
+    crowded.gameState.npcsPresent = ["A crowd"];
+    const crowdedRite = advanceRitual(beginRitual(crowded, TARGET));
+
+    expect(ritualFidelity(crowdedRite, TARGET)).toBeLessThan(
+      ritualFidelity(privateRite, TARGET),
     );
   });
 
-  it("re-seeds a FINISHED same-target rite so it can be performed again (issue #209)", () => {
-    // A survived advancement setback can leave a complete/skipped rite stranded;
-    // beginning the rite again must reset it rather than short-circuit.
-    const skipped = skipRitual(sessionAt(), TARGET); // complete + skipped
-    const reBegun = beginRitual(skipped, TARGET);
-    expect(reBegun).not.toBe(skipped);
-    expect(reBegun.ritualState?.skipped).toBe(false);
-    expect(reBegun.ritualState?.complete).toBe(false);
-    expect(reBegun.ritualState?.turnsRemaining).toBe(reBegun.ritualState?.totalTurns);
-    // …but an IN-PROGRESS same-target rite is still left untouched (idempotent).
-    const inProgress = advanceRitual(beginRitual(sessionAt(), TARGET));
-    expect(beginRitual(inProgress, TARGET)).toBe(inProgress);
-  });
-});
-
-describe("advanceRitual / isRitualComplete", () => {
-  it("lives the rite out one turn per call until complete", () => {
-    let session = beginRitual(sessionAt(), TARGET);
-    const total = session.ritualState!.totalTurns;
-    expect(isRitualComplete(session, TARGET)).toBe(false);
-
-    for (let i = 0; i < total; i++) {
-      expect(ritualProgress(session, TARGET)).toBe(i);
-      session = advanceRitual(session);
-    }
-
-    expect(isRitualComplete(session, TARGET)).toBe(true);
-    expect(session.ritualState?.turnsRemaining).toBe(0);
-    expect(ritualProgress(session, TARGET)).toBe(total);
-  });
-
-  it("accrues full fidelity with a steady mind and drains a little sanity", () => {
-    const session = performRitual(beginRitual(sessionAt(), TARGET));
-    expect(ritualFidelity(session, TARGET)).toBeCloseTo(1, 5);
-    // The grueling rite costs sanity (the survival pressure).
-    expect(session.gameState.sanity).toBeLessThan(100);
-  });
-
-  it("botches beats and lowers fidelity when the mind is frayed", () => {
-    const frayed = beginRitual(sessionAt(), TARGET);
-    frayed.gameState.sanity = 10; // below RITUAL_BEAT_SANITY_RATIO * 100
-    const done = performRitual(frayed);
-    expect(ritualFidelity(done, TARGET)).toBeLessThan(1);
-    expect(ritualFidelity(done, TARGET)).toBeGreaterThan(0);
-  });
-
-  it("seeds a completion fact and drops the quest label on the finishing turn", () => {
-    const done = performRitual(beginRitual(sessionAt(), TARGET));
-    expect(done.gameState.activeQuests).not.toContain(ritualQuestLabel(TARGET));
-    expect(
-      done.memory.sessionFacts.some((f) =>
-        /Completed the Advancement Ritual/.test(f.description),
-      ),
-    ).toBe(true);
-  });
-
-  it("is a no-op when no rite is under way, complete, or skipped", () => {
+  it("is a no-op when no rite is under way, matured, or stalled by danger", () => {
     const none = sessionAt();
     expect(advanceRitual(none)).toBe(none);
-    const done = performRitual(beginRitual(sessionAt(), TARGET));
-    expect(advanceRitual(done)).toBe(done);
-    const skipped = skipRitual(sessionAt(), TARGET);
-    expect(advanceRitual(skipped)).toBe(skipped);
+    const matured = matureRitual(beginRitual(sessionAt(), TARGET), 50);
+    expect(advanceRitual(matured)).toBe(matured); // fully formed + already labelled
+
+    // A scene hostile enough to stall the rite (circumstance 0) makes no progress
+    // and must not churn a new session each turn.
+    const stalled = beginRitual(sessionAt(), TARGET);
+    stalled.gameState.npcsPresent = ["A crowd"];
+    stalled.gameState.injuries = [
+      { id: "i1", description: "A wound", severity: "major", recoveryTurns: 2 },
+    ];
+    stalled.trackedNpcState = {
+      roster: [{ name: "A hunter", disposition: "hostile", follows: true }],
+    };
+    expect(advanceRitual(stalled)).toBe(stalled);
+  });
+
+  it("ritualFidelity is 1 when the rung needs no rite, 0 when not begun", () => {
+    expect(ritualFidelity(sessionAt(9), 8)).toBe(1); // no rite at Seq 9→8
+    expect(ritualFidelity(sessionAt(), TARGET)).toBe(0); // not begun = forgone
+    expect(ritualFidelity(beginRitual(sessionAt(), 4), TARGET)).toBe(0); // wrong target
   });
 });
 
-describe("ritualInProgress / ritualProgress", () => {
-  it("reports a begun-but-unresolved rite as in progress", () => {
-    expect(ritualInProgress(sessionAt(), TARGET)).toBe(false); // not begun
-    const begun = advanceRitual(beginRitual(sessionAt(), TARGET));
-    expect(ritualInProgress(begun, TARGET)).toBe(true);
-    expect(ritualProgress(begun, TARGET)).toBe(1);
-    expect(ritualProgress(begun, 4)).toBe(0); // different target
-    const done = performRitual(begun);
-    expect(ritualInProgress(done, TARGET)).toBe(false); // resolved
-  });
-});
-
-describe("ritualFidelity", () => {
-  it("is 1 when the rung needs no rite", () => {
-    expect(ritualFidelity(sessionAt(9), 8)).toBe(1);
-  });
-
-  it("is 0 when no rite was begun for the target, or it was skipped", () => {
-    expect(ritualFidelity(sessionAt(), TARGET)).toBe(0);
-    expect(ritualFidelity(skipRitual(sessionAt(), TARGET), TARGET)).toBe(0);
-  });
-
-  it("is partial for a rushed (part-performed) rite", () => {
-    const partial = advanceRitual(beginRitual(sessionAt(), TARGET));
-    const fidelity = ritualFidelity(partial, TARGET);
-    expect(fidelity).toBeGreaterThan(0);
-    expect(fidelity).toBeLessThan(1);
-  });
-});
-
-describe("skipRitual", () => {
-  it("marks the rite skipped + complete with zero fidelity and drops the label", () => {
-    const skipped = skipRitual(sessionAt(), TARGET);
-    expect(skipped.ritualState?.skipped).toBe(true);
-    expect(skipped.ritualState?.complete).toBe(true);
-    expect(isRitualComplete(skipped, TARGET)).toBe(true);
-    expect(ritualFidelity(skipped, TARGET)).toBe(0);
-    expect(skipped.gameState.activeQuests).not.toContain(ritualQuestLabel(TARGET));
-    expect(
-      skipped.memory.sessionFacts.some((f) =>
-        /Forwent the Advancement Ritual/.test(f.description),
-      ),
-    ).toBe(true);
-  });
-
-  it("can skip a rite already in progress", () => {
-    const begun = advanceRitual(beginRitual(sessionAt(), TARGET));
-    const skipped = skipRitual(begun, TARGET);
-    expect(skipped.ritualState?.skipped).toBe(true);
-    expect(ritualFidelity(skipped, TARGET)).toBe(0);
+describe("ritualInProgress", () => {
+  it("is true once a rite for the target is begun, false otherwise", () => {
+    expect(ritualInProgress(sessionAt(), TARGET)).toBe(false);
+    expect(ritualInProgress(beginRitual(sessionAt(), TARGET), TARGET)).toBe(true);
+    expect(ritualInProgress(beginRitual(sessionAt(), TARGET), 4)).toBe(false);
   });
 });
 
 describe("clearRitual", () => {
-  it("drops a rite in progress and its quest label", () => {
-    const begun = advanceRitual(beginRitual(sessionAt(), TARGET));
+  it("drops a rite under way and its quest label", () => {
+    const begun = beginRitual(sessionAt(), TARGET);
     expect(begun.ritualState).toBeDefined();
     const cleared = clearRitual(begun);
     expect(cleared.ritualState).toBeUndefined();
@@ -243,15 +186,7 @@ describe("clearRitual", () => {
 });
 
 describe("isValidRitualStateShape", () => {
-  const ok = {
-    pathwayId: 1,
-    targetSeq: 5,
-    totalTurns: 4,
-    turnsRemaining: 2,
-    fidelityScore: 2,
-    skipped: false,
-    complete: false,
-  };
+  const ok = { pathwayId: 1, targetSeq: 5, fidelity: 0.4 };
 
   it("accepts a well-formed state", () => {
     expect(isValidRitualStateShape(ok)).toBe(true);
@@ -260,25 +195,19 @@ describe("isValidRitualStateShape", () => {
   it("rejects malformed states", () => {
     expect(isValidRitualStateShape(null)).toBe(false);
     expect(isValidRitualStateShape([])).toBe(false);
-    expect(isValidRitualStateShape({ pathwayId: 1, targetSeq: 5 })).toBe(false);
+    expect(isValidRitualStateShape({ pathwayId: 1 })).toBe(false);
     expect(isValidRitualStateShape({ ...ok, pathwayId: "x" })).toBe(false);
     expect(isValidRitualStateShape({ ...ok, targetSeq: Infinity })).toBe(false);
-    expect(isValidRitualStateShape({ ...ok, totalTurns: 1.5 })).toBe(false);
-    expect(isValidRitualStateShape({ ...ok, turnsRemaining: -1 })).toBe(false);
-    // turnsRemaining exceeds totalTurns
-    expect(isValidRitualStateShape({ ...ok, turnsRemaining: 5 })).toBe(false);
-    // fidelityScore out of bounds
-    expect(isValidRitualStateShape({ ...ok, fidelityScore: -1 })).toBe(false);
-    expect(isValidRitualStateShape({ ...ok, fidelityScore: 5 })).toBe(false);
-    expect(isValidRitualStateShape({ ...ok, skipped: "no" })).toBe(false);
-    expect(isValidRitualStateShape({ ...ok, complete: "yes" })).toBe(false);
-    // legacy step-counting shape is rejected (no turnsRemaining/fidelityScore)
+    expect(isValidRitualStateShape({ ...ok, fidelity: -0.1 })).toBe(false);
+    expect(isValidRitualStateShape({ ...ok, fidelity: 1.1 })).toBe(false);
+    expect(isValidRitualStateShape({ ...ok, fidelity: "high" })).toBe(false);
+    // The legacy turn-based shape is rejected (no `fidelity`).
     expect(
       isValidRitualStateShape({
         pathwayId: 1,
         targetSeq: 5,
-        stepsCompleted: 0,
-        totalSteps: 3,
+        totalTurns: 5,
+        turnsRemaining: 2,
         complete: false,
       }),
     ).toBe(false);

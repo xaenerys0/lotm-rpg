@@ -1,98 +1,80 @@
 import type { SessionFact } from "@/lib/ai";
 import { getSequence } from "@/lib/rules";
-import type { Ritual, RitualStep } from "@/lib/types/rules";
+import type { RitualStep } from "@/lib/types/rules";
 
 import { clamp } from "./math";
-import { acquisitionDepthFactor } from "./potion-preparation";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
-// Advancement rituals — a lived, pathway-specific ordeal that spans turns
+// Advancement rituals — begun once, then matured naturally over play
 // (issue #209; supersedes the per-step click-counting of issue #99 Part C)
 // ---------------------------------------------------------------------------
 //
-// From Sequence 5 an Advancement Ritual is canon and mandatory: its purpose is
-// to survive the surge of the Beyonder characteristic at the moment of drinking
-// the next potion. Canon also says it CAN be forgone — but then "the likelihood
-// of success plummets to a dangerous point, with losing control being the most
-// likely outcome."
+// From Sequence 5 an Advancement Ritual is canon: its purpose is to survive the
+// surge of the Beyonder characteristic at the moment of drinking the next potion.
+// Canon also says it CAN be forgone — but then "the likelihood of success
+// plummets to a dangerous point, with losing control being the most likely
+// outcome."
 //
-// The rite is no longer a list of click-through steps that read the same for
-// every pathway. It is ONE trigger ("Perform the rite") that the Beyonder begins
-// once and then LIVES OUT over however many turns it demands — mirroring the
-// tracked multi-turn quests `formula-pursuit.ts` / `hunt.ts`. Each turn of play
-// advances the rite (`advanceRitual`, wired into the same per-turn tick chain as
-// `advanceFormulaPursuit`); the narrator weaves that pathway's OWN canon rite
-// into the scene via the AI-visible quest label + facts. The rite's MATERIALS
-// are the potion's reagents (already required and consumed by the ingredients
-// gate / the climb); its CONDITIONS are the lived deeds, enacted symbolically.
+// The rite is NOT a list of click-through steps and NOT a fixed number of turns.
+// The player BEGINS it once ("Perform the rite"), which the React layer pairs
+// with an IMMEDIATE narrated turn so the rite opens in the current scene. From
+// then on it MATURES NATURALLY over the turns of normal play (`advanceRitual`,
+// wired into the per-turn tick) — there is no set length to wait out. The player
+// drinks whenever they judge it ready; advancing on a half-formed rite is
+// allowed, and entirely their call.
 //
-// How faithfully the rite is performed feeds a 0..1 FIDELITY factor that
-// `advancement.ts` folds into the climb odds: each advancing turn is judged
-// faithful or botched by the Beyonder's sanity at that moment, and the grueling
-// rite drains a little sanity per turn — so enduring a long rite on a fraying
-// mind degrades it (faithful-but-costly), while skipping it outright tanks the
-// odds (canon-dangerous). The rite no longer HARD-gates the climb — fidelity
-// does the work.
+// Progress is the `fidelity` (0..1): each turn closes part of the gap to a fully
+// faithful rite, scaled by how favourable the scene is RIGHT THEN
+// (`ritualCircumstanceFidelity`) — a private, unhurt, unhunted moment matures it
+// quickly; witnesses, wounds, or active pursuers slow it, and real danger stalls
+// it. So WHERE and WHEN the rite plays out shapes how far it gets. The stored
+// fidelity is folded into the climb odds by `advancement.ts`
+// (`advancementSuccessChance`/`advancementHighRisk`); skipping the rite outright
+// (never beginning it) reads as fidelity 0.
 //
 // `RitualState` is a single optional sub-state on the session (mirroring
 // `formulaPursuit`): strictly validated, preserved on the deserialize `...s`
-// spread, never seeded — absent simply means no rite in progress. No DB
-// migration (it serializes inside the session blob).
+// spread, never seeded. No DB migration (it serializes inside the session blob).
 //
-// Pure + deterministic; the React layer triggers `beginRitual`/`skipRitual` and
-// ticks `advanceRitual` each turn, then persists.
+// Pure + deterministic; the React layer triggers `beginRitual`, runs the rite's
+// narrated turn, ticks `advanceRitual` each turn, and persists.
 
-/** An advancement ritual being lived out across turns. */
+/** An Advancement Ritual the player has begun and is letting mature. */
 export interface RitualState {
   /** The pathway whose rite this is. */
   pathwayId: number;
   /** The sequence being advanced INTO (one rung lower than the current one). */
   targetSeq: number;
-  /** Total turns the rite demands (scaled by rung + rite). */
-  totalTurns: number;
-  /** Turns of the rite still to live out; 0 = the rite is performed. */
-  turnsRemaining: number;
   /**
-   * Accumulated faithfulness credit (0..totalTurns) — each turn adds 1 when
-   * endured with a steady mind, less when endured while frayed.
+   * How far the rite has matured, in [0, 1]. Accrues each turn (scaled by the
+   * scene's favourability) toward a fully faithful rite; the climb may be taken
+   * at any point, at whatever fidelity has accrued.
    */
-  fidelityScore: number;
-  /** True when the player deliberately forwent the rite (a perilous shortcut). */
-  skipped: boolean;
-  /** True once every turn has been lived out (or the rite was skipped). */
-  complete: boolean;
+  fidelity: number;
 }
 
-/** Base turns the shallowest rite spans, before depth + condition scaling. */
-export const RITUAL_BASE_TURNS = 2;
+/** Fraction of the remaining gap to a faithful rite closed per ideal turn. */
+export const RITUAL_PROGRESS_RATE = 0.3;
+/** At/above this fidelity the rite counts as fully matured (avoids endless churn). */
+export const RITUAL_FIDELITY_CAP = 0.99;
 
-/**
- * A turn of the rite endured with at least this fraction of max sanity intact
- * counts as faithful; below it the beat is botched and credits less fidelity.
- */
-export const RITUAL_BEAT_SANITY_RATIO = 0.5;
-
-/** Fidelity credit a botched (frayed-mind) turn of the rite still earns. */
-export const RITUAL_BOTCHED_BEAT_CREDIT = 0.4;
-
-/** Sanity the grueling rite costs per turn lived out (the survival pressure). */
-export const RITUAL_TURN_SANITY_COST = 2;
+/** Fidelity progress lost to performing the rite with witnesses (a crowd) near. */
+export const RITUAL_WITNESS_PENALTY = 0.3;
+/** Fidelity progress lost to performing the rite while wounded (in/after a fight). */
+export const RITUAL_WOUNDED_PENALTY = 0.4;
+/** Fidelity progress lost to performing the rite while actively hunted. */
+export const RITUAL_HUNTED_PENALTY = 0.4;
 
 /**
  * The ordered steps of the rite for `targetSeq`: the corpus-tagged `steps`
  * (materials + lived conditions) when present, else the hand-authored fallback
  * `requirements` treated as conditions, else empty (the target has no rite).
- * Used to size the rite and surface its canon materials/conditions — never a
+ * Used to surface the rite's canon materials/conditions in the UI — never a
  * clickable list.
  */
 export function ritualStepsFor(session: GameSession, targetSeq: number): RitualStep[] {
   const ritual = getSequence(session.gameState.pathwayId, targetSeq)?.advancementRitual;
-  return stepsForRitual(ritual);
-}
-
-/** Steps of a ritual definition (pathway-agnostic — used by `ritualTurns`). */
-function stepsForRitual(ritual: Ritual | undefined): RitualStep[] {
   if (!ritual) return [];
   if (ritual.steps && ritual.steps.length > 0) return [...ritual.steps];
   // Hand-authored fallback rituals carry only flat `requirements` prose, which
@@ -100,29 +82,38 @@ function stepsForRitual(ritual: Ritual | undefined): RitualStep[] {
   return ritual.requirements.map((text) => ({ kind: "condition", text }));
 }
 
-/** The lived condition beats of the rite (the deeds, distinct from materials). */
-function conditionBeats(ritual: Ritual | undefined): RitualStep[] {
-  return stepsForRitual(ritual).filter((s) => s.kind === "condition");
-}
-
 /**
- * How many turns the rite for `targetSeq` spans. Scales with the same depth
- * factor as the rest of the potion economy (a deeper rung is a longer ordeal)
- * plus one turn per canon condition beat (a richer rite takes longer to live
- * out). Always at least the base length.
+ * How favourable the CURRENT scene is for the rite, in [0, 1]. A private, unhurt,
+ * unhunted moment is ideal (1.0); each adverse circumstance — witnesses present
+ * (a crowd), open wounds (mid-/post-fight), or active pursuers (being hunted) —
+ * lowers it, and enough danger stalls the rite entirely (0). This is the
+ * "isolated vs crowd vs battle" signal that shapes how fast the rite matures each
+ * turn, so the player can seek the right moment. Pure.
  */
-export function ritualTurns(targetSeq: number, ritual: Ritual | undefined): number {
-  const base = Math.round(RITUAL_BASE_TURNS * acquisitionDepthFactor(targetSeq));
-  return Math.max(RITUAL_BASE_TURNS, base + conditionBeats(ritual).length);
+export function ritualCircumstanceFidelity(session: GameSession): number {
+  const { npcsPresent, injuries } = session.gameState;
+  const pursuers = (session.trackedNpcState?.roster ?? []).filter(
+    (npc) => npc.disposition === "hostile" && npc.follows,
+  );
+  let fidelity = 1;
+  if ((injuries?.length ?? 0) > 0) fidelity -= RITUAL_WOUNDED_PENALTY;
+  if (pursuers.length > 0) fidelity -= RITUAL_HUNTED_PENALTY;
+  if ((npcsPresent?.length ?? 0) > 0) fidelity -= RITUAL_WITNESS_PENALTY;
+  return clamp(fidelity, 0, 1);
+}
+
+/** Close part of the remaining gap to a faithful rite, scaled by the scene. */
+function accrueFidelity(current: number, circumstance: number): number {
+  return clamp(current + (1 - current) * RITUAL_PROGRESS_RATE * circumstance, 0, 1);
 }
 
 /**
- * The canonical `activeQuests` string for a rite in progress — one source of
- * truth so the label added on begin matches the one removed on completion (the
- * narrator sees this entry and weaves the pathway's own rite into the scene).
+ * The canonical `activeQuests` string for a rite under way — one source of truth
+ * so the label added on begin matches the one removed on the climb (the narrator
+ * sees this entry and keeps weaving the maturing rite into the scene).
  */
 export function ritualQuestLabel(targetSeq: number): string {
-  return `Perform the Advancement Ritual for the Sequence ${targetSeq} ascent`;
+  return `Let the Advancement Ritual for the Sequence ${targetSeq} ascent mature`;
 }
 
 function withQuestLabel(quests: string[], label: string): string[] {
@@ -135,10 +126,10 @@ function withoutQuestLabel(quests: string[], label: string): string[] {
 
 /**
  * Begin the rite for `targetSeq` — the single "Perform the rite" trigger. Seeds
- * the turn-based state, adds the AI-visible quest label, and records a
- * `quest-progress` fact carrying the canon rite text so the narrator foregrounds
- * it. Idempotent for the same target (returns unchanged if already under way),
- * resets when the target changed. A rite with no turns is born already complete.
+ * the rite with a first turn of progress (scaled by the current scene), adds the
+ * AI-visible quest label, and records the act so the narrator opens it in
+ * context. Idempotent once a rite for this target is under way (does not reset
+ * accrued progress). The React layer pairs this with an immediate narrated turn.
  * Pure.
  */
 export function beginRitual(
@@ -147,24 +138,22 @@ export function beginRitual(
   now: number = Date.now(),
 ): GameSession {
   const existing = session.ritualState;
-  // Short-circuit only a rite genuinely IN PROGRESS for this target; a finished
-  // (complete/skipped) same-target state is re-seeded so the rite can be
-  // performed again — e.g. after a survived advancement setback left it stranded.
-  if (
-    existing &&
-    existing.targetSeq === targetSeq &&
-    !existing.complete &&
-    !existing.skipped
-  ) {
-    return session;
-  }
+  if (existing && existing.targetSeq === targetSeq) return session;
 
   const ritual = getSequence(session.gameState.pathwayId, targetSeq)?.advancementRitual;
-  const totalTurns = ritualTurns(targetSeq, ritual);
+  const fidelity = accrueFidelity(0, ritualCircumstanceFidelity(session));
   const label = ritualQuestLabel(targetSeq);
+  // Re-targeting (a stale rite for a different rung) — drop its label first so a
+  // superseded quest can't linger in `activeQuests`.
+  const quests = existing
+    ? withoutQuestLabel(
+        session.gameState.activeQuests,
+        ritualQuestLabel(existing.targetSeq),
+      )
+    : session.gameState.activeQuests;
 
   const fact: SessionFact = {
-    type: "quest-progress",
+    type: "event",
     description: ritual
       ? `Began the Advancement Ritual to ascend to Sequence ${targetSeq}: ${ritual.description}`
       : `Began the Advancement Ritual to ascend to Sequence ${targetSeq}.`,
@@ -175,17 +164,9 @@ export function beginRitual(
     ...session,
     gameState: {
       ...session.gameState,
-      activeQuests: withQuestLabel(session.gameState.activeQuests, label),
+      activeQuests: withQuestLabel(quests, label),
     },
-    ritualState: {
-      pathwayId: session.gameState.pathwayId,
-      targetSeq,
-      totalTurns,
-      turnsRemaining: totalTurns,
-      fidelityScore: 0,
-      skipped: false,
-      complete: totalTurns === 0,
-    },
+    ritualState: { pathwayId: session.gameState.pathwayId, targetSeq, fidelity },
     memory: {
       ...session.memory,
       sessionFacts: [...session.memory.sessionFacts, fact],
@@ -195,145 +176,69 @@ export function beginRitual(
 }
 
 /**
- * Advance the rite in progress by one turn of play — the per-turn tick (wired
- * alongside `advanceFormulaPursuit`). Lives out one turn: accrues fidelity
- * (full credit when the mind is steady, partial when frayed), drains a little
- * sanity for the ordeal, and keeps the quest label in sync. On the turn that
- * finishes the rite it flips `complete`, drops the label, and seeds a completion
- * fact. A no-op when no rite is under way, or it is already complete/skipped.
- * Pure.
+ * Mature the rite under way by one turn of play — the per-turn tick (wired
+ * alongside `advanceFormulaPursuit`). Closes part of the remaining gap to a
+ * faithful rite, scaled by the scene's favourability that turn, and keeps the
+ * quest label in sync. A no-op when no rite is under way or it has already fully
+ * matured (so a long chronicle does not churn). Pure.
  */
 export function advanceRitual(
   session: GameSession,
   now: number = Date.now(),
 ): GameSession {
   const state = session.ritualState;
-  if (!state || state.complete || state.skipped) return session;
+  if (!state) return session;
 
-  const { sanity, maxSanity } = session.gameState;
-  const survived = sanity >= maxSanity * RITUAL_BEAT_SANITY_RATIO;
-  const fidelityScore = state.fidelityScore + (survived ? 1 : RITUAL_BOTCHED_BEAT_CREDIT);
-  const turnsRemaining = Math.max(0, state.turnsRemaining - 1);
-  const complete = turnsRemaining <= 0;
   const label = ritualQuestLabel(state.targetSeq);
+  const labelled = session.gameState.activeQuests.includes(label);
+  const fidelity = accrueFidelity(state.fidelity, ritualCircumstanceFidelity(session));
 
-  const facts: SessionFact[] = complete
-    ? [
-        {
-          type: "quest-progress",
-          description: `Completed the Advancement Ritual for the Sequence ${state.targetSeq} ascent.`,
-          turnNumber: session.turnCount,
-        },
-      ]
-    : [];
+  // Nothing to commit when the rite is already labelled AND this turn changed
+  // nothing — either it has fully matured (past the cap) or the scene is so
+  // hostile it cannot progress at all (circumstance 0). Avoids per-turn churn.
+  if (
+    labelled &&
+    (state.fidelity >= RITUAL_FIDELITY_CAP || fidelity === state.fidelity)
+  ) {
+    return session;
+  }
 
   return {
     ...session,
     gameState: {
       ...session.gameState,
-      sanity: clamp(sanity - RITUAL_TURN_SANITY_COST, 0, maxSanity),
-      activeQuests: complete
-        ? withoutQuestLabel(session.gameState.activeQuests, label)
-        : withQuestLabel(session.gameState.activeQuests, label),
+      activeQuests: withQuestLabel(session.gameState.activeQuests, label),
     },
-    ritualState: { ...state, turnsRemaining, fidelityScore, complete },
-    memory:
-      facts.length > 0
-        ? {
-            ...session.memory,
-            sessionFacts: [...session.memory.sessionFacts, ...facts],
-          }
-        : session.memory,
+    ritualState: { ...state, fidelity },
     updatedAt: now,
   };
 }
 
 /**
- * Deliberately forgo the rite (the canon-dangerous shortcut). Marks it skipped
- * and complete with zero fidelity so the climb unlocks at the steep penalty
- * `advancement.ts` applies, drops the quest label, and records the choice.
- * Begins the state first when none is under way. Pure.
- */
-export function skipRitual(
-  session: GameSession,
-  targetSeq: number,
-  now: number = Date.now(),
-): GameSession {
-  const begun = beginRitual(session, targetSeq, now);
-  const state = begun.ritualState!;
-  const label = ritualQuestLabel(targetSeq);
-
-  const fact: SessionFact = {
-    type: "quest-progress",
-    description: `Forwent the Advancement Ritual for the Sequence ${targetSeq} ascent — a perilous shortcut that makes losing control the likely outcome.`,
-    turnNumber: session.turnCount,
-  };
-
-  return {
-    ...begun,
-    gameState: {
-      ...begun.gameState,
-      activeQuests: withoutQuestLabel(begun.gameState.activeQuests, label),
-    },
-    ritualState: { ...state, fidelityScore: 0, skipped: true, complete: true },
-    memory: {
-      ...begun.memory,
-      sessionFacts: [...begun.memory.sessionFacts, fact],
-    },
-    updatedAt: now,
-  };
-}
-
-/**
- * How faithfully the rite for `targetSeq` was performed, in [0, 1]. `1` when the
- * rung needs no rite. `0` when none was begun for this target, or it was
- * skipped. Otherwise the share of faithful turns lived out (a partial rite gives
- * partial fidelity). Drives the climb-odds penalty in `advancement.ts`.
+ * How faithfully the rite for `targetSeq` has matured, in [0, 1]. `1` when the
+ * rung needs no rite. `0` when no rite was begun for this target (i.e. the player
+ * forwent it). Otherwise the accrued fidelity. Drives the climb-odds penalty in
+ * `advancement.ts`.
  */
 export function ritualFidelity(session: GameSession, targetSeq: number): number {
   const ritual = getSequence(session.gameState.pathwayId, targetSeq)?.advancementRitual;
   if (!ritual) return 1;
   const state = session.ritualState;
-  if (!state || state.targetSeq !== targetSeq || state.skipped) return 0;
-  if (state.totalTurns <= 0) return 1;
-  return clamp(state.fidelityScore / state.totalTurns, 0, 1);
+  if (!state || state.targetSeq !== targetSeq) return 0;
+  return clamp(state.fidelity, 0, 1);
 }
 
 /**
- * Whether the rite for `targetSeq` has been fully lived out (or skipped — a
- * skipped rite reads complete so the climb unlocks). False when no rite is in
- * progress or it tracks a different target.
- */
-export function isRitualComplete(session: GameSession, targetSeq: number): boolean {
-  const state = session.ritualState;
-  return state !== undefined && state.targetSeq === targetSeq && state.complete;
-}
-
-/**
- * Whether a rite for `targetSeq` is under way but not yet resolved (begun, not
- * complete, not skipped) — the UI shows the progress + skip surface for it.
+ * Whether a rite for `targetSeq` is under way (begun, maturing). False when the
+ * player has not begun one for this target. The UI shows the maturing-progress
+ * surface when true, the "Perform the rite" trigger when false.
  */
 export function ritualInProgress(session: GameSession, targetSeq: number): boolean {
   const state = session.ritualState;
-  return (
-    state !== undefined &&
-    state.targetSeq === targetSeq &&
-    !state.complete &&
-    !state.skipped
-  );
+  return state !== undefined && state.targetSeq === targetSeq;
 }
 
-/**
- * Turns of the rite for `targetSeq` lived out so far — 0 when no rite is in
- * progress or it tracks a different target. The source of truth for the UI
- * progress display.
- */
-export function ritualProgress(session: GameSession, targetSeq: number): number {
-  const state = session.ritualState;
-  return state?.targetSeq === targetSeq ? state.totalTurns - state.turnsRemaining : 0;
-}
-
-/** Drop any rite in progress (consumed on a successful climb, or abandoned). */
+/** Drop any rite under way (consumed on a successful climb, or abandoned). */
 export function clearRitual(session: GameSession, now: number = Date.now()): GameSession {
   const state = session.ritualState;
   if (state === undefined) return session;
@@ -354,14 +259,12 @@ export function isValidRitualStateShape(obj: unknown): boolean {
   const s = obj as Record<string, unknown>;
   if (!Number.isFinite(s.pathwayId)) return false;
   if (!Number.isFinite(s.targetSeq)) return false;
-  if (!Number.isInteger(s.totalTurns) || (s.totalTurns as number) < 0) return false;
-  if (!Number.isInteger(s.turnsRemaining) || (s.turnsRemaining as number) < 0) {
+  if (
+    !Number.isFinite(s.fidelity) ||
+    (s.fidelity as number) < 0 ||
+    (s.fidelity as number) > 1
+  ) {
     return false;
   }
-  if ((s.turnsRemaining as number) > (s.totalTurns as number)) return false;
-  if (!Number.isFinite(s.fidelityScore) || (s.fidelityScore as number) < 0) return false;
-  if ((s.fidelityScore as number) > (s.totalTurns as number)) return false;
-  if (typeof s.skipped !== "boolean") return false;
-  if (typeof s.complete !== "boolean") return false;
   return true;
 }

@@ -18,15 +18,14 @@ import { advanceRitual, beginRitual, ritualQuestLabel } from "./ritual";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
 
-// Live the advancement rite for `target` out to completion (issue #209: the rite
-// spans turns; how faithfully it's performed feeds the climb odds but no longer
-// hard-gates it). A no-op below Sequence 5 (no rite defined there).
+// Begin the advancement rite for `target` and mature it to a fully-formed rite
+// (issue #209: the rite matures over play in favourable conditions; fidelity
+// feeds the climb odds but no longer hard-gates it). A no-op below Sequence 5
+// (no rite defined there).
 function performRitual(session: GameSession, target: number): GameSession {
   let s = beginRitual(session, target);
-  let guard = 0;
-  while (s.ritualState && !s.ritualState.complete && guard++ < 100) {
-    s = advanceRitual(s);
-  }
+  // 40 private turns asymptotically forms the rite (fidelity → ~1).
+  for (let i = 0; i < 40 && s.ritualState; i++) s = advanceRitual(s);
   return s;
 }
 
@@ -153,8 +152,8 @@ describe("advancementRequirements", () => {
     const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
     expect(ritualReq).toBeDefined();
     expect(ritualReq?.met).toBe(true);
-    expect(ritualReq?.forthcoming).toBe(false); // fully performed
-    expect(ritualReq?.label).toMatch(/Advancement Ritual performed/i);
+    expect(ritualReq?.forthcoming).toBe(false); // fully formed
+    expect(ritualReq?.label).toMatch(/Advancement Ritual fully formed/i);
   });
 
   it("no longer hard-blocks the climb on the rite, but marks it forthcoming (issue #209)", () => {
@@ -166,7 +165,7 @@ describe("advancementRequirements", () => {
     const ritualReq = advancementRequirements(unperformed).find((r) => r.id === "ritual");
     expect(ritualReq?.met).toBe(true); // advisory, never blocks
     expect(ritualReq?.forthcoming).toBe(true);
-    expect(ritualReq?.label).toMatch(/skipping it is perilous/i);
+    expect(ritualReq?.label).toMatch(/drinking without it is perilous/i);
     // The climb is attemptable either way — fidelity, not a gate, does the work.
     expect(canAdvance(unperformed)).toBe(true);
     expect(canAdvance(ready)).toBe(true);
@@ -325,20 +324,20 @@ describe("attemptAdvancement", () => {
     const facts = ritualResult.session.memory.sessionFacts;
     if (hasRitual) {
       expect(facts.some((f) => /ritual/i.test(f.description))).toBe(true);
-      expect(facts.some((f) => /performed faithfully/i.test(f.description))).toBe(true);
+      expect(facts.some((f) => /fully formed/i.test(f.description))).toBe(true);
       expect(ritualResult.ritual).toBeDefined();
     }
   });
 
-  it("notes the rite's manner in the memory fact — rushed vs forgone (issue #209)", () => {
-    // A part-performed (rushed) rite: begun, one turn lived out, then the climb.
-    const ready = readyToAdvance(6); // target 5 — rite already faithful
+  it("notes the rite's manner in the memory fact — half-formed vs forgone (issue #209)", () => {
+    // A half-formed rite: begun, one turn matured, then the climb taken early.
+    const ready = readyToAdvance(6); // target 5
     const rushed = advanceRitual(beginRitual({ ...ready, ritualState: undefined }, 5));
     const rushedResult = attemptAdvancement(rushed, () => 0);
     if (rushedResult.outcome === "advanced") {
       expect(
         rushedResult.session.memory.sessionFacts.some((f) =>
-          /rushed/i.test(f.description),
+          /half-formed/i.test(f.description),
         ),
       ).toBe(true);
     }

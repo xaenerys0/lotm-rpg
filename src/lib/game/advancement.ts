@@ -12,7 +12,7 @@ import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
 import { hasItemMatching, removeItemsByName } from "./inventory";
 import { clamp } from "./math";
-import { ritualFidelity, ritualQuestLabel } from "./ritual";
+import { ritualFidelity, ritualQuestLabel, RITUAL_FIDELITY_CAP } from "./ritual";
 import { sanityDelta } from "./sanity";
 import type { GameSession } from "./types";
 import { applySanityImpact } from "./world-state";
@@ -151,14 +151,14 @@ export function advancementRequirements(session: GameSession): AdvancementRequir
     const ritual = targetSeq?.advancementRitual;
     if (ritual) {
       const fidelity = ritualFidelity(session, target);
+      const formed = fidelity >= RITUAL_FIDELITY_CAP;
       requirements.push({
         id: "ritual",
-        label:
-          fidelity >= 1
-            ? `Advancement Ritual performed: ${ritual.description}`
-            : `Perform the Advancement Ritual to steady the climb — skipping it is perilous: ${ritual.description}`,
+        label: formed
+          ? `Advancement Ritual fully formed: ${ritual.description}`
+          : `Let the Advancement Ritual mature to steady the climb — drinking without it is perilous: ${ritual.description}`,
         met: true,
-        forthcoming: fidelity < 1,
+        forthcoming: !formed,
       });
     }
   }
@@ -312,11 +312,11 @@ export function attemptAdvancement(
     // climb accordingly (issue #209): faithful, rushed, or forgone.
     const fidelity = ritualFidelity(session, target);
     const manner =
-      fidelity >= 1
-        ? "performed faithfully"
+      fidelity >= RITUAL_FIDELITY_CAP
+        ? "fully formed"
         : fidelity <= 0
           ? "forgone — survived the surge by sheer luck"
-          : "rushed";
+          : "only half-formed when the potion was drunk";
     facts.push({
       type: "event",
       description: `The advancement ritual to become a ${roleName} was ${manner}: ${ritual.description}`,

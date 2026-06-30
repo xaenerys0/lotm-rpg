@@ -454,9 +454,9 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="ritual-1" />);
   });
 
-  it("ritual performance panel (rite in progress, progressbar) has no violations", async () => {
-    // The rite begun and partway lived out — the panel shows the progressbar +
-    // "Skip the rite" surface (issue #209). Seeds a turn-based ritualState.
+  it("ritual performance panel (rite maturing, progressbar) has no violations", async () => {
+    // The rite begun and maturing — the panel shows the fidelity progressbar
+    // (issue #209). Seeds a `fidelity`-based ritualState.
     const prereqs = getSequence(1, 5)?.prerequisiteItems ?? [];
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-rip", "Klein"),
@@ -469,15 +469,7 @@ describe("accessibility — game loop", () => {
       phase: "choices" as const,
       currentNarrative: "The rite is under way.",
       currentChoices: [{ id: "c1", text: "Endure", type: "action" as const }],
-      ritualState: {
-        pathwayId: 1,
-        targetSeq: 5,
-        totalTurns: 5,
-        turnsRemaining: 3,
-        fidelityScore: 2,
-        skipped: false,
-        complete: false,
-      },
+      ritualState: { pathwayId: 1, targetSeq: 5, fidelity: 0.5 },
     };
     localStorage.setItem(SESSION_KEY_PREFIX + "ritual-ip", serializeSession(session));
     await expectNoAxeViolations(<GameLoop sessionId="ritual-ip" />);

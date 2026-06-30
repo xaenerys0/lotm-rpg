@@ -14,19 +14,20 @@ import {
 // playwright.config.ts and seeded with a signed-in storageState). The game loop
 // is an authenticated screen, so it can't run in the public tier.
 //
-// Faithful Sequence ≤5 advancement rituals (issue #209): the rite is ONE trigger
-// that spans turns, not a per-step click list. We seed a Fool at Seq 6 with the
-// next potion (Seq 5, Marionettist) fully in hand and digested, so the climb
-// cluster renders the RitualPerformancePanel. We assert: the single "Perform the
-// rite" / "Skip the rite" surface shows (no per-step "Enact this step" buttons),
-// the climb attempt waits on the rite, beginning it shows a progressbar, and
-// skipping it unlocks the climb attempt. No live AI call is involved.
+// Faithful Sequence ≤5 advancement rituals (issue #209): the rite is begun by a
+// single "Perform the rite" trigger and then matures naturally over play — it is
+// NOT a per-step click list and NOT a fixed number of turns, and the climb is
+// always the player's call. We seed a Fool at Seq 6 with the next potion (Seq 5,
+// Marionettist) in hand and digested, so the climb cluster renders the
+// RitualPerformancePanel + the always-available AdvancementPanel. (Beginning the
+// rite fires a narrated turn that needs a provider, so this spec checks the
+// surfaces, not the AI turn.)
 
 // A Fool at Seq 6, advancement-ready into Seq 5 (Marionettist): every Seq 5
 // prerequisite carried (so `potionPreparationPlan` reads allOwned + the formula
 // secured) and the current potion fully digested. Parked in the choices phase so
 // the climb cluster renders without an AI turn.
-function readySession(id: string): GameSession {
+function readySession(id: string, ritualBegun = false): GameSession {
   const prereqs = getSequence(1, 5)?.prerequisiteItems ?? [];
   const base = createSession(
     {
@@ -43,6 +44,10 @@ function readySession(id: string): GameSession {
     turnCount: 1,
     currentNarrative: "The potion is brewed. The rite remains.",
     currentChoices: [{ id: "c1", text: "Steady yourself", type: "action" }],
+    // Optionally seed a rite already maturing to exercise the progress meter.
+    ...(ritualBegun
+      ? { ritualState: { pathwayId: 1, targetSeq: 5, fidelity: 0.5 } }
+      : {}),
   };
 }
 
@@ -66,43 +71,36 @@ async function seed(page: import("@playwright/test").Page, session: GameSession)
   await page.getByRole("button", { name: /Resume Klein Rite/ }).click();
 }
 
-test("the rite is one trigger (Perform / Skip), not a per-step click list", async ({
+test("the rite is one trigger, not a per-step click list, and never gates the climb", async ({
   page,
 }) => {
   await seed(page, readySession("e2e-ritual-perform"));
 
   // The pathway-specific rite renders with its canon heading + a single
-  // "Perform the rite" trigger and a "Skip the rite" hatch — no "Enact this step".
+  // "Perform the rite" trigger — no "Enact this step" list, no "Skip" button.
   await expect(
     page.getByRole("heading", { name: /Perform the rite to become a Marionettist/ }),
   ).toBeVisible();
   await expect(page.getByRole("button", { name: /^Perform the rite$/ })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Skip the rite/ })).toBeVisible();
   await expect(page.getByRole("button", { name: /Enact this step/ })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Skip the rite/ })).toHaveCount(0);
 
-  // The climb attempt waits on the rite — it is not offered until the rite is
-  // performed or deliberately forgone.
-  await expect(page.getByRole("button", { name: /Prepare to advance/ })).toHaveCount(0);
-
-  // Beginning the rite shows its progress meter (it then plays out over turns).
-  await page.getByRole("button", { name: /^Perform the rite$/ }).click();
-  await expect(
-    page.getByRole("progressbar", { name: /Advancement ritual progress/ }),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: /Skip the rite/ })).toBeVisible();
-});
-
-test("skipping the rite unlocks the climb attempt", async ({ page }) => {
-  await seed(page, readySession("e2e-ritual-skip"));
-
-  await page
-    .getByRole("button", { name: /Skip the rite/ })
-    .first()
-    .click();
-
-  // The rite panel resolves and the advancement attempt is now offered.
+  // The climb attempt is ALWAYS the player's call — offered alongside the rite,
+  // never gated behind it (issue #209).
   await expect(
     page.getByRole("heading", { name: /The next rung: Sequence 5, Marionettist/ }),
   ).toBeVisible();
+  await expect(page.getByRole("button", { name: /Prepare to advance/ })).toBeVisible();
+});
+
+test("a rite already under way shows its maturing-progress meter", async ({ page }) => {
+  await seed(page, readySession("e2e-ritual-progress", true));
+
+  // With a rite begun, the panel shows the fidelity progress meter (no begin
+  // button), and the climb attempt remains available.
+  await expect(
+    page.getByRole("progressbar", { name: /Advancement ritual fidelity/ }),
+  ).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Perform the rite$/ })).toHaveCount(0);
   await expect(page.getByRole("button", { name: /Prepare to advance/ })).toBeVisible();
 });
