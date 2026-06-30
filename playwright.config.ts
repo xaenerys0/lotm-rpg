@@ -54,13 +54,15 @@ const authenticatedProjects: Project[] = [
   { name: "setup", testMatch: /auth\.setup\.ts/ },
   {
     name: "mobile-authed",
-    testMatch: /(authenticated|canon-takeover-prologue|combat|turn-flow)\.spec\.ts/,
+    testMatch:
+      /(authenticated|canon-takeover-prologue|combat|turn-flow|dev-admin)\.spec\.ts/,
     use: { ...devices["Pixel 5"], storageState: authFile },
     dependencies: ["setup"],
   },
   {
     name: "desktop-authed",
-    testMatch: /(authenticated|canon-takeover-prologue|combat|turn-flow)\.spec\.ts/,
+    testMatch:
+      /(authenticated|canon-takeover-prologue|combat|turn-flow|dev-admin)\.spec\.ts/,
     use: { ...devices["Desktop Chrome"], storageState: authFile },
     dependencies: ["setup"],
   },

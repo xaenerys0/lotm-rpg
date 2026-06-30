@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isAdmin } from "@/lib/supabase/admin";
 import { GameSidebar } from "@/components/game/game-sidebar";
 import { PreferenceEffects } from "@/components/game/preference-effects";
 import { CloudSyncRegistrar } from "@/components/game/cloud-sync-registrar";
@@ -14,11 +15,13 @@ export default async function GameLayout({ children }: { children: React.ReactNo
     redirect("/login");
   }
 
+  const admin = await isAdmin(supabase, data.user.id);
+
   return (
     <div className="fog-overlay flex min-h-screen">
       <PreferenceEffects />
       <CloudSyncRegistrar />
-      <GameSidebar userEmail={data.user.email ?? ""} />
+      <GameSidebar userEmail={data.user.email ?? ""} isAdmin={admin} />
       <main
         id="main-content"
         tabIndex={-1}

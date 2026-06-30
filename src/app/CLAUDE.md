@@ -63,6 +63,7 @@ The app is installable on Android and iOS ("Add to Home Screen"):
 - `/leaderboard` — Public leaderboards (issue #18). Server component wraps `LeaderboardPanel`.
 - `/society` — Secret society hub (issue #32). Server component wraps `SocietyPanel`.
 - `/settings` — AI provider configuration (BYOK) and preferences. Server component wraps `ProviderConfig` client component.
+- `/dev/admin` — **Admin-only dev/test utilities.** Server component: `getUser()` → `isAdmin()` (`@/lib/supabase/admin`, reads `profiles.is_admin`); a non-admin (or signed-out) visitor gets `notFound()` (404). Otherwise wraps the `AdminToolsPanel` client component (forge a character at any state; modify the active save; trigger loss of control). The `(game)` layout also threads `isAdmin` into `GameSidebar` so the "Dev Admin" link shows only to admins. The flag is DB-set only (migration `20260630040622`).
 
 ## API Routes
 

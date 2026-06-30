@@ -66,7 +66,11 @@ parked in the `choices` phase with a `lastResolution` (a just-resolved turn) and
 asserts the merged single-narration screen: the outcome recap and the
 resolution's own next choices both render inline, with **no** "Continue" step —
 i.e. a turn no longer generates a second, forward-looking narration that could
-assume actions the player never chose.
+assume actions the player never chose. `dev-admin.spec.ts` exercises the
+`/dev/admin` test-utilities gate: a freshly signed-in user is a NON-admin
+(`profiles.is_admin` defaults false), so it asserts the page 404s and the sidebar
+offers no "Dev Admin" link (the panel's own rendering + the `isAdmin` allow path
+are covered by the jsdom axe suite and the Vitest unit tests).
 
 Enable it by exporting:
 

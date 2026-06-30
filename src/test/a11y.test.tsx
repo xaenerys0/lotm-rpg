@@ -18,6 +18,7 @@ import { GameLoop } from "@/components/game/game-loop";
 import { CombatEncounterView } from "@/components/game/combat-encounter";
 import { StoryChronicle } from "@/components/game/story-chronicle";
 import { ArtificePanel } from "@/components/game/artifice-panel";
+import { AdminToolsPanel } from "@/components/game/admin-tools-panel";
 import CharacterPage from "@/app/(game)/character/page";
 import JournalPage from "@/app/(game)/journal/page";
 import MapPage from "@/app/(game)/map/page";
@@ -96,6 +97,24 @@ describe("accessibility — game shell", () => {
     localStorage.setItem(SESSION_KEY_PREFIX + "switch-a", serializeSession(a));
     localStorage.setItem(SESSION_KEY_PREFIX + "switch-b", serializeSession(b));
     await expectNoAxeViolations(<GameSidebar userEmail="beyonder@tingen.city" />);
+  });
+
+  it("sidebar with the admin link has no violations", async () => {
+    await expectNoAxeViolations(<GameSidebar userEmail="beyonder@tingen.city" isAdmin />);
+  });
+
+  it("dev admin tools panel has no violations", async () => {
+    await expectNoAxeViolations(<AdminToolsPanel />);
+  });
+
+  it("dev admin tools panel (with an active character) has no violations", async () => {
+    const session = createSession(
+      createDefaultGameState(1, "admin-active", "Klein"),
+      "admin-active",
+    );
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify([session.id]));
+    localStorage.setItem(SESSION_KEY_PREFIX + session.id, serializeSession(session));
+    await expectNoAxeViolations(<AdminToolsPanel />);
   });
 
   it("settings provider config has no violations", async () => {
