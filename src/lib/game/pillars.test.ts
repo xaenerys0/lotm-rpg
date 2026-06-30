@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 
+import { getCumulativeAbilities, getPathway, siblingPathwayIds } from "@/lib/rules";
+
 import { consecrateAnchor, emptyAnchorState } from "./anchors";
-import { sequenceAbilities, uniquenessItemFor } from "./apotheosis";
+import { apexAbilityView, sequenceAbilities, uniquenessItemFor } from "./apotheosis";
 import {
   attemptPillarAscension,
   canAttemptPillarAscension,
@@ -54,10 +56,59 @@ describe("pillarName", () => {
 });
 
 describe("sequenceAbilities at the Pillar tier", () => {
-  it("returns the Pillar framing, not a True God's or a Sequence's", () => {
+  it("overlays the Pillar framing on the family's real, deduped, tagged kit", () => {
     const { abilities, acting } = sequenceAbilities(1, PILLAR_SEQUENCE);
-    expect(abilities).toEqual([...PILLAR_ABILITIES]);
+    // The cosmic-authority lines lead (the overlay).
+    expect(abilities.slice(0, PILLAR_ABILITIES.length)).toEqual([...PILLAR_ABILITIES]);
+    // Acting stays the Pillar's cosmic-role framing.
     expect(acting).toEqual([...PILLAR_ACTING]);
+
+    const family = abilities.slice(PILLAR_ABILITIES.length);
+    // Every family pathway's real abilities are surfaced, tagged by pathway —
+    // the Lord of Mysteries is Fool (1) + its siblings Door (7) + Error (8).
+    const foolName = getPathway(1)!.name;
+    const doorName = getPathway(7)!.name;
+    expect(family).toContain(`Spirit Vision (${foolName})`); // Fool Seq 9
+    // A sibling pathway's kit is present too (not just the own pathway).
+    const doorAbility = getCumulativeAbilities(7, 0)[0];
+    expect(family).toContain(`${doorAbility.name} (${doorName})`);
+    // Deduped: no ability name appears twice (the `(pathway)` tag is appended to
+    // the bare name, so strip it before comparing).
+    const bareNames = family.map((s) => s.replace(/ \([^)]*\)$/, ""));
+    expect(new Set(bareNames).size).toBe(bareNames.length);
+  });
+
+  it("differs by god-family (a Pillar surfaces its OWN family's powers)", () => {
+    const mysteries = sequenceAbilities(1, PILLAR_SEQUENCE).abilities;
+    const lifeFamily = sequenceAbilities(16, PILLAR_SEQUENCE).abilities; // Mother Goddess
+    // The authority overlay is shared, but the real kits differ.
+    expect(mysteries).not.toEqual(lifeFamily);
+  });
+
+  it("falls back to the bare authority lines for a pathway with no Pillar family", () => {
+    // Wheel of Fortune (20) caps at True God — no Pillar above it — so there is
+    // no family kit to overlay (the panel never reaches this state in play).
+    const { abilities } = sequenceAbilities(20, PILLAR_SEQUENCE);
+    expect(abilities).toEqual([...PILLAR_ABILITIES]);
+  });
+});
+
+describe("apexAbilityView at the Pillar tier", () => {
+  it("surfaces the authority lines plus every sibling pathway's grouped kit", () => {
+    const view = apexAbilityView(1, PILLAR_SEQUENCE);
+    expect(view.authority).toEqual([...PILLAR_ABILITIES]);
+    // One entry per sibling (the own pathway is rendered by the sheet itself).
+    expect(view.familyGroups.map((g) => g.pathwayId)).toEqual(siblingPathwayIds(1));
+    for (const family of view.familyGroups) {
+      expect(family.pathwayName).toBe(getPathway(family.pathwayId)!.name);
+      expect(family.groups.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("has no family groups for a pathway with no Pillar family", () => {
+    const view = apexAbilityView(20, PILLAR_SEQUENCE); // Wheel of Fortune
+    expect(view.authority).toEqual([...PILLAR_ABILITIES]);
+    expect(view.familyGroups).toEqual([]);
   });
 });
 

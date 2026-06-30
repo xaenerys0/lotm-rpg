@@ -46,6 +46,7 @@ import {
   repairAnchor,
   requiredSupport,
   resolveLocation,
+  apexAbilityView,
   resolveActingMethodState,
   resolveProfileState,
   resolveTrackedNpcState,
@@ -125,6 +126,28 @@ function TabPanel({
   );
 }
 
+// The name + description list shared by the own-pathway rung groups and the
+// apex family-pathway groups (issue #210) — one place so the ability-item
+// styling can't drift between them.
+function AbilityItems({
+  abilities,
+}: {
+  abilities: readonly { name: string; description: string }[];
+}) {
+  return (
+    <ul className="mt-2 space-y-3">
+      {abilities.map((ability) => (
+        <li key={ability.name} className="text-sm">
+          <span className="font-medium text-foreground">{ability.name}</span>
+          <span className="mt-0.5 block text-xs leading-relaxed text-muted">
+            {ability.description}
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function CharacterSheet() {
   // The shared active character drives the sheet (active-character sync): the
   // selector below writes the same pointer the Map/Journal/sidebar read, and an
@@ -176,6 +199,10 @@ export function CharacterSheet() {
   // Abilities are cumulative — every rung climbed (Sequence 9 down to the
   // current one) is retained, with earlier powers enhanced by advancement.
   const abilityGroups = getCumulativeAbilityGroups(state.pathwayId, state.sequenceLevel);
+  // Apex tiers (issue #210): a True God / Pillar has no rules `Sequence`, so the
+  // cosmic-authority lines — and, for a Pillar, the kits of every OTHER pathway
+  // in its god-family — are surfaced here alongside the own-pathway groups above.
+  const apexView = apexAbilityView(state.pathwayId, state.sequenceLevel);
   const epoch = getEpoch(state.epoch);
   // Acting-method discovery (issue #95): pre-discovery the digestion mechanic is
   // not leaked numerically (or by name); the numeric value is gated the same way
@@ -315,22 +342,46 @@ export function CharacterSheet() {
                         </span>
                       )}
                     </h3>
-                    <ul className="mt-2 space-y-3">
-                      {group.abilities.map((ability) => (
-                        <li key={ability.name} className="text-sm">
-                          <span className="font-medium text-foreground">
-                            {ability.name}
-                          </span>
-                          <span className="mt-0.5 block text-xs leading-relaxed text-muted">
-                            {ability.description}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
+                    <AbilityItems abilities={group.abilities} />
                   </div>
                 ))}
               </div>
             )}
+            {/* Apex authority (issue #210): the cosmic-role powers a True God /
+              Pillar wields beyond any single rung's kit. */}
+            {apexView.authority.length > 0 && (
+              <div className="mt-5">
+                <h3 className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                  Dominion
+                </h3>
+                <ul className="mt-2 space-y-3">
+                  {apexView.authority.map((line) => (
+                    <li key={line} className="text-sm font-medium text-foreground">
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {/* A Pillar sits above its whole god-family: the real abilities of
+              every OTHER pathway in the family are part of its kit (issue #210). */}
+            {apexView.familyGroups.map((family) => (
+              <div key={family.pathwayId} className="mt-6">
+                <h3 className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                  {family.pathwayName} Pathway
+                </h3>
+                <div className="mt-3 space-y-5">
+                  {family.groups.map((group) => (
+                    <div key={group.level}>
+                      <h4 className="text-xs font-semibold tracking-[0.16em] text-copper uppercase">
+                        Sequence {group.level} · {group.name}
+                      </h4>
+                      <AbilityItems abilities={group.abilities} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
             {/* Pre-discovery (issue #95) the secret that living the role digests
               the potion is hidden: the role guidance still shows, but under a
               neutral heading that names neither the mechanic nor digestion. The

@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import type { Item } from "@/lib/types/rules";
-import { ALL_PATHWAYS, SEQUENCE_NAMES } from "@/lib/rules";
+import { ALL_PATHWAYS, getCumulativeAbilities, SEQUENCE_NAMES } from "@/lib/rules";
 
 import {
   ABOVE_SEQUENCE_TEASE,
+  apexAbilityView,
   apotheosisRequirements,
   apotheosisSuccessChance,
   attemptApotheosis,
@@ -14,6 +15,7 @@ import {
   sequenceClassificationFor,
   sequenceLabel,
   trueGodName,
+  TRUE_GOD_ABILITIES,
   TRUE_GOD_NAMES,
   uniquenessItemFor,
 } from "./apotheosis";
@@ -267,10 +269,17 @@ describe("sequenceClassificationFor (issue #99 Part D)", () => {
 });
 
 describe("sequenceAbilities", () => {
-  it("returns the True God framing at Sequence 0", () => {
+  it("overlays the True God framing on the pathway's apex kit at Sequence 0", () => {
     const { abilities, acting } = sequenceAbilities(1, 0);
-    expect(abilities.length).toBeGreaterThan(0);
+    // The authority lines lead (the overlay).
     expect(abilities[0]).toContain("Absolute authority");
+    expect([...TRUE_GOD_ABILITIES].every((line) => abilities.includes(line))).toBe(true);
+    // The pathway's real apex abilities follow (not only generic lines, #210).
+    expect(abilities).toContain("Spirit Vision"); // Fool Seq 9
+    // Every cumulative apex ability name is surfaced (plain, no enhanced suffix).
+    for (const a of getCumulativeAbilities(1, 0)) {
+      expect(abilities).toContain(a.name);
+    }
     expect(acting.length).toBeGreaterThan(0);
   });
 
@@ -296,6 +305,20 @@ describe("sequenceAbilities", () => {
 
   it("is empty for an unknown sequence", () => {
     expect(sequenceAbilities(1, 99)).toEqual({ abilities: [], acting: [] });
+  });
+});
+
+describe("apexAbilityView", () => {
+  it("surfaces the True God authority lines and no family groups at Seq 0", () => {
+    const view = apexAbilityView(1, 0);
+    expect(view.authority).toEqual([...TRUE_GOD_ABILITIES]);
+    // The own apex is already rendered by the sheet's own-pathway groups.
+    expect(view.familyGroups).toEqual([]);
+  });
+
+  it("is empty below the apex (the sheet's own-pathway groups are the whole set)", () => {
+    expect(apexAbilityView(1, 7)).toEqual({ authority: [], familyGroups: [] });
+    expect(apexAbilityView(1, 9)).toEqual({ authority: [], familyGroups: [] });
   });
 });
 

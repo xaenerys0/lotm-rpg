@@ -486,6 +486,8 @@ export {
   canAttemptApotheosis,
   drawPetition,
   sequenceAbilities,
+  apexAbilityView,
+  type ApexAbilityView,
   sequenceClassificationFor,
   sequenceLabel,
   type SequenceTier,
