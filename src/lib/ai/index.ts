@@ -101,6 +101,7 @@ export { parseAIResponse, validateAIResponse, sanitizeAIResponse } from "./valid
 export {
   generate,
   generateCodexRebuild,
+  generateCharacterIdentity,
   classifyCall,
   selectModel,
   validateProviderConfig,
@@ -118,6 +119,17 @@ export {
   type CodexRebuildInput,
   type CodexRebuildJournalEntry,
 } from "./codex-rebuild";
+
+export {
+  buildCharacterIdentityPrompt,
+  parseCharacterIdentity,
+  CHARACTER_REGIONS,
+  IDENTITY_NAME_MAX,
+  IDENTITY_BACKGROUND_MAX,
+  type CharacterRegion,
+  type CharacterIdentityInput,
+  type CharacterIdentity,
+} from "./character-identity";
 
 export {
   createEmbeddingProvider,

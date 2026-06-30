@@ -27,6 +27,12 @@ import {
   parseCodexRebuild,
   type CodexRebuildInput,
 } from "./codex-rebuild";
+import {
+  buildCharacterIdentityPrompt,
+  parseCharacterIdentity,
+  type CharacterIdentity,
+  type CharacterIdentityInput,
+} from "./character-identity";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [2000, 4000, 8000];
@@ -39,6 +45,8 @@ const MAX_OUTPUT_TOKENS = 3072;
 // The one-shot Codex rebuild emits up to MAX_REBUILD_ENTITIES compact entries —
 // a larger ceiling than a turn so the whole registry fits without truncation.
 const REBUILD_MAX_TOKENS = 4096;
+// A name + a short background is tiny — a small cap keeps the dev generator cheap.
+const IDENTITY_MAX_TOKENS = 512;
 // Total attempts to obtain parseable JSON: the initial call plus corrective
 // retries that feed the bad output back with an instruction to fix it.
 const MAX_PARSE_ATTEMPTS = 3;
@@ -268,6 +276,48 @@ export async function generateCodexRebuild(
     );
   }
   return [];
+}
+
+/**
+ * Generate a test character's NAME + BACKGROUND via the player's BYOK provider
+ * (dev/admin test utilities). Reuses the same adapter + retry seam as
+ * `generateCodexRebuild`; the pure prompt/parse + the region naming registers
+ * live in `character-identity.ts`. The routine model is plenty for a name and a
+ * short paragraph, and the first attempt runs hot (varied names) rather than at
+ * temperature 0. Returns `null` after exhausting the parse retries.
+ */
+export async function generateCharacterIdentity(
+  config: ProviderConfig,
+  input: CharacterIdentityInput,
+): Promise<CharacterIdentity | null> {
+  const adapter = createAdapter(config.providerId, config.baseUrl);
+  const model = selectModel(config, "routine");
+  const messages = buildCharacterIdentityPrompt(input);
+
+  const convo = [...messages];
+  for (let attempt = 0; attempt < MAX_PARSE_ATTEMPTS; attempt++) {
+    const response = await executeWithRetry(
+      adapter,
+      {
+        messages: convo,
+        model,
+        // Names want variety, so the first pass is hot (unlike the deterministic
+        // Codex rebuild); a failed parse cools off but stays non-zero.
+        temperature: attempt === 0 ? 0.9 : 0.5,
+        maxTokens: IDENTITY_MAX_TOKENS,
+        responseFormat: { type: "json_object" },
+      },
+      config.apiKey,
+    );
+    const identity = parseCharacterIdentity(response.content);
+    if (identity) return identity;
+    logUnparseableOutput(config.providerId, model, attempt + 1, response);
+    convo.push(
+      { role: "assistant", content: response.content },
+      { role: "user", content: correctiveMessage(response.truncated ?? false) },
+    );
+  }
+  return null;
 }
 
 export function correctiveMessage(truncated: boolean): string {

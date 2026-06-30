@@ -805,8 +805,6 @@ export {
   grantArtifactsToSession,
   forceLossOfControl,
   lossOfControlPreview,
-  generateAdminName,
-  generateAdminBackground,
   type AdminCharacterOptions,
   type AdminAcquiredPowerSpec,
   type AdminAnchorSpec,

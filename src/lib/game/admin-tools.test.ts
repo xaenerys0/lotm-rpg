@@ -6,8 +6,6 @@ import {
   ADMIN_CHARACTER_ID_PREFIX,
   buildAdminCharacter,
   forceLossOfControl,
-  generateAdminBackground,
-  generateAdminName,
   grantArtifactsToSession,
   lossOfControlPreview,
   makeAdvancementReady,
@@ -25,12 +23,6 @@ import { deserializeSession, serializeSession } from "./session";
 // belongs to no Pillar family. White Tower (10) carries deep-rung ingredients.
 const FOOL = 1;
 const JUSTICIAR = 12;
-
-// A cycled deterministic random for the generators.
-function seq(values: number[]): () => number {
-  let i = 0;
-  return () => values[i++ % values.length];
-}
 
 describe("buildAdminCharacter", () => {
   it("seeds a fresh potion at the start of digestion", () => {
@@ -276,26 +268,5 @@ describe("lossOfControlPreview", () => {
       anchors: [],
     });
     expect(lossOfControlPreview(angel)).toBe("fatal");
-  });
-});
-
-describe("name + background generators", () => {
-  it("generates a name deterministically under injected randomness", () => {
-    expect(generateAdminName(seq([0]))).toBe(generateAdminName(seq([0])));
-    expect(typeof generateAdminName(seq([0.5]))).toBe("string");
-  });
-
-  it("composes a pathway-appropriate background naming the role", () => {
-    const role = getSequence(FOOL, 7)?.name ?? "";
-    const bg = generateAdminBackground(FOOL, 7, "Test Subject", seq([0, 0]));
-    expect(bg).toContain("Test Subject");
-    expect(bg).toContain(role);
-    expect(bg.length).toBeGreaterThan(0);
-  });
-
-  it("falls back gracefully for an unknown pathway/sequence", () => {
-    const bg = generateAdminBackground(999, 99, "Nobody", seq([0, 0]));
-    expect(bg).toContain("Nobody");
-    expect(bg).toContain("Beyonder");
   });
 });

@@ -6,17 +6,22 @@ import { useState } from "react";
 import {
   buildAdminCharacter,
   forceLossOfControl,
-  generateAdminBackground,
-  generateAdminName,
   grantArtifactsToSession,
   lossOfControlPreview,
   makeAdvancementReady,
   setSessionFunds,
   setSessionSanity,
+  PROVIDER_CONFIG_KEY,
   type AdminAnchorSpec,
   type AdminEndgame,
   type AdminCharacterOptions,
 } from "@/lib/game";
+import {
+  generateCharacterIdentity,
+  CHARACTER_REGIONS,
+  type CharacterRegion,
+  type ProviderConfig,
+} from "@/lib/ai";
 import {
   loadSessionIndex,
   persistSession,
@@ -24,11 +29,23 @@ import {
   saveSessionIndex,
   useActiveSession,
 } from "@/lib/react/session-store";
-import { ALL_PATHWAYS } from "@/lib/rules";
+import { ALL_PATHWAYS, getPathway, getSequence } from "@/lib/rules";
 import { SEALED_ARTIFACTS, sealedArtifactsForGrade } from "@/lib/lore/sealed-artifacts";
 import type { ArtifactGrade } from "@/lib/lore/sealed-artifacts";
 
 import { PageHeader } from "./page-header";
+
+/** Read the saved BYOK provider config (the AI generator needs it). */
+function loadProviderConfig(): ProviderConfig | null {
+  try {
+    const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
+    return raw ? (JSON.parse(raw) as ProviderConfig) : null;
+  } catch {
+    return null;
+  }
+}
+
+const REGION_IDS = Object.keys(CHARACTER_REGIONS) as CharacterRegion[];
 
 /** Parse a numeric-field string to a finite number, or undefined (blank/garbage). */
 function finiteOrUndefined(raw: string): number | undefined {
@@ -52,8 +69,6 @@ const fieldCls =
 const labelCls = "mb-1.5 block text-xs font-medium tracking-wide text-muted uppercase";
 const primaryBtn =
   "inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg bg-amber px-5 py-2.5 text-sm font-semibold text-background transition-all duration-200 hover:bg-gold hover:shadow-[0_12px_28px_-12px_rgba(224,167,60,0.55)] disabled:opacity-50";
-const ghostBtn =
-  "inline-flex min-h-[36px] items-center justify-center rounded-lg border border-occult/50 px-3 py-1.5 text-xs font-medium text-occult-bright transition-colors hover:border-occult hover:bg-occult/10";
 const subtleBtn =
   "inline-flex min-h-[36px] items-center justify-center rounded-lg border border-border px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-amber/40 hover:text-amber";
 
@@ -100,6 +115,9 @@ function ForgeCharacter() {
   const [digestion, setDigestion] = useState<"start" | "end">("end");
   const [name, setName] = useState("");
   const [background, setBackground] = useState("");
+  const [region, setRegion] = useState<CharacterRegion>("loen");
+  const [generating, setGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
   const [funds, setFunds] = useState("");
   const [sanity, setSanity] = useState("");
   const [knowsMethod, setKnowsMethod] = useState(true);
@@ -119,18 +137,35 @@ function ForgeCharacter() {
     });
   }
 
-  function handleGenerateName() {
-    setName(generateAdminName());
-  }
-  function handleGenerateBackground() {
-    setBackground(
-      generateAdminBackground(pathwayId, sequenceLevel, name.trim() || "This Beyonder"),
-    );
-  }
-  function handleRandomize() {
-    const generated = generateAdminName();
-    setName(generated);
-    setBackground(generateAdminBackground(pathwayId, sequenceLevel, generated));
+  // Generate a name + background with the player's BYOK provider — names follow
+  // the chosen region's naming register (read inside the handler so a provider
+  // configured after opening the page is picked up, mirroring the Codex rebuild).
+  async function handleGenerateIdentity() {
+    const config = loadProviderConfig();
+    if (!config) {
+      setGenError("Configure an AI provider in Settings to generate an identity.");
+      return;
+    }
+    setGenerating(true);
+    setGenError(null);
+    try {
+      const identity = await generateCharacterIdentity(config, {
+        pathwayName: getPathway(pathwayId)?.name ?? "unknown",
+        sequenceName: getSequence(pathwayId, sequenceLevel)?.name ?? "Beyonder",
+        sequenceLevel,
+        region,
+      });
+      if (!identity) {
+        setGenError("The model returned nothing legible. Try again.");
+        return;
+      }
+      setName(identity.name);
+      setBackground(identity.background);
+    } catch {
+      setGenError("Generation failed. Check your provider settings and try again.");
+    } finally {
+      setGenerating(false);
+    }
   }
 
   function handleForge() {
@@ -237,15 +272,57 @@ function ForgeCharacter() {
           </div>
         </fieldset>
 
-        <div>
-          <div className="flex items-end justify-between gap-3">
-            <label htmlFor="forge-name" className={labelCls}>
-              Name
-            </label>
-            <button type="button" onClick={handleGenerateName} className={ghostBtn}>
-              Generate
+        <fieldset className="rounded-lg border border-occult/30 bg-occult/[0.04] p-3">
+          <legend className="px-1 text-xs font-semibold tracking-wide text-occult-bright">
+            AI identity generator
+          </legend>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="min-w-[12rem] flex-1">
+              <label htmlFor="forge-region" className={labelCls}>
+                Naming region
+              </label>
+              <select
+                id="forge-region"
+                className={fieldCls}
+                value={region}
+                onChange={(e) => setRegion(e.target.value as CharacterRegion)}
+              >
+                {REGION_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    {CHARACTER_REGIONS[id].label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              type="button"
+              onClick={handleGenerateIdentity}
+              disabled={generating}
+              className={primaryBtn}
+            >
+              {generating ? "Generating…" : "Generate name & background"}
             </button>
           </div>
+          <p className="mt-2 text-xs text-muted">
+            Uses your configured AI provider; names follow the region&apos;s naming
+            conventions from the novel.
+          </p>
+          {generating ? (
+            <p role="status" className="mt-1 text-xs text-occult-bright">
+              Summoning an identity…
+            </p>
+          ) : null}
+          {genError ? (
+            <p role="alert" className="mt-1 text-xs text-crimson">
+              {genError}
+            </p>
+          ) : null}
+        </fieldset>
+
+        <div>
+          <label htmlFor="forge-name" className={labelCls}>
+            Name
+          </label>
           <input
             id="forge-name"
             className={fieldCls}
@@ -256,23 +333,9 @@ function ForgeCharacter() {
         </div>
 
         <div>
-          <div className="flex items-end justify-between gap-3">
-            <label htmlFor="forge-background" className={labelCls}>
-              Background
-            </label>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleGenerateBackground}
-                className={ghostBtn}
-              >
-                Generate
-              </button>
-              <button type="button" onClick={handleRandomize} className={ghostBtn}>
-                Randomize all
-              </button>
-            </div>
-          </div>
+          <label htmlFor="forge-background" className={labelCls}>
+            Background
+          </label>
           <textarea
             id="forge-background"
             rows={3}
