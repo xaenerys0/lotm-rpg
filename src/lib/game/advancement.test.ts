@@ -14,17 +14,18 @@ import {
   ADVANCEMENT_SANITY_RATIO,
 } from "./advancement";
 import { consecrateAnchor, emptyAnchorState, requiredSupport } from "./anchors";
-import { advanceRitualStep, ritualStepsFor } from "./ritual";
+import { advanceRitual, beginRitual, ritualQuestLabel } from "./ritual";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
 
-// Drive the advancement rite for `target` to completion (issue #99 Part C: the
-// ritual must be performed before the climb unlocks). A no-op below Sequence 5.
+// Begin the advancement rite for `target` and mature it to a fully-formed rite
+// (issue #209: the rite matures over play in favourable conditions; fidelity
+// feeds the climb odds but no longer hard-gates it). A no-op below Sequence 5
+// (no rite defined there).
 function performRitual(session: GameSession, target: number): GameSession {
-  let s = session;
-  for (let i = 0; i < ritualStepsFor(s, target).length; i++) {
-    s = advanceRitualStep(s, target);
-  }
+  let s = beginRitual(session, target);
+  // 40 private turns asymptotically forms the rite (fidelity → ~1).
+  for (let i = 0; i < 40 && s.ritualState; i++) s = advanceRitual(s);
   return s;
 }
 
@@ -145,25 +146,28 @@ describe("advancementRequirements", () => {
     expect(canAdvance(spoofed)).toBe(false);
   });
 
-  it("requires the Advancement Ritual to be performed from Sequence 5 onward", () => {
-    // readyToAdvance has already performed the rite (issue #99 Part C), so the
-    // gate reads met and the climb is allowed.
+  it("surfaces an advisory Advancement Ritual row from Sequence 5 onward", () => {
+    // readyToAdvance has performed the rite, so the row reads as performed.
     const session = readyToAdvance(6); // target 5 — ritual tier
     const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
     expect(ritualReq).toBeDefined();
     expect(ritualReq?.met).toBe(true);
-    expect(ritualReq?.label).toMatch(/Perform the Advancement Ritual/i);
-    expect(canAdvance(session)).toBe(true);
+    expect(ritualReq?.forthcoming).toBe(false); // fully formed
+    expect(ritualReq?.label).toMatch(/Advancement Ritual fully formed/i);
   });
 
-  it("blocks the climb until the ritual is actually performed (issue #99 Part C)", () => {
-    // A session ready in every way EXCEPT the rite has not been enacted.
-    const ready = readyToAdvance(6); // target 5 — rite already performed
+  it("no longer hard-blocks the climb on the rite, but marks it forthcoming (issue #209)", () => {
+    // A session ready in every way EXCEPT the rite has not been begun. The rite
+    // is now a SOFT gate — the climb is allowed, the row is advisory/forthcoming,
+    // and the missing rite tanks the odds (covered in advancementSuccessChance).
+    const ready = readyToAdvance(6); // target 5 — rite performed
     const unperformed: GameSession = { ...ready, ritualState: undefined };
     const ritualReq = advancementRequirements(unperformed).find((r) => r.id === "ritual");
-    expect(ritualReq?.met).toBe(false);
-    expect(canAdvance(unperformed)).toBe(false);
-    // Performing the rite unlocks the climb.
+    expect(ritualReq?.met).toBe(true); // advisory, never blocks
+    expect(ritualReq?.forthcoming).toBe(true);
+    expect(ritualReq?.label).toMatch(/drinking without it is perilous/i);
+    // The climb is attemptable either way — fidelity, not a gate, does the work.
+    expect(canAdvance(unperformed)).toBe(true);
     expect(canAdvance(ready)).toBe(true);
   });
 
@@ -232,6 +236,31 @@ describe("advancementSuccessChance", () => {
       advancementSuccessChance(frayed),
     );
   });
+
+  it("drops sharply for a skipped rite vs a faithfully-performed one (issue #209)", () => {
+    const faithful = readyToAdvance(6); // target 5 — rite performed faithfully
+    const skipped: GameSession = { ...faithful, ritualState: undefined }; // never begun = skipped
+    const faithfulChance = advancementSuccessChance(faithful);
+    const skippedChance = advancementSuccessChance(skipped);
+    expect(skippedChance).toBeLessThan(faithfulChance);
+    // The penalty is steep — canon "plummets to a dangerous point".
+    expect(faithfulChance - skippedChance).toBeGreaterThan(0.3);
+  });
+
+  it("does not penalise rungs below Sequence 5 (no rite, no fidelity factor)", () => {
+    const ready = readyToAdvance(7); // target 6 — no ritual
+    const noRite: GameSession = { ...ready, ritualState: undefined };
+    expect(advancementSuccessChance(noRite)).toBe(advancementSuccessChance(ready));
+  });
+});
+
+describe("advancementHighRisk (ritual fidelity, issue #209)", () => {
+  it("is true for a skipped rite and false for a faithful one at the ritual tier", () => {
+    const faithful = readyToAdvance(6); // target 5 — rite performed
+    const skipped: GameSession = { ...faithful, ritualState: undefined };
+    expect(advancementHighRisk(faithful)).toBe(false);
+    expect(advancementHighRisk(skipped)).toBe(true);
+  });
 });
 
 describe("attemptAdvancement", () => {
@@ -295,8 +324,47 @@ describe("attemptAdvancement", () => {
     const facts = ritualResult.session.memory.sessionFacts;
     if (hasRitual) {
       expect(facts.some((f) => /ritual/i.test(f.description))).toBe(true);
+      expect(facts.some((f) => /fully formed/i.test(f.description))).toBe(true);
       expect(ritualResult.ritual).toBeDefined();
     }
+  });
+
+  it("notes the rite's manner in the memory fact — half-formed vs forgone (issue #209)", () => {
+    // A half-formed rite: begun, one turn matured, then the climb taken early.
+    const ready = readyToAdvance(6); // target 5
+    const rushed = advanceRitual(beginRitual({ ...ready, ritualState: undefined }, 5));
+    const rushedResult = attemptAdvancement(rushed, () => 0);
+    if (rushedResult.outcome === "advanced") {
+      expect(
+        rushedResult.session.memory.sessionFacts.some((f) =>
+          /half-formed/i.test(f.description),
+        ),
+      ).toBe(true);
+    }
+
+    // A forgone rite: never begun (fidelity 0). Force success to read the fact.
+    const forgone: GameSession = { ...ready, ritualState: undefined };
+    const forgoneResult = attemptAdvancement(forgone, () => 0);
+    if (forgoneResult.outcome === "advanced") {
+      expect(
+        forgoneResult.session.memory.sessionFacts.some((f) =>
+          /forgone/i.test(f.description),
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("drops the rite's quest label on a successful climb taken mid-rite (issue #209)", () => {
+    // A climb taken while the rite is still in progress (the label is present)
+    // must not strand the quest label in activeQuests.
+    const ready = readyToAdvance(6); // target 5 — rite already performed
+    const midRite = beginRitual({ ...ready, ritualState: undefined }, 5); // label re-added
+    expect(midRite.gameState.activeQuests).toContain(ritualQuestLabel(5));
+    const result = attemptAdvancement(midRite, () => 0);
+    expect(result.outcome).toBe("advanced");
+    if (result.outcome !== "advanced") return;
+    expect(result.session.gameState.activeQuests).not.toContain(ritualQuestLabel(5));
+    expect(result.session.ritualState).toBeUndefined();
   });
 
   it("loses control on a failed roll, resolved by the death engine", () => {
@@ -361,12 +429,11 @@ describe("canon-data fallbacks", () => {
     ).toBe(true);
   });
 
-  it("shows a generic ritual label and does not block when no ritual is defined", () => {
+  it("omits the ritual row when no rite is defined (issue #209)", () => {
     // An unknown pathway has no sequence data, so the target rung defines no
-    // ritual. Per the issue #99 Part C gate (`met: ritual === undefined ||
-    // isRitualComplete`), an absent rite is nothing to perform — the gate passes
-    // with the generic label rather than hard-blocking. (Real pathways always
-    // define a Seq ≤5 ritual after Part A, so this branch is purely defensive.)
+    // ritual. With the rite now a SOFT, advisory factor, an absent rite is simply
+    // not surfaced — and it never blocks. (Real pathways always define a Seq ≤5
+    // ritual after Part A, so this branch is purely defensive.)
     const base = createDefaultGameState(1, "char-1", "Klein");
     const gameState = {
       ...base,
@@ -379,8 +446,7 @@ describe("canon-data fallbacks", () => {
     };
     const session = createSession(gameState, "session-1");
     const ritualReq = advancementRequirements(session).find((r) => r.id === "ritual");
-    expect(ritualReq?.label).toMatch(/Advancement Ritual/i);
-    expect(ritualReq?.met).toBe(true);
+    expect(ritualReq).toBeUndefined();
   });
 });
 

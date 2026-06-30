@@ -435,8 +435,8 @@ describe("accessibility — game loop", () => {
 
   it("ritual performance panel (Seq 5 rite, choices phase) has no violations", async () => {
     // A Fool at Seq 6 with the next potion fully prepared — the target (Seq 5)
-    // needs an Advancement Ritual, so the RitualPerformancePanel renders with a
-    // progressbar and "Enact this step" controls (issue #99 Part C).
+    // needs an Advancement Ritual, so the RitualPerformancePanel renders with the
+    // single "Perform the rite" + "Skip the rite" controls (issue #209).
     const prereqs = getSequence(1, 5)?.prerequisiteItems ?? [];
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-r", "Klein"),
@@ -452,6 +452,27 @@ describe("accessibility — game loop", () => {
     };
     localStorage.setItem(SESSION_KEY_PREFIX + "ritual-1", serializeSession(session));
     await expectNoAxeViolations(<GameLoop sessionId="ritual-1" />);
+  });
+
+  it("ritual performance panel (rite maturing, progressbar) has no violations", async () => {
+    // The rite begun and maturing — the panel shows the fidelity progressbar
+    // (issue #209). Seeds a `fidelity`-based ritualState.
+    const prereqs = getSequence(1, 5)?.prerequisiteItems ?? [];
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-rip", "Klein"),
+      sequenceLevel: 6,
+      inventory: [...prereqs],
+      digestion: { pathwayId: 1, sequenceLevel: 6, progress: 100, complete: true },
+    };
+    const session = {
+      ...createSession(gameState, "ritual-ip", 1000),
+      phase: "choices" as const,
+      currentNarrative: "The rite is under way.",
+      currentChoices: [{ id: "c1", text: "Endure", type: "action" as const }],
+      ritualState: { pathwayId: 1, targetSeq: 5, fidelity: 0.5 },
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "ritual-ip", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="ritual-ip" />);
   });
 
   it("potion prep panel (unsecured formula) offers trade/seek with no violations", async () => {

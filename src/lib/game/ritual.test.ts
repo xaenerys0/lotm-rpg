@@ -1,20 +1,23 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  advanceRitualStep,
+  advanceRitual,
   beginRitual,
   clearRitual,
-  currentRitualStep,
-  isRitualComplete,
   isValidRitualStateShape,
-  ritualProgress,
+  ritualCircumstanceFidelity,
+  ritualFidelity,
+  ritualInProgress,
+  ritualQuestLabel,
   ritualStepsFor,
+  RITUAL_FIDELITY_CAP,
+  RITUAL_WITNESS_PENALTY,
 } from "./ritual";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
 
 // A Fool at Sequence 6 — the target rung (Seq 5, Marionettist) carries a canon
-// Advancement Ritual, so the rite has steps to perform.
+// Advancement Ritual, so the rite has materials/conditions and matures over play.
 function sessionAt(sequenceLevel = 6, pathwayId = 1): GameSession {
   const gameState = {
     ...createDefaultGameState(pathwayId, "char-1", "Klein"),
@@ -23,95 +26,157 @@ function sessionAt(sequenceLevel = 6, pathwayId = 1): GameSession {
   return createSession(gameState, "session-1");
 }
 
+// Mature the rite over `n` turns of play (the per-turn tick).
+function matureRitual(session: GameSession, n: number): GameSession {
+  let s = session;
+  for (let i = 0; i < n; i++) s = advanceRitual(s);
+  return s;
+}
+
 const TARGET = 5;
 
 describe("ritualStepsFor", () => {
-  it("derives the steps from the target sequence's ritual requirements", () => {
+  it("derives tagged steps (materials + conditions) from the target ritual", () => {
     const steps = ritualStepsFor(sessionAt(), TARGET);
     expect(steps.length).toBeGreaterThan(0);
+    expect(steps.some((s) => s.kind === "material")).toBe(true);
+    expect(steps.some((s) => s.kind === "condition")).toBe(true);
   });
 
   it("returns nothing when the target sequence has no ritual (Seq 9-6)", () => {
-    // Advancing from Seq 9 → 8: no ritual above Sequence 5.
     expect(ritualStepsFor(sessionAt(9), 8)).toEqual([]);
+  });
+
+  it("treats a hand-authored fallback ritual's flat requirements as conditions", () => {
+    // White Tower (#10) has no corpus ritual, so its Seq 5 rung keeps the
+    // hand-authored `requirements` prose (no tagged `steps`) — all conditions.
+    const steps = ritualStepsFor(sessionAt(6, 10), 5);
+    expect(steps.length).toBeGreaterThan(0);
+    expect(steps.every((s) => s.kind === "condition")).toBe(true);
+  });
+});
+
+describe("ritualCircumstanceFidelity", () => {
+  it("is 1 in a private, unhurt, unhunted moment", () => {
+    expect(ritualCircumstanceFidelity(sessionAt())).toBe(1);
+  });
+
+  it("drops with witnesses present (a crowd)", () => {
+    const session = sessionAt();
+    session.gameState.npcsPresent = ["A curious onlooker"];
+    expect(ritualCircumstanceFidelity(session)).toBeCloseTo(
+      1 - RITUAL_WITNESS_PENALTY,
+      5,
+    );
+  });
+
+  it("stalls (toward 0) amid wounds + pursuers + witnesses", () => {
+    const session = sessionAt();
+    session.gameState.npcsPresent = ["A crowd"];
+    session.gameState.injuries = [
+      { id: "i1", description: "A gash", severity: "major", recoveryTurns: 3 },
+    ];
+    session.trackedNpcState = {
+      roster: [{ name: "A Nighthawk", disposition: "hostile", follows: true }],
+    };
+    expect(ritualCircumstanceFidelity(session)).toBe(0);
   });
 });
 
 describe("beginRitual", () => {
-  it("starts a rite tracking the target, with no steps performed yet", () => {
+  it("opens the rite with a first turn of progress, a quest label, and a fact", () => {
     const session = beginRitual(sessionAt(), TARGET);
-    expect(session.ritualState).toEqual({
-      pathwayId: 1,
-      targetSeq: TARGET,
-      stepsCompleted: 0,
-      totalSteps: ritualStepsFor(sessionAt(), TARGET).length,
-      complete: false,
-    });
+    expect(session.ritualState?.pathwayId).toBe(1);
+    expect(session.ritualState?.targetSeq).toBe(TARGET);
+    // A private opening accrues the first slice of fidelity (0 < f < 1).
+    expect(session.ritualState!.fidelity).toBeGreaterThan(0);
+    expect(session.ritualState!.fidelity).toBeLessThan(1);
+    expect(session.gameState.activeQuests).toContain(ritualQuestLabel(TARGET));
+    expect(
+      session.memory.sessionFacts.some(
+        (f) => f.type === "event" && /Began the Advancement Ritual/.test(f.description),
+      ),
+    ).toBe(true);
   });
 
-  it("is idempotent for the same target", () => {
+  it("is idempotent once a rite for the target is under way", () => {
     const once = beginRitual(sessionAt(), TARGET);
-    const twice = beginRitual(once, TARGET);
-    expect(twice).toBe(once);
+    expect(beginRitual(once, TARGET)).toBe(once);
   });
 
-  it("re-targets (resets) when the target changed", () => {
-    const begun = advanceRitualStep(sessionAt(), TARGET); // 1 step into Seq 5
+  it("re-targets (resets progress) when the target changed", () => {
+    const begun = matureRitual(beginRitual(sessionAt(), TARGET), 3);
     const retargeted = beginRitual(begun, 4);
     expect(retargeted.ritualState?.targetSeq).toBe(4);
-    expect(retargeted.ritualState?.stepsCompleted).toBe(0);
+    expect(retargeted.ritualState!.fidelity).toBeLessThan(begun.ritualState!.fidelity);
   });
 });
 
-describe("advanceRitualStep / isRitualComplete / currentRitualStep", () => {
-  it("performs the rite step by step until complete", () => {
-    let session = sessionAt();
-    const steps = ritualStepsFor(session, TARGET);
-    expect(isRitualComplete(session, TARGET)).toBe(false);
-
-    for (let i = 0; i < steps.length; i++) {
-      expect(currentRitualStep(session, TARGET)).toBe(steps[i]);
-      session = advanceRitualStep(session, TARGET);
-      expect(session.ritualState?.stepsCompleted).toBe(i + 1);
-    }
-
-    expect(isRitualComplete(session, TARGET)).toBe(true);
-    expect(currentRitualStep(session, TARGET)).toBeNull();
+describe("advanceRitual / ritualFidelity", () => {
+  it("matures the rite toward 1 over turns of play (no fixed length)", () => {
+    let session = beginRitual(sessionAt(), TARGET);
+    const start = ritualFidelity(session, TARGET);
+    session = advanceRitual(session);
+    expect(ritualFidelity(session, TARGET)).toBeGreaterThan(start);
+    // Many turns asymptotically approach a fully-formed rite.
+    session = matureRitual(session, 40);
+    expect(ritualFidelity(session, TARGET)).toBeGreaterThanOrEqual(RITUAL_FIDELITY_CAP);
+    expect(ritualFidelity(session, TARGET)).toBeLessThanOrEqual(1);
   });
 
-  it("is a no-op once complete (cannot over-advance)", () => {
-    let session = sessionAt();
-    const steps = ritualStepsFor(session, TARGET);
-    for (let i = 0; i < steps.length; i++) session = advanceRitualStep(session, TARGET);
-    const done = session;
-    expect(advanceRitualStep(done, TARGET)).toBe(done);
-    expect(done.ritualState?.stepsCompleted).toBe(steps.length);
+  it("matures slower in poor circumstances than in solitude", () => {
+    const privateRite = advanceRitual(beginRitual(sessionAt(), TARGET));
+
+    const crowded = sessionAt();
+    crowded.gameState.npcsPresent = ["A crowd"];
+    const crowdedRite = advanceRitual(beginRitual(crowded, TARGET));
+
+    expect(ritualFidelity(crowdedRite, TARGET)).toBeLessThan(
+      ritualFidelity(privateRite, TARGET),
+    );
   });
 
-  it("is not complete for a different target than the one tracked", () => {
-    let session = sessionAt();
-    const steps = ritualStepsFor(session, TARGET);
-    for (let i = 0; i < steps.length; i++) session = advanceRitualStep(session, TARGET);
-    expect(isRitualComplete(session, TARGET)).toBe(true);
-    expect(isRitualComplete(session, 4)).toBe(false); // performed Seq 5's rite, not Seq 4's
-    expect(currentRitualStep(session, 4)).toBe(ritualStepsFor(session, 4)[0]);
+  it("is a no-op when no rite is under way, matured, or stalled by danger", () => {
+    const none = sessionAt();
+    expect(advanceRitual(none)).toBe(none);
+    const matured = matureRitual(beginRitual(sessionAt(), TARGET), 50);
+    expect(advanceRitual(matured)).toBe(matured); // fully formed + already labelled
+
+    // A scene hostile enough to stall the rite (circumstance 0) makes no progress
+    // and must not churn a new session each turn.
+    const stalled = beginRitual(sessionAt(), TARGET);
+    stalled.gameState.npcsPresent = ["A crowd"];
+    stalled.gameState.injuries = [
+      { id: "i1", description: "A wound", severity: "major", recoveryTurns: 2 },
+    ];
+    stalled.trackedNpcState = {
+      roster: [{ name: "A hunter", disposition: "hostile", follows: true }],
+    };
+    expect(advanceRitual(stalled)).toBe(stalled);
+  });
+
+  it("ritualFidelity is 1 when the rung needs no rite, 0 when not begun", () => {
+    expect(ritualFidelity(sessionAt(9), 8)).toBe(1); // no rite at Seq 9→8
+    expect(ritualFidelity(sessionAt(), TARGET)).toBe(0); // not begun = forgone
+    expect(ritualFidelity(beginRitual(sessionAt(), 4), TARGET)).toBe(0); // wrong target
   });
 });
 
-describe("ritualProgress", () => {
-  it("counts performed steps for the tracked target, 0 otherwise", () => {
-    expect(ritualProgress(sessionAt(), TARGET)).toBe(0); // no rite yet
-    const begun = advanceRitualStep(sessionAt(), TARGET);
-    expect(ritualProgress(begun, TARGET)).toBe(1);
-    expect(ritualProgress(begun, 4)).toBe(0); // different target
+describe("ritualInProgress", () => {
+  it("is true once a rite for the target is begun, false otherwise", () => {
+    expect(ritualInProgress(sessionAt(), TARGET)).toBe(false);
+    expect(ritualInProgress(beginRitual(sessionAt(), TARGET), TARGET)).toBe(true);
+    expect(ritualInProgress(beginRitual(sessionAt(), TARGET), 4)).toBe(false);
   });
 });
 
 describe("clearRitual", () => {
-  it("drops a rite in progress", () => {
-    const begun = advanceRitualStep(sessionAt(), TARGET);
+  it("drops a rite under way and its quest label", () => {
+    const begun = beginRitual(sessionAt(), TARGET);
     expect(begun.ritualState).toBeDefined();
-    expect(clearRitual(begun).ritualState).toBeUndefined();
+    const cleared = clearRitual(begun);
+    expect(cleared.ritualState).toBeUndefined();
+    expect(cleared.gameState.activeQuests).not.toContain(ritualQuestLabel(TARGET));
   });
 
   it("is a no-op when there is no rite", () => {
@@ -121,51 +186,29 @@ describe("clearRitual", () => {
 });
 
 describe("isValidRitualStateShape", () => {
+  const ok = { pathwayId: 1, targetSeq: 5, fidelity: 0.4 };
+
   it("accepts a well-formed state", () => {
-    expect(
-      isValidRitualStateShape({
-        pathwayId: 1,
-        targetSeq: 5,
-        stepsCompleted: 1,
-        totalSteps: 3,
-        complete: false,
-      }),
-    ).toBe(true);
+    expect(isValidRitualStateShape(ok)).toBe(true);
   });
 
   it("rejects malformed states", () => {
     expect(isValidRitualStateShape(null)).toBe(false);
     expect(isValidRitualStateShape([])).toBe(false);
-    expect(isValidRitualStateShape({ pathwayId: 1, targetSeq: 5 })).toBe(false);
-    const ok = {
-      pathwayId: 1,
-      targetSeq: 5,
-      stepsCompleted: 0,
-      totalSteps: 3,
-      complete: false,
-    };
+    expect(isValidRitualStateShape({ pathwayId: 1 })).toBe(false);
     expect(isValidRitualStateShape({ ...ok, pathwayId: "x" })).toBe(false);
     expect(isValidRitualStateShape({ ...ok, targetSeq: Infinity })).toBe(false);
-    expect(isValidRitualStateShape({ ...ok, totalSteps: 1.5 })).toBe(false);
-    expect(isValidRitualStateShape({ ...ok, stepsCompleted: -1 })).toBe(false);
-    // stepsCompleted exceeds totalSteps
+    expect(isValidRitualStateShape({ ...ok, fidelity: -0.1 })).toBe(false);
+    expect(isValidRitualStateShape({ ...ok, fidelity: 1.1 })).toBe(false);
+    expect(isValidRitualStateShape({ ...ok, fidelity: "high" })).toBe(false);
+    // The legacy turn-based shape is rejected (no `fidelity`).
     expect(
       isValidRitualStateShape({
         pathwayId: 1,
         targetSeq: 5,
-        stepsCompleted: 4,
-        totalSteps: 3,
-        complete: true,
-      }),
-    ).toBe(false);
-    // complete must be boolean
-    expect(
-      isValidRitualStateShape({
-        pathwayId: 1,
-        targetSeq: 5,
-        stepsCompleted: 0,
-        totalSteps: 3,
-        complete: "yes",
+        totalTurns: 5,
+        turnsRemaining: 2,
+        complete: false,
       }),
     ).toBe(false);
   });

@@ -92,12 +92,15 @@ import {
   anchorHighRisk,
   ADVANCEMENT_SANITY_RATIO,
   isAdvanceableSequence,
-  advanceRitualStep,
-  currentRitualStep,
-  isRitualComplete,
-  ritualProgress,
+  advanceRitual,
+  beginRitual,
+  clearRitual,
+  ritualFidelity,
+  ritualCircumstanceFidelity,
+  ritualInProgress,
   ritualStepsFor,
   ritualRequiredFor,
+  RITUAL_FIDELITY_CAP,
   meetsRequirements,
   targetSequence,
   deliverHuntedItem,
@@ -952,7 +955,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         );
         return;
       }
-      handleSetback();
+      // The failed attempt consumed the rite — clear it so the retry performs a
+      // fresh rite rather than re-using the stranded (possibly skipped) one
+      // (issue #209). `clearRitual` is a no-op when no rite is in progress.
+      applySetbackToSession(clearRitual(session));
     } finally {
       advancingRef.current = false;
     }
@@ -962,7 +968,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     recordUsage,
     updateSession,
     concludeChronicle,
-    handleSetback,
+    applySetbackToSession,
     preferences.narrativeVerbosity,
   ]);
 
@@ -1682,10 +1688,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // A turn of play likewise advances the search for the next potion's
       // formula, when one is being sought through the story (issue #171).
       const seeking = advanceFormulaPursuit(tracked);
+      // And it lives out one turn of the Advancement Ritual, when one is under
+      // way (issue #209) — the rite spans turns rather than per-step clicks.
+      const riting = advanceRitual(seeking);
       // Temporary copied/stolen powers fade by one turn; expired ones are
       // released (acquired-powers subsystem), so a Polymath's Imitation or an
       // artifact-stolen ability does not linger forever.
-      const powered = tickAcquiredPowers(seeking);
+      const powered = tickAcquiredPowers(riting);
       // Story-consistency Codex (history-context Codex): fold the narrator's
       // entity deltas into the registry and auto-touch the entities the engine
       // knows are present (current location + present NPCs), so a recurring
@@ -1894,20 +1903,25 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     [session, updateSession],
   );
 
-  // Advancement ritual performed across turns (issue #99 Part C): enacting a step
-  // marks engine progress first (the engine owns the rite's truth), then narrates
-  // the step as a normal player action through the validated turn pipeline — so
-  // the rite plays out over several turns before the climb unlocks.
-  const handleEnactRitualStep = useCallback(() => {
+  // Advancement ritual — begun once, matured naturally over play (issue #209).
+  // "Perform the rite" opens the tracked rite (the engine owns its truth) AND
+  // immediately narrates it as a normal player turn, so the narrator factors in
+  // the current scene (isolation / a crowd / the aftermath of a fight). From then
+  // on the rite matures on its own each turn (advanced in the per-turn tick
+  // chain, scaled by the scene); the player drinks whenever they judge it ready.
+  const handleBeginRite = useCallback(() => {
     if (!session) return;
     const target = targetSequence(session.gameState.sequenceLevel);
-    const step = currentRitualStep(session, target);
-    if (step === null) return;
-    const advanced = advanceRitualStep(session, target);
-    const choice = freeTextToChoice(composeRitualAction([], step));
+    const roleName = getSequence(session.gameState.pathwayId, target)?.name;
+    if (!roleName) return;
+    // Engine first (captures the opening progress + the quest label), then narrate
+    // the rite's opening as a player turn through the validated pipeline.
+    const begun = beginRitual(session, target);
+    const action = `I begin the Advancement Ritual to become a ${roleName}, performing its rite in earnest here and now.`;
+    const choice = freeTextToChoice(action);
     const withChoice = {
-      ...advanced,
-      currentChoices: [...(advanced.currentChoices ?? []), choice],
+      ...begun,
+      currentChoices: [...(begun.currentChoices ?? []), choice],
     };
     updateSession(transition(withChoice, { type: "SELECT_CHOICE", choiceId: choice.id }));
   }, [session, updateSession]);
@@ -2208,8 +2222,12 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                       <RitualPerformancePanel
                         session={session}
                         busy={advancing || facingFate}
-                        onEnactStep={handleEnactRitualStep}
+                        onBeginRite={handleBeginRite}
                       />
+                      {/* The climb is always the player's call (issue #209): they
+                          may drink at any point — at full odds once the rite has
+                          matured, or dangerously early. The rite panel above only
+                          improves the odds; it never gates this. */}
                       <AdvancementPanel
                         session={session}
                         busy={advancing || facingFate}
@@ -3410,7 +3428,14 @@ function TheClimb({ session, children }: { session: GameSession; children: React
     { label: "Secure the recipe", done: plan.formulaSecured },
     { label: "Gather the ingredients", done: plan.allOwned },
     ...(ritualApplies
-      ? [{ label: "Perform the rite", done: isRitualComplete(session, target) }]
+      ? [
+          {
+            label: "Perform the rite",
+            // Done once the rite has fully matured — not the instant it is begun
+            // (the panel still shows it maturing until then).
+            done: ritualFidelity(session, target) >= RITUAL_FIDELITY_CAP,
+          },
+        ]
       : []),
     { label: "Make the climb", done: false },
   ];
@@ -3642,20 +3667,22 @@ function PotionPreparationPanel({
   );
 }
 
-// Advancement ritual performed across turns (issue #99 Part C): between potion
-// preparation and the climb, the Beyonder must enact the canon Advancement Ritual
-// step by step. Each "Enact this step" is a narrated turn; the engine marks
-// progress; the panel hides once the rite is complete and the AdvancementPanel's
-// ritual gate reads met. Renders nothing until the potion is prepared, the target
-// needs a ritual, and the rite is unfinished.
+// Advancement ritual — begun once, matured naturally over play (issue #209).
+// "Perform the rite" opens the canon Advancement Ritual (and narrates its opening
+// in the current scene); from then on it matures on its own each turn, faster in
+// a private, safe moment and slower (or stalled) amid witnesses or danger. A
+// progress meter tracks how faithfully it has formed. There is no fixed length
+// and no per-step clicking — the player drinks (via the climb panel below)
+// whenever they judge it ready. Renders nothing until the potion is prepared and
+// the rung defines a rite.
 function RitualPerformancePanel({
   session,
   busy,
-  onEnactStep,
+  onBeginRite,
 }: {
   session: GameSession;
   busy: boolean;
-  onEnactStep: () => void;
+  onBeginRite: () => void;
 }) {
   const target = targetSequence(session.gameState.sequenceLevel);
   const targetSeq = getSequence(session.gameState.pathwayId, target);
@@ -3663,11 +3690,21 @@ function RitualPerformancePanel({
   // Only once the potion is in hand, the rung needs a ritual, and it's defined.
   if (!potionPreparationPlan(session).allOwned) return null;
   if (!ritualRequiredFor(target) || !ritual) return null;
-  if (isRitualComplete(session, target)) return null;
 
   const steps = ritualStepsFor(session, target);
-  const completed = ritualProgress(session, target);
+  const materials = steps.filter((s) => s.kind === "material");
+  const conditions = steps.filter((s) => s.kind === "condition");
   const roleName = targetSeq?.name ?? `Sequence ${target}`;
+  const inProgress = ritualInProgress(session, target);
+  const fidelityPct = Math.round(ritualFidelity(session, target) * 100);
+  // How the current scene will shape the rite if begun / as it matures.
+  const circumstancePct = Math.round(ritualCircumstanceFidelity(session) * 100);
+  const circumstanceHint =
+    circumstancePct >= 100
+      ? "You are undisturbed — a fitting moment for the rite."
+      : circumstancePct >= 50
+        ? "The moment is less than private — the rite will form slowly here."
+        : "Danger and distraction press in — the rite will barely take hold here.";
 
   return (
     <section
@@ -3681,56 +3718,63 @@ function RitualPerformancePanel({
         Perform the rite to become a {roleName}
       </h2>
       <p className="mt-1 text-sm leading-relaxed text-muted">{ritual.description}</p>
-      <div
-        role="progressbar"
-        aria-label="Advancement ritual progress"
-        aria-valuenow={completed}
-        aria-valuemin={0}
-        aria-valuemax={steps.length}
-        aria-valuetext={`${completed} of ${steps.length} steps performed`}
-        className="mt-3 h-2 overflow-hidden rounded-full bg-surface"
-      >
-        <div
-          className="h-full bg-occult/60"
-          style={{ width: `${steps.length > 0 ? (completed / steps.length) * 100 : 0}%` }}
-        />
-      </div>
-      <ol className="mt-4 space-y-2 text-sm">
-        {steps.map((step, i) => {
-          const done = i < completed;
-          const current = i === completed;
-          return (
-            <li key={`${step}-${i}`} className="flex flex-wrap items-center gap-2">
-              <span
-                aria-hidden="true"
-                className={done ? "text-occult-bright" : "text-muted"}
-              >
-                {done ? "✦" : "◇"}
+
+      {conditions.length > 0 && (
+        <ul className="mt-3 space-y-1 text-sm text-foreground/85">
+          {conditions.map((c, i) => (
+            <li key={`cond-${i}`} className="flex gap-2">
+              <span aria-hidden="true" className="text-occult-bright">
+                ◆
               </span>
-              <span
-                className={
-                  done ? "text-foreground/60 line-through" : "text-foreground/85"
-                }
-              >
-                {step}
-                <span className="sr-only">
-                  {done ? " — performed" : " — not yet performed"}
-                </span>
-              </span>
-              {current && (
-                <button
-                  type="button"
-                  onClick={onEnactStep}
-                  disabled={busy}
-                  className="min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-3 py-1 text-xs font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Enact this step
-                </button>
-              )}
+              <span>{c.text}</span>
             </li>
-          );
-        })}
-      </ol>
+          ))}
+        </ul>
+      )}
+
+      {materials.length > 0 && (
+        <p className="mt-3 text-xs leading-relaxed text-muted">
+          Laid out for the rite: {materials.map((m) => m.text).join(", ")}.
+        </p>
+      )}
+
+      {inProgress ? (
+        <>
+          <div
+            role="progressbar"
+            aria-label="Advancement ritual fidelity"
+            aria-valuenow={fidelityPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuetext={`The rite is ${fidelityPct}% formed`}
+            className="mt-4 h-2 overflow-hidden rounded-full bg-surface"
+          >
+            <div className="h-full bg-occult/60" style={{ width: `${fidelityPct}%` }} />
+          </div>
+          <p className="mt-2 text-sm text-foreground/85">
+            The rite is {fidelityPct}% formed and matures as you play on.{" "}
+            {circumstanceHint} Drink below whenever you judge it ready — sooner is more
+            dangerous.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="mt-4 text-sm text-foreground/85">
+            Begin the rite now and it will mature as your story plays on — fastest in
+            solitude, slowed by a crowd or danger. {circumstanceHint} Drinking without it
+            is allowed, but the surge of the new characteristic is far more likely to take
+            you.
+          </p>
+          <button
+            type="button"
+            onClick={onBeginRite}
+            disabled={busy}
+            className="mt-3 min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-3 py-1 text-xs font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Perform the rite
+          </button>
+        </>
+      )}
     </section>
   );
 }

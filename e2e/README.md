@@ -70,7 +70,13 @@ assume actions the player never chose. `dev-admin.spec.ts` exercises the
 `/dev/admin` test-utilities gate: a freshly signed-in user is a NON-admin
 (`profiles.is_admin` defaults false), so it asserts the page 404s and the sidebar
 offers no "Dev Admin" link (the panel's own rendering + the `isAdmin` allow path
-are covered by the jsdom axe suite and the Vitest unit tests).
+are covered by the jsdom axe suite and the Vitest unit tests). `ritual.spec.ts`
+(issue #209) seeds an advancement-ready Fool at Seq 6 (next potion in hand +
+digested) and asserts the Advancement Ritual is a single "Perform the rite"
+trigger that matures over play — never a per-step "Enact this step" list and never
+a "Skip" button — that the climb attempt is ALWAYS offered alongside it (the rite
+only improves the odds, never gates the climb), and that a rite already under way
+shows its maturing-fidelity `progressbar`.
 
 Enable it by exporting:
 
