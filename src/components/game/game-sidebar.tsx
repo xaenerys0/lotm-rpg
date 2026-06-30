@@ -87,6 +87,12 @@ function Icon({ name }: { name: string }) {
         <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
       </>
     ),
+    "/dev/admin": (
+      <>
+        <path d="M12 3 4 6v5c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6z" />
+        <path d="m9 12 2 2 4-4" />
+      </>
+    ),
   };
   return <svg {...common}>{paths[name]}</svg>;
 }
@@ -154,11 +160,23 @@ function CharacterSwitcher() {
   );
 }
 
-export function GameSidebar({ userEmail }: { userEmail: string }) {
+export function GameSidebar({
+  userEmail,
+  isAdmin = false,
+}: {
+  userEmail: string;
+  isAdmin?: boolean;
+}) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+
+  // The Dev Admin destination is appended only for admins (DB-gated). The page
+  // itself 404s for non-admins, so this is purely a convenience affordance.
+  const items = isAdmin
+    ? [...navItems, { href: "/dev/admin", label: "Dev Admin" } as const]
+    : navItems;
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -260,7 +278,7 @@ export function GameSidebar({ userEmail }: { userEmail: string }) {
             scrolls internally when the items exceed the viewport height. */}
         <nav className="flex-1 overflow-y-auto px-3 py-1" aria-label="Game navigation">
           <ul className="space-y-0.5" role="list">
-            {navItems.map(({ href, label }) => {
+            {items.map(({ href, label }) => {
               const isActive = pathname === href || pathname.startsWith(href + "/");
               return (
                 <li key={href}>

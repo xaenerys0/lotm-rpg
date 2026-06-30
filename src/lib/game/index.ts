@@ -796,6 +796,24 @@ export {
 } from "./dev-tools";
 
 export {
+  ADMIN_CHARACTER_ID_PREFIX,
+  buildAdminCharacter,
+  makeAdvancementReadyState,
+  makeAdvancementReady,
+  setSessionSanity,
+  setSessionFunds,
+  grantArtifactsToSession,
+  forceLossOfControl,
+  lossOfControlPreview,
+  generateAdminName,
+  generateAdminBackground,
+  type AdminCharacterOptions,
+  type AdminAcquiredPowerSpec,
+  type AdminAnchorSpec,
+  type AdminEndgame,
+} from "./admin-tools";
+
+export {
   SANITY_MIN,
   SANITY_TIER_THRESHOLDS,
   SANITY_EFFECTS,

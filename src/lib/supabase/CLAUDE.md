@@ -8,6 +8,7 @@ Three client factories for different execution contexts:
 - `server.ts` — Server client (`createServerClient`). Use in Server Components, route handlers, and Server Actions. Reads cookies from the request.
 - `middleware.ts` — Session refresh client. Called by the proxy middleware on every request to keep the auth session alive and handle redirects.
 - `cookie-options.ts` — Shared `AUTH_COOKIE_OPTIONS` (long `maxAge`, 400 days) passed as `cookieOptions` to all three factories so auth cookies are PERSISTENT, not session, cookies. Without it the cookies can be discarded when the browser/PWA closes, logging the player out on next launch.
+- `admin.ts` — `isAdmin(supabase, userId)`: the single admin gate read for the dev/test utilities surface (`/dev/admin`). Selects `profiles.is_admin` for the user (typed to the server client; the existing "read own profile" RLS policy exposes it); defensive — any error/missing row resolves to `false`, never a throw into a render. The flag is set ONLY in the database (Studio/SQL); migration `20260630040622` adds the column plus a BEFORE UPDATE trigger that blocks client self-escalation. Consumed by `src/app/(game)/dev/admin/page.tsx` (404s a non-admin) and `(game)/layout.tsx` (gates the sidebar "Dev Admin" link).
 
 ## Conventions
 
