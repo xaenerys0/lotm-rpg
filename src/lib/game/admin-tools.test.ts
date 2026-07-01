@@ -18,7 +18,7 @@ import { uniquenessItemFor } from "./apotheosis";
 import { canAttemptApotheosis } from "./apotheosis";
 import { canAttemptPillarAscension, PILLAR_SEQUENCE } from "./pillars";
 import { ascensionRiteReady } from "./ascension-rite";
-import { canAttemptSwitch } from "./pathway-switch";
+import { canAttemptSwitch, switchRelation } from "./pathway-switch";
 import { fusedAbilityNames } from "./pathway-fusion";
 import { deserializeSession, serializeSession } from "./session";
 
@@ -334,6 +334,18 @@ describe("buildAdminCharacter — pathway switching (issue #211)", () => {
     });
     expect(session.gameState.digestion?.complete).toBe(true);
     expect(canAttemptSwitch(session, 3)).toBe(true);
+  });
+
+  it("switchReadyTarget also poises an UNRELATED (poison) exchange", () => {
+    // Fool (1) at Seq 4; Visionary (2) is an unrelated pathway (not a neighbour).
+    const session = buildAdminCharacter({
+      pathwayId: 1,
+      sequenceLevel: 4,
+      digestion: "end",
+      switchReadyTarget: 2,
+    });
+    expect(switchRelation(1, 2)).toBe("unrelated");
+    expect(canAttemptSwitch(session, 2)).toBe(true);
   });
 
   it("fusedPathways seeds a lineage whose retained abilities fuse into the sheet", () => {
