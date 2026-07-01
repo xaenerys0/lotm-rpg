@@ -18,6 +18,7 @@ import { isValidHuntsShape } from "./hunt";
 import { isValidAcquiredPowersShape } from "./acquired-powers";
 import { isValidCustomArtifactStateShape } from "./custom-artifacts";
 import { isValidRitualStateShape } from "./ritual";
+import { isValidAscensionRiteShape } from "./ascension-rite";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
 import { joinRoster, isValidTrackedNpcStateShape } from "./tracked-npcs";
@@ -504,6 +505,12 @@ export function isValidSessionShape(obj: unknown): boolean {
   // Formula pursuit (issue #171) is optional but strict when present — it rides
   // the deserialize `...s` spread (no seeding); absent means no pursuit.
   if (s.formulaPursuit !== undefined && !isValidFormulaPursuitShape(s.formulaPursuit)) {
+    return false;
+  }
+
+  // Ascension rite (apex endgame) is optional but strict when present — it rides
+  // the deserialize `...s` spread (no seeding); absent means no rite under way.
+  if (s.ascensionRite !== undefined && !isValidAscensionRiteShape(s.ascensionRite)) {
     return false;
   }
 

@@ -3,6 +3,11 @@ import { pillarForPathway, siblingPathwayIds, siblingPathwayNames } from "@/lib/
 
 import { anchorHighRisk, effectiveSupport } from "./anchors";
 import { trueGodName, uniquenessItemFor } from "./apotheosis";
+import {
+  ascensionRiteFidelity,
+  ASCENSION_INFIDELITY_PENALTY,
+  ASCENSION_SUCCESS_FLOOR,
+} from "./ascension-rite";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
 import { hasItemMatching } from "./inventory";
@@ -68,13 +73,6 @@ export const PILLAR_ABILITIES: readonly string[] = [
   "Act across the whole world — and the spaces above and beneath it — by intent alone",
   "Hold the Sefirah of your family as your seat, the source every pathway of it draws from",
   "Stand beyond the reach of the sequences: no Beyonder power, however high, binds you",
-];
-
-/** The acting method does not end above the sequences — it becomes existence. */
-export const PILLAR_ACTING: readonly string[] = [
-  "Be the role the world is built around — a Pillar that acts beneath itself cracks the order it holds",
-  "Hold the others of your kind in balance; the Pillars define one another by contrast",
-  "Carry the whole weight of your family's faith and dominion without letting the human thread snap",
 ];
 
 export interface PillarRequirement {
@@ -145,8 +143,15 @@ export function pillarAscensionSuccessChance(session: GameSession): number {
   const support = session.anchorState ? effectiveSupport(session.anchorState) : 0;
   const surplus = Math.max(0, support - PILLAR_REQUIRED_SUPPORT);
   const sanityRatio = state.maxSanity > 0 ? state.sanity / state.maxSanity : 0;
-  const chance = 0.5 + Math.min(0.15, surplus / 600) + sanityRatio * 0.2;
-  return Math.min(0.9, chance);
+  // How faithfully the rite of ascension has matured drags the odds when rushed —
+  // ascending above the sequences the instant the rite opens is dire but allowed.
+  const fidelity = ascensionRiteFidelity(session);
+  const chance =
+    0.5 +
+    Math.min(0.15, surplus / 600) +
+    sanityRatio * 0.2 -
+    ASCENSION_INFIDELITY_PENALTY * (1 - fidelity);
+  return Math.max(ASCENSION_SUCCESS_FLOOR, Math.min(0.9, chance));
 }
 
 /** Shown to a player who seats a Pillar — the view from above the ladder. */

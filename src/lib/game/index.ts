@@ -191,6 +191,23 @@ export {
   type RitualState,
 } from "./ritual";
 
+// The rite of ascension — the apex endgame as a paced, multi-turn rite.
+export {
+  advanceAscensionRite,
+  ascensionRiteFidelity,
+  ascensionRiteInProgress,
+  ascensionRiteQuestLabel,
+  ascensionRiteReady,
+  ascensionTierFor,
+  beginAscensionRite,
+  clearAscensionRite,
+  isValidAscensionRiteShape,
+  ASCENSION_FIDELITY_CAP,
+  ASCENSION_PROGRESS_RATE,
+  type AscensionRiteState,
+  type AscensionTier,
+} from "./ascension-rite";
+
 // Formula pursuit — seeking the next potion's recipe through the story (#171).
 export {
   advanceFormulaPursuit,
@@ -498,7 +515,6 @@ export {
   APOTHEOSIS_STAGES,
   PETITION_CHANCE,
   TRUE_GOD_ABILITIES,
-  TRUE_GOD_ACTING,
   TRUE_GOD_NAMES,
   type ApotheosisAscended,
   type ApotheosisRequirement,
@@ -515,7 +531,6 @@ export {
   pillarRequirements,
   ABOVE_THE_SEQUENCE_TEASE,
   PILLAR_ABILITIES,
-  PILLAR_ACTING,
   PILLAR_REQUIRED_SUPPORT,
   PILLAR_SANITY_RATIO,
   PILLAR_SEQUENCE,

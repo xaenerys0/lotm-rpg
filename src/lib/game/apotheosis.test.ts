@@ -156,15 +156,28 @@ describe("apotheosisRequirements", () => {
   });
 });
 
+// A matured rite of apotheosis on a ready session — the rite's fidelity feeds
+// the ascent odds, so the "strong" chance is only reached with the rite formed.
+function withMaturedRite(session: GameSession, fidelity = 1): GameSession {
+  return {
+    ...session,
+    ascensionRite: {
+      tier: "true-god",
+      pathwayId: session.gameState.pathwayId,
+      fidelity,
+    },
+  };
+}
+
 describe("apotheosisSuccessChance", () => {
-  it("is strong but capped below certainty", () => {
-    const chance = apotheosisSuccessChance(readySession());
+  it("is strong but capped below certainty with a fully matured rite", () => {
+    const chance = apotheosisSuccessChance(withMaturedRite(readySession()));
     expect(chance).toBeGreaterThan(0.6);
     expect(chance).toBeLessThanOrEqual(0.95);
   });
 
   it("rises with anchor surplus and sanity", () => {
-    const strong = readySession();
+    const strong = withMaturedRite(readySession());
     const weaker = {
       ...strong,
       gameState: { ...strong.gameState, sanity: 55 },
@@ -172,6 +185,18 @@ describe("apotheosisSuccessChance", () => {
     expect(apotheosisSuccessChance(strong)).toBeGreaterThan(
       apotheosisSuccessChance(weaker),
     );
+  });
+
+  it("is dragged down by an unformed rite and lifted as it matures", () => {
+    const ready = readySession();
+    // Never-begun (fidelity 0) is far more dangerous than a fully matured rite.
+    expect(apotheosisSuccessChance(withMaturedRite(ready, 1))).toBeGreaterThan(
+      apotheosisSuccessChance(ready),
+    );
+    // And a half-formed rite lands between the two.
+    const half = apotheosisSuccessChance(withMaturedRite(ready, 0.5));
+    expect(half).toBeGreaterThan(apotheosisSuccessChance(ready));
+    expect(half).toBeLessThan(apotheosisSuccessChance(withMaturedRite(ready, 1)));
   });
 });
 
@@ -280,7 +305,8 @@ describe("sequenceAbilities", () => {
     for (const a of getCumulativeAbilities(1, 0)) {
       expect(abilities).toContain(a.name);
     }
-    expect(acting.length).toBeGreaterThan(0);
+    // No acting requirements at the throne — a True God has no rung to act into.
+    expect(acting).toEqual([]);
   });
 
   it("returns the rules-engine sequence's ability/acting names below Seq 0", () => {

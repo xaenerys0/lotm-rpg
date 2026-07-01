@@ -101,6 +101,13 @@ import {
   ritualStepsFor,
   ritualRequiredFor,
   RITUAL_FIDELITY_CAP,
+  advanceAscensionRite,
+  beginAscensionRite,
+  clearAscensionRite,
+  ascensionRiteFidelity,
+  ascensionRiteInProgress,
+  ascensionRiteReady,
+  ascensionTierFor,
   meetsRequirements,
   targetSequence,
   deliverHuntedItem,
@@ -760,9 +767,10 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       ]);
       // Route the ascent through the normal turn loop (like advancement) so the
       // tease becomes the current scene and a memory turn record — the narrator
-      // continues as a True God with full awareness, no side-channel banner.
+      // continues as a True God with full awareness, no side-channel banner. The
+      // rite of apotheosis was consumed by the ascent, so clear it.
       updateSession(
-        transition(result.session, {
+        transition(clearAscensionRite(result.session), {
           type: "ENGINE_RESOLUTION",
           result: engineResolution(
             { narrative: result.tease },
@@ -806,7 +814,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         }),
       ]);
       updateSession(
-        transition(result.session, {
+        transition(clearAscensionRite(result.session), {
           type: "ENGINE_RESOLUTION",
           result: engineResolution(
             { narrative: result.tease },
@@ -1691,10 +1699,13 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // And it lives out one turn of the Advancement Ritual, when one is under
       // way (issue #209) — the rite spans turns rather than per-step clicks.
       const riting = advanceRitual(seeking);
+      // Likewise the rite of ascension (apotheosis / Pillar) matures one turn —
+      // the apex endgame is a multi-turn rite, not a single click.
+      const ascending = advanceAscensionRite(riting);
       // Temporary copied/stolen powers fade by one turn; expired ones are
       // released (acquired-powers subsystem), so a Polymath's Imitation or an
       // artifact-stolen ability does not linger forever.
-      const powered = tickAcquiredPowers(riting);
+      const powered = tickAcquiredPowers(ascending);
       // Story-consistency Codex (history-context Codex): fold the narrator's
       // entity deltas into the registry and auto-touch the entities the engine
       // knows are present (current location + present NPCs), so a recurring
@@ -1918,6 +1929,29 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     // the rite's opening as a player turn through the validated pipeline.
     const begun = beginRitual(session, target);
     const action = `I begin the Advancement Ritual to become a ${roleName}, performing its rite in earnest here and now.`;
+    const choice = freeTextToChoice(action);
+    const withChoice = {
+      ...begun,
+      currentChoices: [...(begun.currentChoices ?? []), choice],
+    };
+    updateSession(transition(withChoice, { type: "SELECT_CHOICE", choiceId: choice.id }));
+  }, [session, updateSession]);
+
+  // The rite of ascension — the apex endgame as a paced, multi-turn rite. Like
+  // the Advancement Ritual, "Begin the rite" opens the tracked rite AND narrates
+  // its opening as a normal player turn (so the scene shapes it); from then on it
+  // matures each turn (advanced in the per-turn tick chain). Only once it is under
+  // way can the transformation be attempted — the several-turn maturation is the
+  // natural, far-safer path.
+  const handleBeginAscensionRite = useCallback(() => {
+    if (!session) return;
+    const tier = ascensionTierFor(session);
+    if (tier === null) return;
+    const begun = beginAscensionRite(session);
+    const action =
+      tier === "pillar"
+        ? `I begin the rite of ascension above the sequences, drawing my family's godhoods together to become ${pillarName(session.gameState.pathwayId)} — performing it in earnest here and now.`
+        : `I begin the rite of apotheosis, opening the ceremony to seize the throne of ${trueGodName(session.gameState.pathwayId)} — performing it in earnest here and now.`;
     const choice = freeTextToChoice(action);
     const withChoice = {
       ...begun,
@@ -2251,19 +2285,35 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                     </TheClimb>
                   )}
                 {session.gameState.sequenceLevel === 1 && (
-                  <ApotheosisPanel
-                    session={session}
-                    busy={facingFate}
-                    onAttempt={() => void handleApotheosis()}
-                  />
+                  <>
+                    <AscensionRitePanel
+                      session={session}
+                      busy={facingFate}
+                      requirementsMet={canAttemptApotheosis(session)}
+                      onBeginRite={handleBeginAscensionRite}
+                    />
+                    <ApotheosisPanel
+                      session={session}
+                      busy={facingFate}
+                      onAttempt={() => void handleApotheosis()}
+                    />
+                  </>
                 )}
                 {session.gameState.sequenceLevel === 0 &&
                   pillarForPathway(session.gameState.pathwayId) !== undefined && (
-                    <PillarAscensionPanel
-                      session={session}
-                      busy={facingFate}
-                      onAttempt={() => void handlePillarAscension()}
-                    />
+                    <>
+                      <AscensionRitePanel
+                        session={session}
+                        busy={facingFate}
+                        requirementsMet={canAttemptPillarAscension(session)}
+                        onBeginRite={handleBeginAscensionRite}
+                      />
+                      <PillarAscensionPanel
+                        session={session}
+                        busy={facingFate}
+                        onAttempt={() => void handlePillarAscension()}
+                      />
+                    </>
                   )}
                 <WorldMessages location={session.gameState.location} />
               </>
@@ -3675,6 +3725,19 @@ function PotionPreparationPanel({
 // and no per-step clicking — the player drinks (via the climb panel below)
 // whenever they judge it ready. Renders nothing until the potion is prepared and
 // the rung defines a rite.
+
+// The scene-favourability hint shared by the Advancement Ritual and the rite of
+// ascension — both mature faster in solitude and stall amid a crowd or danger,
+// via the same `ritualCircumstanceFidelity` signal.
+function ritualCircumstanceHint(session: GameSession): string {
+  const pct = Math.round(ritualCircumstanceFidelity(session) * 100);
+  return pct >= 100
+    ? "You are undisturbed — a fitting moment for the rite."
+    : pct >= 50
+      ? "The moment is less than private — the rite will form slowly here."
+      : "Danger and distraction press in — the rite will barely take hold here.";
+}
+
 function RitualPerformancePanel({
   session,
   busy,
@@ -3698,13 +3761,7 @@ function RitualPerformancePanel({
   const inProgress = ritualInProgress(session, target);
   const fidelityPct = Math.round(ritualFidelity(session, target) * 100);
   // How the current scene will shape the rite if begun / as it matures.
-  const circumstancePct = Math.round(ritualCircumstanceFidelity(session) * 100);
-  const circumstanceHint =
-    circumstancePct >= 100
-      ? "You are undisturbed — a fitting moment for the rite."
-      : circumstancePct >= 50
-        ? "The moment is less than private — the rite will form slowly here."
-        : "Danger and distraction press in — the rite will barely take hold here.";
+  const circumstanceHint = ritualCircumstanceHint(session);
 
   return (
     <section
@@ -3816,6 +3873,100 @@ function AdvancementPanel({
   );
 }
 
+// The rite of ascension (apex endgame): the multi-turn rite performed before the
+// transformation — apotheosis (Seq 1 → 0) or Pillar ascension (Seq 0 → above).
+// Mirrors the Advancement Ritual's `RitualPerformancePanel`: "Begin the rite"
+// opens it and narrates the opening; from then on it matures each turn (a
+// `role="progressbar"` fidelity meter), climbing fastest in solitude and stalling
+// amid a crowd or danger. Only once it is under way can the ascent be attempted.
+function AscensionRitePanel({
+  session,
+  busy,
+  requirementsMet,
+  onBeginRite,
+}: {
+  session: GameSession;
+  busy: boolean;
+  requirementsMet: boolean;
+  onBeginRite: () => void;
+}) {
+  const tier = ascensionTierFor(session);
+  if (tier === null) return null;
+
+  const stages = tier === "pillar" ? PILLAR_STAGES : APOTHEOSIS_STAGES;
+  const riteName = tier === "pillar" ? "ascension above the sequences" : "apotheosis";
+  const inRite = ascensionRiteInProgress(session);
+  const ready = ascensionRiteReady(session);
+  const fidelityPct = Math.round(ascensionRiteFidelity(session) * 100);
+  const circumstanceHint = ritualCircumstanceHint(session);
+
+  return (
+    <section
+      aria-labelledby="ascension-rite-heading"
+      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+    >
+      <h2
+        id="ascension-rite-heading"
+        className="gaslit font-serif text-base font-semibold text-occult-bright"
+      >
+        The rite of {riteName}
+      </h2>
+      <p className="mt-1 text-sm leading-relaxed text-muted">
+        {tier === "pillar"
+          ? "Ascending above the sequences is not seized in an instant — it is a rite performed and held as the order of things reshapes around you."
+          : "Seizing the throne is not the work of a moment — it is a rite performed and sustained until the pathway itself accepts you."}
+      </p>
+      <ol className="mt-3 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-foreground/75">
+        {stages.map((stage) => (
+          <li key={stage}>{stage}</li>
+        ))}
+      </ol>
+
+      {inRite ? (
+        <>
+          <div
+            role="progressbar"
+            aria-label="Rite of ascension fidelity"
+            aria-valuenow={fidelityPct}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuetext={`The rite is ${fidelityPct}% formed`}
+            className="mt-4 h-2 overflow-hidden rounded-full bg-surface"
+          >
+            <div className="h-full bg-occult/60" style={{ width: `${fidelityPct}%` }} />
+          </div>
+          <p className="mt-2 text-sm text-foreground/85">
+            {ready
+              ? "The rite is fully formed — this is the safest moment to attempt the ascent below."
+              : `The rite is ${fidelityPct}% formed and matures as you play on. ${circumstanceHint} Attempt the ascent below whenever you judge it ready — sooner is far more dangerous.`}
+          </p>
+        </>
+      ) : requirementsMet ? (
+        <>
+          <p className="mt-4 text-sm text-foreground/85">
+            Begin the rite and it will mature as your story plays on — fastest in
+            solitude, slowed by a crowd or danger. {circumstanceHint} Only once it is
+            under way can you attempt the ascent.
+          </p>
+          <button
+            type="button"
+            onClick={onBeginRite}
+            disabled={busy}
+            className="mt-3 min-h-[24px] rounded-md border border-occult/40 bg-occult/[0.08] px-3 py-1 text-xs font-medium text-occult-bright transition-colors hover:border-occult/60 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            Begin the rite of {riteName}
+          </button>
+        </>
+      ) : (
+        <p className="mt-4 text-sm text-foreground/85">
+          Meet every requirement below, then begin the rite — it matures over the turns
+          that follow, and only once it is under way can you attempt the ascent.
+        </p>
+      )}
+    </section>
+  );
+}
+
 // Apotheosis (issue #30): shown to a Sequence 1 King of Angels. Failure at this
 // height is permadeath, so the staged ceremony is previewed once ready.
 function ApotheosisPanel({
@@ -3828,7 +3979,9 @@ function ApotheosisPanel({
   onAttempt: () => void;
 }) {
   const requirements = apotheosisRequirements(session);
-  const ready = canAttemptApotheosis(session);
+  // The transformation can be attempted only once the rite of apotheosis is under
+  // way (its fidelity feeds the odds) — the several-turn rite is the safe path.
+  const ready = canAttemptApotheosis(session) && ascensionRiteInProgress(session);
   const chance = Math.round(apotheosisSuccessChance(session) * 100);
   const honorific = trueGodName(session.gameState.pathwayId);
 
@@ -3836,23 +3989,17 @@ function ApotheosisPanel({
     <RitualAttemptPanel
       headingId="apotheosis-heading"
       heading={`The throne of ${honorific} stands empty`}
-      intro="One rung remains. Sequence 0 is not climbed — it is seized, once, by the one the pathway accepts."
+      intro="One rung remains. Sequence 0 is not climbed — it is seized, once, by the one the pathway accepts. Begin the rite above, then seize the throne when it has formed."
       requirements={requirements}
       ready={ready}
       busy={busy}
-      armLabel="Begin the apotheosis ritual"
+      armLabel="Seize the throne"
       confirmLabel="Seize the throne — irrevocably"
       confirmBusyLabel="The world holds its breath…"
       cancelLabel="Step back"
       oddsText={`The augurs put your odds near ${chance}%. Failure is not survivable.`}
       onAttempt={onAttempt}
-    >
-      <ol className="mt-4 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-foreground/75">
-        {APOTHEOSIS_STAGES.map((stage) => (
-          <li key={stage}>{stage}</li>
-        ))}
-      </ol>
-    </RitualAttemptPanel>
+    />
   );
 }
 
@@ -3869,7 +4016,9 @@ function PillarAscensionPanel({
   onAttempt: () => void;
 }) {
   const requirements = pillarRequirements(session);
-  const ready = canAttemptPillarAscension(session);
+  // Attemptable only once the rite of ascension is under way (its fidelity feeds
+  // the odds) — the several-turn rite is the safe path above the sequences.
+  const ready = canAttemptPillarAscension(session) && ascensionRiteInProgress(session);
   const chance = Math.round(pillarAscensionSuccessChance(session) * 100);
   const name = pillarName(session.gameState.pathwayId);
 
@@ -3877,23 +4026,17 @@ function PillarAscensionPanel({
     <RitualAttemptPanel
       headingId="pillar-heading"
       heading={`Above the sequences: the seat of ${name}`}
-      intro="A True God is the apex of a pathway. A Pillar is the apex of the world. Gather the godhoods of your family's pathways and become the role they all answer to — there is no climb beyond this one."
+      intro="A True God is the apex of a pathway. A Pillar is the apex of the world. Gather the godhoods of your family's pathways and become the role they all answer to — there is no climb beyond this one. Begin the rite above, then ascend when it has formed."
       requirements={requirements}
       ready={ready}
       busy={busy}
-      armLabel="Begin the ascent above the sequences"
+      armLabel="Ascend above the sequences"
       confirmLabel="Become a Pillar — irrevocably"
       confirmBusyLabel="The order of things rewrites itself…"
       cancelLabel="Remain a god"
       oddsText={`The augurs put your odds near ${chance}%. Failure is not survivable.`}
       onAttempt={onAttempt}
-    >
-      <ol className="mt-4 list-decimal space-y-1 pl-5 text-xs leading-relaxed text-foreground/75">
-        {PILLAR_STAGES.map((stage) => (
-          <li key={stage}>{stage}</li>
-        ))}
-      </ol>
-    </RitualAttemptPanel>
+    />
   );
 }
 

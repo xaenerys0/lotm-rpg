@@ -13,10 +13,15 @@ import {
 } from "@/lib/rules";
 
 import { effectiveSupport, requiredSupport, anchorHighRisk } from "./anchors";
+import {
+  ascensionRiteFidelity,
+  ASCENSION_INFIDELITY_PENALTY,
+  ASCENSION_SUCCESS_FLOOR,
+} from "./ascension-rite";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
 import { hasItemMatching } from "./inventory";
-import { PILLAR_ABILITIES, PILLAR_ACTING, PILLAR_SEQUENCE, pillarName } from "./pillars";
+import { PILLAR_ABILITIES, PILLAR_SEQUENCE, pillarName } from "./pillars";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -113,13 +118,6 @@ export const TRUE_GOD_ABILITIES: readonly string[] = [
   "Confer or revoke blessings, oracles, and divine punishments",
 ];
 
-/** The acting method does not end at the throne — it tightens. */
-export const TRUE_GOD_ACTING: readonly string[] = [
-  "Be the god the faithful believe in — every public act is doctrine now",
-  "Never act beneath your station; a god who plays mortal frays",
-  "Answer faith with presence; a silent god breeds heresy and rivals",
-];
-
 /**
  * The family-tagged, deduped ability NAMES across every pathway in a Pillar's
  * family (issue #210). A Pillar sits above an entire god-family group, not one
@@ -157,8 +155,10 @@ function familyAbilityNames(pillar: Pillar): string[] {
  * an overlay ON TOP of the pathway's real kit (issue #210): a True God surfaces
  * its pathway's full apex abilities; a Pillar surfaces the deduped, family-tagged
  * abilities of EVERY pathway in its god-family, so different families differ.
- * Acting requirements stay scoped to the current rung (the role being digested);
- * the apex tiers keep their cosmic-role framing.
+ * Below the apex, acting requirements stay scoped to the current rung (the role
+ * being digested); at the apex there are none — a True God / Pillar has no rung
+ * to act into, so the acting list is empty (nothing to list on the sheet or in
+ * the prompt).
  */
 export function sequenceAbilities(
   pathwayId: number,
@@ -166,18 +166,18 @@ export function sequenceAbilities(
 ): { abilities: string[]; acting: string[] } {
   // A Pillar (above the sequences, issue #99 Part B) is the apex of an entire
   // god-family: the authority lines overlay the real abilities of every pathway
-  // in the family (issue #210).
+  // in the family (issue #210). No acting requirements above the sequences.
   if (level === PILLAR_SEQUENCE) {
     const pillar = pillarForPathway(pathwayId);
     const family = pillar ? familyAbilityNames(pillar) : [];
-    return { abilities: [...PILLAR_ABILITIES, ...family], acting: [...PILLAR_ACTING] };
+    return { abilities: [...PILLAR_ABILITIES, ...family], acting: [] };
   }
   // A True God (Seq 0): the authority lines overlay the pathway's full cumulative
   // apex kit. Plain names — at the apex every power is "enhanced", so the suffix
-  // would only be noise.
+  // would only be noise. No acting requirements at the throne.
   if (level === 0) {
     const apex = getCumulativeAbilities(pathwayId, 0).map((a) => a.name);
-    return { abilities: [...TRUE_GOD_ABILITIES, ...apex], acting: [...TRUE_GOD_ACTING] };
+    return { abilities: [...TRUE_GOD_ABILITIES, ...apex], acting: [] };
   }
   const seq = getSequence(pathwayId, level);
   return {
@@ -308,15 +308,23 @@ export function canAttemptApotheosis(session: GameSession): boolean {
 
 /**
  * Success odds once every requirement is met: strong but never certain. Anchor
- * surplus beyond the requirement and a fuller mind both steady the ascent.
+ * surplus beyond the requirement and a fuller mind both steady the ascent; how
+ * faithfully the rite of apotheosis has matured (`ascensionRiteFidelity`) drags
+ * it down when rushed — seizing the throne the instant the rite opens is dire but
+ * allowed, so the multi-turn rite is the natural path.
  */
 export function apotheosisSuccessChance(session: GameSession): number {
   const state = session.gameState;
   const support = session.anchorState ? effectiveSupport(session.anchorState) : 0;
   const surplus = Math.max(0, support - requiredSupport(0));
   const sanityRatio = state.maxSanity > 0 ? state.sanity / state.maxSanity : 0;
-  const chance = 0.6 + Math.min(0.15, surplus / 400) + sanityRatio * 0.2;
-  return Math.min(0.95, chance);
+  const fidelity = ascensionRiteFidelity(session);
+  const chance =
+    0.6 +
+    Math.min(0.15, surplus / 400) +
+    sanityRatio * 0.2 -
+    ASCENSION_INFIDELITY_PENALTY * (1 - fidelity);
+  return Math.max(ASCENSION_SUCCESS_FLOOR, Math.min(0.95, chance));
 }
 
 /** Shown once to a player who reaches Sequence 0 — and never explained. */

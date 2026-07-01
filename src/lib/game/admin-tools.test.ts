@@ -17,6 +17,7 @@ import { effectiveSupport, requiredSupport } from "./anchors";
 import { uniquenessItemFor } from "./apotheosis";
 import { canAttemptApotheosis } from "./apotheosis";
 import { canAttemptPillarAscension } from "./pillars";
+import { ascensionRiteReady } from "./ascension-rite";
 import { deserializeSession, serializeSession } from "./session";
 
 // Fool (1) belongs to the Lord of Mysteries Pillar family {1,7,8}; Justiciar (12)
@@ -163,6 +164,14 @@ describe("buildAdminCharacter", () => {
       requiredSupport(0),
     );
     expect(canAttemptApotheosis(session)).toBe(true);
+    // The apex ascent is a matured rite now — the endgame build seeds it fully
+    // formed (true-god tier) so it is poised to attempt immediately.
+    expect(session.ascensionRite).toEqual({
+      tier: "true-god",
+      pathwayId: FOOL,
+      fidelity: 1,
+    });
+    expect(ascensionRiteReady(session)).toBe(true);
   });
 
   it("poises a pillar-ready True God (Seq 0 + sibling Uniquenesses)", () => {
@@ -181,6 +190,12 @@ describe("buildAdminCharacter", () => {
       ).toBe(true);
     }
     expect(canAttemptPillarAscension(session)).toBe(true);
+    expect(session.ascensionRite).toEqual({
+      tier: "pillar",
+      pathwayId: FOOL,
+      fidelity: 1,
+    });
+    expect(ascensionRiteReady(session)).toBe(true);
   });
 
   it("falls back to apotheosis when the pathway has no Pillar family", () => {

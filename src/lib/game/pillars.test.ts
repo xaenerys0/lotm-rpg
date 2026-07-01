@@ -11,7 +11,6 @@ import {
   pillarName,
   pillarRequirements,
   PILLAR_ABILITIES,
-  PILLAR_ACTING,
   PILLAR_SEQUENCE,
 } from "./pillars";
 import { createDefaultGameState, createSession } from "./session";
@@ -60,8 +59,9 @@ describe("sequenceAbilities at the Pillar tier", () => {
     const { abilities, acting } = sequenceAbilities(1, PILLAR_SEQUENCE);
     // The cosmic-authority lines lead (the overlay).
     expect(abilities.slice(0, PILLAR_ABILITIES.length)).toEqual([...PILLAR_ABILITIES]);
-    // Acting stays the Pillar's cosmic-role framing.
-    expect(acting).toEqual([...PILLAR_ACTING]);
+    // No acting requirements above the sequences — a Pillar has no rung to act
+    // into (the acting method / role list is dropped at the apex).
+    expect(acting).toEqual([]);
 
     const family = abilities.slice(PILLAR_ABILITIES.length);
     // Every family pathway's real abilities are surfaced, tagged by pathway —
@@ -166,18 +166,38 @@ describe("pillarRequirements", () => {
   });
 });
 
+// A matured rite of ascension on a ready session — its fidelity feeds the ascent
+// odds, so the "strong" chance is only reached once the rite has fully formed.
+function withMaturedRite(session: GameSession, fidelity = 1): GameSession {
+  return {
+    ...session,
+    ascensionRite: {
+      tier: "pillar",
+      pathwayId: session.gameState.pathwayId,
+      fidelity,
+    },
+  };
+}
+
 describe("pillarAscensionSuccessChance", () => {
-  it("is bounded between the base and the 0.9 cap", () => {
-    const chance = pillarAscensionSuccessChance(readyPillarSession());
+  it("is bounded between the base and the 0.9 cap with a fully matured rite", () => {
+    const chance = pillarAscensionSuccessChance(withMaturedRite(readyPillarSession()));
     expect(chance).toBeGreaterThanOrEqual(0.5);
     expect(chance).toBeLessThanOrEqual(0.9);
   });
 
   it("rises with anchor surplus and sanity", () => {
-    const lean = readyPillarSession();
+    const lean = withMaturedRite(readyPillarSession());
     const leanLowSanity = { ...lean, gameState: { ...lean.gameState, sanity: 75 } };
     expect(pillarAscensionSuccessChance(lean)).toBeGreaterThan(
       pillarAscensionSuccessChance(leanLowSanity),
+    );
+  });
+
+  it("is dragged down by an unformed rite and lifted as it matures", () => {
+    const ready = readyPillarSession();
+    expect(pillarAscensionSuccessChance(withMaturedRite(ready, 1))).toBeGreaterThan(
+      pillarAscensionSuccessChance(ready),
     );
   });
 });

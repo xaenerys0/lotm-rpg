@@ -219,6 +219,21 @@ export function buildAdminCharacter(
     session = { ...session, anchorState };
   }
 
+  // The apex ascent is now a paced, multi-turn rite (`ascension-rite.ts`) that the
+  // UI requires under way before the attempt. Seed it fully formed for an endgame
+  // build so it is genuinely poised to ascend immediately — the builder's contract
+  // — rather than made to play out the rite over turns.
+  if (apotheosisReady || pillarReady) {
+    session = {
+      ...session,
+      ascensionRite: {
+        tier: pillarReady ? "pillar" : "true-god",
+        pathwayId: options.pathwayId,
+        fidelity: 1,
+      },
+    };
+  }
+
   return session;
 }
 

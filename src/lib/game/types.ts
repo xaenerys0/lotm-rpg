@@ -123,6 +123,15 @@ export interface GameSession {
    */
   formulaPursuit?: import("./formula-pursuit").FormulaPursuitState;
   /**
+   * Ascension rite in progress (apex endgame): the multi-turn rite a Sequence 1
+   * King of Angels performs to seize the throne (apotheosis) or a Sequence 0
+   * True God performs to ascend into a Pillar. Mirrors `ritualState` — begun
+   * once, matured over turns, keyed by tier. Absent when no ascension rite is
+   * under way; strictly validated when present and preserved on the deserialize
+   * `...s` spread (no seeding). No DB migration — serializes inside the session.
+   */
+  ascensionRite?: import("./ascension-rite").AscensionRiteState;
+  /**
    * Story-consistency Codex (history-context Codex): the durable registry of the
    * important people, places, objects, groups, and open plot threads the
    * chronicle has established. Maintained by the narrator's per-turn

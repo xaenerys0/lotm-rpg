@@ -148,6 +148,43 @@ function AbilityItems({
   );
 }
 
+// A collapsible rung group (native <details>/<summary>, no client JS — the
+// codebase pattern from story-chronicle). Abilities pile up as a character
+// climbs, so each Sequence's kit folds away; the current rung opens by default.
+function CollapsibleAbilityGroup({
+  title,
+  enhanced = false,
+  abilities,
+  defaultOpen,
+}: {
+  title: string;
+  enhanced?: boolean;
+  abilities: readonly { name: string; description: string }[];
+  defaultOpen: boolean;
+}) {
+  return (
+    <details open={defaultOpen} className="group">
+      <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-2 gap-y-1 marker:content-none">
+        <span
+          aria-hidden="true"
+          className="inline-block text-amber transition-transform group-open:rotate-90"
+        >
+          ▸
+        </span>
+        <span className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+          {title}
+        </span>
+        {enhanced && (
+          <span className="rounded-md border border-amber/30 bg-amber/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.1em] text-amber normal-case">
+            Enhanced
+          </span>
+        )}
+      </summary>
+      <AbilityItems abilities={abilities} />
+    </details>
+  );
+}
+
 export function CharacterSheet() {
   // The shared active character drives the sheet (active-character sync): the
   // selector below writes the same pointer the Map/Journal/sidebar read, and an
@@ -324,26 +361,21 @@ export function CharacterSheet() {
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-muted">
               Every power from the rungs you have climbed is yours — those drawn from
-              earlier Sequences are enhanced as you advance.
+              earlier Sequences are enhanced as you advance. Each Sequence folds away;
+              your current rung opens by default.
             </p>
             {abilityGroups.length === 0 ? (
               <p className="mt-4 text-sm text-muted">None recorded.</p>
             ) : (
-              <div className="mt-4 space-y-5">
-                {abilityGroups.map((group) => (
-                  <div key={group.level}>
-                    <h3 className="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-                      <span>
-                        Sequence {group.level} · {group.name}
-                      </span>
-                      {group.enhanced && (
-                        <span className="rounded-md border border-amber/30 bg-amber/10 px-2 py-0.5 text-[10px] font-medium tracking-[0.1em] text-amber normal-case">
-                          Enhanced
-                        </span>
-                      )}
-                    </h3>
-                    <AbilityItems abilities={group.abilities} />
-                  </div>
+              <div className="mt-4 space-y-3">
+                {abilityGroups.map((group, index) => (
+                  <CollapsibleAbilityGroup
+                    key={group.level}
+                    title={`Sequence ${group.level} · ${group.name}`}
+                    enhanced={group.enhanced}
+                    abilities={group.abilities}
+                    defaultOpen={index === 0}
+                  />
                 ))}
               </div>
             )}
@@ -364,38 +396,54 @@ export function CharacterSheet() {
               </div>
             )}
             {/* A Pillar sits above its whole god-family: the real abilities of
-              every OTHER pathway in the family are part of its kit (issue #210). */}
+              every OTHER pathway in the family are part of its kit (issue #210).
+              Each family pathway folds away (a family is a lot to scan), and its
+              rungs fold within it. */}
             {apexView.familyGroups.map((family) => (
-              <div key={family.pathwayId} className="mt-6">
-                <h3 className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-                  {family.pathwayName} Pathway
-                </h3>
-                <div className="mt-3 space-y-5">
+              <details key={family.pathwayId} className="group/pathway mt-4">
+                <summary className="flex cursor-pointer list-none items-center gap-2 marker:content-none">
+                  <span
+                    aria-hidden="true"
+                    className="inline-block text-amber transition-transform group-open/pathway:rotate-90"
+                  >
+                    ▸
+                  </span>
+                  <span className="text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                    {family.pathwayName} Pathway
+                  </span>
+                </summary>
+                <div className="mt-3 space-y-3 border-l border-border/60 pl-4">
                   {family.groups.map((group) => (
-                    <div key={group.level}>
-                      <h4 className="text-xs font-semibold tracking-[0.16em] text-copper uppercase">
-                        Sequence {group.level} · {group.name}
-                      </h4>
-                      <AbilityItems abilities={group.abilities} />
-                    </div>
+                    <CollapsibleAbilityGroup
+                      key={group.level}
+                      title={`Sequence ${group.level} · ${group.name}`}
+                      abilities={group.abilities}
+                      defaultOpen={false}
+                    />
                   ))}
                 </div>
-              </div>
+              </details>
             ))}
             {/* Pre-discovery (issue #95) the secret that living the role digests
               the potion is hidden: the role guidance still shows, but under a
               neutral heading that names neither the mechanic nor digestion. The
-              heading flips to "Acting Method" once the character discovers it. */}
-            <h3 className="mt-6 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-              {knowsMethod ? "Acting Method" : "Your Role"}
-            </h3>
-            <ul className="mt-2 list-inside space-y-1.5">
-              {(sequence?.actingRequirements ?? []).map((req) => (
-                <li key={req} className="text-sm leading-relaxed text-foreground">
-                  {req}
-                </li>
-              ))}
-            </ul>
+              heading flips to "Acting Method" once the character discovers it.
+              At the apex tiers (Seq 0 True God, Pillar) there is no rung to act
+              into, so the section is dropped entirely rather than shown empty. */}
+            {(sequence?.actingRequirements?.length ?? 0) > 0 && (
+              <>
+                <h3 className="mt-6 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+                  {knowsMethod ? "Acting Method" : "Your Role"}
+                </h3>
+                <ul className="mt-2 list-inside space-y-1.5">
+                  {(sequence?.actingRequirements ?? []).map((req) => (
+                    <li key={req} className="text-sm leading-relaxed text-foreground">
+                      {req}
+                    </li>
+                  ))}
+                </ul>
+              </>
+            )}
           </section>
 
           {/* Condition */}
