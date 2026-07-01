@@ -15,6 +15,7 @@ import {
   type AnchorKind,
 } from "./anchors";
 import { uniquenessItemFor } from "./apotheosis";
+import { PILLAR_SEQUENCE } from "./pillars";
 import { createDigestionState } from "./digestion";
 import { adjustFunds, getFunds } from "./marketplace";
 import { clamp } from "./math";
@@ -63,8 +64,19 @@ const ENDGAME_ANCHORS: readonly AdminAnchorSpec[] = [
   { kind: "congregation", name: "Fourth Faithful Congregation" },
 ];
 
-/** Which endgame ascent the build should be poised at (or none). */
-export type AdminEndgame = "none" | "apotheosis" | "pillar";
+/**
+ * Which endgame the build should sit at (or none). The `-ready` values POISE the
+ * character to attempt the ascent (Seq 1 for apotheosis, Seq 0 for the Pillar);
+ * the `enthroned` values stand up an ALREADY-ASCENDED apex so the post-ascension
+ * surfaces — the True God / Pillar sheet, the family-pathway kits (issue #210) —
+ * can be viewed directly without playing out the rite.
+ */
+export type AdminEndgame =
+  | "none"
+  | "apotheosis"
+  | "pillar"
+  | "true-god"
+  | "pillar-enthroned";
 
 /** A power to force-grant onto the build (bypasses the normal capability gate). */
 export interface AdminAcquiredPowerSpec {
@@ -142,16 +154,30 @@ export function buildAdminCharacter(
   initialMemory?: MemoryState,
 ): GameSession {
   const endgame = options.endgame ?? "none";
-  // A pillar build only makes sense for a pathway that belongs to a Pillar
-  // family; otherwise fall back to the apotheosis (True God) endgame.
-  const pillarReady =
-    endgame === "pillar" && siblingPathwayIds(options.pathwayId).length > 0;
+  // A pillar build (poised or enthroned) only reaches the Pillar for a pathway in
+  // a Pillar family; otherwise it falls back to the True God tier (its own apex).
+  const hasFamily = siblingPathwayIds(options.pathwayId).length > 0;
+  const pillarReady = endgame === "pillar" && hasFamily;
   const apotheosisReady =
-    endgame === "apotheosis" || (endgame === "pillar" && !pillarReady);
+    endgame === "apotheosis" || (endgame === "pillar" && !hasFamily);
+  // Already-ascended apex states — stood up so the post-ascension surfaces (the
+  // True God / Pillar sheet, the family-pathway kits, issue #210) can be viewed
+  // directly rather than played out through the rite.
+  const pillarEnthroned = endgame === "pillar-enthroned" && hasFamily;
+  const trueGodEnthroned =
+    endgame === "true-god" || (endgame === "pillar-enthroned" && !hasFamily);
 
   const requestedSeq = clamp(Math.round(options.sequenceLevel), 1, 9);
-  // Apotheosis is attempted at Seq 1; the Pillar from a Seq 0 True God.
-  const sequenceLevel = pillarReady ? 0 : apotheosisReady ? 1 : requestedSeq;
+  // Apotheosis is attempted at Seq 1; the Pillar from a Seq 0 True God. An
+  // enthroned Pillar sits above the sequences (PILLAR_SEQUENCE); an enthroned or
+  // poised True God at Seq 0.
+  const sequenceLevel = pillarEnthroned
+    ? PILLAR_SEQUENCE
+    : trueGodEnthroned || pillarReady
+      ? 0
+      : apotheosisReady
+        ? 1
+        : requestedSeq;
 
   const base = createDefaultGameState(
     options.pathwayId,
