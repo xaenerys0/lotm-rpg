@@ -77,6 +77,8 @@ import {
   artifactNarratorContext,
   tickAcquiredPowers,
   sequenceLabel,
+  sequenceClassificationFor,
+  apexAbilityView,
   trueGodName,
   APOTHEOSIS_STAGES,
   attemptPillarAscension,
@@ -108,6 +110,7 @@ import {
   ascensionRiteInProgress,
   ascensionRiteReady,
   ascensionTierFor,
+  type AscensionTier,
   meetsRequirements,
   targetSequence,
   deliverHuntedItem,
@@ -4271,6 +4274,86 @@ function ResolutionRecap({
 // ENGINE_RESOLUTION): the committed narration recap + a Continue that resumes
 // with a fresh scene. A normal player turn no longer uses this — it presents its
 // next choices inline above the resolution recap on the choices screen.
+// Whether THIS consequences turn is an apex ascent landing (and which tier),
+// derived purely from session state so it survives a reload and is testable. The
+// signal is unambiguous: only apotheosis / Pillar ascension reaches the apex
+// sequence levels (0 / PILLAR_SEQUENCE), routed through ENGINE_RESOLUTION with an
+// engine-stamped `"advancement"` journal flag — a True God's combat carries a
+// `"combat"` flag, and ordinary advancement never reaches these levels.
+function apexAscensionTier(session: GameSession): AscensionTier | null {
+  const level = session.gameState.sequenceLevel;
+  if (level !== 0 && level !== PILLAR_SEQUENCE) return null;
+  const flag = validateJournalFlag(session.lastResolution?.response.journalEntry);
+  if (flag?.eventType !== "advancement") return null;
+  return level === PILLAR_SEQUENCE ? "pillar" : "true-god";
+}
+
+// The climactic reveal on the consequences screen the moment an apex ascent
+// lands (apotheosis → True God, or Pillar). Beyond the tease narrative in the
+// recap below it, this names the new existence — the honorific + tier — and
+// unveils the dominion just gained: the cosmic-authority lines, and (for a
+// Pillar) the whole god-family whose pathways now answer to the ascendant.
+function AscensionReveal({
+  session,
+  tier,
+}: {
+  session: GameSession;
+  tier: AscensionTier;
+}) {
+  const { pathwayId, sequenceLevel } = session.gameState;
+  const title = sequenceLabel(pathwayId, sequenceLevel);
+  const tierWord = sequenceClassificationFor(sequenceLevel);
+  const view = apexAbilityView(pathwayId, sequenceLevel);
+  const ownPathway = getPathway(pathwayId)?.name;
+  const familyNames = view.familyGroups.map((g) => g.pathwayName);
+  const eyebrow = tier === "pillar" ? "Above the Sequence" : "Apotheosis";
+
+  return (
+    <section
+      aria-labelledby="ascension-reveal-heading"
+      className="gaslit mb-6 overflow-hidden rounded-xl border border-occult/40 bg-occult/[0.06] p-6 text-center animate-fade-in-up"
+    >
+      <p className="text-xs font-semibold tracking-[0.3em] text-occult-bright uppercase">
+        {eyebrow}
+      </p>
+      <h2
+        id="ascension-reveal-heading"
+        className="mt-2 font-serif text-3xl font-bold text-foreground"
+      >
+        {title}
+      </h2>
+      <p className="mt-1 text-xs font-semibold tracking-[0.24em] text-amber uppercase">
+        {tierWord}
+      </p>
+
+      {view.authority.length > 0 && (
+        <div className="mt-5 text-left">
+          <h3 className="text-xs font-semibold tracking-[0.18em] text-occult-bright uppercase">
+            Your dominion
+          </h3>
+          <ul className="mt-2 space-y-1.5">
+            {view.authority.map((line) => (
+              <li key={line} className="flex gap-2 text-sm text-foreground">
+                <span aria-hidden="true" className="text-occult-bright">
+                  ◆
+                </span>
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+          {tier === "pillar" && familyNames.length > 0 && (
+            <p className="mt-3 text-sm leading-relaxed text-muted">
+              You now hold the authority of your entire family — the{" "}
+              {[ownPathway, ...familyNames].filter(Boolean).join(", ")} pathways answer to
+              you.
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function ConsequencesPhase({
   session,
   onContinue,
@@ -4288,8 +4371,10 @@ function ConsequencesPhase({
   digestionMeterVisible: boolean;
   sanityMeterVisible: boolean;
 }) {
+  const reveal = apexAscensionTier(session);
   return (
     <div className="animate-fade-in-up">
+      {reveal && <AscensionReveal session={session} tier={reveal} />}
       <ResolutionRecap
         session={session}
         artTurn={session.turnCount}

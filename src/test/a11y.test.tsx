@@ -560,6 +560,59 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="arite-1" />);
   });
 
+  it("ascension reveal (Pillar consequences) has no violations", async () => {
+    // The climactic reveal shown the moment a Pillar ascent lands: the new title,
+    // tier, and the "Your dominion" powers block above the tease recap.
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-rev", "Klein"),
+      sequenceLevel: -1, // PILLAR_SEQUENCE — enthroned as a Pillar
+    };
+    const session = {
+      ...createSession(gameState, "reveal-1", 1000),
+      phase: "consequences" as const,
+      pendingPlayerAction: "I ascend above the sequences, becoming a Pillar.",
+      lastResolution: {
+        response: {
+          narrative:
+            "You are no longer on the ladder. From here the sequences are a single structure.",
+          journalEntry: {
+            summary: "Ascended above Sequence 0 to become Lord of Mysteries.",
+            eventType: "advancement",
+          },
+        },
+        validation: { valid: true, violations: [] },
+      },
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "reveal-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="reveal-1" />);
+  });
+
+  it("ascension reveal (True God consequences) has no violations", async () => {
+    // The True God branch (Seq 0): the reveal's authority "Your dominion" block
+    // without the Pillar-only family line.
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-tg", "Klein"),
+      sequenceLevel: 0,
+    };
+    const session = {
+      ...createSession(gameState, "tgreveal-1", 1000),
+      phase: "consequences" as const,
+      pendingPlayerAction: "I seize the throne and ascend to Sequence 0.",
+      lastResolution: {
+        response: {
+          narrative: "From the throne you finally see it: the sequences are rungs.",
+          journalEntry: {
+            summary: "Became The Fool — the Sequence 0 True God.",
+            eventType: "advancement",
+          },
+        },
+        validation: { valid: true, violations: [] },
+      },
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "tgreveal-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="tgreveal-1" />);
+  });
+
   it("failure panel (zero sanity) has no violations", async () => {
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-f", "Klein"),
