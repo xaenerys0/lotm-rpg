@@ -541,6 +541,78 @@ describe("accessibility — game loop", () => {
     await expectNoAxeViolations(<GameLoop sessionId="pillar-1" />);
   });
 
+  it("ascension rite in progress (progressbar branch) has no violations", async () => {
+    // A True God of a Pillar family mid-rite: the AscensionRitePanel renders its
+    // `role="progressbar"` fidelity meter + the "fully formed" cue (apex endgame
+    // as a multi-turn rite). Seeded fully matured so the ready copy shows too.
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-ar", "Klein"),
+      sequenceLevel: 0,
+    };
+    const session = {
+      ...createSession(gameState, "arite-1", 1000),
+      ascensionRite: { tier: "pillar" as const, pathwayId: 1, fidelity: 1 },
+      phase: "choices" as const,
+      currentNarrative: "The rite has formed; the seat above the sequences waits.",
+      currentChoices: [{ id: "c1", text: "Steady yourself", type: "action" as const }],
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "arite-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="arite-1" />);
+  });
+
+  it("ascension reveal (Pillar consequences) has no violations", async () => {
+    // The climactic reveal shown the moment a Pillar ascent lands: the new title,
+    // tier, and the "Your dominion" powers block above the tease recap.
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-rev", "Klein"),
+      sequenceLevel: -1, // PILLAR_SEQUENCE — enthroned as a Pillar
+    };
+    const session = {
+      ...createSession(gameState, "reveal-1", 1000),
+      phase: "consequences" as const,
+      pendingPlayerAction: "I ascend above the sequences, becoming a Pillar.",
+      lastResolution: {
+        response: {
+          narrative:
+            "You are no longer on the ladder. From here the sequences are a single structure.",
+          journalEntry: {
+            summary: "Ascended above Sequence 0 to become Lord of Mysteries.",
+            eventType: "advancement",
+          },
+        },
+        validation: { valid: true, violations: [] },
+      },
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "reveal-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="reveal-1" />);
+  });
+
+  it("ascension reveal (True God consequences) has no violations", async () => {
+    // The True God branch (Seq 0): the reveal's authority "Your dominion" block
+    // without the Pillar-only family line.
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-tg", "Klein"),
+      sequenceLevel: 0,
+    };
+    const session = {
+      ...createSession(gameState, "tgreveal-1", 1000),
+      phase: "consequences" as const,
+      pendingPlayerAction: "I seize the throne and ascend to Sequence 0.",
+      lastResolution: {
+        response: {
+          narrative: "From the throne you finally see it: the sequences are rungs.",
+          journalEntry: {
+            summary: "Became The Fool — the Sequence 0 True God.",
+            eventType: "advancement",
+          },
+        },
+        validation: { valid: true, violations: [] },
+      },
+    };
+    localStorage.setItem(SESSION_KEY_PREFIX + "tgreveal-1", serializeSession(session));
+    await expectNoAxeViolations(<GameLoop sessionId="tgreveal-1" />);
+  });
+
   it("failure panel (zero sanity) has no violations", async () => {
     const gameState: GameState = {
       ...createDefaultGameState(1, "char-f", "Klein"),
@@ -936,6 +1008,28 @@ describe("accessibility — stub pages", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Holdings" }));
     // Open the two-step delete confirm and re-check the live region + buttons.
     fireEvent.click(screen.getByRole("button", { name: /Delete Klein/ }));
+    await expectNoAxeViolationsInContainer(container);
+  });
+
+  it("character sheet at the Pillar apex (collapsible family kits) has no violations", async () => {
+    // A Pillar (above the sequences, PILLAR_SEQUENCE -1) of the Lord of Mysteries
+    // family (Fool): the Abilities section renders the collapsible own-pathway
+    // rung groups (CollapsibleAbilityGroup), the "Dominion" authority block, and
+    // a collapsible <details> per SIBLING family pathway (issue #210). The acting
+    // section is dropped at the apex. Exercises the new disclosure markup.
+    const gameState: GameState = {
+      ...createDefaultGameState(1, "char-pillar", "Klein"),
+      sequenceLevel: -1,
+    };
+    const session = createSession(gameState, "sheet-pillar", 1000);
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["sheet-pillar"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "sheet-pillar", serializeSession(session));
+    const { container } = render(<CharacterPage />);
+    await expectNoAxeViolationsInContainer(container);
+
+    // Expand a sibling family pathway's kit (collapsed by default) and re-check.
+    const familyToggle = screen.getAllByText(/Pathway$/)[0];
+    fireEvent.click(familyToggle);
     await expectNoAxeViolationsInContainer(container);
   });
 

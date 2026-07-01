@@ -16,7 +16,8 @@ import {
 import { effectiveSupport, requiredSupport } from "./anchors";
 import { uniquenessItemFor } from "./apotheosis";
 import { canAttemptApotheosis } from "./apotheosis";
-import { canAttemptPillarAscension } from "./pillars";
+import { canAttemptPillarAscension, PILLAR_SEQUENCE } from "./pillars";
+import { ascensionRiteReady } from "./ascension-rite";
 import { deserializeSession, serializeSession } from "./session";
 
 // Fool (1) belongs to the Lord of Mysteries Pillar family {1,7,8}; Justiciar (12)
@@ -163,6 +164,14 @@ describe("buildAdminCharacter", () => {
       requiredSupport(0),
     );
     expect(canAttemptApotheosis(session)).toBe(true);
+    // The apex ascent is a matured rite now — the endgame build seeds it fully
+    // formed (true-god tier) so it is poised to attempt immediately.
+    expect(session.ascensionRite).toEqual({
+      tier: "true-god",
+      pathwayId: FOOL,
+      fidelity: 1,
+    });
+    expect(ascensionRiteReady(session)).toBe(true);
   });
 
   it("poises a pillar-ready True God (Seq 0 + sibling Uniquenesses)", () => {
@@ -181,6 +190,12 @@ describe("buildAdminCharacter", () => {
       ).toBe(true);
     }
     expect(canAttemptPillarAscension(session)).toBe(true);
+    expect(session.ascensionRite).toEqual({
+      tier: "pillar",
+      pathwayId: FOOL,
+      fidelity: 1,
+    });
+    expect(ascensionRiteReady(session)).toBe(true);
   });
 
   it("falls back to apotheosis when the pathway has no Pillar family", () => {
@@ -193,6 +208,41 @@ describe("buildAdminCharacter", () => {
     expect(siblingPathwayIds(JUSTICIAR)).toHaveLength(0);
     expect(session.gameState.sequenceLevel).toBe(1);
     expect(canAttemptApotheosis(session)).toBe(true);
+  });
+
+  it("stands up an ascended True God (Seq 0) with no rite to attempt", () => {
+    const session = buildAdminCharacter({
+      pathwayId: FOOL,
+      sequenceLevel: 5,
+      digestion: "start",
+      endgame: "true-god",
+    });
+    expect(session.gameState.sequenceLevel).toBe(0);
+    // Already ascended — no ascension rite is seeded (nothing to attempt).
+    expect(session.ascensionRite).toBeUndefined();
+  });
+
+  it("stands up an enthroned Pillar (Above the Sequence) for a family pathway", () => {
+    const session = buildAdminCharacter({
+      pathwayId: FOOL,
+      sequenceLevel: 5,
+      digestion: "start",
+      endgame: "pillar-enthroned",
+    });
+    expect(session.gameState.sequenceLevel).toBe(PILLAR_SEQUENCE);
+    expect(session.ascensionRite).toBeUndefined();
+  });
+
+  it("falls back to an ascended True God when enthroning a non-Pillar pathway", () => {
+    const session = buildAdminCharacter({
+      pathwayId: JUSTICIAR,
+      sequenceLevel: 5,
+      digestion: "start",
+      endgame: "pillar-enthroned",
+    });
+    expect(siblingPathwayIds(JUSTICIAR)).toHaveLength(0);
+    expect(session.gameState.sequenceLevel).toBe(0);
+    expect(session.ascensionRite).toBeUndefined();
   });
 });
 

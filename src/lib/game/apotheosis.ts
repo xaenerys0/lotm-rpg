@@ -1,13 +1,27 @@
 import type { SessionFact } from "@/lib/ai";
 import { pickRandom } from "@/lib/lore/random";
 import type { Item } from "@/lib/types/rules";
-import { getCumulativeAbilities, getPathway, getSequence } from "@/lib/rules";
+import {
+  getCumulativeAbilities,
+  getCumulativeAbilityGroups,
+  getPathway,
+  getSequence,
+  pillarForPathway,
+  siblingPathwayIds,
+  type Pillar,
+  type SequenceAbilityGroup,
+} from "@/lib/rules";
 
 import { effectiveSupport, requiredSupport, anchorHighRisk } from "./anchors";
+import {
+  ascensionRiteFidelity,
+  ASCENSION_INFIDELITY_PENALTY,
+  ASCENSION_SUCCESS_FLOOR,
+} from "./ascension-rite";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
 import { hasItemMatching } from "./inventory";
-import { PILLAR_ABILITIES, PILLAR_ACTING, PILLAR_SEQUENCE, pillarName } from "./pillars";
+import { PILLAR_ABILITIES, PILLAR_SEQUENCE, pillarName } from "./pillars";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -104,38 +118,66 @@ export const TRUE_GOD_ABILITIES: readonly string[] = [
   "Confer or revoke blessings, oracles, and divine punishments",
 ];
 
-/** The acting method does not end at the throne — it tightens. */
-export const TRUE_GOD_ACTING: readonly string[] = [
-  "Be the god the faithful believe in — every public act is doctrine now",
-  "Never act beneath your station; a god who plays mortal frays",
-  "Answer faith with presence; a silent god breeds heresy and rivals",
-];
+/**
+ * The family-tagged, deduped ability NAMES across every pathway in a Pillar's
+ * family (issue #210). A Pillar sits above an entire god-family group, not one
+ * pathway, so its real kit is the union of all its constituent pathways' apex
+ * powers. Each name is tagged with the pathway it belongs to; an ability shared
+ * across sibling pathways (e.g. "Spirituality") appears once, the first family
+ * pathway winning the tag. `getCumulativeAbilities(pid, 0)` is the full apex kit
+ * (Seq 9 → 1, already deduped within a pathway).
+ */
+function familyAbilityNames(pillar: Pillar): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const pid of pillar.pathwayIds) {
+    const pathwayName = getPathway(pid)?.name ?? `Pathway ${pid}`;
+    for (const ability of getCumulativeAbilities(pid, 0)) {
+      if (seen.has(ability.name)) continue;
+      seen.add(ability.name);
+      out.push(`${ability.name} (${pathwayName})`);
+    }
+  }
+  return out;
+}
 
 /**
  * The ability and acting-requirement names to present for a character at this
- * sequence. Sequence 0 has no rules-engine `Sequence`, so a True God's
- * authority is framed here instead of resolving to an empty lookup — one place
- * for the True-God-aware derivation the prompt and UI both need.
+ * sequence. Sequence 0 (True God) and the Pillar tier (above the sequences) have
+ * no rules-engine `Sequence`, so their authority is framed here instead of
+ * resolving to an empty lookup — one place for the apex-aware derivation the
+ * prompt and combat both need.
  *
- * Abilities are **cumulative**: the list carries every power from the rungs the
- * character has climbed (the current Sequence up through Sequence 9), with the
- * earlier, now-enhanced powers tagged `(enhanced)` so the narrator knows the
- * Beyonder still wields them — strengthened — at the current rung. Acting
- * requirements stay scoped to the current Sequence: they describe the role
- * being digested now, not the roles already mastered.
+ * Abilities are **cumulative**: below the apex the list carries every power from
+ * the rungs the character has climbed (the current Sequence up through Sequence
+ * 9), with the earlier, now-enhanced powers tagged `(enhanced)`. At the apex the
+ * generic authority lines (`TRUE_GOD_ABILITIES` / `PILLAR_ABILITIES`) are kept as
+ * an overlay ON TOP of the pathway's real kit (issue #210): a True God surfaces
+ * its pathway's full apex abilities; a Pillar surfaces the deduped, family-tagged
+ * abilities of EVERY pathway in its god-family, so different families differ.
+ * Below the apex, acting requirements stay scoped to the current rung (the role
+ * being digested); at the apex there are none — a True God / Pillar has no rung
+ * to act into, so the acting list is empty (nothing to list on the sheet or in
+ * the prompt).
  */
 export function sequenceAbilities(
   pathwayId: number,
   level: number,
 ): { abilities: string[]; acting: string[] } {
-  // A Pillar (above the sequences, issue #99 Part B) has neither a `Sequence`
-  // nor a True God's domain-bound authority — its abilities are the authority of
-  // a cosmic role itself.
+  // A Pillar (above the sequences, issue #99 Part B) is the apex of an entire
+  // god-family: the authority lines overlay the real abilities of every pathway
+  // in the family (issue #210). No acting requirements above the sequences.
   if (level === PILLAR_SEQUENCE) {
-    return { abilities: [...PILLAR_ABILITIES], acting: [...PILLAR_ACTING] };
+    const pillar = pillarForPathway(pathwayId);
+    const family = pillar ? familyAbilityNames(pillar) : [];
+    return { abilities: [...PILLAR_ABILITIES, ...family], acting: [] };
   }
+  // A True God (Seq 0): the authority lines overlay the pathway's full cumulative
+  // apex kit. Plain names — at the apex every power is "enhanced", so the suffix
+  // would only be noise. No acting requirements at the throne.
   if (level === 0) {
-    return { abilities: [...TRUE_GOD_ABILITIES], acting: [...TRUE_GOD_ACTING] };
+    const apex = getCumulativeAbilities(pathwayId, 0).map((a) => a.name);
+    return { abilities: [...TRUE_GOD_ABILITIES, ...apex], acting: [] };
   }
   const seq = getSequence(pathwayId, level);
   return {
@@ -144,6 +186,42 @@ export function sequenceAbilities(
     ),
     acting: seq?.actingRequirements ?? [],
   };
+}
+
+/**
+ * The structured apex ability set the character sheet renders (issue #210). The
+ * sheet already shows the character's OWN pathway groups via
+ * `getCumulativeAbilityGroups`; this supplies the two things those groups omit —
+ * the cosmic-authority lines, and (for a Pillar) the sibling pathways' kits — so
+ * the sheet surfaces the same family kit the narrator prompt sees.
+ *
+ * - Pillar: `authority` = `PILLAR_ABILITIES`; `familyGroups` = one entry per
+ *   SIBLING pathway (the own pathway is already rendered by the sheet).
+ * - True God (Seq 0): `authority` = `TRUE_GOD_ABILITIES`; `familyGroups` = `[]`.
+ * - Below the apex: both empty (the sheet's own-pathway groups are the whole set).
+ */
+export interface ApexAbilityView {
+  authority: string[];
+  familyGroups: {
+    pathwayId: number;
+    pathwayName: string;
+    groups: SequenceAbilityGroup[];
+  }[];
+}
+
+export function apexAbilityView(pathwayId: number, level: number): ApexAbilityView {
+  if (level === PILLAR_SEQUENCE) {
+    const familyGroups = siblingPathwayIds(pathwayId).map((pid) => ({
+      pathwayId: pid,
+      pathwayName: getPathway(pid)?.name ?? `Pathway ${pid}`,
+      groups: getCumulativeAbilityGroups(pid, 0),
+    }));
+    return { authority: [...PILLAR_ABILITIES], familyGroups };
+  }
+  if (level === 0) {
+    return { authority: [...TRUE_GOD_ABILITIES], familyGroups: [] };
+  }
+  return { authority: [], familyGroups: [] };
 }
 
 /**
@@ -230,15 +308,23 @@ export function canAttemptApotheosis(session: GameSession): boolean {
 
 /**
  * Success odds once every requirement is met: strong but never certain. Anchor
- * surplus beyond the requirement and a fuller mind both steady the ascent.
+ * surplus beyond the requirement and a fuller mind both steady the ascent; how
+ * faithfully the rite of apotheosis has matured (`ascensionRiteFidelity`) drags
+ * it down when rushed — seizing the throne the instant the rite opens is dire but
+ * allowed, so the multi-turn rite is the natural path.
  */
 export function apotheosisSuccessChance(session: GameSession): number {
   const state = session.gameState;
   const support = session.anchorState ? effectiveSupport(session.anchorState) : 0;
   const surplus = Math.max(0, support - requiredSupport(0));
   const sanityRatio = state.maxSanity > 0 ? state.sanity / state.maxSanity : 0;
-  const chance = 0.6 + Math.min(0.15, surplus / 400) + sanityRatio * 0.2;
-  return Math.min(0.95, chance);
+  const fidelity = ascensionRiteFidelity(session);
+  const chance =
+    0.6 +
+    Math.min(0.15, surplus / 400) +
+    sanityRatio * 0.2 -
+    ASCENSION_INFIDELITY_PENALTY * (1 - fidelity);
+  return Math.max(ASCENSION_SUCCESS_FLOOR, Math.min(0.95, chance));
 }
 
 /** Shown once to a player who reaches Sequence 0 — and never explained. */

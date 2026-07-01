@@ -388,11 +388,18 @@ function ForgeCharacter() {
             onChange={(e) => setEndgame(e.target.value as AdminEndgame)}
           >
             <option value="none">None</option>
-            <option value="apotheosis">Apotheosis-ready (Seq 1, True God)</option>
-            <option value="pillar">Pillar-ready (Seq 0 → Above the Sequence)</option>
+            <option value="apotheosis">Apotheosis-ready (Seq 1, poised)</option>
+            <option value="pillar">Pillar-ready (Seq 0 True God, poised)</option>
+            <option value="true-god">True God — ascended (Seq 0)</option>
+            <option value="pillar-enthroned">
+              Pillar — enthroned (Above the Sequence)
+            </option>
           </select>
           <p className="mt-1 text-xs text-muted">
-            Apotheosis/pillar override the sequence and seed the Uniqueness + anchors.
+            The <em>-ready</em> builds override the sequence and seed the Uniqueness +
+            anchors + a matured rite (poised to attempt). The <em>ascended</em> builds
+            stand up the finished True God / Pillar so you can view the post-ascension
+            sheet and family kits directly.
           </p>
         </div>
 

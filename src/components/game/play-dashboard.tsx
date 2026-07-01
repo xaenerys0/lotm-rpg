@@ -413,8 +413,17 @@ export function PlayDashboard() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <p className="font-serif text-sm font-medium text-foreground/90">
-                        {seq?.name ?? "Unknown"}{" "}
-                        <span className="text-muted">(Seq. {s.sequenceLevel})</span>
+                        {/* Apex tiers (Seq 0 True God, Pillar) have no rules
+                            `Sequence`, so read their honorific + tier rather than
+                            "Unknown (Seq. 0/-1)". */}
+                        {s.sequenceLevel <= 0
+                          ? sequenceLabel(s.pathwayId, s.sequenceLevel)
+                          : (seq?.name ?? "Unknown")}{" "}
+                        <span className="text-muted">
+                          {s.sequenceLevel <= 0
+                            ? `(${sequenceClassificationFor(s.sequenceLevel)})`
+                            : `(Seq. ${s.sequenceLevel})`}
+                        </span>
                       </p>
                       <p className="text-xs text-muted">
                         {pathway?.name ?? "?"} pathway &middot; {s.location} &middot; Turn{" "}
