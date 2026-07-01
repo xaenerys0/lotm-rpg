@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { getSequence } from "@/lib/rules";
 import {
+  consecrateAnchor,
   createDefaultGameState,
   createSession,
+  emptyAnchorState,
   serializeSession,
   ACTIVE_SESSION_KEY,
   SESSION_INDEX_KEY,
@@ -14,28 +16,33 @@ import {
 // playwright.config.ts and seeded with a signed-in storageState). The game loop
 // is an authenticated screen, so it can't run in the public tier.
 //
-// Pathway switching (issue #211): a digested Beyonder at the canon threshold may
-// exchange into a neighbouring pathway (safe) or gamble on an unrelated one
-// (poison). We seed a Visionary (2) at Sequence 4 carrying the neighbouring Sun
-// (3) Sequence-4 potion and fully digested, so the climb cluster renders the
-// PathwaySwitchPanel with the exchange ready. (Confirming the exchange fires a
+// Pathway switching (issue #211): a switch is an advancement along a neighbouring
+// line — you drink the neighbour's NEXT-rung potion. We seed a Visionary (2) at
+// Sequence 5, fully digested, carrying the neighbouring Sun (3) Sequence-4 potion
+// (the next rung) with anchors held, so the climb cluster's PathwaySwitchPanel
+// offers the exchange into Sun, Sequence 4. (Confirming the exchange fires a
 // narrated turn that needs a provider, so this spec checks the surfaces.)
 
 function switchReadySession(id: string): GameSession {
   const sunPotion = getSequence(3, 4)?.prerequisiteItems ?? [];
+  let anchors = emptyAnchorState();
+  anchors = consecrateAnchor(anchors, { kind: "congregation", name: "The Flock" });
+  anchors = consecrateAnchor(anchors, { kind: "place", name: "A shrine" });
+  anchors = consecrateAnchor(anchors, { kind: "object", name: "A relic" });
   const base = createSession(
     {
       ...createDefaultGameState(2, `${id}-char`, "Klein Switch"),
-      sequenceLevel: 4,
+      sequenceLevel: 5,
       sanity: 100,
       maxSanity: 100,
       inventory: [...sunPotion],
-      digestion: { pathwayId: 2, sequenceLevel: 4, progress: 100, complete: true },
+      digestion: { pathwayId: 2, sequenceLevel: 5, progress: 100, complete: true },
     },
     id,
   );
   return {
     ...base,
+    anchorState: anchors,
     phase: "choices",
     turnCount: 1,
     currentNarrative: "Two roads open before you: climb, or exchange.",
@@ -68,10 +75,11 @@ test("the switch panel offers a ready neighbouring exchange and a gated poison o
 }) => {
   await seed(page, switchReadySession("e2e-switch-ready"));
 
-  // The exchange panel renders in the climb cluster.
-  await expect(
-    page.getByRole("heading", { name: /Exchange your pathway/ }),
-  ).toBeVisible();
+  // The exchange panel is a collapsed, advanced disclosure in the climb cluster —
+  // switching is a rare choice, so it stays out of the way until opened.
+  const switchSummary = page.getByText("Exchange your pathway", { exact: false });
+  await expect(switchSummary).toBeVisible();
+  await switchSummary.click();
 
   // Sun is the prepared neighbour: its card shows, and — every requirement met —
   // the two-step "Prepare to exchange" affordance is offered.

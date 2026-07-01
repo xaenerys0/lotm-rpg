@@ -1,4 +1,10 @@
-import { getPathway } from "@/lib/rules";
+import {
+  getCumulativeAbilities,
+  getCumulativeAbilityGroups,
+  getPathway,
+  type CumulativeAbility,
+  type SequenceAbilityGroup,
+} from "@/lib/rules";
 import type { CombatAbility } from "@/lib/types/combat";
 
 import { sequenceAbilities } from "./apotheosis";
@@ -15,27 +21,80 @@ import type { GameSession } from "./types";
 // abilities kept from every pathway switched away from.
 // ---------------------------------------------------------------------------
 //
-// Canon: a successful switch keeps the previous pathway's powers "fused together
-// with the powers provided by their current, new pathway potion … a certain level
-// of mutation, creating unique and bizarre powers." The current pathway's kit is
-// the apex-aware `sequenceAbilities`/`combatKitFor` primitive (unchanged); fusion
-// layers the frozen retained abilities on top, tagged `(fused)` — the mutation
-// flavour, mirroring the existing `(enhanced)` suffix.
+// Canon: a switch is an advancement along a new line — the Beyonder keeps ALL of
+// their previous pathway's powers "fused together with the powers provided by
+// their current, new pathway potion … a certain level of mutation." But they join
+// the new pathway partway down and never digested its weaker rungs, so "missing
+// characteristic of lower sequence will lead to lost of some of the corresponding
+// abilities."
 //
-// Dedup: the current pathway wins; among priors the most-recent switch wins
-// (`fusedRetainedAbilities`). A save that has never switched carries no lineage,
-// so every helper here returns the base kit unchanged (byte-identical to before).
+// Two derivations combine:
+// - The CURRENT pathway kit, CAPPED to the rungs the character legitimately holds
+//   (`heldCumulativeAbilities` — `sourceLevel <= currentJoinSequence`), so the
+//   weaker rungs skipped by joining partway down are absent (the canon loss).
+// - The frozen retained kit of every prior pathway (`fusedRetainedAbilities`),
+//   tagged `(fused)` — the mutation flavour, mirroring the `(enhanced)` suffix.
 //
-// Pure. The two engine call sites (the narrator prompt and combat) swap their
-// base derivation for the fused one; the character sheet renders the retained
-// groups.
+// Dedup: the current pathway wins; among priors the most-recent switch wins. A
+// save that has never switched has no cap and no retained kit, so every helper
+// returns the base kit unchanged (byte-identical to before).
+//
+// Pure. The narrator prompt, combat, and the character sheet all route through
+// these helpers.
 
 /** The `(fused)` mutation tag, analogous to the `(enhanced)` suffix. */
 const FUSED_TAG = "(fused)";
 
+/** The weakest (highest-numbered) rung — the "no cap" sentinel for an unswitched save. */
+const UNCAPPED_SEQUENCE = 9;
+
 /** Strip a trailing display suffix so names dedup on their bare form. */
 function bareName(name: string): string {
   return name.replace(/\s*\((?:enhanced|fused)\)$/, "");
+}
+
+/**
+ * The highest rung of the CURRENT pathway the character legitimately holds. After
+ * a switch they joined the current pathway one rung below where they left the last
+ * one (`lastSwitch.atSequence - 1`), so any current-pathway ability sourced at a
+ * WEAKER (higher-numbered) rung was never digested. `9` (no cap) for a save that
+ * never switched. Pure.
+ */
+export function currentJoinSequence(session: GameSession): number {
+  const switches = session.pathwayLineage?.switches ?? [];
+  if (switches.length === 0) return UNCAPPED_SEQUENCE;
+  return switches[switches.length - 1].atSequence - 1;
+}
+
+/**
+ * The current pathway's cumulative abilities capped to the rungs actually held
+ * (`sourceLevel <= currentJoinSequence`) — the weaker rungs skipped by joining a
+ * pathway partway down are dropped (the canon switch loss). Identical to the plain
+ * cumulative kit for a save that never switched. Pure.
+ */
+export function heldCumulativeAbilities(session: GameSession): CumulativeAbility[] {
+  const cap = currentJoinSequence(session);
+  return getCumulativeAbilities(
+    session.gameState.pathwayId,
+    session.gameState.sequenceLevel,
+  ).filter((ability) => ability.sourceLevel <= cap);
+}
+
+/**
+ * The current pathway's ability groups (per originating rung) the character sheet
+ * renders, capped to the rungs actually held. Identical to the plain grouped kit
+ * for a save that never switched. Above the sequences (apex) the cap is NOT
+ * applied — matching `fusedAbilityNames`/`fusedCombatKit`, so the sheet and the
+ * prompt/combat never disagree for a switched-then-ascended character. Pure.
+ */
+export function heldAbilityGroups(session: GameSession): SequenceAbilityGroup[] {
+  const groups = getCumulativeAbilityGroups(
+    session.gameState.pathwayId,
+    session.gameState.sequenceLevel,
+  );
+  if (session.gameState.sequenceLevel <= 0) return groups;
+  const cap = currentJoinSequence(session);
+  return groups.filter((group) => group.level <= cap);
 }
 
 /**
@@ -46,10 +105,16 @@ function bareName(name: string): string {
  * character has never switched. Pure.
  */
 export function fusedAbilityNames(session: GameSession): string[] {
-  const { abilities } = sequenceAbilities(
-    session.gameState.pathwayId,
-    session.gameState.sequenceLevel,
-  );
+  // Below the apex the base is the join-capped current kit (so a switched
+  // character lacks the new pathway's weaker rungs); at the apex the True-God /
+  // Pillar overlays stand (a rare switch-then-ascend edge left uncapped).
+  const abilities =
+    session.gameState.sequenceLevel <= 0
+      ? sequenceAbilities(session.gameState.pathwayId, session.gameState.sequenceLevel)
+          .abilities
+      : heldCumulativeAbilities(session).map((a) =>
+          a.enhanced ? `${a.name} (enhanced)` : a.name,
+        );
   const retained = fusedRetainedAbilities(session.pathwayLineage);
   if (retained.length === 0) return abilities;
 
@@ -71,7 +136,14 @@ export function fusedAbilityNames(session: GameSession): string[] {
  * switched. Pure.
  */
 export function fusedCombatKit(session: GameSession): CombatAbility[] {
-  const base = combatKitFor(session.gameState.pathwayId, session.gameState.sequenceLevel);
+  // Below the apex, cap the base kit to the rungs actually held (the switch loss);
+  // at the apex fall back to the plain kit (a rare switch-then-ascend edge).
+  const base =
+    session.gameState.sequenceLevel <= 0
+      ? combatKitFor(session.gameState.pathwayId, session.gameState.sequenceLevel)
+      : heldCumulativeAbilities(session).map((a) =>
+          combatAbilityFrom(a, session.gameState.pathwayId),
+        );
   const retained = fusedRetainedAbilities(session.pathwayLineage);
   if (retained.length === 0) return base;
 

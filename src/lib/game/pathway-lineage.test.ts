@@ -26,23 +26,13 @@ function switchEntry(overrides: Partial<PathwaySwitch> = {}): PathwaySwitch {
 }
 
 describe("retainedAbilitiesFor", () => {
-  it("keeps only the abilities sourced ABOVE the switch rung (the loss rule)", () => {
+  it("keeps the FULL kit held on the old pathway (canon: keep all previous powers)", () => {
     const retained = retainedAbilitiesFor(2, 4);
-    expect(retained.length).toBeGreaterThan(0);
-    // Every kept ability was earned at a shallower rung than the switch (Seq > 4).
-    expect(retained.every((a) => a.sourceLevel > 4)).toBe(true);
-    // None sourced at the switch rung itself survives — that characteristic is lost.
-    expect(retained.some((a) => a.sourceLevel === 4)).toBe(false);
-  });
-
-  it("drops exactly the switch-rung abilities from the full cumulative kit", () => {
     const full = getCumulativeAbilities(2, 4);
-    const retained = retainedAbilitiesFor(2, 4);
-    const droppedNames = full.filter((a) => a.sourceLevel === 4).map((a) => a.name);
-    expect(droppedNames.length).toBeGreaterThan(0);
-    for (const name of droppedNames) {
-      expect(retained.some((a) => a.name === name)).toBe(false);
-    }
+    expect(retained.length).toBe(full.length);
+    expect(retained.map((a) => a.name).sort()).toEqual(full.map((a) => a.name).sort());
+    // Nothing is dropped — including the rung the character left from (Seq 4).
+    expect(retained.some((a) => a.sourceLevel === 4)).toBe(true);
   });
 
   it("carries name/description/type/sourceLevel through", () => {

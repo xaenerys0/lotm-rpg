@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { getSequence } from "@/lib/rules";
 
+import { consecrateAnchor, emptyAnchorState } from "./anchors";
 import {
   attemptPathwaySwitch,
   canAttemptSwitch,
@@ -10,24 +11,35 @@ import {
   switchHighRisk,
   switchRelation,
   switchRequirements,
+  switchTargetSequence,
   switchUnlockSequence,
 } from "./pathway-switch";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
 
-// A character standing on `sequenceLevel` of `currentPathwayId`, fully digested,
-// carrying every ingredient for the TARGET pathway's same-rung potion — poised to
-// switch. Ingredients are read from the rules engine so the fixture stays correct.
+// Anchors holding past the Saint/Angel requirement — a switch ADVANCES into the
+// Saint tier (target Seq ≤ 4), which needs them, exactly like a normal climb.
+function withAnchors(session: GameSession): GameSession {
+  let anchors = emptyAnchorState();
+  anchors = consecrateAnchor(anchors, { kind: "congregation", name: "The Flock" });
+  anchors = consecrateAnchor(anchors, { kind: "place", name: "A shrine" });
+  anchors = consecrateAnchor(anchors, { kind: "object", name: "A relic" });
+  return { ...session, anchorState: anchors };
+}
+
+// A character on `sequenceLevel` of `currentPathwayId`, fully digested, carrying
+// every ingredient for the TARGET pathway's NEXT-rung potion (a switch advances
+// one rung), with anchors held. Ingredients read from the rules engine.
 function readyToSwitch(
   sequenceLevel: number,
   currentPathwayId: number,
   targetPathwayId: number,
+  anchors = true,
 ): GameSession {
-  const base = createDefaultGameState(currentPathwayId, "char-1", "Klein Moretti");
-  const potionItems =
-    getSequence(targetPathwayId, sequenceLevel)?.prerequisiteItems ?? [];
+  const target = sequenceLevel - 1;
+  const potionItems = getSequence(targetPathwayId, target)?.prerequisiteItems ?? [];
   const gameState = {
-    ...base,
+    ...createDefaultGameState(currentPathwayId, "char-1", "Klein Moretti"),
     sequenceLevel,
     sanity: 100,
     maxSanity: 100,
@@ -39,186 +51,170 @@ function readyToSwitch(
       complete: true,
     },
   };
-  return createSession(gameState, "session-1");
+  const session = createSession(gameState, "session-1");
+  return anchors ? withAnchors(session) : session;
 }
 
-describe("switchUnlockSequence", () => {
-  it("is Sequence 3 for the Lord of Mysteries group, 4 otherwise", () => {
+describe("switchUnlockSequence / switchTargetSequence", () => {
+  it("the target threshold is Sequence 3 for Mysteries, 4 otherwise", () => {
     expect(switchUnlockSequence(1)).toBe(3); // Fool (Mysteries)
     expect(switchUnlockSequence(7)).toBe(3); // Door (Mysteries)
-    expect(switchUnlockSequence(8)).toBe(3); // Error (Mysteries)
     expect(switchUnlockSequence(2)).toBe(4); // Visionary (God Almighty)
-    expect(switchUnlockSequence(4)).toBe(4); // Death (Eternal Darkness)
+  });
+
+  it("a switch advances one rung (target = current - 1)", () => {
+    expect(switchTargetSequence(readyToSwitch(5, 2, 3))).toBe(4);
+    expect(switchTargetSequence(readyToSwitch(4, 1, 8))).toBe(3);
   });
 });
 
 describe("switchRelation", () => {
-  it("is neighboring for adjacent same-group pathways", () => {
-    expect(switchRelation(1, 8)).toBe("neighboring"); // Fool ↔ Error
+  it("is neighboring for adjacent same-group pathways, unrelated otherwise", () => {
+    expect(switchRelation(7, 1)).toBe("neighboring"); // Door ↔ Fool
     expect(switchRelation(2, 3)).toBe("neighboring"); // Visionary ↔ Sun
-  });
-
-  it("is unrelated for non-adjacent pathways", () => {
-    expect(switchRelation(1, 4)).toBe("unrelated"); // Fool → Death
     expect(switchRelation(2, 4)).toBe("unrelated"); // Visionary → Death
   });
 });
 
 describe("neighboringSwitchTargets", () => {
   it("lists the current pathway's adjacent pathways", () => {
-    const session = readyToSwitch(4, 1, 8);
-    const targets = neighboringSwitchTargets(session);
-    expect(targets).toContain(7);
-    expect(targets).toContain(8);
-    expect(targets).not.toContain(1);
+    const targets = neighboringSwitchTargets(readyToSwitch(4, 7, 1)); // Door
+    expect(targets).toContain(1); // Fool
+    expect(targets).toContain(8); // Error
+    expect(targets).not.toContain(7);
   });
 
-  it("is empty for a pathway with no neighbour (Wheel of Fortune)", () => {
-    const session = readyToSwitch(4, 20, 20);
-    expect(neighboringSwitchTargets(session)).toEqual([]);
-  });
-
-  it("is empty for an unknown current pathway", () => {
-    const session = readyToSwitch(4, 2, 3);
-    const broken = { ...session, gameState: { ...session.gameState, pathwayId: 999 } };
-    expect(neighboringSwitchTargets(broken)).toEqual([]);
+  it("is empty for a pathway with no neighbour (Wheel of Fortune) or an unknown one", () => {
+    expect(neighboringSwitchTargets(readyToSwitch(4, 20, 20))).toEqual([]);
+    const broken = readyToSwitch(4, 2, 3);
+    expect(
+      neighboringSwitchTargets({
+        ...broken,
+        gameState: { ...broken.gameState, pathwayId: 999 },
+      }),
+    ).toEqual([]);
   });
 });
 
 describe("switchRequirements / canAttemptSwitch", () => {
-  it("is fully met for a prepared neighboring switch at the threshold", () => {
-    const session = readyToSwitch(4, 2, 3); // Visionary → Sun at Seq 4 (threshold 4)
-    expect(switchRequirements(session, 3).every((r) => r.met)).toBe(true);
-    expect(canAttemptSwitch(session, 3)).toBe(true);
+  it("is fully met for a prepared neighboring switch advancing into the threshold rung", () => {
+    // Door Seq 4 → Fool Seq 3 (Scholar of Yore): the first safe Mysteries rung.
+    const session = readyToSwitch(4, 7, 1);
+    expect(switchRequirements(session, 1).every((r) => r.met)).toBe(true);
+    expect(canAttemptSwitch(session, 1)).toBe(true);
   });
 
-  it("enforces the neighboring threshold (Seq 4 general)", () => {
-    const session = readyToSwitch(5, 2, 3); // Seq 5 is above the general threshold
-    const threshold = switchRequirements(session, 3).find((r) => r.id === "threshold");
+  it("gates a neighboring switch on the TARGET rung, not the current one", () => {
+    // Visionary Seq 6 → target Seq 5 is above the general threshold (4).
+    const tooShallow = readyToSwitch(6, 2, 3);
+    const threshold = switchRequirements(tooShallow, 3).find((r) => r.id === "threshold");
     expect(threshold?.met).toBe(false);
-    expect(canAttemptSwitch(session, 3)).toBe(false);
+    expect(canAttemptSwitch(tooShallow, 3)).toBe(false);
+    // Visionary Seq 5 → target Seq 4 is exactly the first allowed rung.
+    expect(canAttemptSwitch(readyToSwitch(5, 2, 3), 3)).toBe(true);
   });
 
-  it("enforces the deeper Mysteries threshold (Seq 3)", () => {
-    const atFour = readyToSwitch(4, 1, 8); // Fool → Error at Seq 4 — too shallow
-    expect(canAttemptSwitch(atFour, 8)).toBe(false);
-    const atThree = readyToSwitch(3, 1, 8);
-    expect(canAttemptSwitch(atThree, 8)).toBe(true);
+  it("enforces the deeper Mysteries target threshold (Seq 3)", () => {
+    // Fool Seq 5 → target Seq 4 is too shallow for Mysteries (needs ≤ 3).
+    expect(canAttemptSwitch(readyToSwitch(5, 1, 8), 8)).toBe(false);
+    // Fool Seq 4 → target Seq 3 is the first allowed Mysteries rung.
+    expect(canAttemptSwitch(readyToSwitch(4, 1, 8), 8)).toBe(true);
   });
 
   it("has NO threshold gate for an unrelated (poison) switch", () => {
-    const session = readyToSwitch(5, 2, 4); // Visionary → Death, unrelated, Seq 5
+    const session = readyToSwitch(6, 2, 4); // Visionary → Death, unrelated
     const ids = switchRequirements(session, 4).map((r) => r.id);
     expect(ids).not.toContain("threshold");
     expect(canAttemptSwitch(session, 4)).toBe(true);
   });
 
+  it("requires anchors when advancing into the Saint tier", () => {
+    const noAnchors = readyToSwitch(4, 7, 1, false); // no anchorState
+    const anchors = switchRequirements(noAnchors, 1).find((r) => r.id === "anchors");
+    expect(anchors?.met).toBe(false);
+    expect(canAttemptSwitch(noAnchors, 1)).toBe(false);
+  });
+
   it("rejects the apex, a same/unknown target, missing potion, undigested, low sanity", () => {
-    // Apex (Seq 1) cannot switch.
     const apex = readyToSwitch(1, 2, 3);
-    expect(canAttemptSwitch(apex, 3)).toBe(false);
-    // Same pathway target.
-    const same = readyToSwitch(4, 2, 3);
-    expect(canAttemptSwitch(same, 2)).toBe(false);
-    // Unknown target pathway.
-    expect(canAttemptSwitch(same, 999)).toBe(false);
-    // Missing the cross-pathway potion.
+    expect(canAttemptSwitch(apex, 3)).toBe(false); // Seq 1 cannot climb
+    const base = readyToSwitch(5, 2, 3);
+    expect(canAttemptSwitch(base, 2)).toBe(false); // same pathway
+    expect(canAttemptSwitch(base, 999)).toBe(false); // unknown pathway
     expect(
-      canAttemptSwitch({ ...same, gameState: { ...same.gameState, inventory: [] } }, 3),
-    ).toBe(false);
-    // Undigested current potion.
+      canAttemptSwitch({ ...base, gameState: { ...base.gameState, inventory: [] } }, 3),
+    ).toBe(false); // missing potion
     expect(
       canAttemptSwitch(
         {
-          ...same,
+          ...base,
           gameState: {
-            ...same.gameState,
-            digestion: { ...same.gameState.digestion!, complete: false },
+            ...base.gameState,
+            digestion: { ...base.gameState.digestion!, complete: false },
           },
         },
         3,
       ),
-    ).toBe(false);
-    // Frayed mind below the sanity floor.
+    ).toBe(false); // undigested
     expect(
-      canAttemptSwitch({ ...same, gameState: { ...same.gameState, sanity: 5 } }, 3),
-    ).toBe(false);
+      canAttemptSwitch({ ...base, gameState: { ...base.gameState, sanity: 5 } }, 3),
+    ).toBe(false); // frayed mind
   });
 });
 
 describe("pathwaySwitchSuccessChance", () => {
-  it("keeps a neighboring switch strong (0.4–0.9)", () => {
-    const session = readyToSwitch(4, 2, 3);
-    const chance = pathwaySwitchSuccessChance(session, 3);
-    expect(chance).toBeGreaterThanOrEqual(0.4);
-    expect(chance).toBeLessThanOrEqual(0.9);
-  });
-
-  it("caps an unrelated (poison) switch low (0.05–0.4)", () => {
-    const session = readyToSwitch(4, 2, 4);
-    const chance = pathwaySwitchSuccessChance(session, 4);
-    expect(chance).toBeGreaterThanOrEqual(0.05);
-    expect(chance).toBeLessThanOrEqual(0.4);
-  });
-
-  it("makes a neighboring switch likelier than a poison one at equal sanity", () => {
-    const session = readyToSwitch(4, 2, 3);
-    expect(pathwaySwitchSuccessChance(session, 3)).toBeGreaterThan(
-      pathwaySwitchSuccessChance(session, 4),
-    );
+  it("keeps a neighboring switch strong (0.4–0.9), a poison one low (0.05–0.4)", () => {
+    const session = readyToSwitch(5, 2, 3);
+    const neighbor = pathwaySwitchSuccessChance(session, 3);
+    const poison = pathwaySwitchSuccessChance(readyToSwitch(5, 2, 4), 4);
+    expect(neighbor).toBeGreaterThanOrEqual(0.4);
+    expect(neighbor).toBeLessThanOrEqual(0.9);
+    expect(poison).toBeGreaterThanOrEqual(0.05);
+    expect(poison).toBeLessThanOrEqual(0.4);
+    expect(neighbor).toBeGreaterThan(poison);
   });
 
   it("handles a zero-max-sanity save without dividing by zero", () => {
-    const session = readyToSwitch(4, 2, 3);
+    const session = readyToSwitch(5, 2, 3);
     const broken = { ...session, gameState: { ...session.gameState, maxSanity: 0 } };
     expect(pathwaySwitchSuccessChance(broken, 3)).toBeGreaterThanOrEqual(0.4);
   });
 });
 
 describe("switchHighRisk", () => {
-  it("is always true for an unrelated (poison) switch", () => {
-    const session = readyToSwitch(4, 2, 4);
-    expect(switchHighRisk(session, "unrelated")).toBe(true);
-  });
-
-  it("is false for a neighboring switch with a steady mind, true when frayed", () => {
-    const session = readyToSwitch(4, 2, 3);
-    expect(switchHighRisk(session, "neighboring")).toBe(false);
-    const frayed = { ...session, gameState: { ...session.gameState, sanity: 5 } };
-    expect(switchHighRisk(frayed, "neighboring")).toBe(true);
+  it("is true only for a poison switch (a neighbouring switch is never eligible while frayed)", () => {
+    expect(switchHighRisk("unrelated")).toBe(true);
+    expect(switchHighRisk("neighboring")).toBe(false);
   });
 });
 
 describe("attemptPathwaySwitch", () => {
-  it("adopts the new pathway, keeps the rung, fuses retained powers, consumes the potion", () => {
-    const session = readyToSwitch(4, 2, 3);
-    const result = attemptPathwaySwitch(session, 3, () => 0); // always succeeds
+  it("ADVANCES a rung into the new pathway, fuses the old kit, consumes the potion", () => {
+    const session = readyToSwitch(5, 2, 3); // Visionary Seq 5 → Sun Seq 4
+    const result = attemptPathwaySwitch(session, 3, () => 0);
     expect(result.outcome).toBe("switched");
     if (result.outcome !== "switched") return;
-    expect(result.session.gameState.pathwayId).toBe(3);
-    expect(result.session.gameState.sequenceLevel).toBe(4); // rung unchanged
-    // The cross-pathway potion's ingredients are consumed.
-    expect(result.session.gameState.inventory).toHaveLength(0);
-    // Digestion re-seeds for the new pathway, fresh.
+    expect(result.session.gameState.pathwayId).toBe(3); // adopted Sun
+    expect(result.session.gameState.sequenceLevel).toBe(4); // ADVANCED 5 → 4
+    expect(result.newSequenceLevel).toBe(4);
+    expect(result.session.gameState.inventory).toHaveLength(0); // potion consumed
     expect(result.session.gameState.digestion?.pathwayId).toBe(3);
     expect(result.session.gameState.digestion?.complete).toBe(false);
-    // The outgoing pathway is recorded with a frozen retained snapshot.
+    // The outgoing pathway is recorded with its FULL frozen kit (left at Seq 5).
     const [entry] = result.session.pathwayLineage!.switches;
     expect(entry.fromPathwayId).toBe(2);
-    expect(entry.atSequence).toBe(4);
+    expect(entry.atSequence).toBe(5);
     expect(entry.kind).toBe("neighboring");
-    expect(entry.retained.length).toBeGreaterThan(0);
-    expect(entry.retained.every((a) => a.sourceLevel > 4)).toBe(true);
-    // Sanity drained; a memory fact recorded.
+    expect(entry.retained.some((a) => a.sourceLevel === 5)).toBe(true);
     expect(result.session.gameState.sanity).toBeLessThan(100);
     expect(result.session.memory.sessionFacts.length).toBeGreaterThan(
       session.memory.sessionFacts.length,
     );
   });
 
-  it("drains more sanity for a poison (unrelated) switch than a neighboring one", () => {
-    const neighbor = attemptPathwaySwitch(readyToSwitch(4, 2, 3), 3, () => 0);
-    const poison = attemptPathwaySwitch(readyToSwitch(4, 2, 4), 4, () => 0);
+  it("drains more sanity for a poison switch than a neighboring one", () => {
+    const neighbor = attemptPathwaySwitch(readyToSwitch(5, 2, 3), 3, () => 0);
+    const poison = attemptPathwaySwitch(readyToSwitch(5, 2, 4), 4, () => 0);
     if (neighbor.outcome !== "switched" || poison.outcome !== "switched") {
       throw new Error("expected both to succeed");
     }
@@ -227,21 +223,13 @@ describe("attemptPathwaySwitch", () => {
     );
   });
 
-  it("resolves a failed switch as a loss of control", () => {
-    const session = readyToSwitch(4, 2, 3);
-    const result = attemptPathwaySwitch(session, 3, () => 1); // always fails
-    expect(result.outcome).toBe("lost-control");
-    if (result.outcome !== "lost-control") return;
-    expect(result.verdict.cause).toBe("loss-of-control");
-  });
-
-  it("makes a failed poison switch high-risk (escalated) versus a neighboring one", () => {
-    // At a Saint rung a high-risk loss of control escalates in severity.
-    const neighbor = attemptPathwaySwitch(readyToSwitch(4, 2, 3), 3, () => 1);
-    const poison = attemptPathwaySwitch(readyToSwitch(4, 2, 4), 4, () => 1);
+  it("resolves a failed switch as a loss of control (poison escalated vs neighboring)", () => {
+    const neighbor = attemptPathwaySwitch(readyToSwitch(5, 2, 3), 3, () => 1);
+    const poison = attemptPathwaySwitch(readyToSwitch(5, 2, 4), 4, () => 1);
     if (neighbor.outcome !== "lost-control" || poison.outcome !== "lost-control") {
       throw new Error("expected both to fail");
     }
+    expect(neighbor.verdict.cause).toBe("loss-of-control");
     const order = ["setback", "transformation", "fatal"];
     expect(order.indexOf(poison.verdict.severity)).toBeGreaterThanOrEqual(
       order.indexOf(neighbor.verdict.severity),
@@ -249,7 +237,7 @@ describe("attemptPathwaySwitch", () => {
   });
 
   it("treats a flagrantly ineligible attempt as a high-risk loss of control", () => {
-    const session = readyToSwitch(4, 2, 3);
+    const session = readyToSwitch(5, 2, 3);
     const undigested = {
       ...session,
       gameState: {
@@ -257,28 +245,22 @@ describe("attemptPathwaySwitch", () => {
         digestion: { ...session.gameState.digestion!, complete: false },
       },
     };
-    const result = attemptPathwaySwitch(undigested, 3, () => 0);
-    expect(result.outcome).toBe("lost-control");
+    expect(attemptPathwaySwitch(undigested, 3, () => 0).outcome).toBe("lost-control");
   });
 
   it("sheds the old pathway's ritual / formula / hunt pursuits on a successful switch", () => {
-    const session = readyToSwitch(4, 2, 3);
+    const session = readyToSwitch(5, 2, 3);
     const withPursuits: GameSession = {
       ...session,
-      ritualState: { pathwayId: 2, targetSeq: 3, fidelity: 0.5 },
+      ritualState: { pathwayId: 2, targetSeq: 4, fidelity: 0.5 },
       formulaPursuit: {
         targetItemName: "Old Formula",
-        targetSeq: 3,
+        targetSeq: 4,
         turnsRemaining: 2,
         totalTurns: 4,
       },
       hunts: [
-        {
-          targetItemName: "Old Characteristic",
-          targetSeq: 3,
-          turnsRemaining: 1,
-          totalTurns: 3,
-        },
+        { targetItemName: "Old Char", targetSeq: 4, turnsRemaining: 1, totalTurns: 3 },
       ],
     };
     const result = attemptPathwaySwitch(withPursuits, 3, () => 0);
@@ -289,7 +271,7 @@ describe("attemptPathwaySwitch", () => {
   });
 
   it("does not mutate the input session", () => {
-    const session = readyToSwitch(4, 2, 3);
+    const session = readyToSwitch(5, 2, 3);
     const before = JSON.stringify(session);
     attemptPathwaySwitch(session, 3, () => 0);
     expect(JSON.stringify(session)).toBe(before);

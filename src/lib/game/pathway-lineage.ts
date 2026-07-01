@@ -40,7 +40,7 @@ export interface RetainedAbility {
 export interface PathwaySwitch {
   /** The pathway left behind. */
   fromPathwayId: number;
-  /** The rung the switch happened at (unchanged by the switch itself). */
+  /** The sequence the character stood on when they LEFT the old pathway. */
   atSequence: number;
   /** Whether the target was an adjacent (safe) or unrelated (poison) pathway. */
   kind: "neighboring" | "unrelated";
@@ -64,27 +64,25 @@ export function hasSwitchedPathways(session: GameSession): boolean {
 }
 
 /**
- * The abilities retained from `fromPathwayId` when switching away at rung
- * `atSequence`. Canon: a switch keeps the previous pathway's powers, but the
- * "missing characteristic of lower sequence" costs "some of the corresponding
- * abilities." We model that deterministically: the character climbed `A` from
- * Seq 9 down to `atSequence`, so its earned abilities are
- * `getCumulativeAbilities(A, atSequence)`; the ones sourced at the switch rung
- * ITSELF (the deepest characteristic, no longer carried forward) are dropped, and
- * the shallower rungs are kept. Pure — no randomness, identical every call.
+ * The abilities retained from `fromPathwayId` when the character LEAVES it at
+ * rung `atSequence`. Canon: a successful switch "keep[s] all of their powers from
+ * the previous Pathway" — so this is the FULL kit the character had on the old
+ * pathway (every rung Seq 9 → `atSequence`), frozen. The canon "missing
+ * characteristic of lower sequence → lost abilities" acts on the NEW pathway
+ * instead (the character joins it partway down and never digested its weaker
+ * rungs — see `currentJoinSequence`/`heldCumulativeAbilities` in
+ * `pathway-fusion.ts`), not by trimming what is kept from the old one. Pure.
  */
 export function retainedAbilitiesFor(
   fromPathwayId: number,
   atSequence: number,
 ): RetainedAbility[] {
-  return getCumulativeAbilities(fromPathwayId, atSequence)
-    .filter((ability) => ability.sourceLevel > atSequence)
-    .map((ability) => ({
-      name: ability.name,
-      description: ability.description,
-      type: ability.type,
-      sourceLevel: ability.sourceLevel,
-    }));
+  return getCumulativeAbilities(fromPathwayId, atSequence).map((ability) => ({
+    name: ability.name,
+    description: ability.description,
+    type: ability.type,
+    sourceLevel: ability.sourceLevel,
+  }));
 }
 
 /**

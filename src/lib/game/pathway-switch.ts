@@ -6,7 +6,12 @@ import {
   getSequence,
 } from "@/lib/rules";
 
-import { ADVANCEMENT_SANITY_RATIO, isAdvanceableSequence } from "./advancement";
+import {
+  ADVANCEMENT_SANITY_RATIO,
+  isAdvanceableSequence,
+  targetSequence,
+} from "./advancement";
+import { anchorsRelevant, effectiveSupport, requiredSupport } from "./anchors";
 import { evaluateFailure, type FailureVerdict } from "./death";
 import { createDigestionState } from "./digestion";
 import { clearFormulaPursuit } from "./formula-pursuit";
@@ -21,27 +26,37 @@ import type { GameSession } from "./types";
 import { applySanityImpact } from "./world-state";
 
 // ---------------------------------------------------------------------------
-// Pathway switching (issue #211) — exchanging one pathway for another.
+// Pathway switching (issue #211) — advancing along a NEIGHBOURING line.
 // ---------------------------------------------------------------------------
 //
 // Canon (wiki):
+// - A switch is an ADVANCEMENT taken along a different line: instead of drinking
+//   your own pathway's NEXT potion you drink a neighbouring pathway's next potion,
+//   climbing one rung AND changing pathways in a single step ("the powers gained
+//   from the new pathway will depend on the set of characteristic that is used to
+//   advance").
 // - "High-Sequence Beyonders can exchange pathways with similar pathways starting
 //   at Sequence 4. The only exception is for the pathways of the Lord of Mysteries
-//   group, which can only be exchanged starting at Sequence 3."
+//   group, which can only be exchanged starting at Sequence 3." — i.e. the FIRST
+//   allowed switch lands you at Sequence 4 (Sequence 3 for the Mysteries group),
+//   so the TARGET rung must be Seq ≤ 4 (≤ 3 for Mysteries).
 // - A neighbouring (adjacent, same Above-the-Sequence group) switch is the safe
 //   path — no loss of control, no madness. An unrelated pathway is "akin to taking
 //   poison, where the best outcome is a half-mad state" (Roselle Gustav is the
 //   survivable precedent).
-// - On success the Beyonder keeps their previous powers, fused with the new
-//   pathway's — modelled in `pathway-lineage.ts`.
+// - On success the Beyonder keeps ALL of their previous pathway's powers, fused
+//   with the new pathway's potion — but they join the new pathway partway down and
+//   never digested its weaker rungs, so "missing characteristic of lower sequence
+//   will lead to lost of some of the corresponding abilities" (modelled by the
+//   join-sequence cap in `pathway-fusion.ts`).
 //
-// The engine — never the AI — owns the outcome. A successful switch rewrites
-// `gameState.pathwayId` to the NEW pathway (so future advancement climbs it),
-// keeps the rung, records the outgoing pathway + its retained abilities, re-seeds
-// digestion, consumes the cross-pathway potion, sheds the old pathway's
-// ritual/formula/hunt pursuits, and drains sanity (heavily for the poison). A
-// failed switch is a loss of control resolved by the shared death/sanity ladder —
-// an unrelated attempt forces `highRisk`, so poison is deadlier at the same rung.
+// The engine — never the AI — owns the outcome. A successful switch ADVANCES one
+// rung and rewrites `gameState.pathwayId` to the NEW pathway, records the outgoing
+// pathway + its retained abilities, re-seeds digestion, consumes the target
+// potion, sheds the old pathway's ritual/formula/hunt pursuits, and drains sanity
+// (heavily for the poison). A failed switch is a loss of control resolved by the
+// shared death/sanity ladder — an unrelated attempt forces `highRisk`, so poison
+// is deadlier than the safe neighbouring advance.
 //
 // Pure + deterministic under injected randomness; storage and AI narration stay
 // in the React layer like every other engine subsystem.
@@ -49,13 +64,18 @@ import { applySanityImpact } from "./world-state";
 export type SwitchRelation = "neighboring" | "unrelated";
 
 /**
- * The rung at or below which a neighbouring switch is the safe, canon path. Seq 4
- * in general; Seq 3 for the Lord of Mysteries group (pathways 1/7/8) per the Law
- * of Similar Sequence Beyonder Characteristics Conservation. (Sequences count
- * DOWN, so "starting at Sequence 4" means `sequenceLevel <= 4`.)
+ * The TARGET rung at or below which a neighbouring switch is the safe, canon path.
+ * Seq 4 in general; Seq 3 for the Lord of Mysteries group (pathways 1/7/8) per the
+ * Law of Similar Sequence Beyonder Characteristics Conservation — the first
+ * allowed switch lands you here.
  */
 export function switchUnlockSequence(pathwayId: number): number {
   return getGroupForPathway(pathwayId)?.id === "mysteries" ? 3 : 4;
+}
+
+/** The rung a switch would ADVANCE the character into (one below the current). */
+export function switchTargetSequence(session: GameSession): number {
+  return targetSequence(session.gameState.sequenceLevel);
 }
 
 /** Whether the target is an adjacent (safe) or an unrelated (poison) pathway. */
@@ -69,18 +89,26 @@ export function switchRelation(
 }
 
 export interface SwitchRequirement {
-  id: "target" | "sequence" | "threshold" | "digestion" | "ingredients" | "sanity";
+  id:
+    | "target"
+    | "sequence"
+    | "threshold"
+    | "digestion"
+    | "ingredients"
+    | "anchors"
+    | "sanity";
   label: string;
   met: boolean;
 }
 
 /**
- * The requirement checklist for switching into `targetPathwayId`, built from
- * session data only. Hard gates: a real, different pathway; a non-apex rung; the
- * current potion digested; the cross-pathway potion carried; a sanity floor. A
- * NEIGHBOURING target additionally must stand at/below the canon threshold; an
- * UNRELATED target has no threshold gate (it is dangerous at every rung) but its
- * consequences are severe.
+ * The requirement checklist for switch-ADVANCING into `targetPathwayId`, built
+ * from session data only. Hard gates: a real, different pathway; a climbable rung;
+ * the current potion digested; the TARGET pathway's next-rung potion carried;
+ * Saint-tier anchors when the target rung demands them; a sanity floor. A
+ * NEIGHBOURING target additionally must ADVANCE INTO a rung at/below the canon
+ * threshold (Seq 4, or 3 for Mysteries); an UNRELATED target has no threshold gate
+ * (it is dangerous at every rung) but its consequences are severe.
  */
 export function switchRequirements(
   session: GameSession,
@@ -89,6 +117,8 @@ export function switchRequirements(
   const state = session.gameState;
   const targetPathway = getPathway(targetPathwayId);
   const relation = switchRelation(state.pathwayId, targetPathwayId);
+  const target = switchTargetSequence(session);
+  const targetRole = getSequence(targetPathwayId, target)?.name;
   const requirements: SwitchRequirement[] = [];
 
   requirements.push({
@@ -99,16 +129,16 @@ export function switchRequirements(
 
   requirements.push({
     id: "sequence",
-    label: "Stand on a mortal rung (Sequence 9 – 2) — the apex cannot switch",
+    label: "Stand on a rung you can still climb from (Sequence 9 – 2)",
     met: isAdvanceableSequence(state.sequenceLevel),
   });
 
   if (relation === "neighboring") {
-    const unlock = switchUnlockSequence(state.pathwayId);
+    const unlock = switchUnlockSequence(targetPathwayId);
     requirements.push({
       id: "threshold",
-      label: `Be High-Sequence enough — Sequence ${unlock} or deeper to exchange safely`,
-      met: state.sequenceLevel <= unlock,
+      label: `Exchange only into Sequence ${unlock} or deeper — the first safe rung for this group`,
+      met: target <= unlock,
     });
   }
 
@@ -121,10 +151,20 @@ export function switchRequirements(
   requirements.push({
     id: "ingredients",
     label: `Carry the formula and every ingredient for the ${
-      targetPathway?.name ?? "new"
+      targetRole ?? targetPathway?.name ?? "new"
     } potion`,
     met: hasCrossPathwayPotion(session, targetPathwayId),
   });
+
+  // Advancing into the Saint tier or deeper needs anchors to keep the new shape.
+  if (anchorsRelevant(target)) {
+    const support = session.anchorState ? effectiveSupport(session.anchorState) : 0;
+    requirements.push({
+      id: "anchors",
+      label: `Anchors hold ${requiredSupport(target)} support — enough to keep your new shape`,
+      met: support >= requiredSupport(target),
+    });
+  }
 
   requirements.push({
     id: "sanity",
@@ -165,13 +205,12 @@ export function pathwaySwitchSuccessChance(
 
 /**
  * Whether a failed switch is a high-risk loss of control (escalated one step up
- * the death ladder). An unrelated (poison) switch ALWAYS is; a neighbouring switch
- * only when the mind is already frayed.
+ * the death ladder). Only an unrelated (poison) switch is: a neighbouring switch
+ * is the safe path and is only ever eligible with a steady mind (the sanity-floor
+ * requirement gates it), so a frayed neighbouring attempt cannot reach here.
  */
-export function switchHighRisk(session: GameSession, relation: SwitchRelation): boolean {
-  if (relation === "unrelated") return true;
-  const state = session.gameState;
-  return state.sanity < state.maxSanity * ADVANCEMENT_SANITY_RATIO;
+export function switchHighRisk(relation: SwitchRelation): boolean {
+  return relation === "unrelated";
 }
 
 export interface PathwaySwitched {
@@ -179,7 +218,9 @@ export interface PathwaySwitched {
   session: GameSession;
   /** The pathway just adopted. */
   targetPathwayId: number;
-  /** The role name of the new pathway at the current rung (for narration). */
+  /** The rung just climbed into on the new pathway. */
+  newSequenceLevel: number;
+  /** The role name of the new pathway at the rung just reached (for narration). */
   roleName: string;
   relation: SwitchRelation;
 }
@@ -203,10 +244,10 @@ function shedOldPathwayPursuits(session: GameSession, now: number): GameSession 
 
 /**
  * Attempt the switch. Deterministic under the injected randomness. On success the
- * engine — not the AI — adopts the new pathway, keeps the rung, records the
- * outgoing pathway and the abilities retained (fused) from it, re-seeds digestion,
- * consumes the cross-pathway potion, sheds the old pathway's pursuits, drains
- * sanity (heavily for the poison), and records what happened through memory facts.
+ * engine — not the AI — adopts the new pathway AND advances one rung, records the
+ * outgoing pathway and the full kit retained (fused) from it, re-seeds digestion,
+ * consumes the target pathway's next-rung potion, sheds the old pathway's
+ * pursuits, drains sanity (heavily for the poison), and records memory facts.
  * On failure the death engine resolves a loss of control (unrelated forces
  * `highRisk`); the caller routes it through the same setback / permadeath
  * machinery as any other failure.
@@ -240,28 +281,31 @@ export function attemptPathwaySwitch(
       verdict: evaluateFailure({
         cause: "loss-of-control",
         sequenceLevel: state.sequenceLevel,
-        highRisk: switchHighRisk(session, relation),
+        highRisk: switchHighRisk(relation),
       }),
     };
   }
 
   const fromPathwayId = state.pathwayId;
-  const atSequence = state.sequenceLevel;
+  // The character LEAVES the old pathway at their current rung and CLIMBS one rung
+  // into the new pathway (`target`) — a switch is an advancement along a new line.
+  const leftAtSequence = state.sequenceLevel;
+  const target = switchTargetSequence(session);
   const fromName = getPathway(fromPathwayId)?.name ?? "the old pathway";
   const toName = getPathway(targetPathwayId)?.name ?? "the new pathway";
-  const roleName =
-    getSequence(targetPathwayId, atSequence)?.name ?? `Sequence ${atSequence}`;
+  const roleName = getSequence(targetPathwayId, target)?.name ?? `Sequence ${target}`;
 
+  // `atSequence` = the sequence LEFT behind, so the full old kit is frozen and the
+  // new pathway's join rung (`atSequence - 1`) is recoverable for the loss model.
   const switchEntry = makePathwaySwitch(
     fromPathwayId,
-    atSequence,
+    leftAtSequence,
     relation,
     session.turnCount,
   );
 
   const cleaned = shedOldPathwayPursuits(session, now);
-  const targetPotionItems =
-    getSequence(targetPathwayId, atSequence)?.prerequisiteItems ?? [];
+  const targetPotionItems = getSequence(targetPathwayId, target)?.prerequisiteItems ?? [];
 
   // Switching is an upheaval of the self — it always drains sanity, and the poison
   // of an unrelated pathway drains far more (the "half-mad" cost).
@@ -276,8 +320,8 @@ export function attemptPathwaySwitch(
       type: "event",
       description:
         relation === "neighboring"
-          ? `Exchanged the ${fromName} pathway for the neighbouring ${toName} pathway at Sequence ${atSequence}, ${roleName}. The old powers fused with the new — a certain mutation.`
-          : `Drank an unrelated ${toName} potion — poison to a ${fromName} Beyonder — and survived the exchange in a half-mad haze, the two pathways grinding into something bizarre.`,
+          ? `Advanced by exchanging into the neighbouring ${toName} pathway, becoming a Sequence ${target} ${roleName}. The old ${fromName} powers fused with the new — a certain mutation.`
+          : `Drank an unrelated ${toName} potion — poison to a ${fromName} Beyonder — and survived the exchange into a half-mad Sequence ${target} ${roleName}, the two pathways grinding into something bizarre.`,
       turnNumber: session.turnCount,
     },
   ];
@@ -294,6 +338,7 @@ export function attemptPathwaySwitch(
   return {
     outcome: "switched",
     targetPathwayId,
+    newSequenceLevel: target,
     roleName,
     relation,
     session: {
@@ -301,8 +346,9 @@ export function attemptPathwaySwitch(
       gameState: {
         ...drained,
         pathwayId: targetPathwayId,
+        sequenceLevel: target,
         inventory: removeItemsByName(cleaned.gameState.inventory, targetPotionItems),
-        digestion: createDigestionState(targetPathwayId, atSequence),
+        digestion: createDigestionState(targetPathwayId, target),
       },
       pathwayLineage: recordPathwaySwitch(cleaned.pathwayLineage, switchEntry),
       memory: {

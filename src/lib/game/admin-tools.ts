@@ -10,10 +10,12 @@ import type {
 import { MAX_ACQUIRED_POWERS } from "./acquired-powers";
 import {
   anchorHighRisk,
+  anchorsRelevant,
   consecrateAnchor,
   emptyAnchorState,
   type AnchorKind,
 } from "./anchors";
+import { targetSequence } from "./advancement";
 import { uniquenessItemFor } from "./apotheosis";
 import { makePathwaySwitch } from "./pathway-lineage";
 import { switchRelation } from "./pathway-switch";
@@ -225,11 +227,12 @@ export function buildAdminCharacter(
     gameState = makeAdvancementReadyState(gameState);
   }
 
-  // Poise the build to switch into `switchReadyTarget`: digest the current potion
-  // and seed the target pathway's current-rung recipe so the switch panel unlocks.
+  // Poise the build to switch-advance into `switchReadyTarget`: digest the current
+  // potion and seed the target pathway's NEXT-rung recipe (a switch advances one
+  // rung) so the switch panel unlocks.
   if (options.switchReadyTarget !== undefined) {
     const switchItems = (
-      getSequence(options.switchReadyTarget, gameState.sequenceLevel)
+      getSequence(options.switchReadyTarget, gameState.sequenceLevel - 1)
         ?.prerequisiteItems ?? []
     ).map((item) => ({ ...item }));
     gameState = {
@@ -268,13 +271,15 @@ export function buildAdminCharacter(
   if (powers.length > 0) session = { ...session, acquiredPowers: powers };
 
   // An already-fused character (issue #211): record each pathway switched away
-  // from with its frozen retained-ability snapshot.
+  // from with its frozen retained-ability snapshot. The character LEFT each prior
+  // pathway one rung above where they now stand (`sequenceLevel + 1`, capped at 9),
+  // so the join cap keeps the current pathway's held rungs consistent.
   if (options.fusedPathways && options.fusedPathways.length > 0) {
-    const seq = session.gameState.sequenceLevel;
+    const leftAt = Math.min(9, session.gameState.sequenceLevel + 1);
     const switches = options.fusedPathways.map((fromId) =>
       makePathwaySwitch(
         fromId,
-        seq,
+        leftAt,
         switchRelation(session.gameState.pathwayId, fromId),
         0,
       ),
@@ -282,8 +287,15 @@ export function buildAdminCharacter(
     session = { ...session, pathwayLineage: { switches } };
   }
 
+  // A neighbouring switch ADVANCES into the Saint tier (target Seq ≤ 4), which
+  // needs anchors — so a switch-ready build seeds them too, else the switch panel
+  // would be gated on anchors the admin never granted.
+  const switchNeedsAnchors =
+    options.switchReadyTarget !== undefined &&
+    anchorsRelevant(targetSequence(session.gameState.sequenceLevel));
   const anchorSpecs =
-    options.anchors ?? (apotheosisReady || pillarReady ? ENDGAME_ANCHORS : []);
+    options.anchors ??
+    (apotheosisReady || pillarReady || switchNeedsAnchors ? ENDGAME_ANCHORS : []);
   if (anchorSpecs.length > 0) {
     let anchorState = session.anchorState ?? emptyAnchorState();
     anchorSpecs.forEach((spec, i) => {

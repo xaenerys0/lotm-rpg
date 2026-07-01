@@ -599,6 +599,7 @@ export {
 } from "./pathway-lineage";
 export {
   switchUnlockSequence,
+  switchTargetSequence,
   switchRelation,
   switchRequirements,
   meetsSwitchRequirements,
@@ -801,6 +802,9 @@ export {
 export {
   fusedAbilityNames,
   fusedCombatKit,
+  currentJoinSequence,
+  heldCumulativeAbilities,
+  heldAbilityGroups,
   retainedAbilityGroups,
   type RetainedAbilityGroup,
 } from "./pathway-fusion";

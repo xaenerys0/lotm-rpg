@@ -41,31 +41,36 @@ Verified against `corpus/wiki/lordofthemystery_pages_current.xml` (Git LFS):
 
 ### Concept
 
-A digested Beyonder at the canon threshold may drink a **different pathway's**
-potion of their current Sequence instead of climbing their own. Two flavors:
+A switch is an **advancement taken along a different line**: instead of drinking
+your own pathway's NEXT potion you drink a neighbouring pathway's NEXT potion,
+climbing one rung AND changing pathways in a single step ("the powers gained from
+the new pathway will depend on the set of characteristic that is used to
+advance"). Two flavors:
 
 - **Neighboring switch** (adjacent pathway, same Above-the-Sequence group): the
-  safe canon path — the character adopts the new pathway, keeps their earned
-  powers fused in with a "mutation" tag, and plays on.
+  safe canon path — the character advances into the new pathway, keeps their
+  earned old-pathway powers fused in with a "mutation" tag, and plays on.
 - **Unrelated switch** (any non-adjacent pathway): _poison._ Possible but with
   severe, corpus-faithful consequences — very low odds, a heavy sanity hit, and a
   forced high-risk loss-of-control on failure. Survivable-but-exceptional
   (Roselle Gustav is the precedent).
 
-### Switch model — new pathway becomes primary
+### Switch model — advance into the neighbour
 
-On a successful switch:
+On a successful switch (from current Seq `N`):
 
-- `gameState.pathwayId` **becomes the new pathway** — future advancement climbs
-  it with **zero changes to `advancement.ts`** (which already keys off a single
-  `pathwayId`).
-- `gameState.sequenceLevel` is **unchanged** (you switch at the rung you stand
-  on; you do not advance).
-- The pathway left behind is appended to `pathwayLineage.switches`, carrying a
-  **frozen snapshot** of the abilities retained from it.
+- `gameState.pathwayId` **becomes the new pathway** and `gameState.sequenceLevel`
+  **decrements to `N-1`** — a switch is an advancement, so future climbs continue
+  on the new pathway with **zero changes to `advancement.ts`**.
+- The switch potion is the **new pathway's Seq `N-1` recipe** (its next rung).
+- The pathway left behind is appended to `pathwayLineage.switches` with
+  `atSequence = N` (the rung left) and a **frozen snapshot of the FULL old-pathway
+  kit** — canon: "keep all of their powers from the previous Pathway."
 
-This matches canon ("you now walk the new pathway, keeping old powers") and keeps
-the ability math cheap and drift-proof.
+**Eligibility (neighbouring) is gated on the TARGET rung**: `N-1 <=
+switchUnlockSequence` (Seq 4 general, Seq 3 for the Mysteries group) — the first
+allowed switch lands you at Seq 4 (Seq 3 for Mysteries). Advancing into the Saint
+tier also requires anchors, exactly like a normal climb.
 
 ### Data model — `pathwayLineage` session sub-state
 
@@ -104,23 +109,25 @@ number of switches.
 
 ### The ability-loss rule (deterministic)
 
-When switching at rung `S` from pathway `A`, the character has climbed `A` from
-Seq 9 down to `S`, so their earned abilities are
-`getCumulativeAbilities(A, S)` (sourceLevels `S..9`). Canon: _"Missing
-characteristic of lower sequence will lead to lost of some of the corresponding
-abilities."_ We model that as:
+Canon: a successful switch **keeps ALL of the old pathway's powers** ("keep all of
+their powers from the previous Pathway"), but the loss — _"missing characteristic
+of lower sequence will lead to lost of some of the corresponding abilities"_ —
+lands on the **NEW** pathway: you join it partway down (at Seq `N-1`) and never
+digested its **weaker** (higher-numbered) rungs.
 
-```
-retained = getCumulativeAbilities(A, S).filter(a => a.sourceLevel > S)
-```
+- **Retained (frozen, old pathway):** `getCumulativeAbilities(A, N)` — the whole
+  kit the character held on the old pathway, unfiltered.
+- **Held (current, new pathway):** capped at the **join sequence** — the rung the
+  character joined the current pathway at (`lastSwitch.atSequence - 1`). Any
+  current-pathway ability sourced at a weaker rung (`sourceLevel > join`) was
+  never digested and is absent:
+  `getCumulativeAbilities(current, level).filter(a => a.sourceLevel <= join)`.
 
-i.e. **drop the abilities sourced at the switch rung `S` itself, keep the
-shallower rungs already digested.** The Seq-`S` characteristic is the deepest one
-the character stops carrying forward, so its abilities are the "corresponding
-abilities" lost. This is a pure filter with no randomness — the retained set is
-identical every time it is computed, and it is frozen once into the switch entry.
-It is non-empty at both canon gates (Seq 4 / Mysteries Seq 3 always have higher,
-shallower rungs to retain).
+`currentJoinSequence` / `heldCumulativeAbilities` / `heldAbilityGroups`
+(`pathway-fusion.ts`) implement the cap; a save that never switched has join `9`
+(no cap), so behaviour is byte-identical to before. As the character advances
+further on the new pathway they accrue its deeper rungs normally, but the weaker
+rungs skipped by joining partway down stay missing — the canon loss.
 
 ### Fusion derivation
 
@@ -153,53 +160,55 @@ a dedicated fused-abilities group with a "mutation" badge.
 Mirrors `advancement.ts` (pure + deterministic under injected randomness):
 
 - `switchUnlockSequence(pathwayId)` → `3` when the pathway is in the Mysteries
-  group (getGroupForPathway === "mysteries"), else `4`.
+  group (getGroupForPathway === "mysteries"), else `4` — the TARGET-rung threshold.
+- `switchTargetSequence(session)` → `sequenceLevel - 1` (a switch advances a rung).
 - `switchRelation(currentPathwayId, targetPathwayId)` → `"neighboring"` when
   `areNeighboringPathways` holds, else `"unrelated"`.
-- `switchEligibility(session, targetPathwayId)` → a checklist analogous to
+- `switchRequirements(session, targetPathwayId)` → a checklist analogous to
   `advancementRequirements`. Hard gates:
   - target is a real pathway, different from the current one;
-  - not at/above the apex (Seq ≤ 1 / 0 / -1 blocked);
+  - a climbable rung (`isAdvanceableSequence`, Seq 9–2 — apex cannot switch);
   - the current potion is fully digested;
-  - the target pathway's Seq-`sequenceLevel` potion is carried (cross-pathway
-    potion, see below);
+  - the target pathway's **next-rung** (`switchTargetSequence`) potion is carried
+    (cross-pathway potion, see below);
+  - **anchors** when the target rung is Saint tier (`anchorsRelevant`) — a switch
+    into Saint needs them exactly like a normal climb;
   - a sanity floor (reuse `ADVANCEMENT_SANITY_RATIO`);
-  - **for a neighboring target only**, `sequenceLevel <= switchUnlockSequence`
-    (the canon Seq-4 / Mysteries-Seq-3 threshold — enforced exactly).
-    An unrelated target is allowed at any non-apex sequence (the poison gamble); it
-    carries no threshold gate because it is dangerous at every rung.
+  - **for a neighboring target only**, `switchTargetSequence <= switchUnlockSequence`
+    (the canon Seq-4 / Mysteries-Seq-3 threshold on the TARGET rung — the first
+    allowed switch lands you there). An unrelated target is allowed at any non-apex
+    sequence (the poison gamble); no threshold gate.
 - `pathwaySwitchSuccessChance(session, targetPathwayId)`:
   - **neighboring:** strong, steadied by sanity (clamp ~0.4–0.9) — the safe path.
   - **unrelated:** capped low and heavily sanity-dependent (clamp ~0.05–0.4) —
     the Roselle survivable-outlier; the low-odds success IS the "half-mad best
     case."
 - `attemptPathwaySwitch(session, targetPathwayId, random?, now?)` →
-  `{ outcome: "switched", session, … }` | `{ outcome: "lost-control", verdict }`.
-  On success:
-  - set `gameState.pathwayId = target`, keep `sequenceLevel`;
-  - append a `PathwaySwitch` with the frozen `retained` snapshot (the loss rule
-    above) of the OUTGOING pathway;
-  - re-seed digestion via `createDigestionState(target, sequenceLevel)`;
-  - consume the cross-pathway potion's ingredients (`removeItemsByName`);
-  - clear stale `ritualState` / `formulaPursuit` / old-pathway `hunts` (they
-    target the old pathway's next rung);
+  `{ outcome: "switched", session, newSequenceLevel, … }` |
+  `{ outcome: "lost-control", verdict }`. On success:
+  - set `gameState.pathwayId = target` AND `sequenceLevel = switchTargetSequence`
+    (advance one rung);
+  - append a `PathwaySwitch` (`atSequence` = the rung LEFT) with the frozen FULL
+    old-pathway kit;
+  - re-seed digestion via `createDigestionState(target, targetSeq)`;
+  - consume the target pathway's next-rung potion (`removeItemsByName`);
+  - clear stale `ritualState` / `formulaPursuit` / old-pathway `hunts`;
   - drain sanity — `sanityDelta({type:"advancement"})` for neighboring, plus
     `sanityDelta({type:"outer-deity"})` for the unrelated poison;
   - seed memory facts (the mutation / half-mad framing).
     On failure route through
     `evaluateFailure({cause:"loss-of-control", sequenceLevel, highRisk})`, where
     **`highRisk` is forced true for an unrelated switch** — poison escalates the
-    death ladder one step, so it is deadlier at the same rung.
+    death ladder one step, deadlier than the safe neighbouring advance.
 
 ## Cross-pathway potion acquisition
 
-`potion-preparation.ts` currently assumes the next rung of the OWN pathway
-(`targetSequence(sequenceLevel)`). Add a variant keyed to an explicit
-`(pathwayId, sequence)` — `crossPathwayPotionPlan(session, targetPathwayId)` and a
-matching purchase/deliver path — reusing the same `acquisitionMethodsFor` /
-`acquisitionCost` / `grantItem` machinery and the formula gate (`isFormula`), so
-gathering a different pathway's current-Sequence potion follows the same buy/hunt
-economy.
+`crossPathwayPotionPlan(session, targetPathwayId)` / `purchaseCrossPathwayPotionItem`
+gather the TARGET pathway's **next-rung** recipe (`targetSequence(sequenceLevel)` —
+a switch advances a rung), reusing the same `acquisitionCost` / `grantItem`
+machinery and the formula gate (`isFormula`). Purchase-only at a
+`CROSS_PATHWAY_COST_PREMIUM` (a foreign line's reagents come through trade — a
+documented compression, see below).
 
 ## Ripple
 
@@ -208,9 +217,10 @@ economy.
 - **Combat** (`game-loop.tsx` `createEncounter` path): swap `combatKitFor` to
   `fusedCombatKit(session)`. Optional: a small neighboring-pathway affinity nudge
   in `computePathwayMatchup` (`combat.ts`).
-- **Character sheet** (`character-sheet.tsx`): a fused-abilities group + a "fused
-  pathway / mutation" badge naming the prior pathway(s); the status bar keeps the
-  current rung + new pathway via the existing `sequenceLabel`.
+- **Character sheet** (`character-sheet.tsx`): own-pathway groups from the
+  join-capped `heldAbilityGroups` + a "Fused Pathways" section
+  (`retainedAbilityGroups`); the status bar shows the new pathway + advanced rung
+  via the existing `sequenceLabel`.
 - **Switch panel** (`game-loop.tsx`, in the climb cluster beside
   `AdvancementPanel`/`RitualPerformancePanel`): a `PathwaySwitchPanel` that lists
   eligible neighboring pathways, offers the cross-pathway potion prep, and gates
@@ -229,8 +239,9 @@ economy.
   migration.
 - **`acquired-powers`** stays orthogonal — appended after fused abilities exactly
   as today.
-- **Post-switch hygiene.** Digestion re-seeds; old-pathway ritual/formula/hunts
-  are cleared; no free advancement (the rung is unchanged).
+- **Post-switch hygiene.** The rung advances one step (a switch IS an
+  advancement); digestion re-seeds for the new pathway+rung; old-pathway
+  ritual/formula/hunts are cleared.
 - **`fusedCombatKit` guard.** A name-resolution miss falls back to `utility` +
   the stored name; never throws.
 

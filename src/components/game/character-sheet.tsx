@@ -10,7 +10,7 @@ import {
   useSessionSummaries,
 } from "@/lib/react/session-store";
 import { useStoredPreferences } from "./use-stored-preferences";
-import { getCumulativeAbilityGroups, getPathway, getSequence } from "@/lib/rules";
+import { getPathway, getSequence } from "@/lib/rules";
 import { getEpoch } from "@/lib/lore";
 import { TabBar, tabButtonId, tabPanelId, type TabDef } from "./tabs";
 import { CodexSection } from "./codex-section";
@@ -47,6 +47,7 @@ import {
   requiredSupport,
   resolveLocation,
   apexAbilityView,
+  heldAbilityGroups,
   retainedAbilityGroups,
   resolveActingMethodState,
   resolveProfileState,
@@ -235,8 +236,10 @@ export function CharacterSheet() {
   const pathway = getPathway(state.pathwayId);
   const sequence = getSequence(state.pathwayId, state.sequenceLevel);
   // Abilities are cumulative — every rung climbed (Sequence 9 down to the
-  // current one) is retained, with earlier powers enhanced by advancement.
-  const abilityGroups = getCumulativeAbilityGroups(state.pathwayId, state.sequenceLevel);
+  // current one) is retained, with earlier powers enhanced by advancement. Capped
+  // to the rungs actually held after any pathway switch (issue #211): a character
+  // who joined this pathway partway down lacks its weaker rungs.
+  const abilityGroups = heldAbilityGroups(session);
   // Apex tiers (issue #210): a True God / Pillar has no rules `Sequence`, so the
   // cosmic-authority lines — and, for a Pillar, the kits of every OTHER pathway
   // in its god-family — are surfaced here alongside the own-pathway groups above.

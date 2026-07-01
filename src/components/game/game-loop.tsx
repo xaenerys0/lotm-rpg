@@ -78,6 +78,7 @@ import {
   attemptPathwaySwitch,
   meetsSwitchRequirements,
   switchRequirements,
+  switchTargetSequence,
   neighboringSwitchTargets,
   switchRelation,
   crossPathwayPotionPlan,
@@ -4045,11 +4046,19 @@ function SwitchTargetCard({
   const plan = crossPathwayPotionPlan(session, targetId);
   const buyable = plan.items.filter((status) => !status.owned && !status.locked);
   const armed = armedTarget === targetId;
+  // A switch ADVANCES a rung into the target pathway — name the rung reached.
+  const target = switchTargetSequence(session);
+  const targetRole = getSequence(targetId, target)?.name;
 
   return (
     <div className="mt-3 rounded border border-border/60 bg-surface/40 p-4">
       <p className="text-sm font-semibold text-foreground">
         {name} Pathway
+        {targetRole && (
+          <span className="ml-2 text-xs font-normal text-occult-bright">
+            → Sequence {target}, {targetRole}
+          </span>
+        )}
         <span className="ml-2 text-xs font-normal text-muted">
           {relation === "neighboring" ? "neighbouring — safe" : "unrelated — poison"}
         </span>
@@ -4140,9 +4149,11 @@ function PathwaySwitchPanel({
   onSwitch: (targetId: number) => void;
 }) {
   const [armedTarget, setArmedTarget] = useState<number | null>(null);
-  // The poison list is long (~19 pathways); render its cards only while the
-  // disclosure is open so their per-target plan/requirement derivations don't run
-  // on every scene render for a section the player hasn't expanded.
+  // Switching pathways is a rare, advanced choice — climbing your own line is the
+  // primary action — so the whole panel is collapsed by default and its cards are
+  // rendered only while open (keeps the climb view uncluttered and avoids the
+  // per-target derivations on every scene render).
+  const [open, setOpen] = useState(false);
   const [poisonOpen, setPoisonOpen] = useState(false);
   const current = session.gameState.pathwayId;
   const neighbors = neighboringSwitchTargets(session);
@@ -4160,63 +4171,78 @@ function PathwaySwitchPanel({
   };
 
   return (
-    <section
-      aria-labelledby="pathway-switch-heading"
-      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+    <details
+      className="group/switch mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
     >
-      <h2
-        id="pathway-switch-heading"
-        className="gaslit font-serif text-base font-semibold text-occult-bright"
-      >
-        Exchange your pathway
-      </h2>
-      <p className="mt-1 text-sm leading-relaxed text-muted">
-        Instead of climbing your own line you may exchange into another pathway, keeping
-        your powers fused with the new — a bizarre mutation. A neighbouring pathway is the
-        safe path; an unrelated potion is poison, survivable only at ruinous cost.
-        Sticking to one pathway is usually the wiser road.
-      </p>
-      {notice && (
-        <p role="status" className="mt-3 text-sm text-crimson">
-          {notice}
-        </p>
-      )}
+      <summary className="flex cursor-pointer list-none items-center gap-2 marker:content-none">
+        <span
+          aria-hidden="true"
+          className="inline-block text-occult-bright transition-transform group-open/switch:rotate-90"
+        >
+          ▸
+        </span>
+        <span className="gaslit font-serif text-base font-semibold text-occult-bright">
+          Exchange your pathway
+        </span>
+        <span className="ml-2 text-xs text-muted">— advanced, optional</span>
+      </summary>
 
-      <h3 className="mt-4 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
-        Neighbouring pathways
-      </h3>
-      {neighbors.length === 0 ? (
-        <p className="mt-2 text-xs text-muted">
-          Your pathway has no neighbour to exchange into safely.
-        </p>
-      ) : (
-        neighbors.map((id) => <SwitchTargetCard key={id} targetId={id} {...cardProps} />)
-      )}
+      {open && (
+        <div className="mt-3">
+          <p className="text-sm leading-relaxed text-muted">
+            Instead of climbing your own line you may exchange into another pathway,
+            keeping your powers fused with the new — a bizarre mutation. A neighbouring
+            pathway is the safe path; an unrelated potion is poison, survivable only at
+            ruinous cost. Sticking to one pathway is usually the wiser road.
+          </p>
+          {notice && (
+            <p role="status" className="mt-3 text-sm text-crimson">
+              {notice}
+            </p>
+          )}
 
-      <details
-        className="group/poison mt-5"
-        onToggle={(e) => setPoisonOpen((e.currentTarget as HTMLDetailsElement).open)}
-      >
-        <summary className="flex cursor-pointer list-none items-center gap-2 marker:content-none">
-          <span
-            aria-hidden="true"
-            className="inline-block text-crimson transition-transform group-open/poison:rotate-90"
+          <h3 className="mt-4 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+            Neighbouring pathways
+          </h3>
+          {neighbors.length === 0 ? (
+            <p className="mt-2 text-xs text-muted">
+              Your pathway has no neighbour to exchange into safely.
+            </p>
+          ) : (
+            neighbors.map((id) => (
+              <SwitchTargetCard key={id} targetId={id} {...cardProps} />
+            ))
+          )}
+
+          <details
+            className="group/poison mt-5"
+            onToggle={(e) => setPoisonOpen((e.currentTarget as HTMLDetailsElement).open)}
           >
-            ▸
-          </span>
-          <span className="text-xs font-semibold tracking-[0.18em] text-crimson uppercase">
-            Drink an unrelated potion (poison)
-          </span>
-        </summary>
-        <p className="mt-2 text-xs leading-relaxed text-muted">
-          Drinking a wholly foreign pathway is akin to swallowing poison — the best
-          outcome is a half-mad state, and losing control is far more likely. Only the
-          desperate or the exceptional survive it.
-        </p>
-        {poisonOpen &&
-          poison.map((id) => <SwitchTargetCard key={id} targetId={id} {...cardProps} />)}
-      </details>
-    </section>
+            <summary className="flex cursor-pointer list-none items-center gap-2 marker:content-none">
+              <span
+                aria-hidden="true"
+                className="inline-block text-crimson transition-transform group-open/poison:rotate-90"
+              >
+                ▸
+              </span>
+              <span className="text-xs font-semibold tracking-[0.18em] text-crimson uppercase">
+                Drink an unrelated potion (poison)
+              </span>
+            </summary>
+            <p className="mt-2 text-xs leading-relaxed text-muted">
+              Drinking a wholly foreign pathway is akin to swallowing poison — the best
+              outcome is a half-mad state, and losing control is far more likely. Only the
+              desperate or the exceptional survive it.
+            </p>
+            {poisonOpen &&
+              poison.map((id) => (
+                <SwitchTargetCard key={id} targetId={id} {...cardProps} />
+              ))}
+          </details>
+        </div>
+      )}
+    </details>
   );
 }
 

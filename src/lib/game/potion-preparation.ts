@@ -335,7 +335,7 @@ export function crossPathwayAcquisitionCost(item: Item, sequence: number): numbe
 export interface CrossPathwayPotionPlan {
   /** The pathway being switched INTO. */
   pathwayId: number;
-  /** The rung the switch potion is for (the character's current sequence). */
+  /** The rung the switch potion is for (the character's NEXT rung — a switch advances). */
   sequence: number;
   items: PotionItemStatus[];
   allOwned: boolean;
@@ -358,7 +358,8 @@ export function crossPathwayPotionPlan(
   session: GameSession,
   targetPathwayId: number,
 ): CrossPathwayPotionPlan {
-  const sequence = session.gameState.sequenceLevel;
+  // A switch ADVANCES a rung: the potion is the target pathway's NEXT-rung recipe.
+  const sequence = targetSequence(session.gameState.sequenceLevel);
   const prerequisites = crossPathwayPotionItems(targetPathwayId, sequence);
   const formulaItem = prerequisites.find(isFormula);
   const formulaSecured =
@@ -409,7 +410,7 @@ export function purchaseCrossPathwayPotionItem(
   itemName: string,
   now: number = Date.now(),
 ): PurchaseResult {
-  const sequence = session.gameState.sequenceLevel;
+  const sequence = targetSequence(session.gameState.sequenceLevel);
   const prerequisites = crossPathwayPotionItems(targetPathwayId, sequence);
   const item = prerequisites.find((candidate) => candidate.name === itemName);
   if (!item) return { outcome: "not-required" };

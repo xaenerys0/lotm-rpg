@@ -329,13 +329,14 @@ describe("nextPotionItems", () => {
 });
 
 describe("cross-pathway potion (issue #211)", () => {
-  // A digested Beyonder on Seq 4 of pathway 2, preparing to switch into pathway 3.
+  // A digested Beyonder on Seq 4 of pathway 2, preparing to switch-ADVANCE into
+  // pathway 3 — the switch potion is the target's NEXT rung (Seq 3).
   function switcher(funds = 1_000_000): GameSession {
     return stuck(4, funds, 2);
   }
-  // The target pathway's Seq-4 recipe, resolved from the rules engine.
+  // The target pathway's NEXT-rung (Seq 3) recipe, resolved from the rules engine.
   function targetRecipe() {
-    const items = getSequence(3, 4)?.prerequisiteItems ?? [];
+    const items = getSequence(3, 3)?.prerequisiteItems ?? [];
     return {
       items,
       formula: items.find((i) => i.category === "potion-formula"),
@@ -345,15 +346,15 @@ describe("cross-pathway potion (issue #211)", () => {
 
   it("prices a foreign reagent at the cross-pathway premium", () => {
     const { ingredient } = targetRecipe();
-    expect(crossPathwayAcquisitionCost(ingredient!, 4)).toBe(
-      Math.round(acquisitionCost(ingredient!, 4) * CROSS_PATHWAY_COST_PREMIUM),
+    expect(crossPathwayAcquisitionCost(ingredient!, 3)).toBe(
+      Math.round(acquisitionCost(ingredient!, 3) * CROSS_PATHWAY_COST_PREMIUM),
     );
   });
 
-  it("builds a purchase-only, formula-gated plan for the target pathway's rung", () => {
+  it("builds a purchase-only, formula-gated plan for the target pathway's next rung", () => {
     const plan = crossPathwayPotionPlan(switcher(), 3);
     expect(plan.pathwayId).toBe(3);
-    expect(plan.sequence).toBe(4);
+    expect(plan.sequence).toBe(3);
     expect(plan.items.map((s) => s.item)).toEqual(targetRecipe().items);
     expect(plan.items.length).toBeGreaterThan(0);
     expect(
@@ -385,7 +386,7 @@ describe("cross-pathway potion (issue #211)", () => {
     );
     const boughtFormula = purchaseCrossPathwayPotionItem(session, 3, formula!.name);
     expect(boughtFormula.outcome).toBe("purchased");
-    expect(boughtFormula.cost).toBe(crossPathwayAcquisitionCost(formula!, 4));
+    expect(boughtFormula.cost).toBe(crossPathwayAcquisitionCost(formula!, 3));
     session = boughtFormula.session!;
     // Buying it again is refused.
     expect(purchaseCrossPathwayPotionItem(session, 3, formula!.name).outcome).toBe(
