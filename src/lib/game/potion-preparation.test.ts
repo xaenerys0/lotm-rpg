@@ -9,12 +9,17 @@ import {
   acquisitionCost,
   acquisitionDepthFactor,
   acquisitionMethodsFor,
+  crossPathwayAcquisitionCost,
+  crossPathwayPotionPlan,
   deliverHuntedItem,
+  hasCrossPathwayPotion,
   huntLootReward,
   nextPotionItems,
   potionPreparationPlan,
+  purchaseCrossPathwayPotionItem,
   purchasePotionItem,
   ACQUISITION_DEPTH_STEP,
+  CROSS_PATHWAY_COST_PREMIUM,
   HUNT_LOOT_BASE,
   MAIN_INGREDIENT_HUNT_ONLY_AT_OR_BELOW,
 } from "./potion-preparation";
@@ -320,5 +325,85 @@ describe("deliverHuntedItem", () => {
 describe("nextPotionItems", () => {
   it("returns the target potion's prerequisite list", () => {
     expect(nextPotionItems(stuck(9))).toEqual(targetItems(9).items);
+  });
+});
+
+describe("cross-pathway potion (issue #211)", () => {
+  // A digested Beyonder on Seq 4 of pathway 2, preparing to switch-ADVANCE into
+  // pathway 3 — the switch potion is the target's NEXT rung (Seq 3).
+  function switcher(funds = 1_000_000): GameSession {
+    return stuck(4, funds, 2);
+  }
+  // The target pathway's NEXT-rung (Seq 3) recipe, resolved from the rules engine.
+  function targetRecipe() {
+    const items = getSequence(3, 3)?.prerequisiteItems ?? [];
+    return {
+      items,
+      formula: items.find((i) => i.category === "potion-formula"),
+      ingredient: items.find((i) => i.category !== "potion-formula"),
+    };
+  }
+
+  it("prices a foreign reagent at the cross-pathway premium", () => {
+    const { ingredient } = targetRecipe();
+    expect(crossPathwayAcquisitionCost(ingredient!, 3)).toBe(
+      Math.round(acquisitionCost(ingredient!, 3) * CROSS_PATHWAY_COST_PREMIUM),
+    );
+  });
+
+  it("builds a purchase-only, formula-gated plan for the target pathway's next rung", () => {
+    const plan = crossPathwayPotionPlan(switcher(), 3);
+    expect(plan.pathwayId).toBe(3);
+    expect(plan.sequence).toBe(3);
+    expect(plan.items.map((s) => s.item)).toEqual(targetRecipe().items);
+    expect(plan.items.length).toBeGreaterThan(0);
+    expect(
+      plan.items.every((s) => s.methods.length === 1 && s.methods[0] === "purchase"),
+    ).toBe(true);
+    expect(plan.allOwned).toBe(false);
+    // Ingredients are locked until the foreign formula is in hand.
+    const ingredient = plan.items.find((s) => s.item.category !== "potion-formula");
+    expect(ingredient?.locked).toBe(true);
+    expect(plan.formula?.locked).toBe(false);
+  });
+
+  it("hasCrossPathwayPotion flips true only when every prerequisite is carried", () => {
+    const session = switcher();
+    expect(hasCrossPathwayPotion(session, 3)).toBe(false);
+    const carrying: GameSession = {
+      ...session,
+      gameState: { ...session.gameState, inventory: [...targetRecipe().items] },
+    };
+    expect(hasCrossPathwayPotion(carrying, 3)).toBe(true);
+  });
+
+  it("buys the foreign formula, then unlocks and buys an ingredient", () => {
+    const { formula, ingredient } = targetRecipe();
+    let session = switcher();
+    // The ingredient is gated until the formula is in hand.
+    expect(purchaseCrossPathwayPotionItem(session, 3, ingredient!.name).outcome).toBe(
+      "formula-required",
+    );
+    const boughtFormula = purchaseCrossPathwayPotionItem(session, 3, formula!.name);
+    expect(boughtFormula.outcome).toBe("purchased");
+    expect(boughtFormula.cost).toBe(crossPathwayAcquisitionCost(formula!, 3));
+    session = boughtFormula.session!;
+    // Buying it again is refused.
+    expect(purchaseCrossPathwayPotionItem(session, 3, formula!.name).outcome).toBe(
+      "already-owned",
+    );
+    // Now the ingredient can be bought.
+    const boughtIngredient = purchaseCrossPathwayPotionItem(session, 3, ingredient!.name);
+    expect(boughtIngredient.outcome).toBe("purchased");
+  });
+
+  it("refuses an unknown item and an unaffordable purchase", () => {
+    expect(purchaseCrossPathwayPotionItem(switcher(), 3, "Phantom").outcome).toBe(
+      "not-required",
+    );
+    const { formula } = targetRecipe();
+    const broke = purchaseCrossPathwayPotionItem(switcher(1), 3, formula!.name);
+    expect(broke.outcome).toBe("unaffordable");
+    expect(broke.cost).toBeGreaterThan(0);
   });
 });

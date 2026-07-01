@@ -307,3 +307,137 @@ export function deliverHuntedItem(
     ),
   };
 }
+
+// ---------------------------------------------------------------------------
+// Cross-pathway potion (issue #211) — the potion a pathway SWITCH needs.
+// ---------------------------------------------------------------------------
+//
+// To switch to another pathway a Beyonder drinks that pathway's potion of the
+// rung they currently stand on (not one rung lower). Its prerequisites come from
+// the TARGET pathway's Sequence-`sequenceLevel` recipe, gathered through the same
+// formula-gated economy as an own-pathway potion.
+//
+// Deliberate compression (documented in `docs/pathway-switching-design.md`): a
+// FOREIGN pathway's reagents are acquired by TRADE (purchase) rather than the
+// own-pathway hunt, at a premium — you are not walking that line, so you buy the
+// potion from specialists/the black market instead of hunting its Characteristic
+// yourself. This keeps the switch preparation a single buy flow without
+// duplicating the whole hunt subsystem for another pathway.
+
+/** How much dearer a foreign pathway's reagents are than your own line's. */
+export const CROSS_PATHWAY_COST_PREMIUM = 1.5;
+
+/** The purchase price (pence) of one cross-pathway prerequisite at `sequence`. */
+export function crossPathwayAcquisitionCost(item: Item, sequence: number): number {
+  return Math.round(acquisitionCost(item, sequence) * CROSS_PATHWAY_COST_PREMIUM);
+}
+
+export interface CrossPathwayPotionPlan {
+  /** The pathway being switched INTO. */
+  pathwayId: number;
+  /** The rung the switch potion is for (the character's NEXT rung — a switch advances). */
+  sequence: number;
+  items: PotionItemStatus[];
+  allOwned: boolean;
+  formulaSecured: boolean;
+  formula: PotionItemStatus | null;
+}
+
+/** The target pathway's Sequence-`sequence` recipe (formula + ingredients). */
+function crossPathwayPotionItems(pathwayId: number, sequence: number): Item[] {
+  return getSequence(pathwayId, sequence)?.prerequisiteItems ?? [];
+}
+
+/**
+ * The preparation checklist for switching into `targetPathwayId`: the target
+ * pathway's current-rung potion, each prerequisite with whether it is carried and
+ * its (premium, purchase-only) cost. The formula gate (issue #171) still applies —
+ * ingredients stay locked until the foreign recipe is in hand.
+ */
+export function crossPathwayPotionPlan(
+  session: GameSession,
+  targetPathwayId: number,
+): CrossPathwayPotionPlan {
+  // A switch ADVANCES a rung: the potion is the target pathway's NEXT-rung recipe.
+  const sequence = targetSequence(session.gameState.sequenceLevel);
+  const prerequisites = crossPathwayPotionItems(targetPathwayId, sequence);
+  const formulaItem = prerequisites.find(isFormula);
+  const formulaSecured =
+    formulaItem === undefined ||
+    hasItemMatching(session.gameState.inventory, formulaItem);
+
+  const items = prerequisites.map(
+    (item): PotionItemStatus => ({
+      item,
+      owned: hasItemMatching(session.gameState.inventory, item),
+      methods: ["purchase"],
+      cost: crossPathwayAcquisitionCost(item, sequence),
+      locked: !isFormula(item) && !formulaSecured,
+    }),
+  );
+
+  return {
+    pathwayId: targetPathwayId,
+    sequence,
+    items,
+    allOwned: items.length > 0 && items.every((status) => status.owned),
+    formulaSecured,
+    formula: items.find((status) => isFormula(status.item)) ?? null,
+  };
+}
+
+/**
+ * Whether every prerequisite for switching into `targetPathwayId` is carried —
+ * the ingredient gate `pathway-switch.ts` checks. False when the target pathway
+ * has no recipe at this rung (nothing to prepare).
+ */
+export function hasCrossPathwayPotion(
+  session: GameSession,
+  targetPathwayId: number,
+): boolean {
+  return crossPathwayPotionPlan(session, targetPathwayId).allOwned;
+}
+
+/**
+ * Buy one prerequisite for the switch potion. Validates it is a missing
+ * prerequisite of the target pathway's current-rung recipe, that the foreign
+ * formula is in hand (for an ingredient), and that the player can afford the
+ * premium price — then deducts funds and delivers it. Never trusts AI data.
+ */
+export function purchaseCrossPathwayPotionItem(
+  session: GameSession,
+  targetPathwayId: number,
+  itemName: string,
+  now: number = Date.now(),
+): PurchaseResult {
+  const sequence = targetSequence(session.gameState.sequenceLevel);
+  const prerequisites = crossPathwayPotionItems(targetPathwayId, sequence);
+  const item = prerequisites.find((candidate) => candidate.name === itemName);
+  if (!item) return { outcome: "not-required" };
+  if (hasItemMatching(session.gameState.inventory, item)) {
+    return { outcome: "already-owned" };
+  }
+  const formulaItem = prerequisites.find(isFormula);
+  if (
+    !isFormula(item) &&
+    formulaItem !== undefined &&
+    !hasItemMatching(session.gameState.inventory, formulaItem)
+  ) {
+    return { outcome: "formula-required" };
+  }
+
+  const cost = crossPathwayAcquisitionCost(item, sequence);
+  if (!canAfford(session.gameState, cost)) return { outcome: "unaffordable", cost };
+
+  return {
+    outcome: "purchased",
+    cost,
+    session: grantItem(
+      session,
+      item,
+      -cost,
+      `Acquired ${item.name} to switch pathways (${cost} pence).`,
+      now,
+    ),
+  };
+}

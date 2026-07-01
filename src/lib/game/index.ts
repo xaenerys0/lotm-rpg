@@ -575,11 +575,45 @@ export {
   type AcquisitionMethod,
   type HuntOutcome,
   type HuntResult,
+  crossPathwayAcquisitionCost,
+  crossPathwayPotionPlan,
+  hasCrossPathwayPotion,
+  purchaseCrossPathwayPotionItem,
+  CROSS_PATHWAY_COST_PREMIUM,
   type PotionItemStatus,
   type PotionPreparationPlan,
+  type CrossPathwayPotionPlan,
   type PurchaseOutcome,
   type PurchaseResult,
 } from "./potion-preparation";
+export {
+  hasSwitchedPathways,
+  retainedAbilitiesFor,
+  makePathwaySwitch,
+  recordPathwaySwitch,
+  fusedRetainedAbilities,
+  isValidPathwayLineageShape,
+  type RetainedAbility,
+  type PathwaySwitch,
+  type PathwayLineageState,
+} from "./pathway-lineage";
+export {
+  switchUnlockSequence,
+  switchTargetSequence,
+  switchRelation,
+  switchRequirements,
+  meetsSwitchRequirements,
+  canAttemptSwitch,
+  pathwaySwitchSuccessChance,
+  switchHighRisk,
+  attemptPathwaySwitch,
+  neighboringSwitchTargets,
+  type SwitchRelation,
+  type SwitchRequirement,
+  type PathwaySwitched,
+  type PathwaySwitchLostControl,
+  type PathwaySwitchResult,
+} from "./pathway-switch";
 export {
   hasItem,
   hasItemMatching,
@@ -757,7 +791,23 @@ export {
   type AfterActionReport,
 } from "./combat";
 
-export { combatKitFor, classifyAbility, abilityKindTag } from "./combat-abilities";
+export {
+  combatKitFor,
+  combatAbilityFrom,
+  classifyAbility,
+  abilityKindTag,
+  type KitSourceAbility,
+} from "./combat-abilities";
+
+export {
+  fusedAbilityNames,
+  fusedCombatKit,
+  currentJoinSequence,
+  heldCumulativeAbilities,
+  heldAbilityGroups,
+  retainedAbilityGroups,
+  type RetainedAbilityGroup,
+} from "./pathway-fusion";
 
 export type {
   IntelligenceLevel,

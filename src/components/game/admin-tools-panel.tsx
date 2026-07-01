@@ -35,6 +35,13 @@ import type { ArtifactGrade } from "@/lib/lore/sealed-artifacts";
 
 import { PageHeader } from "./page-header";
 
+/** The first pathway that is neither `pathwayId` nor one of its neighbours — an
+ * UNRELATED (poison) switch target for the admin "switch-ready (poison)" toggle. */
+function firstUnrelatedPathway(pathwayId: number): number | undefined {
+  const neighbors = getPathway(pathwayId)?.neighboringPathways ?? [];
+  return ALL_PATHWAYS.find((p) => p.id !== pathwayId && !neighbors.includes(p.id))?.id;
+}
+
 /** Read the saved BYOK provider config (the AI generator needs it). */
 function loadProviderConfig(): ProviderConfig | null {
   try {
@@ -125,6 +132,8 @@ function ForgeCharacter() {
   const [endgame, setEndgame] = useState<AdminEndgame>("none");
   const [grantPower, setGrantPower] = useState(false);
   const [grantAnchor, setGrantAnchor] = useState(false);
+  const [switchReady, setSwitchReady] = useState(false);
+  const [switchReadyPoison, setSwitchReadyPoison] = useState(false);
   const [artifacts, setArtifacts] = useState<ReadonlySet<string>>(new Set());
   const [created, setCreated] = useState<string | null>(null);
 
@@ -188,6 +197,14 @@ function ForgeCharacter() {
       knowsActingMethod: knowsMethod,
       advancementReady,
       endgame,
+      // Pathway switching (issue #211): poise the build to exchange into its
+      // first neighbouring pathway (safe) or, with the poison toggle, the first
+      // UNRELATED pathway (recipe seeded, potion digested, anchors granted).
+      switchReadyTarget: switchReadyPoison
+        ? firstUnrelatedPathway(pathwayId)
+        : switchReady
+          ? getPathway(pathwayId)?.neighboringPathways.find((id) => id !== pathwayId)
+          : undefined,
       artifactNumbers: [...artifacts],
       anchors,
       acquiredPowers: grantPower
@@ -430,6 +447,20 @@ function ForgeCharacter() {
             onChange={setGrantAnchor}
             disabled={endgame !== "none"}
             note={endgame !== "none" ? "Endgame seeds its own anchors" : undefined}
+          />
+          <Toggle
+            id="forge-switch"
+            label="Pathway-switch ready (neighbour's potion + digested)"
+            checked={switchReady}
+            onChange={setSwitchReady}
+            note="Poises the character to exchange into a neighbouring pathway"
+          />
+          <Toggle
+            id="forge-switch-poison"
+            label="Pathway-switch ready — unrelated (poison)"
+            checked={switchReadyPoison}
+            onChange={setSwitchReadyPoison}
+            note="Seeds an UNRELATED pathway's potion so the poison exchange is testable (takes precedence over the neighbour toggle)"
           />
         </fieldset>
 

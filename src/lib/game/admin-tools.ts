@@ -10,11 +10,15 @@ import type {
 import { MAX_ACQUIRED_POWERS } from "./acquired-powers";
 import {
   anchorHighRisk,
+  anchorsRelevant,
   consecrateAnchor,
   emptyAnchorState,
   type AnchorKind,
 } from "./anchors";
+import { targetSequence } from "./advancement";
 import { uniquenessItemFor } from "./apotheosis";
+import { makePathwaySwitch } from "./pathway-lineage";
+import { switchRelation } from "./pathway-switch";
 import { PILLAR_SEQUENCE } from "./pillars";
 import { createDigestionState } from "./digestion";
 import { adjustFunds, getFunds } from "./marketplace";
@@ -118,6 +122,18 @@ export interface AdminCharacterOptions {
   anchors?: readonly AdminAnchorSpec[];
   /** Poise the build at an endgame ascent (apotheosis at Seq 1, pillar at Seq 0). */
   endgame?: AdminEndgame;
+  /**
+   * Pathway switching (issue #211): prepare the switch potion for this TARGET
+   * pathway (its current-rung recipe seeded into inventory + digestion complete)
+   * so the character is poised to exchange into it from the switch panel.
+   */
+  switchReadyTarget?: number;
+  /**
+   * Pathway switching (issue #211): pathways the character has ALREADY switched
+   * away from — seeds a fused `pathwayLineage` so the fused abilities show on the
+   * sheet and in combat without playing the exchange out.
+   */
+  fusedPathways?: readonly number[];
 }
 
 /** Append a fresh copy of an item to the inventory. */
@@ -211,6 +227,25 @@ export function buildAdminCharacter(
     gameState = makeAdvancementReadyState(gameState);
   }
 
+  // Poise the build to switch-advance into `switchReadyTarget`: digest the current
+  // potion and seed the target pathway's NEXT-rung recipe (a switch advances one
+  // rung) so the switch panel unlocks.
+  if (options.switchReadyTarget !== undefined) {
+    const switchItems = (
+      getSequence(options.switchReadyTarget, gameState.sequenceLevel - 1)
+        ?.prerequisiteItems ?? []
+    ).map((item) => ({ ...item }));
+    gameState = {
+      ...gameState,
+      inventory: [...gameState.inventory, ...switchItems],
+      digestion: {
+        ...createDigestionState(gameState.pathwayId, gameState.sequenceLevel),
+        progress: 100,
+        complete: true,
+      },
+    };
+  }
+
   // Endgame inventory: the Uniqueness artifact(s) the ascent consumes.
   if (apotheosisReady) {
     gameState = withItem(gameState, uniquenessItemFor(options.pathwayId));
@@ -235,8 +270,32 @@ export function buildAdminCharacter(
     .map((spec, i) => buildAcquiredPower(spec, `${id}-power-${i}`));
   if (powers.length > 0) session = { ...session, acquiredPowers: powers };
 
+  // An already-fused character (issue #211): record each pathway switched away
+  // from with its frozen retained-ability snapshot. The character LEFT each prior
+  // pathway one rung above where they now stand (`sequenceLevel + 1`, capped at 9),
+  // so the join cap keeps the current pathway's held rungs consistent.
+  if (options.fusedPathways && options.fusedPathways.length > 0) {
+    const leftAt = Math.min(9, session.gameState.sequenceLevel + 1);
+    const switches = options.fusedPathways.map((fromId) =>
+      makePathwaySwitch(
+        fromId,
+        leftAt,
+        switchRelation(session.gameState.pathwayId, fromId),
+        0,
+      ),
+    );
+    session = { ...session, pathwayLineage: { switches } };
+  }
+
+  // A neighbouring switch ADVANCES into the Saint tier (target Seq ≤ 4), which
+  // needs anchors — so a switch-ready build seeds them too, else the switch panel
+  // would be gated on anchors the admin never granted.
+  const switchNeedsAnchors =
+    options.switchReadyTarget !== undefined &&
+    anchorsRelevant(targetSequence(session.gameState.sequenceLevel));
   const anchorSpecs =
-    options.anchors ?? (apotheosisReady || pillarReady ? ENDGAME_ANCHORS : []);
+    options.anchors ??
+    (apotheosisReady || pillarReady || switchNeedsAnchors ? ENDGAME_ANCHORS : []);
   if (anchorSpecs.length > 0) {
     let anchorState = session.anchorState ?? emptyAnchorState();
     anchorSpecs.forEach((spec, i) => {

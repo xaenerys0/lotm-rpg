@@ -389,3 +389,51 @@ describe("Codex persistence + backfill (history-context Codex)", () => {
     expect(isValidSessionShape(session)).toBe(false);
   });
 });
+
+// ─── pathway lineage round-trip (issue #211) ────────────────────────────
+
+describe("pathway lineage (de)serialization", () => {
+  function base() {
+    return createSession(createDefaultGameState(1, "c1", "Hero"), "s1");
+  }
+
+  it("preserves a valid pathwayLineage across a round-trip", () => {
+    const session = {
+      ...base(),
+      pathwayLineage: {
+        switches: [
+          {
+            fromPathwayId: 2,
+            atSequence: 4,
+            kind: "neighboring" as const,
+            switchTurn: 3,
+            retained: [
+              {
+                name: "Spirit Vision",
+                description: "sees spirits",
+                type: "passive" as const,
+                sourceLevel: 5,
+              },
+            ],
+          },
+        ],
+      },
+    };
+    const restored = deserializeSession(serializeSession(session));
+    expect(restored).not.toBeNull();
+    expect(restored!.pathwayLineage?.switches).toHaveLength(1);
+    expect(restored!.pathwayLineage?.switches[0].fromPathwayId).toBe(2);
+  });
+
+  it("rejects a malformed pathwayLineage", () => {
+    const raw = JSON.parse(serializeSession(base())) as Record<string, unknown>;
+    raw.pathwayLineage = { switches: [{ fromPathwayId: "x" }] };
+    expect(deserializeSession(JSON.stringify(raw))).toBeNull();
+  });
+
+  it("a legacy save with no pathwayLineage stays valid", () => {
+    const raw = JSON.parse(serializeSession(base())) as Record<string, unknown>;
+    delete raw.pathwayLineage;
+    expect(deserializeSession(JSON.stringify(raw))).not.toBeNull();
+  });
+});

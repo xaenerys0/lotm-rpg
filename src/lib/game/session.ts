@@ -19,6 +19,7 @@ import { isValidAcquiredPowersShape } from "./acquired-powers";
 import { isValidCustomArtifactStateShape } from "./custom-artifacts";
 import { isValidRitualStateShape } from "./ritual";
 import { isValidAscensionRiteShape } from "./ascension-rite";
+import { isValidPathwayLineageShape } from "./pathway-lineage";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
 import { joinRoster, isValidTrackedNpcStateShape } from "./tracked-npcs";
@@ -520,6 +521,12 @@ export function isValidSessionShape(obj: unknown): boolean {
     s.trackedNpcState !== undefined &&
     !isValidTrackedNpcStateShape(s.trackedNpcState)
   ) {
+    return false;
+  }
+
+  // Pathway lineage (issue #211) is optional but strict when present — it rides
+  // the deserialize `...s` spread (no seeding); absent means never switched.
+  if (s.pathwayLineage !== undefined && !isValidPathwayLineageShape(s.pathwayLineage)) {
     return false;
   }
 
