@@ -125,6 +125,7 @@ function ForgeCharacter() {
   const [endgame, setEndgame] = useState<AdminEndgame>("none");
   const [grantPower, setGrantPower] = useState(false);
   const [grantAnchor, setGrantAnchor] = useState(false);
+  const [switchReady, setSwitchReady] = useState(false);
   const [artifacts, setArtifacts] = useState<ReadonlySet<string>>(new Set());
   const [created, setCreated] = useState<string | null>(null);
 
@@ -188,6 +189,11 @@ function ForgeCharacter() {
       knowsActingMethod: knowsMethod,
       advancementReady,
       endgame,
+      // Pathway switching (issue #211): poise the build to exchange into its
+      // first neighbouring pathway (recipe seeded, potion digested).
+      switchReadyTarget: switchReady
+        ? getPathway(pathwayId)?.neighboringPathways.find((id) => id !== pathwayId)
+        : undefined,
       artifactNumbers: [...artifacts],
       anchors,
       acquiredPowers: grantPower
@@ -430,6 +436,13 @@ function ForgeCharacter() {
             onChange={setGrantAnchor}
             disabled={endgame !== "none"}
             note={endgame !== "none" ? "Endgame seeds its own anchors" : undefined}
+          />
+          <Toggle
+            id="forge-switch"
+            label="Pathway-switch ready (neighbour's potion + digested)"
+            checked={switchReady}
+            onChange={setSwitchReady}
+            note="Poises the character to exchange into a neighbouring pathway"
           />
         </fieldset>
 

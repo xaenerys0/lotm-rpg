@@ -145,6 +145,16 @@ export interface GameSession {
    */
   codexState?: import("./codex").CodexState;
   /**
+   * Pathway lineage (issue #211): the pathways the character has SWITCHED away
+   * from, each with a frozen snapshot of the abilities retained (fused) from it.
+   * The current pathway lives in `gameState.pathwayId` (a switch rewrites it);
+   * this records what came before so the fused ability set can be reconstructed
+   * cheaply. Absent on saves that never switched; strictly validated when present
+   * and preserved on the deserialize `...s` spread (no seeding), exactly like
+   * `ritualState`. No DB migration — it serializes inside the session blob.
+   */
+  pathwayLineage?: import("./pathway-lineage").PathwayLineageState;
+  /**
    * Tracked-NPC roster (issue #101): the durable cast the player is bound to —
    * allies who follow (a party) and hostiles who follow (pursuers) — distinct
    * from the transient, scene-scoped `gameState.npcsPresent`. Followers are

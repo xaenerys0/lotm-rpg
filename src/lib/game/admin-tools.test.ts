@@ -18,6 +18,8 @@ import { uniquenessItemFor } from "./apotheosis";
 import { canAttemptApotheosis } from "./apotheosis";
 import { canAttemptPillarAscension, PILLAR_SEQUENCE } from "./pillars";
 import { ascensionRiteReady } from "./ascension-rite";
+import { canAttemptSwitch } from "./pathway-switch";
+import { fusedAbilityNames } from "./pathway-fusion";
 import { deserializeSession, serializeSession } from "./session";
 
 // Fool (1) belongs to the Lord of Mysteries Pillar family {1,7,8}; Justiciar (12)
@@ -318,5 +320,35 @@ describe("lossOfControlPreview", () => {
       anchors: [],
     });
     expect(lossOfControlPreview(angel)).toBe("fatal");
+  });
+});
+
+describe("buildAdminCharacter — pathway switching (issue #211)", () => {
+  it("switchReadyTarget poises the character to exchange into a neighbour", () => {
+    // Visionary (2) at Seq 4, neighbour Sun (3).
+    const session = buildAdminCharacter({
+      pathwayId: 2,
+      sequenceLevel: 4,
+      digestion: "end",
+      switchReadyTarget: 3,
+    });
+    expect(session.gameState.digestion?.complete).toBe(true);
+    expect(canAttemptSwitch(session, 3)).toBe(true);
+  });
+
+  it("fusedPathways seeds a lineage whose retained abilities fuse into the sheet", () => {
+    const session = buildAdminCharacter({
+      pathwayId: 3,
+      sequenceLevel: 4,
+      digestion: "end",
+      fusedPathways: [2],
+    });
+    expect(session.pathwayLineage?.switches).toHaveLength(1);
+    const entry = session.pathwayLineage!.switches[0];
+    expect(entry.fromPathwayId).toBe(2);
+    expect(entry.retained.length).toBeGreaterThan(0);
+    // The fused abilities surface for the narrator/combat derivations.
+    const names = fusedAbilityNames(session);
+    expect(names.some((n) => n.endsWith("(fused)"))).toBe(true);
   });
 });

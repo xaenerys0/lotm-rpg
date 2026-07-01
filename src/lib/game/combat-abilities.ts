@@ -246,29 +246,54 @@ function condense(description: string): string {
 }
 
 /**
+ * The source-ability shape `combatAbilityFrom` needs — satisfied by both a
+ * rules-engine `CumulativeAbility` and a `RetainedAbility` frozen from a switched-
+ * away pathway (issue #211). `enhanced` is optional (a retained ability has none).
+ */
+export interface KitSourceAbility {
+  name: string;
+  description: string;
+  sourceLevel: number;
+  enhanced?: boolean;
+}
+
+/**
+ * Build one `CombatAbility` from a source ability, classified into a combat role
+ * and scaled for its rung. The role classification always yields a value (falling
+ * through to `utility`), so this never throws even for an unrecognised ability.
+ * `pathwayId` namespaces the id. Pure.
+ */
+export function combatAbilityFrom(
+  ability: KitSourceAbility,
+  pathwayId: number,
+): CombatAbility {
+  const kind = classifyAbility(ability.name, ability.description);
+  const base = ROLE_BASE[kind];
+  const scaled = scaleForLevel(base, ability.sourceLevel, ability.enhanced ?? false);
+  const counters = ROLE_COUNTERS[kind];
+  return {
+    id: `kit-${pathwayId}-${slug(ability.name)}`,
+    name: ability.name,
+    kind,
+    description: condense(ability.description),
+    sanityCost: scaled.sanityCost,
+    controlStrain: scaled.controlStrain,
+    cooldown: base.cooldown,
+    potency: scaled.potency,
+    ...(counters.length > 0 ? { counters } : {}),
+  };
+}
+
+/**
  * The combat ability kit for a Beyonder at `(pathwayId, sequenceLevel)` — the
  * canon cumulative abilities of every rung climbed, classified into combat roles
  * with costs and potency. Cumulative like the underlying abilities, so climbing
  * a rung visibly grows the toolkit. Pure and deterministic.
  */
 export function combatKitFor(pathwayId: number, sequenceLevel: number): CombatAbility[] {
-  return getCumulativeAbilities(pathwayId, sequenceLevel).map((ability) => {
-    const kind = classifyAbility(ability.name, ability.description);
-    const base = ROLE_BASE[kind];
-    const scaled = scaleForLevel(base, ability.sourceLevel, ability.enhanced);
-    const counters = ROLE_COUNTERS[kind];
-    return {
-      id: `kit-${pathwayId}-${slug(ability.name)}`,
-      name: ability.name,
-      kind,
-      description: condense(ability.description),
-      sanityCost: scaled.sanityCost,
-      controlStrain: scaled.controlStrain,
-      cooldown: base.cooldown,
-      potency: scaled.potency,
-      ...(counters.length > 0 ? { counters } : {}),
-    };
-  });
+  return getCumulativeAbilities(pathwayId, sequenceLevel).map((ability) =>
+    combatAbilityFrom(ability, pathwayId),
+  );
 }
 
 /** A plain-language role descriptor for the legible option/effect tag. */

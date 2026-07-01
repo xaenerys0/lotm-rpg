@@ -47,6 +47,7 @@ import {
   requiredSupport,
   resolveLocation,
   apexAbilityView,
+  retainedAbilityGroups,
   resolveActingMethodState,
   resolveProfileState,
   resolveTrackedNpcState,
@@ -240,6 +241,9 @@ export function CharacterSheet() {
   // cosmic-authority lines — and, for a Pillar, the kits of every OTHER pathway
   // in its god-family — are surfaced here alongside the own-pathway groups above.
   const apexView = apexAbilityView(state.pathwayId, state.sequenceLevel);
+  // Pathway switching (issue #211): the abilities kept (fused) from any pathways
+  // the character switched away from, grouped per prior pathway (newest first).
+  const fusedGroups = retainedAbilityGroups(session);
   const epoch = getEpoch(state.epoch);
   // Acting-method discovery (issue #95): pre-discovery the digestion mechanic is
   // not leaked numerically (or by name); the numeric value is gated the same way
@@ -424,6 +428,54 @@ export function CharacterSheet() {
                 </div>
               </details>
             ))}
+            {/* Fused pathways (issue #211): powers kept from pathways the
+              character switched away from, fused with the current kit — "a certain
+              level of mutation." One group per prior pathway, newest first. */}
+            {fusedGroups.length > 0 && (
+              <div className="mt-5">
+                <h3 className="text-xs font-semibold tracking-[0.18em] text-occult-bright uppercase">
+                  Fused Pathways
+                </h3>
+                <p className="mt-1 text-xs leading-relaxed text-muted">
+                  Powers carried over from pathways you exchanged, fused into your present
+                  form — a bizarre mutation.
+                </p>
+                <div className="mt-3 space-y-3">
+                  {fusedGroups.map((group) => (
+                    <div
+                      key={`${group.fromPathwayId}-${group.atSequence}`}
+                      className="border-l border-occult/60 pl-4"
+                    >
+                      <p className="text-xs font-semibold tracking-[0.18em] text-occult-bright uppercase">
+                        {group.fromPathwayName} Pathway
+                        <span className="ml-2 font-normal normal-case tracking-normal text-muted">
+                          {group.kind === "neighboring"
+                            ? `exchanged at Sequence ${group.atSequence}`
+                            : `poison-forced at Sequence ${group.atSequence}`}
+                        </span>
+                      </p>
+                      {group.abilities.length === 0 ? (
+                        <p className="mt-2 text-sm text-muted">
+                          No powers survived the exchange.
+                        </p>
+                      ) : (
+                        <ul className="mt-2 space-y-1.5">
+                          {group.abilities.map((ability) => (
+                            <li
+                              key={ability.name}
+                              className="text-sm leading-relaxed text-foreground"
+                            >
+                              <span className="font-medium">{ability.name}</span>
+                              <span className="text-muted"> — {ability.description}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             {/* Pre-discovery (issue #95) the secret that living the role digests
               the potion is hidden: the role guidance still shows, but under a
               neutral heading that names neither the mechanic nor digestion. The

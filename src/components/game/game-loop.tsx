@@ -73,6 +73,15 @@ import {
   canAttemptApotheosis,
   drawPetition,
   sequenceAbilities,
+  fusedAbilityNames,
+  fusedCombatKit,
+  attemptPathwaySwitch,
+  meetsSwitchRequirements,
+  switchRequirements,
+  neighboringSwitchTargets,
+  switchRelation,
+  crossPathwayPotionPlan,
+  purchaseCrossPathwayPotionItem,
   acquiredPowerAbilityLabels,
   artifactNarratorContext,
   tickAcquiredPowers,
@@ -210,7 +219,7 @@ import { SceneArt } from "./scene-art";
 import { WorldMessages } from "./world-messages";
 import { StoryChronicle } from "./story-chronicle";
 import { sceneArtKey, shouldGenerateSceneArt } from "@/lib/ai";
-import { getPathway, getSequence, pillarForPathway } from "@/lib/rules";
+import { ALL_PATHWAYS, getPathway, getSequence, pillarForPathway } from "@/lib/rules";
 import { noopSubscribe } from "@/lib/react";
 import {
   loadSessionById,
@@ -461,11 +470,16 @@ function buildAICallParams(currentSession: GameSession) {
     currentSession.gameState.pathwayId,
     currentSession.gameState.sequenceLevel,
   );
-  // True-God-aware abilities (issue #30): Sequence 0 has no rules `Sequence`.
-  const { abilities, acting } = sequenceAbilities(
+  // True-God-aware abilities (issue #30), fused across any switched-away pathways
+  // (issue #211): `fusedAbilityNames` returns the current pathway's apex-aware kit
+  // plus the deduped, `(fused)`-tagged powers kept from prior pathway switches (or
+  // the base kit unchanged when the character has never switched). Acting stays
+  // scoped to the current rung.
+  const { acting } = sequenceAbilities(
     currentSession.gameState.pathwayId,
     currentSession.gameState.sequenceLevel,
   );
+  const abilities = fusedAbilityNames(currentSession);
   // Powers the character copied/stole from others (acquired-powers subsystem)
   // ride alongside the derived ones so the narrator can wield them too.
   const allAbilities = [...abilities, ...acquiredPowerAbilityLabels(currentSession)];
@@ -1056,6 +1070,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         playerSequence: sequenceLevel,
         ambush,
         injuries: session.gameState.injuries ?? [],
+        // Fuse in abilities kept from switched-away pathways (issue #211); the
+        // helper returns the plain pathway kit when the character never switched.
+        availableKit: fusedCombatKit(session),
         availableAbilities: combatReadyAbilities,
         availableArtifacts,
         huntTarget,
@@ -1320,6 +1337,154 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       }
     },
     [session, updateSession, narrateFormulaSecured],
+  );
+
+  // Pathway switching (issue #211): buy one prerequisite of a FOREIGN pathway's
+  // switch potion. Purchase-only and formula-gated, at a premium (a foreign line's
+  // reagents come through trade). A quiet panel action like an ordinary ingredient
+  // buy; refusals surface in-world via `prepNotice`.
+  const handlePurchaseSwitchItem = useCallback(
+    (targetPathwayId: number, itemName: string) => {
+      if (!session) return;
+      const result = purchaseCrossPathwayPotionItem(session, targetPathwayId, itemName);
+      if (result.outcome === "purchased" && result.session) {
+        const next = result.session;
+        appendJournalEntries(session.id, [
+          buildJournalEntry(next.gameState, next.turnCount, {
+            eventType: "discovery",
+            summary: `Acquired ${itemName} to switch pathways.`,
+            narrative: `You secured ${itemName}, one step closer to exchanging pathways.`,
+          }),
+        ]);
+        setPrepNotice(null);
+        updateSession(next);
+      } else if (result.outcome === "unaffordable") {
+        setPrepNotice(
+          `You cannot yet afford ${itemName} (${result.cost} pence) for the exchange.`,
+        );
+      } else if (result.outcome === "formula-required") {
+        setPrepNotice(
+          "You must secure the foreign pathway's formula before gathering its ingredients.",
+        );
+      }
+    },
+    [session, updateSession],
+  );
+
+  // Pathway switching (issue #211): the engine — not the AI — decides the
+  // exchange. Mirrors `handleAdvancement` — success routes the fused result
+  // through the normal turn loop via `ENGINE_RESOLUTION`; a lost-control verdict
+  // routes through the shared setback / permadeath machinery (an unrelated poison
+  // switch forces the high-risk, deadlier failure).
+  const handlePathwaySwitch = useCallback(
+    async (targetPathwayId: number) => {
+      if (!session || endingInFlight.current || advancingRef.current) return;
+      advancingRef.current = true;
+      try {
+        const result = attemptPathwaySwitch(session, targetPathwayId);
+        const toName = getPathway(targetPathwayId)?.name ?? "the new pathway";
+
+        if (result.outcome === "switched") {
+          setAdvancing(true);
+          const switched = result.session;
+          const newSeq = switched.gameState.sequenceLevel;
+          let scene =
+            result.relation === "neighboring"
+              ? `You drink the ${toName} potion. Your old powers grind against the new and fuse into something bizarre — you are a ${result.roleName} of the ${toName} pathway now.`
+              : `You drink the alien ${toName} potion. It is poison: the world tilts, your mind splits, and you hold on only barely as two pathways war and fuse. You are a half-mad ${result.roleName} now.`;
+          let aiResponse: AIResponse | null = null;
+          if (providerConfig) {
+            try {
+              const {
+                abilities,
+                actingReqs,
+                loreContext,
+                identityContext,
+                profileContext,
+                recognitionContext,
+                epochContext,
+                cityNarration,
+                artifactEffectsContext,
+              } = buildAICallParams(switched);
+              const res = await generate({
+                config: providerConfig,
+                gameState: switched.gameState,
+                memory: switched.memory,
+                loreContext,
+                identityContext,
+                profileContext,
+                recognitionContext,
+                epochContext,
+                cityNarration,
+                artifactEffectsContext,
+                verbosity: preferences.narrativeVerbosity,
+                instruction: "advancement",
+                playerAction: `Narrate my exchange of pathways to the ${toName} pathway, Sequence ${newSeq}, ${result.roleName}. ${
+                  result.relation === "neighboring"
+                    ? "It is a neighbouring pathway; my old powers fuse with the new."
+                    : "It is an unrelated pathway — poison — and I survive it half-mad, the pathways grinding into something bizarre."
+                }`,
+                abilities,
+                actingRequirements: actingReqs,
+              });
+              if (res.response.narrative) scene = res.response.narrative;
+              aiResponse = res.response;
+              recordUsage(res.usage);
+            } catch {
+              // Deterministic scene already set.
+            }
+          }
+          const summary = `Exchanged pathways to the ${toName} pathway at Sequence ${newSeq}, ${result.roleName}.`;
+          appendJournalEntries(session.id, [
+            buildJournalEntry(switched.gameState, switched.turnCount, {
+              eventType: "advancement",
+              summary,
+              narrative: scene,
+              arc: `Sequence ${newSeq}`,
+            }),
+          ]);
+          const resolution = engineResolution(
+            aiResponse
+              ? { ...narrationOnly(aiResponse), narrative: scene }
+              : { narrative: scene },
+            { eventType: "advancement", summary },
+          );
+          updateSession(
+            transition(switched, {
+              type: "ENGINE_RESOLUTION",
+              result: resolution,
+              playerAction: `I drink the ${toName} potion and exchange pathways, fusing my old powers with the new.`,
+              kind: "advancement",
+            }),
+          );
+          setAdvancing(false);
+          return;
+        }
+
+        if (result.verdict.outcome === "permadeath") {
+          await concludeChronicle(
+            result.verdict,
+            descentAction(
+              "Narrate the pathway exchange turning to poison — the foreign potion overwhelms the mind and control is lost. This is",
+              result.verdict.severity,
+            ),
+          );
+          return;
+        }
+        applySetbackToSession(clearRitual(session));
+      } finally {
+        advancingRef.current = false;
+      }
+    },
+    [
+      session,
+      providerConfig,
+      recordUsage,
+      updateSession,
+      concludeChronicle,
+      applySetbackToSession,
+      preferences.narrativeVerbosity,
+    ],
   );
 
   // Seek the next potion's formula through the story (issue #171) — the
@@ -2285,6 +2450,17 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                           to steady your new shape.
                         </p>
                       )}
+                      {/* Pathway switching (issue #211): the alternative to
+                          climbing your own line — exchange into a neighbouring
+                          pathway (safe at the canon threshold) or gamble on an
+                          unrelated one (poison). */}
+                      <PathwaySwitchPanel
+                        session={session}
+                        busy={advancing || facingFate || formulaActionBusy}
+                        notice={prepNotice}
+                        onPurchase={handlePurchaseSwitchItem}
+                        onSwitch={(id) => void handlePathwaySwitch(id)}
+                      />
                     </TheClimb>
                   )}
                 {session.gameState.sequenceLevel === 1 && (
@@ -3835,6 +4011,211 @@ function RitualPerformancePanel({
           </button>
         </>
       )}
+    </section>
+  );
+}
+
+// Pathway switching (issue #211): the alternative to climbing your own line. A
+// neighbouring exchange (same Above-the-Sequence group) is the safe canon path at
+// the threshold; an unrelated potion is poison — survivable but ruinous. A
+// successful switch fuses the old powers into the new form.
+function SwitchTargetCard({
+  session,
+  targetId,
+  busy,
+  armedTarget,
+  onArm,
+  onPurchase,
+  onSwitch,
+}: {
+  session: GameSession;
+  targetId: number;
+  busy: boolean;
+  armedTarget: number | null;
+  onArm: (id: number | null) => void;
+  onPurchase: (targetId: number, itemName: string) => void;
+  onSwitch: (targetId: number) => void;
+}) {
+  const name = getPathway(targetId)?.name ?? `Pathway ${targetId}`;
+  const relation = switchRelation(session.gameState.pathwayId, targetId);
+  const requirements = switchRequirements(session, targetId);
+  // Derive readiness from the checklist already computed rather than calling
+  // `canAttemptSwitch` (which rebuilds `switchRequirements` internally).
+  const ready = meetsSwitchRequirements(requirements);
+  const plan = crossPathwayPotionPlan(session, targetId);
+  const buyable = plan.items.filter((status) => !status.owned && !status.locked);
+  const armed = armedTarget === targetId;
+
+  return (
+    <div className="mt-3 rounded border border-border/60 bg-surface/40 p-4">
+      <p className="text-sm font-semibold text-foreground">
+        {name} Pathway
+        <span className="ml-2 text-xs font-normal text-muted">
+          {relation === "neighboring" ? "neighbouring — safe" : "unrelated — poison"}
+        </span>
+      </p>
+      <ul className="mt-2 space-y-1 text-xs leading-relaxed">
+        {requirements.map((req) => (
+          <li key={req.id} className="text-foreground/85">
+            <span className={req.met ? "text-amber" : "text-muted"} aria-hidden="true">
+              {req.met ? "✓ " : "• "}
+            </span>
+            <span className="sr-only">{req.met ? "Met: " : "Needed: "}</span>
+            {req.label}
+          </li>
+        ))}
+      </ul>
+      {!plan.allOwned && (
+        <div className="mt-3">
+          {buyable.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {buyable.map((status) => (
+                <button
+                  key={status.item.name}
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onPurchase(targetId, status.item.name)}
+                  className="min-h-[24px] rounded border border-amber/40 px-2 py-1 text-xs text-amber transition-colors hover:bg-amber/10 disabled:opacity-50"
+                >
+                  Buy {status.item.name} ({status.cost} pence)
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-muted">
+              {plan.formulaSecured
+                ? "Gather the remaining reagents for this exchange."
+                : "Secure the foreign pathway's formula first — then its reagents unlock."}
+            </p>
+          )}
+        </div>
+      )}
+      {ready &&
+        (armed ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onSwitch(targetId)}
+              className="min-h-[24px] rounded bg-occult px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-occult/80 disabled:opacity-50"
+            >
+              {relation === "neighboring"
+                ? "Confirm the exchange"
+                : "Drink the poison and exchange"}
+            </button>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => onArm(null)}
+              className="min-h-[24px] rounded border border-border px-3 py-1.5 text-sm text-muted transition-colors hover:text-foreground disabled:opacity-50"
+            >
+              Not yet
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => onArm(targetId)}
+            className="mt-3 min-h-[24px] rounded border border-occult/50 px-3 py-1.5 text-sm text-occult-bright transition-colors hover:bg-occult/10 disabled:opacity-50"
+          >
+            Prepare to exchange into {name}
+          </button>
+        ))}
+    </div>
+  );
+}
+
+function PathwaySwitchPanel({
+  session,
+  busy,
+  notice,
+  onPurchase,
+  onSwitch,
+}: {
+  session: GameSession;
+  busy: boolean;
+  notice: string | null;
+  onPurchase: (targetId: number, itemName: string) => void;
+  onSwitch: (targetId: number) => void;
+}) {
+  const [armedTarget, setArmedTarget] = useState<number | null>(null);
+  // The poison list is long (~19 pathways); render its cards only while the
+  // disclosure is open so their per-target plan/requirement derivations don't run
+  // on every scene render for a section the player hasn't expanded.
+  const [poisonOpen, setPoisonOpen] = useState(false);
+  const current = session.gameState.pathwayId;
+  const neighbors = neighboringSwitchTargets(session);
+  const poison = ALL_PATHWAYS.filter(
+    (p) => p.id !== current && !neighbors.includes(p.id),
+  ).map((p) => p.id);
+
+  const cardProps = {
+    session,
+    busy,
+    armedTarget,
+    onArm: setArmedTarget,
+    onPurchase,
+    onSwitch,
+  };
+
+  return (
+    <section
+      aria-labelledby="pathway-switch-heading"
+      className="mt-8 rounded-lg border border-occult/30 bg-occult/[0.04] p-5"
+    >
+      <h2
+        id="pathway-switch-heading"
+        className="gaslit font-serif text-base font-semibold text-occult-bright"
+      >
+        Exchange your pathway
+      </h2>
+      <p className="mt-1 text-sm leading-relaxed text-muted">
+        Instead of climbing your own line you may exchange into another pathway, keeping
+        your powers fused with the new — a bizarre mutation. A neighbouring pathway is the
+        safe path; an unrelated potion is poison, survivable only at ruinous cost.
+        Sticking to one pathway is usually the wiser road.
+      </p>
+      {notice && (
+        <p role="status" className="mt-3 text-sm text-crimson">
+          {notice}
+        </p>
+      )}
+
+      <h3 className="mt-4 text-xs font-semibold tracking-[0.18em] text-amber uppercase">
+        Neighbouring pathways
+      </h3>
+      {neighbors.length === 0 ? (
+        <p className="mt-2 text-xs text-muted">
+          Your pathway has no neighbour to exchange into safely.
+        </p>
+      ) : (
+        neighbors.map((id) => <SwitchTargetCard key={id} targetId={id} {...cardProps} />)
+      )}
+
+      <details
+        className="group/poison mt-5"
+        onToggle={(e) => setPoisonOpen((e.currentTarget as HTMLDetailsElement).open)}
+      >
+        <summary className="flex cursor-pointer list-none items-center gap-2 marker:content-none">
+          <span
+            aria-hidden="true"
+            className="inline-block text-crimson transition-transform group-open/poison:rotate-90"
+          >
+            ▸
+          </span>
+          <span className="text-xs font-semibold tracking-[0.18em] text-crimson uppercase">
+            Drink an unrelated potion (poison)
+          </span>
+        </summary>
+        <p className="mt-2 text-xs leading-relaxed text-muted">
+          Drinking a wholly foreign pathway is akin to swallowing poison — the best
+          outcome is a half-mad state, and losing control is far more likely. Only the
+          desperate or the exceptional survive it.
+        </p>
+        {poisonOpen &&
+          poison.map((id) => <SwitchTargetCard key={id} targetId={id} {...cardProps} />)}
+      </details>
     </section>
   );
 }

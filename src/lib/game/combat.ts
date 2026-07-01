@@ -1715,6 +1715,12 @@ export interface CreateEncounterOptions {
   randomFactor?: number;
   /** The player's active injuries, which penalise their advantage. */
   injuries?: Injury[];
+  /**
+   * The player's combat kit, overriding the pathway-derived one. Passed by the
+   * caller to fuse in abilities kept from switched-away pathways (issue #211);
+   * when absent the kit is derived from the pathway/sequence alone.
+   */
+  availableKit?: CombatAbility[];
   /** Learned abilities offered as dynamic mid-fight options. */
   availableAbilities?: string[];
   /** Carried artifacts (non-reagent) offered as dynamic mid-fight options. */
@@ -1786,7 +1792,9 @@ export function createEncounter(options: CreateEncounterOptions): CombatEncounte
     result: null,
     availableAbilities: options.availableAbilities ?? [],
     availableArtifacts: options.availableArtifacts ?? [],
-    availableKit: combatKitFor(options.playerPathwayId, options.playerSequence),
+    availableKit:
+      options.availableKit ??
+      combatKitFor(options.playerPathwayId, options.playerSequence),
     ...(options.huntTarget !== undefined ? { huntTarget: options.huntTarget } : {}),
   };
 

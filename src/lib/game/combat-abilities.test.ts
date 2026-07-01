@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { classifyAbility, combatKitFor, abilityKindTag } from "./combat-abilities";
+import {
+  classifyAbility,
+  combatAbilityFrom,
+  combatKitFor,
+  abilityKindTag,
+} from "./combat-abilities";
 import type { AbilityKind } from "@/lib/types/combat";
 
 const KINDS: AbilityKind[] = ["offensive", "defensive", "control", "evasive", "utility"];
@@ -82,6 +87,48 @@ describe("combatKitFor", () => {
 
   it("returns an empty kit for an unknown pathway", () => {
     expect(combatKitFor(999, 9)).toEqual([]);
+  });
+});
+
+describe("combatAbilityFrom", () => {
+  it("builds a well-formed CombatAbility from a source ability", () => {
+    const ability = combatAbilityFrom(
+      { name: "Spectral Strike", description: "a searing blow", sourceLevel: 6 },
+      2,
+    );
+    expect(ability.id).toBe("kit-2-spectral-strike");
+    expect(ability.name).toBe("Spectral Strike");
+    expect(KINDS).toContain(ability.kind);
+    expect(ability.potency).toBeGreaterThanOrEqual(0);
+    expect(ability.potency).toBeLessThanOrEqual(0.3);
+  });
+
+  it("gives a deeper-rung ability more potency than a shallow one (same role)", () => {
+    const deep = combatAbilityFrom(
+      { name: "Strike", description: "attack blow", sourceLevel: 1 },
+      1,
+    );
+    const shallow = combatAbilityFrom(
+      { name: "Strike", description: "attack blow", sourceLevel: 9 },
+      1,
+    );
+    expect(deep.potency).toBeGreaterThan(shallow.potency);
+  });
+
+  it("classifies an unrecognised ability as utility without throwing", () => {
+    const ability = combatAbilityFrom(
+      { name: "Zzz", description: "", sourceLevel: 5 },
+      7,
+    );
+    expect(ability.kind).toBe("utility");
+  });
+
+  it("is the building block combatKitFor uses", () => {
+    const kit = combatKitFor(1, 9);
+    expect(kit.length).toBeGreaterThan(0);
+    for (const ability of kit) {
+      expect(ability.id.startsWith("kit-1-")).toBe(true);
+    }
   });
 });
 

@@ -998,6 +998,30 @@ describe("createEncounter framing + kit capture (issues #187)", () => {
     expect((encounter.availableKit ?? []).length).toBeGreaterThan(0);
   });
 
+  it("uses a caller-supplied availableKit override (fused pathways, issue #211)", () => {
+    const fusedKit = [
+      {
+        id: "kit-2-foreign",
+        name: "Foreign Power",
+        kind: "offensive" as const,
+        description: "a fused ability",
+        sanityCost: -2,
+        controlStrain: 0.1,
+        cooldown: 1,
+        potency: 0.1,
+      },
+    ];
+    const encounter = createEncounter({
+      id: "fused",
+      enemy: makeEnemy({ isBeyonder: true }),
+      playerPathwayId: 1,
+      playerSequence: 5,
+      availableKit: fusedKit,
+      randomFactor: 0.5,
+    });
+    expect(encounter.availableKit).toEqual(fusedKit);
+  });
+
   it("defaults a context from the enemy when none is passed", () => {
     const beyonder = createEncounter({
       id: "d1",

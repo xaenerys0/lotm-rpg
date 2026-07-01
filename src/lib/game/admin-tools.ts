@@ -15,6 +15,8 @@ import {
   type AnchorKind,
 } from "./anchors";
 import { uniquenessItemFor } from "./apotheosis";
+import { makePathwaySwitch } from "./pathway-lineage";
+import { switchRelation } from "./pathway-switch";
 import { PILLAR_SEQUENCE } from "./pillars";
 import { createDigestionState } from "./digestion";
 import { adjustFunds, getFunds } from "./marketplace";
@@ -118,6 +120,18 @@ export interface AdminCharacterOptions {
   anchors?: readonly AdminAnchorSpec[];
   /** Poise the build at an endgame ascent (apotheosis at Seq 1, pillar at Seq 0). */
   endgame?: AdminEndgame;
+  /**
+   * Pathway switching (issue #211): prepare the switch potion for this TARGET
+   * pathway (its current-rung recipe seeded into inventory + digestion complete)
+   * so the character is poised to exchange into it from the switch panel.
+   */
+  switchReadyTarget?: number;
+  /**
+   * Pathway switching (issue #211): pathways the character has ALREADY switched
+   * away from — seeds a fused `pathwayLineage` so the fused abilities show on the
+   * sheet and in combat without playing the exchange out.
+   */
+  fusedPathways?: readonly number[];
 }
 
 /** Append a fresh copy of an item to the inventory. */
@@ -211,6 +225,24 @@ export function buildAdminCharacter(
     gameState = makeAdvancementReadyState(gameState);
   }
 
+  // Poise the build to switch into `switchReadyTarget`: digest the current potion
+  // and seed the target pathway's current-rung recipe so the switch panel unlocks.
+  if (options.switchReadyTarget !== undefined) {
+    const switchItems = (
+      getSequence(options.switchReadyTarget, gameState.sequenceLevel)
+        ?.prerequisiteItems ?? []
+    ).map((item) => ({ ...item }));
+    gameState = {
+      ...gameState,
+      inventory: [...gameState.inventory, ...switchItems],
+      digestion: {
+        ...createDigestionState(gameState.pathwayId, gameState.sequenceLevel),
+        progress: 100,
+        complete: true,
+      },
+    };
+  }
+
   // Endgame inventory: the Uniqueness artifact(s) the ascent consumes.
   if (apotheosisReady) {
     gameState = withItem(gameState, uniquenessItemFor(options.pathwayId));
@@ -234,6 +266,21 @@ export function buildAdminCharacter(
     .slice(0, MAX_ACQUIRED_POWERS)
     .map((spec, i) => buildAcquiredPower(spec, `${id}-power-${i}`));
   if (powers.length > 0) session = { ...session, acquiredPowers: powers };
+
+  // An already-fused character (issue #211): record each pathway switched away
+  // from with its frozen retained-ability snapshot.
+  if (options.fusedPathways && options.fusedPathways.length > 0) {
+    const seq = session.gameState.sequenceLevel;
+    const switches = options.fusedPathways.map((fromId) =>
+      makePathwaySwitch(
+        fromId,
+        seq,
+        switchRelation(session.gameState.pathwayId, fromId),
+        0,
+      ),
+    );
+    session = { ...session, pathwayLineage: { switches } };
+  }
 
   const anchorSpecs =
     options.anchors ?? (apotheosisReady || pillarReady ? ENDGAME_ANCHORS : []);
