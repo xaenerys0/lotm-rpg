@@ -102,6 +102,10 @@ export {
   generate,
   generateCodexRebuild,
   generateCharacterIdentity,
+  generateSocietyIdentity,
+  generateSocietyCandidates,
+  generateInvitationOutcome,
+  generateGathering,
   classifyCall,
   selectModel,
   validateProviderConfig,
@@ -132,6 +136,28 @@ export {
   type CharacterIdentity,
   type DigestionStage,
 } from "./character-identity";
+
+export {
+  buildSocietyIdentityPrompt,
+  parseSocietyIdentity,
+  buildSocietyCandidatesPrompt,
+  parseSocietyCandidates,
+  buildInvitationOutcomePrompt,
+  parseInvitationOutcome,
+  buildGatheringPrompt,
+  parseGatheringNarration,
+  MAX_SOCIETY_CANDIDATES,
+  MAX_GATHERING_INTEL,
+  type SocietyIdentityInput,
+  type SocietyIdentity,
+  type SocietyCandidatesInput,
+  type SocietyCandidate,
+  type CanonSeedLite,
+  type InvitationOutcomeInput,
+  type InvitationOutcome,
+  type GatheringInput,
+  type GatheringNarration,
+} from "./society-generation";
 
 export {
   createEmbeddingProvider,

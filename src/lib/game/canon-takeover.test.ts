@@ -32,6 +32,20 @@ describe("createCanonCharacterSession", () => {
     expect(createCanonCharacterSession(dunn, createMemoryState()).canonPosition).toBe(12);
   });
 
+  it("pre-seeds Klein the empty Tarot Club and leaves a non-founder without one", () => {
+    // Klein IS the Fool who convenes the Tarot Club — he begins holding it, empty.
+    const kleinSession = createCanonCharacterSession(klein, createMemoryState());
+    expect(kleinSession.societyState?.kind).toBe("tarot-club");
+    expect(kleinSession.societyState?.name).toBe("The Tarot Club");
+    expect(kleinSession.societyState?.members).toEqual([]);
+    expect(kleinSession.societyState?.meetingPlace).toBeTruthy();
+    // A non-founder (Dunn) starts with no society — he uses the invitation flow.
+    expect(dunn.id).not.toBe("klein-moretti");
+    expect(
+      createCanonCharacterSession(dunn, createMemoryState()).societyState,
+    ).toBeUndefined();
+  });
+
   it("re-seeds digestion for a NON-9 canon start sequence", () => {
     const session = createCanonCharacterSession(dunn, createMemoryState());
     expect(session.gameState.sequenceLevel).toBe(7);

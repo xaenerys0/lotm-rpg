@@ -1,23 +1,35 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  applyGatheringNarration,
   canConvene,
   canFoundSociety,
+  canonCandidateSeeds,
+  commitInvitedMember,
   foundSociety,
   holdGathering,
+  invitedCanonIds,
   isValidSocietyShape,
   memberArc,
   memberPathwayHint,
   migrateSocietyState,
   recruitMember,
   resolveMemberArc,
+  seedCanonSociety,
   seedSocietyMembership,
   societyKindForPathway,
+  commitAndIntegrateMember,
   GATHERING_COOLDOWN_TURNS,
+  MAX_SOCIETY_MEMBERS,
   RESOLVED_ARC_ID,
   SOCIETY_KIND_LABELS,
+  type SocietyMemberCommit,
   type SocietyState,
 } from "./society";
+import { createDefaultGameState, createSession } from "./session";
+import { resolveTrackedNpcState } from "./tracked-npcs";
+import { resolveCodexState } from "./codex";
+import type { GameSession } from "./types";
 
 const lowRoll = (): number => 0; // always shares intel, always advances arcs
 const highRoll = (): number => 0.99; // never shares, never trades
@@ -284,5 +296,367 @@ describe("seedSocietyMembership (issue #131)", () => {
     expect(isValidSocietyShape(seedSocietyMembership("nighthawks-tingen-team"))).toBe(
       true,
     );
+  });
+});
+
+// --- AI society overhaul --------------------------------------------------
+
+function commit(overrides: Partial<SocietyMemberCommit> = {}): SocietyMemberCommit {
+  return {
+    codeName: "Justice",
+    realName: "Audrey Hall",
+    pathwayHintProse: "reads the hearts of others",
+    arcProse: "are quietly building a following of their own",
+    origin: "canon",
+    canonId: "audrey-hall",
+    ...overrides,
+  };
+}
+
+describe("seedCanonSociety", () => {
+  it("gives Klein a pre-founded, empty Tarot Club with fiction", () => {
+    const state = seedCanonSociety("klein-moretti");
+    expect(state).not.toBeNull();
+    expect(state?.kind).toBe("tarot-club");
+    expect(state?.name).toBe("The Tarot Club");
+    expect(state?.members).toEqual([]);
+    expect(state?.description).toBeTruthy();
+    expect(state?.ethos).toBeTruthy();
+    expect(state?.meetingPlace).toBeTruthy();
+    // Seeded so a gathering is immediately possible once members exist.
+    expect(state?.lastGatheringTurn).toBe(-GATHERING_COOLDOWN_TURNS);
+    expect(isValidSocietyShape(state)).toBe(true);
+  });
+
+  it("returns null for a canon figure who is not a founder (e.g. Audrey)", () => {
+    expect(seedCanonSociety("audrey-hall")).toBeNull();
+    expect(seedCanonSociety("unknown-person")).toBeNull();
+  });
+
+  it("returns a fresh copy each call (no shared mutable template)", () => {
+    const a = seedCanonSociety("klein-moretti");
+    const b = seedCanonSociety("klein-moretti");
+    expect(a).not.toBe(b);
+    expect(a?.members).not.toBe(b?.members);
+  });
+});
+
+describe("canonCandidateSeeds", () => {
+  it("returns the corpus tarot roster for the tarot-club kind", () => {
+    const seeds = canonCandidateSeeds("tarot-club");
+    const ids = seeds.map((s) => s.canonId);
+    expect(ids).toContain("audrey-hall");
+    expect(ids).toContain("alger-wilson");
+    expect(ids).toContain("xio-derecha");
+    // Canon caution: neither the false "Death" rumour nor "The World" is a member.
+    expect(ids).not.toContain("azik-eggers");
+    expect(seeds.every((s) => s.codeName && s.realName && s.roleHint)).toBe(true);
+  });
+
+  it("excludes already-seated ids and the player's own canon id", () => {
+    const seeds = canonCandidateSeeds("tarot-club", {
+      excludeCanonIds: ["audrey-hall"],
+      excludeSelfId: "klein-moretti",
+    });
+    const ids = seeds.map((s) => s.canonId);
+    expect(ids).not.toContain("audrey-hall");
+    expect(ids).not.toContain("klein-moretti");
+  });
+
+  it("returns an empty roster for kinds with no canon seeds", () => {
+    expect(canonCandidateSeeds("church-division")).toEqual([]);
+    expect(canonCandidateSeeds("scholars-circle")).toEqual([]);
+  });
+});
+
+describe("commitInvitedMember", () => {
+  it("commits a canon candidate with its canonId, prose, and origin", () => {
+    const society = seedCanonSociety("klein-moretti")!;
+    const next = commitInvitedMember(society, commit(), "m-audrey");
+    expect(next.members).toHaveLength(1);
+    const member = next.members[0];
+    expect(member.id).toBe("m-audrey");
+    expect(member.codeName).toBe("Justice");
+    expect(member.realName).toBe("Audrey Hall");
+    expect(member.canonId).toBe("audrey-hall");
+    expect(member.origin).toBe("canon");
+    expect(member.disposition).toBe(10);
+    expect(memberPathwayHint(member)).toBe("reads the hearts of others");
+    expect(isValidSocietyShape(next)).toBe(true);
+  });
+
+  it("drops an unrecognized canonId and commits as an original", () => {
+    const society = seedCanonSociety("klein-moretti")!;
+    const next = commitInvitedMember(
+      society,
+      commit({ canonId: "totally-made-up", origin: "canon" }),
+    );
+    expect(next.members[0].canonId).toBeUndefined();
+    expect(next.members[0].origin).toBe("original");
+  });
+
+  it("rejects a duplicate canon figure already seated", () => {
+    let society = seedCanonSociety("klein-moretti")!;
+    society = commitInvitedMember(society, commit(), "m1");
+    expect(() => commitInvitedMember(society, commit(), "m2")).toThrow(/seat/i);
+  });
+
+  it("rejects a member with no code name", () => {
+    const society = seedCanonSociety("klein-moretti")!;
+    expect(() => commitInvitedMember(society, commit({ codeName: "  " }))).toThrow(
+      /code name/i,
+    );
+  });
+
+  it("honours an explicit disposition and an original candidate", () => {
+    const society = foundSociety(2, 7, "A Circle");
+    const next = commitInvitedMember(society, {
+      codeName: "The Whisper",
+      pathwayHintProse: "keeps to the shadows",
+      arcProse: "seek a lost sibling",
+      origin: "original",
+      disposition: -20,
+    });
+    expect(next.members[0].origin).toBe("original");
+    expect(next.members[0].disposition).toBe(-20);
+    expect(next.members[0].canonId).toBeUndefined();
+  });
+});
+
+describe("invitedCanonIds", () => {
+  it("lists the canon ids currently seated", () => {
+    let society = seedCanonSociety("klein-moretti")!;
+    society = commitInvitedMember(society, commit(), "m1");
+    society = recruitMember(society, lowRoll, "m2"); // a catalog member, no canonId
+    expect(invitedCanonIds(society)).toEqual(["audrey-hall"]);
+  });
+});
+
+describe("memberPathwayHint / memberArc prose preference", () => {
+  it("prefers persisted prose over the catalog index for AI members", () => {
+    const society = commitInvitedMember(
+      seedCanonSociety("klein-moretti")!,
+      commit({ pathwayHintProse: "hums forbidden hymns", arcProse: "hunt a traitor" }),
+    );
+    const member = society.members[0];
+    expect(memberPathwayHint(member)).toBe("hums forbidden hymns");
+    expect(memberArc(member)).toBe("hunt a traitor");
+  });
+
+  it("falls back to the catalog for a legacy/deterministic member", () => {
+    const society = recruitMember(foundSociety(1, 7, "Club"), lowRoll, "m1");
+    expect(memberPathwayHint(society.members[0]).length).toBeGreaterThan(0);
+    expect(memberArc(society.members[0]).length).toBeGreaterThan(0);
+  });
+});
+
+describe("holdGathering sharers", () => {
+  it("reports the code names of members who shared, one per fact", () => {
+    const society = club(2);
+    const outcome = holdGathering(society, 100, lowRoll);
+    expect(outcome.sharers).toHaveLength(outcome.facts.length);
+    expect(outcome.sharers.length).toBeGreaterThan(0);
+    for (const codeName of outcome.sharers) {
+      expect(society.members.map((m) => m.codeName)).toContain(codeName);
+    }
+  });
+
+  it("reports no sharers when the table stays quiet", () => {
+    const outcome = holdGathering(club(2), 100, highRoll);
+    expect(outcome.sharers).toEqual([]);
+    expect(outcome.facts).toEqual([]);
+  });
+});
+
+describe("applyGatheringNarration", () => {
+  it("overlays AI narrative + intel + traded name, keeping the mechanics", () => {
+    const base = holdGathering(club(2), 100, lowRoll);
+    const intel = base.facts.map((_, i) => `AI intel line ${i}`);
+    const next = applyGatheringNarration(base, {
+      narrative: "The bronze table gleams in the fog.",
+      intel,
+      tradedItemName: "A sealed confession",
+    });
+    expect(next.narrativeSeed).toBe("The bronze table gleams in the fog.");
+    next.facts.forEach((fact, i) => expect(fact.description).toBe(`AI intel line ${i}`));
+    // Mechanics unchanged: same society, same fact count, same item count.
+    expect(next.society).toBe(base.society);
+    expect(next.facts).toHaveLength(base.facts.length);
+    if (base.items.length > 0) {
+      expect(next.items[0].name).toBe("A sealed confession");
+    }
+  });
+
+  it("never mints an item the engine withheld", () => {
+    const base = holdGathering(club(2), 100, highRoll); // no item traded
+    const next = applyGatheringNarration(base, {
+      tradedItemName: "A phantom relic",
+    });
+    expect(next.items).toEqual([]);
+  });
+
+  it("keeps deterministic prose when narration fields are blank/absent", () => {
+    const base = holdGathering(club(2), 100, lowRoll);
+    const next = applyGatheringNarration(base, { narrative: "   " });
+    expect(next.narrativeSeed).toBe(base.narrativeSeed);
+    expect(next.facts).toEqual(base.facts);
+  });
+});
+
+describe("isValidSocietyShape — AI fields", () => {
+  it("accepts a society with AI fiction and a pure-prose member", () => {
+    const society = commitInvitedMember(seedCanonSociety("klein-moretti")!, commit());
+    expect(isValidSocietyShape(society)).toBe(true);
+  });
+
+  it("rejects a non-string society description", () => {
+    const bad = { ...foundSociety(1, 7, "Club"), description: 42 };
+    expect(isValidSocietyShape(bad)).toBe(false);
+  });
+
+  it("rejects a member with an invalid origin literal", () => {
+    const society = commitInvitedMember(seedCanonSociety("klein-moretti")!, commit());
+    const bad = {
+      ...society,
+      members: [{ ...society.members[0], origin: "bogus" }],
+    };
+    expect(isValidSocietyShape(bad)).toBe(false);
+  });
+
+  it("rejects a member with a non-string canonId", () => {
+    const society = commitInvitedMember(seedCanonSociety("klein-moretti")!, commit());
+    const bad = {
+      ...society,
+      members: [{ ...society.members[0], canonId: 7 }],
+    };
+    expect(isValidSocietyShape(bad)).toBe(false);
+  });
+});
+
+describe("migrateSocietyState — AI members", () => {
+  it("preserves an AI member's prose fields unchanged (idempotent)", () => {
+    const society = commitInvitedMember(seedCanonSociety("klein-moretti")!, commit());
+    const migrated = migrateSocietyState(society);
+    expect(migrated).toBe(society); // no change → same reference
+    expect(migrated.members[0].pathwayHintProse).toBe("reads the hearts of others");
+  });
+});
+
+describe("commitInvitedMember — full table cap", () => {
+  it("rejects a commit once MAX_SOCIETY_MEMBERS seats are filled", () => {
+    let society = seedCanonSociety("klein-moretti")!;
+    for (let i = 0; i < MAX_SOCIETY_MEMBERS; i++) {
+      society = commitInvitedMember(
+        society,
+        commit({ codeName: `Member ${i}`, origin: "original", canonId: undefined }),
+        `m${i}`,
+      );
+    }
+    expect(society.members).toHaveLength(MAX_SOCIETY_MEMBERS);
+    expect(() =>
+      commitInvitedMember(
+        society,
+        commit({ codeName: "One too many", origin: "original", canonId: undefined }),
+      ),
+    ).toThrow(/seat at the long table is filled/i);
+  });
+});
+
+describe("canonCandidateSeeds — nighthawk code names are the real names (not invented canon)", () => {
+  it("uses each Nighthawk's real name as the code name (no fabricated card)", () => {
+    const seeds = canonCandidateSeeds("nighthawk-squad");
+    for (const seed of seeds) {
+      expect(seed.codeName).toBe(seed.realName);
+    }
+    expect(seeds.map((s) => s.realName)).toContain("Dunn Smith");
+    // No invented card-style monikers.
+    expect(seeds.map((s) => s.codeName)).not.toContain("The Captain");
+  });
+});
+
+describe("commitAndIntegrateMember — full-world integration", () => {
+  function baseSession(): GameSession {
+    return {
+      ...createSession(createDefaultGameState(1, "char-int", "Klein"), "s-int", 1000),
+      societyState: seedCanonSociety("klein-moretti")!,
+    };
+  }
+
+  it("seats the member AND rosters them as an ally AND files a Codex person", () => {
+    const next = commitAndIntegrateMember(
+      baseSession(),
+      {
+        codeName: "Justice",
+        realName: "Audrey Hall",
+        pathwayHintProse: "reads the hearts of others",
+        arcProse: "are building a following",
+        origin: "canon",
+        canonId: "audrey-hall",
+        note: "A Visionary noble who would answer the call.",
+      },
+      () => "m-int-1",
+    );
+    // Seated in the society.
+    expect(next.societyState?.members.map((m) => m.realName)).toContain("Audrey Hall");
+    // Rostered as a following ally.
+    const roster = resolveTrackedNpcState(next.trackedNpcState).roster;
+    expect(roster).toContainEqual(
+      expect.objectContaining({
+        name: "Audrey Hall",
+        disposition: "ally",
+        follows: true,
+      }),
+    );
+    // Filed as a Codex person, code name as an alias, dossier as the note.
+    const person = resolveCodexState(next.codexState).entities.find(
+      (e) => e.name === "Audrey Hall",
+    );
+    expect(person?.kind).toBe("person");
+    expect(person?.aliases).toContain("Justice");
+    expect(person?.note).toContain("Visionary");
+  });
+
+  it("propagates a commit failure (duplicate canon) without partial integration", () => {
+    let session = baseSession();
+    session = commitAndIntegrateMember(
+      session,
+      {
+        codeName: "Justice",
+        realName: "Audrey Hall",
+        pathwayHintProse: "reads hearts",
+        arcProse: "build power",
+        origin: "canon",
+        canonId: "audrey-hall",
+      },
+      () => "m1",
+    );
+    expect(() =>
+      commitAndIntegrateMember(session, {
+        codeName: "Justice",
+        realName: "Audrey Hall",
+        pathwayHintProse: "reads hearts",
+        arcProse: "build power",
+        origin: "canon",
+        canonId: "audrey-hall",
+      }),
+    ).toThrow(/seat/i);
+    // Only one member + one roster entry — no duplicate integration.
+    expect(session.societyState?.members).toHaveLength(1);
+    expect(resolveTrackedNpcState(session.trackedNpcState).roster).toHaveLength(1);
+  });
+
+  it("is a no-op when the session has no society", () => {
+    const noSociety = createSession(
+      createDefaultGameState(1, "char-none", "Klein"),
+      "s-none",
+      1000,
+    );
+    const result = commitAndIntegrateMember(noSociety, {
+      codeName: "Nobody",
+      pathwayHintProse: "x",
+      arcProse: "y",
+      origin: "original",
+    });
+    expect(result).toBe(noSociety);
   });
 });
