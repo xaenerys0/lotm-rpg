@@ -8,6 +8,7 @@ import {
   ritualCircumstanceFidelity,
   ritualFidelity,
   ritualInProgress,
+  ritualNarratorContext,
   ritualQuestLabel,
   ritualStepsFor,
   RITUAL_FIDELITY_CAP,
@@ -167,6 +168,33 @@ describe("ritualInProgress", () => {
     expect(ritualInProgress(sessionAt(), TARGET)).toBe(false);
     expect(ritualInProgress(beginRitual(sessionAt(), TARGET), TARGET)).toBe(true);
     expect(ritualInProgress(beginRitual(sessionAt(), TARGET), 4)).toBe(false);
+  });
+});
+
+describe("ritualNarratorContext (issue #220)", () => {
+  it("is null when no advancement rite is under way", () => {
+    expect(ritualNarratorContext(sessionAt())).toBeNull();
+  });
+
+  it("names the target + current role and forbids narrating the ascension", () => {
+    const ctx = ritualNarratorContext(beginRitual(sessionAt(6, 1), TARGET));
+    expect(ctx).not.toBeNull();
+    // Fool Seq 6 → 5: current "Clown", target "Magician" (Marionettist family).
+    expect(ctx).toContain(`Sequence ${TARGET}`);
+    expect(ctx).toMatch(/NOT the advancement itself/);
+    expect(ctx).toMatch(/has NOT ascended/);
+    expect(ctx).toMatch(/when they drink the potion and the game commits/);
+  });
+
+  it("is null for a stale rite whose target is not one rung below now", () => {
+    // A rite begun for Seq 5, but the character has since drifted to Seq 4 — the
+    // rite no longer feeds this advancement, so it must not steer narration.
+    const begun = beginRitual(sessionAt(6, 1), TARGET);
+    const drifted: GameSession = {
+      ...begun,
+      gameState: { ...begun.gameState, sequenceLevel: 4 },
+    };
+    expect(ritualNarratorContext(drifted)).toBeNull();
   });
 });
 

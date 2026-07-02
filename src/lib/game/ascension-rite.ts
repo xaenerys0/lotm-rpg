@@ -2,7 +2,7 @@ import type { SessionFact } from "@/lib/ai";
 import { pillarForPathway } from "@/lib/rules";
 
 import { clamp } from "./math";
-import { ritualCircumstanceFidelity } from "./ritual";
+import { RITE_IN_PROGRESS_GUARD, ritualCircumstanceFidelity } from "./ritual";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -234,6 +234,38 @@ export function ascensionRiteReady(session: GameSession): boolean {
   return (
     ascensionRiteInProgress(session) &&
     ascensionRiteFidelity(session) >= ASCENSION_FIDELITY_CAP
+  );
+}
+
+/**
+ * The binding `## Ritual in Progress` narrator block (threaded via
+ * `GenerateOptions.ritualContext` → `prompts.ts`), or `null` when no apex rite is
+ * under way. The apex counterpart to `ritualNarratorContext` (issue #220): tells
+ * the narrator that beginning/performing the rite is NOT the ascension itself —
+ * the character has not yet become a True God / Pillar — so it portrays the rite
+ * forming and the power gathering, never a completed ascension (which only the
+ * engine-committed ascent may narrate). Pure.
+ */
+export function ascensionRiteNarratorContext(session: GameSession): string | null {
+  const state = session.ascensionRite;
+  const tier = ascensionTierFor(session);
+  // Only surface a rite that matches the apex the character can currently ascend
+  // into (a stale rite for the other tier is inert — mirrors `ascensionRiteFidelity`).
+  if (!state || tier === null || state.tier !== tier) return null;
+
+  const opening =
+    tier === "pillar"
+      ? "A rite of ascension above the Sequences — drawing a god-family's authority together to become a Pillar of the universe — is under way."
+      : "A rite of apotheosis — the ceremony to seize the empty throne of Sequence 0 and become a True God — is under way.";
+  const becoming = tier === "pillar" ? "a Pillar above the Sequences" : "a True God";
+
+  return (
+    `${opening} This is the protective, world-shaking rite performed to endure the ` +
+    `transformation; beginning or performing it does NOT complete the ascension. The ` +
+    `character has NOT yet become ${becoming} or gained that dominion, and remains ` +
+    `who they are now. Portray the rite taking shape and the vast power gathering — ` +
+    `the pressure, the peril, the threshold drawing nearer — but ${RITE_IN_PROGRESS_GUARD} ` +
+    `The transformation completes only later, when the game commits it.`
   );
 }
 

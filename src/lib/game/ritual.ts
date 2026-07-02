@@ -54,6 +54,15 @@ export interface RitualState {
   fidelity: number;
 }
 
+/**
+ * The core issue-#220 guardrail sentence, shared verbatim by both the advancement
+ * (`ritualNarratorContext`) and apex (`ascensionRiteNarratorContext`) narrator
+ * blocks so a future rewording can never drift between the two paths.
+ */
+export const RITE_IN_PROGRESS_GUARD =
+  "never narrate the ascension as accomplished, and do not declare the rite " +
+  'finished or announce it is "ready".';
+
 /** Fraction of the remaining gap to a faithful rite closed per ideal turn. */
 export const RITUAL_PROGRESS_RATE = 0.3;
 /** At/above this fidelity the rite counts as fully matured (avoids endless churn). */
@@ -236,6 +245,42 @@ export function ritualFidelity(session: GameSession, targetSeq: number): number 
 export function ritualInProgress(session: GameSession, targetSeq: number): boolean {
   const state = session.ritualState;
   return state !== undefined && state.targetSeq === targetSeq;
+}
+
+/**
+ * The binding `## Ritual in Progress` narrator block (threaded via
+ * `GenerateOptions.ritualContext` → `prompts.ts`), or `null` when no advancement
+ * rite is under way. Tells the narrator that beginning/performing the rite is NOT
+ * the advancement itself: the character remains their current role and has not
+ * ascended — portray the rite forming and the surge building, never a completed
+ * becoming, which only the engine-committed climb may narrate (issue #220). Pure.
+ */
+export function ritualNarratorContext(session: GameSession): string | null {
+  const state = session.ritualState;
+  if (!state) return null;
+
+  const { pathwayId, sequenceLevel } = session.gameState;
+  // Only surface the rite the character can actually be performing now — a stale
+  // rite for a rung they are no longer one below is inert (never fed to advancement).
+  if (state.targetSeq !== sequenceLevel - 1) return null;
+
+  const targetRole =
+    getSequence(pathwayId, state.targetSeq)?.name ?? `Sequence ${state.targetSeq}`;
+  const currentRole =
+    getSequence(pathwayId, sequenceLevel)?.name ?? `Sequence ${sequenceLevel}`;
+
+  return (
+    `An Advancement Ritual toward Sequence ${state.targetSeq}, ${targetRole}, is ` +
+    `under way. This rite is the protective scaffolding a Beyonder performs to ` +
+    `survive the surge of the new Beyonder characteristic at the moment of drinking ` +
+    `the next potion — it is NOT the advancement itself, and beginning or performing ` +
+    `it does NOT make the character that role. The character REMAINS ${currentRole} ` +
+    `and has NOT ascended, become ${targetRole}, or gained its powers. Portray the ` +
+    `rite taking shape and the coming characteristic's pressure building — the strain, ` +
+    `the danger, the threshold drawing nearer — but ${RITE_IN_PROGRESS_GUARD} ` +
+    `Whether the character truly becomes ${targetRole} is decided only later, when ` +
+    `they drink the potion and the game commits the change.`
+  );
 }
 
 /** Drop any rite under way (consumed on a successful climb, or abandoned). */

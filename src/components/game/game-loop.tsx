@@ -110,6 +110,7 @@ import {
   ritualFidelity,
   ritualCircumstanceFidelity,
   ritualInProgress,
+  ritualNarratorContext,
   ritualStepsFor,
   ritualRequiredFor,
   RITUAL_FIDELITY_CAP,
@@ -118,6 +119,7 @@ import {
   clearAscensionRite,
   ascensionRiteFidelity,
   ascensionRiteInProgress,
+  ascensionRiteNarratorContext,
   ascensionRiteReady,
   ascensionTierFor,
   type AscensionTier,
@@ -515,6 +517,12 @@ function buildAICallParams(currentSession: GameSession) {
     // toward the same/neighbouring pathway the character's recorded Beyonder
     // Characteristics resonate with. null (dropped) when nothing is attracted.
     convergenceContext: convergenceNarratorContext(currentSession),
+    // Ritual in progress (issue #220): while an advancement/ascension rite is
+    // under way, the narrator must portray it forming — never a completed
+    // ascension, which only the engine-committed climb narrates. null → dropped.
+    ritualContext:
+      ritualNarratorContext(currentSession) ??
+      ascensionRiteNarratorContext(currentSession),
     // Curated guardrail selection lives in @/lib/lore (tested); the component
     // stays a thin caller (issue #63).
     loreContext: selectCuratedLore(
@@ -719,6 +727,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             cityNarration,
             artifactEffectsContext,
             convergenceContext,
+            ritualContext,
           } = buildAICallParams(session);
           const result = await generate({
             config: providerConfig,
@@ -732,6 +741,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             cityNarration,
             artifactEffectsContext,
             convergenceContext,
+            ritualContext,
             verbosity: preferences.narrativeVerbosity,
             instruction: "narrative",
             playerAction: descentAction,
@@ -918,6 +928,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               cityNarration,
               artifactEffectsContext,
               convergenceContext,
+              ritualContext,
             } = buildAICallParams(advanced);
             const res = await generate({
               config: providerConfig,
@@ -931,6 +942,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               cityNarration,
               artifactEffectsContext,
               convergenceContext,
+              ritualContext,
               verbosity: preferences.narrativeVerbosity,
               instruction: "advancement",
               playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
@@ -1296,6 +1308,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             cityNarration,
             artifactEffectsContext,
             convergenceContext,
+            ritualContext,
           } = buildAICallParams(next);
           const res = await generate({
             config: providerConfig,
@@ -1309,6 +1322,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             cityNarration,
             artifactEffectsContext,
             convergenceContext,
+            ritualContext,
             verbosity: preferences.narrativeVerbosity,
             instruction: "advancement",
             playerAction: viaTrade
@@ -1461,6 +1475,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 cityNarration,
                 artifactEffectsContext,
                 convergenceContext,
+                ritualContext,
               } = buildAICallParams(switched);
               const res = await generate({
                 config: providerConfig,
@@ -1474,6 +1489,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 cityNarration,
                 artifactEffectsContext,
                 convergenceContext,
+                ritualContext,
                 verbosity: preferences.narrativeVerbosity,
                 instruction: "advancement",
                 playerAction: `Narrate my exchange of pathways to the ${toName} pathway, Sequence ${newSeq}, ${result.roleName}. ${
@@ -1704,6 +1720,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         cityNarration,
         artifactEffectsContext,
         convergenceContext,
+        ritualContext,
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
@@ -1738,6 +1755,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           cityNarration,
           artifactEffectsContext,
           convergenceContext,
+          ritualContext,
           verbosity: preferences.narrativeVerbosity,
           pinnedEntities,
           instruction,
@@ -1976,6 +1994,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         cityNarration,
         artifactEffectsContext,
         convergenceContext,
+        ritualContext,
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
@@ -1996,6 +2015,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           cityNarration,
           artifactEffectsContext,
           convergenceContext,
+          ritualContext,
           verbosity: preferences.narrativeVerbosity,
           pinnedEntities,
           instruction,
@@ -2157,7 +2177,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     // Engine first (captures the opening progress + the quest label), then narrate
     // the rite's opening as a player turn through the validated pipeline.
     const begun = beginRitual(session, target);
-    const action = `I begin the Advancement Ritual to become a ${roleName}, performing its rite in earnest here and now.`;
+    const action = `I begin the Advancement Ritual for the ascent to ${roleName} — performing its opening rites here and now and bracing for the surge of the new characteristic to come. The rite is only beginning; the climb itself still lies ahead, and I have not yet become a ${roleName}.`;
     const choice = freeTextToChoice(action);
     const withChoice = {
       ...begun,
@@ -2179,8 +2199,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     const begun = beginAscensionRite(session);
     const action =
       tier === "pillar"
-        ? `I begin the rite of ascension above the sequences, drawing my family's godhoods together to become ${pillarName(session.gameState.pathwayId)} — performing it in earnest here and now.`
-        : `I begin the rite of apotheosis, opening the ceremony to seize the throne of ${trueGodName(session.gameState.pathwayId)} — performing it in earnest here and now.`;
+        ? `I begin the rite of ascension above the sequences, opening the ceremony to draw my family's godhoods together toward becoming ${pillarName(session.gameState.pathwayId)} — performing its opening rites here and now. The rite is only beginning; the ascension itself still lies ahead, and I have not yet become a Pillar.`
+        : `I begin the rite of apotheosis, opening the ceremony to seize the throne of ${trueGodName(session.gameState.pathwayId)} — performing its opening rites here and now. The rite is only beginning; the ascension itself still lies ahead, and I have not yet become a True God.`;
     const choice = freeTextToChoice(action);
     const withChoice = {
       ...begun,

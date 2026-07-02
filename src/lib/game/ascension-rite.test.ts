@@ -4,6 +4,7 @@ import {
   advanceAscensionRite,
   ascensionRiteFidelity,
   ascensionRiteInProgress,
+  ascensionRiteNarratorContext,
   ascensionRiteQuestLabel,
   ascensionRiteReady,
   ascensionTierFor,
@@ -188,6 +189,39 @@ describe("ascensionRiteFidelity / inProgress / ready", () => {
     expect(ascensionRiteReady(s)).toBe(false);
     for (let i = 0; i < 60; i++) s = advanceAscensionRite(s, 1001 + i);
     expect(ascensionRiteReady(s)).toBe(true);
+  });
+});
+
+describe("ascensionRiteNarratorContext (issue #220)", () => {
+  it("is null when no apex rite is under way", () => {
+    expect(ascensionRiteNarratorContext(sessionAt(1))).toBeNull();
+  });
+
+  it("frames a true-god rite as beginning, not accomplished", () => {
+    const ctx = ascensionRiteNarratorContext(beginAscensionRite(sessionAt(1)));
+    expect(ctx).not.toBeNull();
+    expect(ctx).toContain("apotheosis");
+    expect(ctx).toContain("a True God");
+    expect(ctx).toMatch(/does NOT complete the ascension/);
+    expect(ctx).toMatch(/never narrate the ascension as/);
+  });
+
+  it("frames a pillar rite as beginning, not accomplished", () => {
+    const ctx = ascensionRiteNarratorContext(beginAscensionRite(sessionAt(0, 1)));
+    expect(ctx).not.toBeNull();
+    expect(ctx).toContain("above the Sequences");
+    expect(ctx).toContain("a Pillar");
+  });
+
+  it("is null for a stale rite whose tier no longer matches the current apex", () => {
+    // A true-god rite begun at Seq 1, then the character somehow sits at a rung
+    // with no apex — the rite must not steer narration.
+    const begun = beginAscensionRite(sessionAt(1));
+    const drifted: GameSession = {
+      ...begun,
+      gameState: { ...begun.gameState, sequenceLevel: 3 },
+    };
+    expect(ascensionRiteNarratorContext(drifted)).toBeNull();
   });
 });
 

@@ -2554,6 +2554,17 @@ describe("prompts", () => {
       expect(hasLayer({ convergenceContext: null }, "## Convergence")).toBe(false);
     });
 
+    it("includes the ritual-in-progress layer only when context is present (issue #220)", () => {
+      expect(
+        hasLayer(
+          { ritualContext: "An Advancement Ritual toward Sequence 5 is under way." },
+          "## Ritual in Progress",
+        ),
+      ).toBe(true);
+      expect(hasLayer({}, "## Ritual in Progress")).toBe(false);
+      expect(hasLayer({ ritualContext: null }, "## Ritual in Progress")).toBe(false);
+    });
+
     it("includes the pacing rule for player-driven turns and omits it for engine-committed ones", () => {
       expect(hasLayer({ instruction: "narrative" }, "Pacing & Agency")).toBe(true);
       expect(hasLayer({ instruction: "choices" }, "Pacing & Agency")).toBe(true);

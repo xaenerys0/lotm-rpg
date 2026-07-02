@@ -536,6 +536,16 @@ export interface PromptInput {
    */
   convergenceContext?: string | null;
   /**
+   * Ritual-in-progress context (issue #220) — the binding `## Advancement Ritual
+   * (in progress)` / `## Rite of Ascension (in progress)` block from
+   * `ritualNarratorContext` / `ascensionRiteNarratorContext` (`@/lib/game`): tells
+   * the narrator that beginning or performing an advancement/ascension rite is NOT
+   * the ascension itself — the character keeps their current Sequence and only the
+   * engine-committed climb may narrate the becoming. null/absent when no rite is
+   * under way.
+   */
+  ritualContext?: string | null;
+  /**
    * True-self ground-truth context (character-info storage) — one narrator-facing
    * line from `profilePromptContext` (pronouns, gender, appearance, demeanor);
    * null/absent when the profile is empty.

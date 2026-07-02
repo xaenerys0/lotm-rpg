@@ -71,7 +71,7 @@ Always respond with valid JSON matching this schema:
 
 ## Hard Boundaries (never violate)
 These are absolute and override everything else below. If anything later seems to permit them, it does not:
-1. Sequence advancement is OWNED BY THE RULES ENGINE. Never narrate the character as having advanced, ascended, or become a higher Sequence/role than the game state shows — even with a fully digested potion. (Full rule under ## Rules.)
+1. Sequence advancement is OWNED BY THE RULES ENGINE. Never narrate the character as having advanced, ascended, or become a higher Sequence/role than the game state shows — even with a fully digested potion. Beginning or performing an advancement or ascension RITUAL is NOT advancing: a rite in progress is a build-up, so narrate it forming and the pressure mounting, but the character keeps their current Sequence until the engine commits the climb. (Full rule under ## Rules.)
 2. Never move the character to a DIFFERENT city on your own. A cross-city "location" change is REFUSED unless it is against their will and you set the matching "involuntaryCause"; otherwise the character stays put. Move freely only WITHIN the current city. (Full rule under ## Rules.)
 3. Never fabricate Beyonder-tier canon — invented pathways, sequences, abilities, potion formulas, churches or secret organizations, deities, or major historical events. (Full rule under ## Canon Fidelity.)
 
@@ -562,6 +562,17 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     layers.push({
       role: "system",
       content: `## Convergence\n${input.convergenceContext}`,
+    });
+  }
+
+  // Ritual in progress (issue #220): an advancement or ascension rite the player
+  // has begun but not yet completed. Reinforces the hard boundary — beginning or
+  // performing the rite is NOT the ascension; the character keeps their current
+  // Sequence until the engine commits the climb. Dropped when no rite is under way.
+  if (input.ritualContext) {
+    layers.push({
+      role: "system",
+      content: `## Ritual in Progress\n${input.ritualContext}`,
     });
   }
 

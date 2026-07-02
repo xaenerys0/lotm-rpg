@@ -144,6 +144,12 @@ export interface GenerateOptions {
   artifactEffectsContext?: string | null;
   /** Convergence steering (issue #212), from `convergenceNarratorContext`. */
   convergenceContext?: string | null;
+  /**
+   * Ritual-in-progress steering (issue #220), from `ritualNarratorContext` /
+   * `ascensionRiteNarratorContext` — never narrate an in-progress rite as a
+   * completed ascension.
+   */
+  ritualContext?: string | null;
   /** True-self ground-truth context, from `profilePromptContext`. */
   profileContext?: string | null;
   /** Recognition-gap context, from `recognitionPromptContext`. */
@@ -179,6 +185,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     identityContext: options.identityContext,
     artifactEffectsContext: options.artifactEffectsContext,
     convergenceContext: options.convergenceContext,
+    ritualContext: options.ritualContext,
     profileContext: options.profileContext,
     recognitionContext: options.recognitionContext,
     epochContext: options.epochContext,
