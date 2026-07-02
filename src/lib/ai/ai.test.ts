@@ -3744,6 +3744,24 @@ describe("validation", () => {
       ).toBeUndefined();
     });
 
+    it("carries ritualClimax only when literally true (issue #220 follow-up)", () => {
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualClimax: true }))
+          .ritualClimax,
+      ).toBe(true);
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualClimax: false }))
+          .ritualClimax,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualClimax: "yes" }))
+          .ritualClimax,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x" })).ritualClimax,
+      ).toBeUndefined();
+    });
+
     it("carries sanitized codexUpdates (history-context Codex)", () => {
       const result = parseAIResponse(
         JSON.stringify({

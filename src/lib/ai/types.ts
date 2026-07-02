@@ -149,6 +149,15 @@ export interface AIResponse {
    * ONLY AI-driven acting-method discovery trigger and is NEVER a sanity scare.
    */
   actingMethodTaught?: boolean;
+  /**
+   * The fiction reached an in-progress advancement/ascension rite's culminating
+   * moment this turn (issue #220 follow-up) — the chosen hour/omen has come, the
+   * materials are laid, the character is undisturbed. Drop-not-throw flag (carried
+   * only when `true`); the game brings whichever rite is under way to its peak
+   * (`climaxRitual`/`climaxAscensionRite`), so narrative timing — not just idle
+   * turns — can complete a rite. Never itself advances the Sequence.
+   */
+  ritualClimax?: boolean;
   itemsDiscovered?: Item[];
   /**
    * Currency found (or lost) in the fiction this turn, in pence (issue #16

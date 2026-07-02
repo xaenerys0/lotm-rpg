@@ -2,7 +2,11 @@ import type { SessionFact } from "@/lib/ai";
 import { pillarForPathway } from "@/lib/rules";
 
 import { clamp } from "./math";
-import { RITE_IN_PROGRESS_GUARD, ritualCircumstanceFidelity } from "./ritual";
+import {
+  RITE_CLIMAX_INSTRUCTION,
+  RITE_IN_PROGRESS_GUARD,
+  ritualCircumstanceFidelity,
+} from "./ritual";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -265,8 +269,27 @@ export function ascensionRiteNarratorContext(session: GameSession): string | nul
     `character has NOT yet become ${becoming} or gained that dominion, and remains ` +
     `who they are now. Portray the rite taking shape and the vast power gathering — ` +
     `the pressure, the peril, the threshold drawing nearer — but ${RITE_IN_PROGRESS_GUARD} ` +
-    `The transformation completes only later, when the game commits it.`
+    `The transformation completes only later, when the game commits it. ${RITE_CLIMAX_INSTRUCTION}`
   );
+}
+
+/**
+ * Bring the ascension rite under way straight to its peak — the fiction has
+ * reached the rite's culminating moment (the narrator's `ritualClimax` flag). The
+ * apex counterpart to `climaxRitual` (issue #220 follow-up); a no-op when no apex
+ * rite is under way or it is already at the cap. Pure.
+ */
+export function climaxAscensionRite(
+  session: GameSession,
+  now: number = Date.now(),
+): GameSession {
+  const state = session.ascensionRite;
+  if (!state || state.fidelity >= ASCENSION_FIDELITY_CAP) return session;
+  return {
+    ...session,
+    ascensionRite: { ...state, fidelity: ASCENSION_FIDELITY_CAP },
+    updatedAt: now,
+  };
 }
 
 /** Drop any rite under way (consumed on a successful ascent, or abandoned). */

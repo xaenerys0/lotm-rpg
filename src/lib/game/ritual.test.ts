@@ -10,7 +10,9 @@ import {
   ritualInProgress,
   ritualNarratorContext,
   ritualQuestLabel,
+  ritualReady,
   ritualStepsFor,
+  climaxRitual,
   RITUAL_FIDELITY_CAP,
   RITUAL_WITNESS_PENALTY,
 } from "./ritual";
@@ -81,6 +83,31 @@ describe("ritualCircumstanceFidelity", () => {
       roster: [{ name: "A Nighthawk", disposition: "hostile", follows: true }],
     };
     expect(ritualCircumstanceFidelity(session)).toBe(0);
+  });
+
+  it("does NOT count the character's own tracked allies as witnesses (issue #220)", () => {
+    const session = sessionAt();
+    // A chosen ceremony attended only by the character's circle keeps its secrecy.
+    session.gameState.npcsPresent = ["Old Neil", "Rozanne Bance"];
+    session.trackedNpcState = {
+      roster: [
+        { name: "Old Neil", disposition: "ally", follows: true },
+        { name: "rozanne bance", disposition: "ally", follows: true },
+      ],
+    };
+    expect(ritualCircumstanceFidelity(session)).toBe(1);
+  });
+
+  it("still penalises a stranger present even alongside allies", () => {
+    const session = sessionAt();
+    session.gameState.npcsPresent = ["Old Neil", "A curious stranger"];
+    session.trackedNpcState = {
+      roster: [{ name: "Old Neil", disposition: "ally", follows: true }],
+    };
+    expect(ritualCircumstanceFidelity(session)).toBeCloseTo(
+      1 - RITUAL_WITNESS_PENALTY,
+      5,
+    );
   });
 });
 
@@ -184,6 +211,8 @@ describe("ritualNarratorContext (issue #220)", () => {
     expect(ctx).toMatch(/NOT the advancement itself/);
     expect(ctx).toMatch(/has NOT ascended/);
     expect(ctx).toMatch(/when they drink the potion and the game commits/);
+    // The fiction-driven climax instruction is present (issue #220 follow-up).
+    expect(ctx).toContain('"ritualClimax": true');
   });
 
   it("is null for a stale rite whose target is not one rung below now", () => {
@@ -195,6 +224,36 @@ describe("ritualNarratorContext (issue #220)", () => {
       gameState: { ...begun.gameState, sequenceLevel: 4 },
     };
     expect(ritualNarratorContext(drifted)).toBeNull();
+  });
+});
+
+describe("ritualReady + climaxRitual (issue #220 follow-up)", () => {
+  it("is not ready on a freshly-begun rite, but is once matured to the cap", () => {
+    const begun = beginRitual(sessionAt(), TARGET);
+    expect(ritualReady(begun, TARGET)).toBe(false);
+    const matured = matureRitual(begun, 15); // well past the cap
+    expect(ritualFidelity(matured, TARGET)).toBeGreaterThanOrEqual(RITUAL_FIDELITY_CAP);
+    expect(ritualReady(matured, TARGET)).toBe(true);
+  });
+
+  it("climaxRitual jumps a rite under way straight to the peak", () => {
+    const begun = beginRitual(sessionAt(), TARGET);
+    expect(ritualReady(begun, TARGET)).toBe(false);
+    const peaked = climaxRitual(begun);
+    expect(peaked.ritualState!.fidelity).toBe(RITUAL_FIDELITY_CAP);
+    expect(ritualReady(peaked, TARGET)).toBe(true);
+  });
+
+  it("climaxRitual is a no-op with no rite, and idempotent at the cap", () => {
+    const none = sessionAt();
+    expect(climaxRitual(none)).toBe(none);
+    const peaked = climaxRitual(beginRitual(sessionAt(), TARGET));
+    expect(climaxRitual(peaked)).toBe(peaked);
+  });
+
+  it("ritualReady is false for a rite begun for a different target", () => {
+    const peaked = climaxRitual(beginRitual(sessionAt(), TARGET));
+    expect(ritualReady(peaked, 4)).toBe(false);
   });
 });
 

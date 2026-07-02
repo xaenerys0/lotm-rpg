@@ -111,8 +111,10 @@ import {
   ritualCircumstanceFidelity,
   ritualInProgress,
   ritualNarratorContext,
+  ritualReady,
   ritualStepsFor,
   ritualRequiredFor,
+  climaxRitual,
   RITUAL_FIDELITY_CAP,
   advanceAscensionRite,
   beginAscensionRite,
@@ -121,6 +123,7 @@ import {
   ascensionRiteInProgress,
   ascensionRiteNarratorContext,
   ascensionRiteReady,
+  climaxAscensionRite,
   ascensionTierFor,
   type AscensionTier,
   meetsRequirements,
@@ -1947,10 +1950,18 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // Likewise the rite of ascension (apotheosis / Pillar) matures one turn —
       // the apex endgame is a multi-turn rite, not a single click.
       const ascending = advanceAscensionRite(riting);
+      // Fiction-driven peak (issue #220 follow-up): when the narrator marks the
+      // rite's culminating moment (the chosen hour/omen, materials laid,
+      // undisturbed), bring whichever rite is under way straight to its peak — so
+      // "wait until the full-moon zenith" resolves through the story, not just
+      // idle turns. Only one rite is ever active, so both are safe to apply.
+      const climaxed = resolution.response.ritualClimax
+        ? climaxAscensionRite(climaxRitual(ascending))
+        : ascending;
       // Temporary copied/stolen powers fade by one turn; expired ones are
       // released (acquired-powers subsystem), so a Polymath's Imitation or an
       // artifact-stolen ability does not linger forever.
-      const powered = tickAcquiredPowers(ascending);
+      const powered = tickAcquiredPowers(climaxed);
       // Story-consistency Codex (history-context Codex): fold the narrator's
       // entity deltas into the registry and auto-touch the entities the engine
       // knows are present (current location + present NPCs), so a recurring
@@ -4019,7 +4030,10 @@ function RitualPerformancePanel({
   const conditions = steps.filter((s) => s.kind === "condition");
   const roleName = targetSeq?.name ?? `Sequence ${target}`;
   const inProgress = ritualInProgress(session, target);
-  const fidelityPct = Math.round(ritualFidelity(session, target) * 100);
+  // At its peak the rite reads as fully formed (100%) with a clear "safest moment
+  // to drink" nudge, rather than an endless sub-100% meter (issue #220 follow-up).
+  const ready = ritualReady(session, target);
+  const fidelityPct = ready ? 100 : Math.round(ritualFidelity(session, target) * 100);
   // How the current scene will shape the rite if begun / as it matures.
   const circumstanceHint = ritualCircumstanceHint(session);
 
@@ -4063,15 +4077,28 @@ function RitualPerformancePanel({
             aria-valuenow={fidelityPct}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuetext={`The rite is ${fidelityPct}% formed`}
+            aria-valuetext={
+              ready
+                ? "The rite has reached its peak"
+                : `The rite is ${fidelityPct}% formed`
+            }
             className="mt-4 h-2 overflow-hidden rounded-full bg-surface"
           >
             <div className="h-full bg-occult/60" style={{ width: `${fidelityPct}%` }} />
           </div>
           <p className="mt-2 text-sm text-foreground/85">
-            The rite is {fidelityPct}% formed and matures as you play on.{" "}
-            {circumstanceHint} Drink below whenever you judge it ready — sooner is more
-            dangerous.
+            {ready ? (
+              <span className="font-medium text-occult-bright">
+                The rite has reached its peak — this is the safest moment to make the
+                climb below.
+              </span>
+            ) : (
+              <>
+                The rite is {fidelityPct}% formed and matures as you play on.{" "}
+                {circumstanceHint} Drink below whenever you judge it ready — sooner is
+                more dangerous.
+              </>
+            )}
           </p>
         </>
       ) : (
@@ -4387,7 +4414,9 @@ function AscensionRitePanel({
   const riteName = tier === "pillar" ? "ascension above the sequences" : "apotheosis";
   const inRite = ascensionRiteInProgress(session);
   const ready = ascensionRiteReady(session);
-  const fidelityPct = Math.round(ascensionRiteFidelity(session) * 100);
+  // At its peak the rite reads as fully formed (100%), matching RitualPerformancePanel
+  // rather than the endless sub-100% asymptote (issue #220 follow-up).
+  const fidelityPct = ready ? 100 : Math.round(ascensionRiteFidelity(session) * 100);
   const circumstanceHint = ritualCircumstanceHint(session);
 
   return (
@@ -4420,7 +4449,11 @@ function AscensionRitePanel({
             aria-valuenow={fidelityPct}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuetext={`The rite is ${fidelityPct}% formed`}
+            aria-valuetext={
+              ready
+                ? "The rite has reached its peak"
+                : `The rite is ${fidelityPct}% formed`
+            }
             className="mt-4 h-2 overflow-hidden rounded-full bg-surface"
           >
             <div className="h-full bg-occult/60" style={{ width: `${fidelityPct}%` }} />

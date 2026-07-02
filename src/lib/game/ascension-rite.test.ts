@@ -10,6 +10,7 @@ import {
   ascensionTierFor,
   beginAscensionRite,
   clearAscensionRite,
+  climaxAscensionRite,
   isValidAscensionRiteShape,
   ASCENSION_FIDELITY_CAP,
 } from "./ascension-rite";
@@ -204,6 +205,8 @@ describe("ascensionRiteNarratorContext (issue #220)", () => {
     expect(ctx).toContain("a True God");
     expect(ctx).toMatch(/does NOT complete the ascension/);
     expect(ctx).toMatch(/never narrate the ascension as/);
+    // The shared fiction-driven climax instruction rides along (issue #220 follow-up).
+    expect(ctx).toContain('"ritualClimax": true');
   });
 
   it("frames a pillar rite as beginning, not accomplished", () => {
@@ -222,6 +225,23 @@ describe("ascensionRiteNarratorContext (issue #220)", () => {
       gameState: { ...begun.gameState, sequenceLevel: 3 },
     };
     expect(ascensionRiteNarratorContext(drifted)).toBeNull();
+  });
+});
+
+describe("climaxAscensionRite (issue #220 follow-up)", () => {
+  it("jumps an apex rite under way straight to its peak", () => {
+    const begun = beginAscensionRite(sessionAt(1));
+    expect(ascensionRiteReady(begun)).toBe(false);
+    const peaked = climaxAscensionRite(begun);
+    expect(peaked.ascensionRite!.fidelity).toBe(ASCENSION_FIDELITY_CAP);
+    expect(ascensionRiteReady(peaked)).toBe(true);
+  });
+
+  it("is a no-op with no rite, and idempotent at the cap", () => {
+    const none = sessionAt(1);
+    expect(climaxAscensionRite(none)).toBe(none);
+    const peaked = climaxAscensionRite(beginAscensionRite(sessionAt(1)));
+    expect(climaxAscensionRite(peaked)).toBe(peaked);
   });
 });
 
