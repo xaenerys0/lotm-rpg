@@ -8,7 +8,8 @@ a maintainer, a future agent, or a first-time contributor — can act on it with
 follow-up questions. It produces content that matches the repo's issue templates and files
 the issue through the scripts in this skill's `scripts/` subdirectory.
 
-It works for both Claude and Codex. Codex is pointed here from the repo's `AGENTS.md`.
+This is the **Codex-native** copy of the skill (discovered under `.agents/skills/`). Claude
+loads an equivalent copy from `.claude/skills/write-github-issue/`; keep the two in sync.
 
 ## When to use this skill — and which template
 
@@ -78,7 +79,7 @@ Fill every section of `feature_request.md`:
 1. **Check for duplicates first.** Search existing issues before writing anything:
 
    ```bash
-   .claude/skills/write-github-issue/scripts/find-similar-issues.sh "<keywords>"
+   .agents/skills/write-github-issue/scripts/find-similar-issues.sh "<keywords>"
    ```
 
    If a matching open issue exists, add to it instead of filing a new one.
@@ -91,7 +92,7 @@ Fill every section of `feature_request.md`:
 3. **Create the issue** through the script:
 
    ```bash
-   .claude/skills/write-github-issue/scripts/create-issue.sh \
+   .agents/skills/write-github-issue/scripts/create-issue.sh \
      --title "<concise, specific title>" \
      --body-file <path-to-filled-body.md> \
      --label bug            # or: --label enhancement
