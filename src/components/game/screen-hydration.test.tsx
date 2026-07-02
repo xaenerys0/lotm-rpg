@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
+
+// PlayDashboard calls `useRouter` (map-travel resume param strip); stub the
+// Next navigation hooks so the SSR/hydrate harness can render it.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+}));
 
 import {
   createDefaultGameState,

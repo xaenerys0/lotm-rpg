@@ -1,6 +1,7 @@
 import type { AccessFlag, Continent, GameState, SessionFact } from "@/lib/ai";
 import { isAccessFlag } from "@/lib/ai";
 import { regionIdentity } from "@/lib/lore/region-registry";
+import { clamp } from "./math";
 import {
   emptyTrackedNpcState,
   reassertFollowersAt,
@@ -502,15 +503,7 @@ export function travelTo(
 
   const fromId = cityIdFromLocation(state.location);
   const from = fromId ? getCity(fromId) : undefined;
-  // Cross-continent journeys take a fixed crossing time rather than a distance
-  // from the matrix (which has no cross-continent entries, issue #130): the long
-  // Berserk Sea voyage to the Southern Continent or the Forsaken Land's dream
-  // passage, per `continentCrossingDays` (issue #138).
-  const days = fromId
-    ? crossesContinent(fromId, cityId)
-      ? continentCrossingDays(fromId, cityId)
-      : travelDays(fromId, cityId)
-    : null;
+  const days = journeyDays(state, cityId);
 
   const journey =
     from && days !== null
@@ -529,5 +522,125 @@ export function travelTo(
       npcsPresent: reassertFollowersAt([], trackedNpcState),
     },
     fact: { type: "event", description: journey, turnNumber },
+  };
+}
+
+/**
+ * The whole journey's length in days from the character's current city to
+ * `cityId` — the distance matrix, or the fixed cross-continent crossing time
+ * (`continentCrossingDays`) for a Berserk-Sea / dream-passage voyage (issues
+ * #130/#138). `null` when the origin city is unknown. Shared by `travelTo`'s
+ * fact wording and `planTravel`'s encounter odds.
+ */
+export function journeyDays(state: GameState, cityId: string): number | null {
+  const fromId = cityIdFromLocation(state.location);
+  if (!fromId) return null;
+  return crossesContinent(fromId, cityId)
+    ? continentCrossingDays(fromId, cityId)
+    : travelDays(fromId, cityId);
+}
+
+// ---------------------------------------------------------------------------
+// Travel as a played turn — arrival, or a chance encounter mid-journey
+// ---------------------------------------------------------------------------
+//
+// Clicking a destination on the map is a deliberate player action that should
+// play out as a narrated turn (not a silent status line). Most journeys end with
+// a clean ARRIVAL at the destination; some are interrupted by a chance ENCOUNTER
+// on the road, in which case the character is left MID-JOURNEY (a waypoint) rather
+// than at the destination and presses on later. The odds rise with the distance —
+// a longer road is a longer exposure. Pure + deterministic under an injected
+// `random`; the React layer (map-panel) rolls `Math.random()`, composes the turn,
+// and hands it to the play screen via the `BEGIN_INJECTED_TURN` state-machine action.
+
+// A gentle curve: an encounter is occasional spice, not the norm — most journeys
+// arrive cleanly. A day-0 baseline of 8% rises 2.5%/day and caps at 35%, so even a
+// long road tops out around a third. (Real routes: a 2-day hop ≈ 13%, a 6-day ≈
+// 23%, anything ≥ ~11 days = the 35% cap.)
+/** Baseline chance a just-set-out journey is interrupted by an encounter. */
+export const TRAVEL_ENCOUNTER_BASE_CHANCE = 0.08;
+/** Added encounter chance per day of travel (a longer road is more exposed). */
+export const TRAVEL_ENCOUNTER_PER_DAY = 0.025;
+/** The most likely any journey is to be interrupted, however long. */
+export const TRAVEL_ENCOUNTER_CHANCE_CAP = 0.35;
+
+/** Chance in [0,1] that a journey of `days` is interrupted mid-road. Pure. */
+export function travelEncounterChance(days: number | null): number {
+  const d = days ?? 1;
+  return clamp(
+    TRAVEL_ENCOUNTER_BASE_CHANCE + TRAVEL_ENCOUNTER_PER_DAY * d,
+    0,
+    TRAVEL_ENCOUNTER_CHANCE_CAP,
+  );
+}
+
+/** Whether the journey reached its destination or was interrupted on the way. */
+export type TravelPlanKind = "arrival" | "encounter";
+
+export interface TravelPlan {
+  /** `arrival` at the destination, or `encounter` mid-journey. */
+  kind: TravelPlanKind;
+  /** The destination city's name (for the caller's turn/fact wording). */
+  destinationName: string;
+  /** The full journey's length in days, or `null` when the origin is unknown. */
+  days: number | null;
+  /** New GameState — at the destination (arrival) or a road waypoint (encounter). */
+  state: GameState;
+  /** Memory-fact payload for the caller to record. */
+  fact: SessionFact;
+}
+
+/**
+ * Plan a deliberate journey to `cityId` as a PLAYED turn: usually a clean
+ * `arrival` at the destination, or — with `travelEncounterChance(days)` odds under
+ * the injected `random` — an `encounter` that interrupts the journey and leaves
+ * the character MID-ROAD (the destination is NOT reached, the origin city stays
+ * the map anchor, followers still travel along). `null` when the travel is not
+ * permitted (mirrors `travelTo`). Pure + deterministic. The caller composes the
+ * arrival/encounter narration and runs the turn.
+ */
+export function planTravel(
+  state: GameState,
+  cityId: string,
+  turnNumber = 0,
+  trackedNpcState: TrackedNpcState = emptyTrackedNpcState(),
+  random = 0,
+): TravelPlan | null {
+  const arrival = travelTo(state, cityId, turnNumber, trackedNpcState);
+  if (!arrival) return null;
+  // `travelTo` already validated the destination, so `getCity` is defined.
+  const destName = getCity(cityId)?.name ?? arrival.state.location;
+  const days = journeyDays(state, cityId);
+
+  if (random >= travelEncounterChance(days)) {
+    return {
+      kind: "arrival",
+      destinationName: destName,
+      days,
+      state: arrival.state,
+      fact: arrival.fact,
+    };
+  }
+
+  // Interrupted: the character never reaches the destination this turn. They are
+  // between cities on the road — `currentCity` is CLEARED so the map reads
+  // "whereabouts uncertain" (every city travel-reachable, so pressing on later
+  // re-anchors) rather than the origin city's atlas. Followers travel along,
+  // incidental NPCs are left behind — the same cast rule as an arrival.
+  return {
+    kind: "encounter",
+    destinationName: destName,
+    days,
+    state: {
+      ...state,
+      location: `On the road to ${destName}`,
+      currentCity: undefined,
+      npcsPresent: reassertFollowersAt([], trackedNpcState),
+    },
+    fact: {
+      type: "event",
+      description: `Set out for ${destName}, but the journey was interrupted on the road.`,
+      turnNumber,
+    },
   };
 }

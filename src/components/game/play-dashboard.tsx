@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { noopSubscribe } from "@/lib/react";
 import type { ProviderConfig, MemoryState } from "@/lib/ai";
 import type { GameSessionSummary } from "@/lib/game";
 import {
@@ -46,6 +48,7 @@ import {
   saveActiveSessionId,
   saveSessionIndex,
   persistSession,
+  useActiveSessionId,
   useSessionSummaries,
   useStoredValue,
 } from "@/lib/react/session-store";
@@ -167,6 +170,25 @@ export function PlayDashboard() {
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   // Two-step confirm so a destructive delete is never a single misclick.
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+
+  // Resume-into-play (map travel): the Map route composes a travel turn, makes the
+  // character active, and navigates to `/play?resume=…`. Open straight into that
+  // character's GameLoop (which narrates the arrival/encounter on mount) instead of
+  // the roster. DERIVED (never setState-in-effect): an SSR-safe one-shot read of the
+  // `?resume` intent (getServerSnapshot=false → no hydration mismatch, then the real
+  // value after hydration, the `useStoredValue` pattern) plus the active pointer;
+  // `dismissedResume` lets "Back to Dashboard" leave the resumed view for good.
+  const [dismissedResume, setDismissedResume] = useState(false);
+  const router = useRouter();
+  const resumeIntent = useSyncExternalStore(
+    noopSubscribe,
+    () => new URLSearchParams(window.location.search).has("resume"),
+    () => false,
+  );
+  const resumePointerId = useActiveSessionId();
+  const showTravelResume = resumeIntent && !!resumePointerId && !dismissedResume;
+  const playingView = showTravelResume ? "playing" : view;
+  const playingSessionId = showTravelResume ? resumePointerId : activeSessionId;
   // "Your Characters" roster pagination. `safePage` clamps the page during render
   // (rather than a setState-in-render) so the roster shrinking — e.g. after a
   // delete drops the last page — never leaves us pointing past the end.
@@ -332,11 +354,16 @@ export function PlayDashboard() {
   }, []);
 
   const handleBackToDashboard = useCallback(() => {
+    // Dismiss any map-travel resume intent so returning to the roster sticks: the
+    // in-session flag handles this render, and stripping the `?resume` param keeps
+    // it from re-opening the GameLoop on a later reload of the same URL.
+    setDismissedResume(true);
+    router.replace("/play");
     setView("home");
     setActiveSessionId(null);
     setPendingDeleteId(null);
     setSessionsOverride(loadExistingSessions());
-  }, []);
+  }, [router]);
 
   // Remove a character and every scrap of its data (shared cleanup in
   // `purgeCharacter`), then drop it from the displayed list. Cross-timeline
@@ -355,7 +382,7 @@ export function PlayDashboard() {
     [sessions],
   );
 
-  if (view === "playing" && activeSessionId) {
+  if (playingView === "playing" && playingSessionId) {
     return (
       <div className="mx-auto max-w-[var(--container-game)] px-4 py-6 animate-fade-in sm:px-6">
         <button
@@ -365,7 +392,7 @@ export function PlayDashboard() {
         >
           <span aria-hidden="true">←</span> Back to Dashboard
         </button>
-        <GameLoop sessionId={activeSessionId} />
+        <GameLoop sessionId={playingSessionId} />
       </div>
     );
   }

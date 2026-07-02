@@ -397,6 +397,62 @@ describe("transition", () => {
     });
   });
 
+  describe("BEGIN_INJECTED_TURN (map travel turn)", () => {
+    const travelChoice = {
+      id: "travel-turn",
+      text: "I complete the journey to Backlund and take in my surroundings.",
+      type: "action" as const,
+    };
+
+    it("sets up the resolution phase with the composed choice from a resting phase", () => {
+      const session = makeSession({
+        phase: "choices",
+        currentChoices: makeChoices(),
+        lastResolution: makeValidatedResponse(),
+      });
+      const next = transition(
+        session,
+        { type: "BEGIN_INJECTED_TURN", choice: travelChoice },
+        NOW,
+      );
+      expect(next.phase).toBe("resolution");
+      expect(next.currentChoices).toEqual([travelChoice]);
+      expect(next.selectedChoiceId).toBe("travel-turn");
+      expect(next.lastResolution).toBeNull();
+      expect(next.updatedAt).toBe(NOW);
+    });
+
+    it("is accepted from EVERY phase (the player left the game screen to travel)", () => {
+      // Including `resolution`: an in-flight turn on the abandoned game route is
+      // discarded and replaced, so there is no mid-turn to protect.
+      for (const phase of [
+        "idle",
+        "situation",
+        "consequences",
+        "error",
+        "resolution",
+      ] as const) {
+        const next = transition(
+          makeSession({ phase }),
+          { type: "BEGIN_INJECTED_TURN", choice: travelChoice },
+          NOW,
+        );
+        expect(next.phase).toBe("resolution");
+        expect(next.selectedChoiceId).toBe("travel-turn");
+      }
+    });
+
+    it("clears a prior error when injected from the error phase", () => {
+      const session = makeSession({ phase: "error", errorMessage: "boom" });
+      const next = transition(
+        session,
+        { type: "BEGIN_INJECTED_TURN", choice: travelChoice },
+        NOW,
+      );
+      expect(next.errorMessage).toBeNull();
+    });
+  });
+
   describe("RESOLUTION_READY", () => {
     it("transitions from resolution to consequences", () => {
       const result = makeValidatedResponse();

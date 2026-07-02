@@ -740,8 +740,16 @@ export {
   reachedDreamWorldGate,
   travelDays,
   travelTo,
+  journeyDays,
+  planTravel,
+  travelEncounterChance,
+  TRAVEL_ENCOUNTER_BASE_CHANCE,
+  TRAVEL_ENCOUNTER_PER_DAY,
+  TRAVEL_ENCOUNTER_CHANCE_CAP,
   type City,
   type TravelResult,
+  type TravelPlan,
+  type TravelPlanKind,
 } from "./travel";
 
 export {
