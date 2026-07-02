@@ -79,7 +79,7 @@ only improves the odds, never gates the climb), and that a rite already under wa
 shows its maturing-fidelity `progressbar`. `society.spec.ts` (AI Society overhaul)
 seeds a Seq-7 founder and drives the NO-PROVIDER deterministic path end-to-end —
 found the society, "Seek someone to invite" (the random-recruit fallback) seats a
-member, then "Convene above the gray fog" renders the latest-gathering region (the
+member, then "Convene the gathering" renders the latest-gathering region (the
 AI affordances need a provider + live model, so they are covered by unit tests).
 
 Enable it by exporting:

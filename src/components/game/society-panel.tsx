@@ -568,7 +568,7 @@ export function SocietyPanel() {
               }
               className="rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-gold disabled:cursor-not-allowed disabled:opacity-40"
             >
-              {busy === "convene" ? "Convening…" : "Convene above the gray fog"}
+              {busy === "convene" ? "Convening…" : "Convene the gathering"}
             </button>
           </span>
         </div>

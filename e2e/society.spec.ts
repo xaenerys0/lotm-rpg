@@ -71,7 +71,7 @@ test("found, invite (no-provider fallback), and convene end-to-end", async ({ pa
   await expect(page.getByRole("progressbar", { name: /Trust/ })).toHaveCount(1);
 
   // With a member seated, the fog opens — convene.
-  const convene = page.getByRole("button", { name: /Convene above the gray fog/ });
+  const convene = page.getByRole("button", { name: /Convene the gathering/ });
   await expect(convene).toBeEnabled();
   await convene.click();
 
