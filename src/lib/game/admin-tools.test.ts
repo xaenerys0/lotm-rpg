@@ -273,6 +273,33 @@ describe("regionOrigin", () => {
   });
 });
 
+describe("buildAdminCharacter — grounded opening beat", () => {
+  it("names the actual location + sequence and reads as established when digested", () => {
+    const origin = regionOrigin("rorsted");
+    const beat = buildAdminCharacter({
+      pathwayId: FOOL,
+      sequenceLevel: 6,
+      digestion: "end",
+      location: `${origin.cityName} — a dimly lit tea house`,
+      originCityId: origin.cityId,
+    }).gameState.openingBeat!;
+    expect(beat).toContain(origin.cityName);
+    expect(beat).toContain("Sequence 6");
+    // A digested build is established, not a just-happened becoming.
+    expect(beat).toContain("settled and familiar");
+    expect(beat).not.toContain("Tingen");
+  });
+
+  it("reads as a fresh potion for a start-of-digestion build", () => {
+    const beat = buildAdminCharacter({
+      pathwayId: FOOL,
+      sequenceLevel: 9,
+      digestion: "start",
+    }).gameState.openingBeat!;
+    expect(beat).toContain("still settling");
+  });
+});
+
 describe("buildAdminCharacter — generated-identity origin", () => {
   it("applies a city-led location, tracked city, and origin flags", () => {
     const origin = regionOrigin("forsaken");

@@ -6,10 +6,12 @@ import {
   type CanonCharacterPreset,
 } from "@/lib/lore/canon-characters";
 import type { StartScenario } from "@/lib/lore/start-scenarios";
+import { getSequence } from "@/lib/rules";
 import { createDigestionState } from "./digestion";
 import {
   createDefaultGameState,
   createSession,
+  establishedOpeningBeat,
   type CreateSessionOptions,
 } from "./session";
 import { cityIdFromLocation } from "./travel";
@@ -77,6 +79,24 @@ export function createCanonCharacterSession(
     // Re-seed digestion for the canon START sequence (the generic builder seeds
     // it for Seq 9; a non-9 canon start — Dunn/Daly at Seq 7 — needs the match).
     digestion: createDigestionState(preset.pathwayId, preset.startSequence),
+    // Ground the first turn at the figure's ACTUAL start place (issue #220
+    // follow-up): a takeover with no explicit scenario beat would otherwise fall
+    // back to the epoch's "fresh becoming in Tingen" beat — wrong for a canon
+    // figure introduced elsewhere (Audrey in Backlund, Derrick in the City of
+    // Silver). A figure whose introduction IS their becoming (`becomesOnScreen`)
+    // reads as a still-settling fresh potion; an already-established one as
+    // settled. Skip when a chosen scenario already supplied a beat.
+    ...(base.openingBeat
+      ? {}
+      : {
+          openingBeat: establishedOpeningBeat(
+            location,
+            `a Sequence ${preset.startSequence} ${
+              getSequence(preset.pathwayId, preset.startSequence)?.name ?? "Beyonder"
+            }`,
+            !preset.becomesOnScreen,
+          ),
+        }),
     canonCharacterId: preset.id,
     // Seed the figure's canon disposition so the narrator biases the choices it
     // presents toward what this character would do (the player stays free).

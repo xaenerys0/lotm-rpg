@@ -16,7 +16,7 @@ import {
   type AnchorKind,
 } from "./anchors";
 import { targetSequence } from "./advancement";
-import { uniquenessItemFor } from "./apotheosis";
+import { sequenceLabel, uniquenessItemFor } from "./apotheosis";
 import { makePathwaySwitch } from "./pathway-lineage";
 import { switchRelation } from "./pathway-switch";
 import { PILLAR_SEQUENCE } from "./pillars";
@@ -24,7 +24,7 @@ import { createDigestionState } from "./digestion";
 import { adjustFunds, getFunds } from "./marketplace";
 import { clamp } from "./math";
 import { evaluateLossOfControl, type LossOfControlSeverity } from "./sanity";
-import { createDefaultGameState, createSession } from "./session";
+import { createDefaultGameState, createSession, establishedOpeningBeat } from "./session";
 import { getCity } from "./travel";
 import type { GameSession } from "./types";
 import { applySanityImpact, grantSealedArtifact } from "./world-state";
@@ -284,6 +284,28 @@ export function buildAdminCharacter(
   if (options.accessFlags && options.accessFlags.length > 0) {
     gameState = { ...gameState, accessFlags: [...options.accessFlags] };
   }
+
+  // Seed a grounded first-turn opening beat (issue #220 follow-up): an admin build
+  // skips character creation, so without this the opening turn falls back to the
+  // epoch's default "fresh becoming in Tingen" beat — narrating the wrong city and
+  // a just-happened becoming for a character standing elsewhere at an established
+  // Sequence. Name the ACTUAL location (after the origin override above) + current
+  // standing. Playable rungs read "a Sequence N <role>"; an apex build (Seq 0 /
+  // Pillar) uses its honorific via `sequenceLabel` so the beat never leaks
+  // "Sequence 0"/"Sequence -1". Any endgame build reads as established (no potion
+  // in flight), else the digestion toggle decides.
+  const standing =
+    sequenceLevel >= 1
+      ? `a Sequence ${sequenceLevel} ${getSequence(options.pathwayId, sequenceLevel)?.name ?? "Beyonder"}`
+      : sequenceLabel(options.pathwayId, sequenceLevel);
+  gameState = {
+    ...gameState,
+    openingBeat: establishedOpeningBeat(
+      gameState.location,
+      standing,
+      digested || endgame !== "none",
+    ),
+  };
 
   if (options.sanity !== undefined) {
     gameState = {

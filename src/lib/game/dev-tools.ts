@@ -2,7 +2,7 @@ import type { GameState } from "@/lib/ai";
 import { getSequence } from "@/lib/rules";
 
 import { createDigestionState } from "./digestion";
-import { createDefaultGameState, createSession } from "./session";
+import { createDefaultGameState, createSession, establishedOpeningBeat } from "./session";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -70,6 +70,15 @@ export function createTestCharacter(
     // The next potion's prerequisites verbatim (category + name) satisfy the
     // ingredient gate via hasItemMatching.
     inventory: (target?.prerequisiteItems ?? []).map((item) => ({ ...item })),
+    // Ground the first turn in the seeded state (issue #220 follow-up): without an
+    // opening beat the game loop falls back to the epoch's "fresh becoming" beat,
+    // narrating this fully-digested, established Sequence 9 as if it had only just
+    // happened. Name the current location + standing instead.
+    openingBeat: establishedOpeningBeat(
+      base.location,
+      `a Sequence 9 ${getSequence(pathwayId, 9)?.name ?? "Beyonder"}`,
+      true,
+    ),
   };
   return {
     ...createSession(gameState, TEST_CHARACTER_ID, now),
