@@ -9,6 +9,7 @@ import {
   grantArtifactsToSession,
   lossOfControlPreview,
   makeAdvancementReady,
+  regionOrigin,
   setSessionFunds,
   setSessionSanity,
   PROVIDER_CONFIG_KEY,
@@ -53,6 +54,15 @@ function loadProviderConfig(): ProviderConfig | null {
 }
 
 const REGION_IDS = Object.keys(CHARACTER_REGIONS) as CharacterRegion[];
+
+/**
+ * The era descriptor fed to the identity generator. Admin builds always stand up
+ * in the Fifth Epoch (`buildAdminCharacter` passes no epoch), so this is fixed —
+ * it grounds the generated background in the gaslit present rather than a
+ * pre-Iron-Age era.
+ */
+const FIFTH_EPOCH_LABEL =
+  "the Fifth Epoch — a gaslit, steam-and-coal industrial age where the supernatural is hidden beneath everyday life";
 
 /** Parse a numeric-field string to a finite number, or undefined (blank/garbage). */
 function finiteOrUndefined(raw: string): number | undefined {
@@ -122,6 +132,7 @@ function ForgeCharacter() {
   const [digestion, setDigestion] = useState<"start" | "end">("end");
   const [name, setName] = useState("");
   const [background, setBackground] = useState("");
+  const [location, setLocation] = useState("");
   const [region, setRegion] = useState<CharacterRegion>("loen");
   const [generating, setGenerating] = useState(false);
   const [genError, setGenError] = useState<string | null>(null);
@@ -158,11 +169,19 @@ function ForgeCharacter() {
     setGenerating(true);
     setGenError(null);
     try {
+      const origin = regionOrigin(region);
       const identity = await generateCharacterIdentity(config, {
         pathwayName: getPathway(pathwayId)?.name ?? "unknown",
         sequenceName: getSequence(pathwayId, sequenceLevel)?.name ?? "Beyonder",
         sequenceLevel,
         region,
+        cityName: origin.cityName,
+        epochLabel: FIFTH_EPOCH_LABEL,
+        // The digestion toggle drives how settled the background reads.
+        digestionStage: digestion === "start" ? "fresh" : "digested",
+        // A per-call seed so the byte-identical prompt no longer collapses to a
+        // small set of names — rotates the naming facets and anti-repetition token.
+        variety: Math.floor(Math.random() * 1_000_000_000),
       });
       if (!identity) {
         setGenError("The model returned nothing legible. Try again.");
@@ -170,6 +189,12 @@ function ForgeCharacter() {
       }
       setName(identity.name);
       setBackground(identity.background);
+      // Hybrid location: the engine owns the CITY, the model names the venue. Lead
+      // the composed string with the city name so `currentCity` resolves on forge;
+      // fall back to the bare city when the model named no venue.
+      setLocation(
+        identity.location ? `${origin.cityName} — ${identity.location}` : origin.cityName,
+      );
     } catch {
       setGenError("Generation failed. Check your provider settings and try again.");
     } finally {
@@ -186,12 +211,20 @@ function ForgeCharacter() {
             { kind: "congregation", name: "A test congregation" },
           ]
         : undefined;
+    // Anchor the build in the naming region's canonical city (Hybrid location):
+    // the location string (leading with the city) and the tracked `currentCity`
+    // come from here, plus any origin flags a Forsaken-Land region needs to move
+    // at home. A blank location box falls back to the bare city name.
+    const origin = regionOrigin(region);
     const options: AdminCharacterOptions = {
       pathwayId,
       sequenceLevel,
       digestion,
       characterName: name.trim() || undefined,
       characterBackground: background.trim() || undefined,
+      location: location.trim() || origin.cityName,
+      originCityId: origin.cityId,
+      accessFlags: origin.accessFlags,
       funds: finiteOrUndefined(funds),
       sanity: finiteOrUndefined(sanity),
       knowsActingMethod: knowsMethod,
@@ -321,8 +354,10 @@ function ForgeCharacter() {
             </button>
           </div>
           <p className="mt-2 text-xs text-muted">
-            Uses your configured AI provider; names follow the region&apos;s naming
-            conventions from the novel.
+            Uses your configured AI provider to invent a fresh name, a background (shaped
+            by the pathway, region, era, and digestion), and a starting location in the
+            region&apos;s city — names follow the region&apos;s naming conventions from
+            the novel.
           </p>
           {generating ? (
             <p role="status" className="mt-1 text-xs text-occult-bright">
@@ -361,6 +396,26 @@ function ForgeCharacter() {
             placeholder="Optional backstory"
             onChange={(e) => setBackground(e.target.value)}
           />
+        </div>
+
+        <div>
+          <label htmlFor="forge-location" className={labelCls}>
+            Starting location
+          </label>
+          <input
+            id="forge-location"
+            className={fieldCls}
+            value={location}
+            placeholder="Defaults to the naming region's city"
+            aria-describedby="forge-location-help"
+            onChange={(e) => setLocation(e.target.value)}
+          />
+          <p id="forge-location-help" className="mt-1 text-xs text-muted">
+            Lead with the city name so the map opens on the right city. The generator
+            fills this in from the region; forging always anchors the character in the
+            region&apos;s city, and a Forsaken-Land region also grants the dream-world
+            passage.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">

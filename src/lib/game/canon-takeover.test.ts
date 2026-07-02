@@ -126,6 +126,41 @@ describe("createCanonCharacterSession", () => {
   });
 });
 
+describe("createCanonCharacterSession — grounded opening beat", () => {
+  it("grounds turn 0 at the figure's real city + sequence (a becoming for a becomes-on-screen figure)", () => {
+    const session = createCanonCharacterSession(klein, createMemoryState());
+    const beat = session.gameState.openingBeat!;
+    expect(beat).toContain(session.gameState.location); // Tingen City, not a fallback
+    expect(beat).toContain("Sequence 9 Seer");
+    // Klein becomes on-screen — the potion is still settling, not long-established.
+    expect(beat).toContain("still settling");
+  });
+
+  it("grounds a non-Tingen native at their real city, not the epoch default", () => {
+    const beat = createCanonCharacterSession(derrick, createMemoryState()).gameState
+      .openingBeat!;
+    expect(beat).toContain("Silver City");
+    expect(beat).not.toContain("Tingen");
+  });
+
+  it("reads as established for an already-Beyonder figure (not becomes-on-screen)", () => {
+    const beat = createCanonCharacterSession(dunn, createMemoryState()).gameState
+      .openingBeat!;
+    expect(beat).toContain("settled and familiar");
+  });
+
+  it("defers to an explicit scenario beat instead of the grounded one", () => {
+    const session = createCanonCharacterSession(klein, createMemoryState(), {
+      id: "scn",
+      epoch: 5,
+      location: "Backlund",
+      blurb: "",
+      openingBeat: "An opening beat.",
+    });
+    expect(session.gameState.openingBeat).toBe("An opening beat.");
+  });
+});
+
 describe("buildGameStatePrompt self directive", () => {
   it("adds the 'you ARE this character' guard for a canon takeover", () => {
     const session = createCanonCharacterSession(klein, createMemoryState());

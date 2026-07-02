@@ -18,6 +18,12 @@ import {
   reachedDreamWorldGate,
   travelDays,
   travelTo,
+  journeyDays,
+  planTravel,
+  travelEncounterChance,
+  TRAVEL_ENCOUNTER_BASE_CHANCE,
+  TRAVEL_ENCOUNTER_PER_DAY,
+  TRAVEL_ENCOUNTER_CHANCE_CAP,
 } from "./travel";
 
 function stateAt(location: string, overrides: Partial<GameState> = {}): GameState {
@@ -356,6 +362,72 @@ describe("canTravelTo", () => {
     });
     expect(canTravelTo(atCourt, "silver-city")).toBe(true);
     expect(canTravelTo(atCourt, "tingen")).toBe(true);
+  });
+});
+
+describe("journeyDays / travelEncounterChance (map travel turn)", () => {
+  it("journeyDays returns a number for a known origin and null for an unknown one", () => {
+    expect(journeyDays(stateAt("Tingen City"), "backlund")).toBeGreaterThan(0);
+    expect(journeyDays(stateAt("A Lonely Moor"), "backlund")).toBeNull();
+  });
+
+  it("travelEncounterChance rises with distance and is capped", () => {
+    const oneDay = TRAVEL_ENCOUNTER_BASE_CHANCE + TRAVEL_ENCOUNTER_PER_DAY;
+    expect(travelEncounterChance(null)).toBeCloseTo(oneDay, 5); // null → 1 day
+    expect(travelEncounterChance(1)).toBeCloseTo(oneDay, 5);
+    expect(travelEncounterChance(3)).toBeGreaterThan(travelEncounterChance(1));
+    expect(travelEncounterChance(1000)).toBe(TRAVEL_ENCOUNTER_CHANCE_CAP);
+    expect(travelEncounterChance(0)).toBe(TRAVEL_ENCOUNTER_BASE_CHANCE);
+    // The gentle curve keeps even the shortest real hop modest and caps low.
+    expect(travelEncounterChance(2)).toBeLessThan(0.2);
+    expect(TRAVEL_ENCOUNTER_CHANCE_CAP).toBeLessThanOrEqual(0.35);
+  });
+});
+
+describe("planTravel (map travel turn)", () => {
+  it("plans a clean ARRIVAL when the roll clears the encounter chance", () => {
+    // random = 1 is >= every possible chance, so never an encounter.
+    const plan = planTravel(stateAt("Tingen City"), "backlund", 5, undefined, 1);
+    expect(plan).not.toBeNull();
+    expect(plan!.kind).toBe("arrival");
+    expect(plan!.state.location).toBe("Backlund");
+    expect(plan!.state.currentCity).toBe("backlund");
+    expect(plan!.destinationName).toBe("Backlund");
+    expect(plan!.days).toBeGreaterThan(0);
+    expect(plan!.fact.description).toContain("Backlund");
+  });
+
+  it("plans a mid-journey ENCOUNTER when the roll lands under the chance", () => {
+    // random = 0 is below every positive chance, so always an encounter.
+    const before = stateAt("Tingen City", { currentCity: "tingen" });
+    const plan = planTravel(before, "backlund", 5, undefined, 0);
+    expect(plan).not.toBeNull();
+    expect(plan!.kind).toBe("encounter");
+    // NOT at the destination — on the road, and the city anchor is CLEARED so the
+    // map reads "whereabouts uncertain" rather than the origin city's atlas.
+    expect(plan!.state.location).toBe("On the road to Backlund");
+    expect(plan!.state.currentCity).toBeUndefined();
+    expect(plan!.fact.description).toMatch(/interrupted on the road/);
+    // Purity: the input is untouched (its currentCity is intact).
+    expect(before.location).toBe("Tingen City");
+    expect(before.currentCity).toBe("tingen");
+  });
+
+  it("carries followers on an interrupted journey and leaves strangers behind", () => {
+    const roster = {
+      roster: [
+        { name: "Old Neil", disposition: "ally" as const, follows: true },
+        { name: "A Stranger", disposition: "neutral" as const, follows: false },
+      ],
+    };
+    const plan = planTravel(stateAt("Tingen City"), "backlund", 1, roster, 0);
+    expect(plan!.kind).toBe("encounter");
+    expect(plan!.state.npcsPresent).toEqual(["Old Neil"]);
+  });
+
+  it("returns null when the travel is not permitted (mirrors travelTo)", () => {
+    expect(planTravel(stateAt("Backlund"), "backlund", 0, undefined, 0)).toBeNull();
+    expect(planTravel(stateAt("Tingen City"), "narnia", 0, undefined, 0)).toBeNull();
   });
 });
 

@@ -8,22 +8,32 @@ import {
   advancementSuccessChance,
   attemptAdvancement,
   canAdvance,
+  detectConsumePotionIntent,
   isAdvanceableSequence,
   ritualRequiredFor,
   targetSequence,
   ADVANCEMENT_SANITY_RATIO,
+  CONSUME_VIA_PANEL_NARRATIVE,
 } from "./advancement";
 import { consecrateAnchor, emptyAnchorState, requiredSupport } from "./anchors";
-import { advanceRitual, beginRitual, ritualQuestLabel } from "./ritual";
+import {
+  advanceRitual,
+  beginRitual,
+  recordRitualSetting,
+  ritualQuestLabel,
+} from "./ritual";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
 
 // Begin the advancement rite for `target` and mature it to a fully-formed rite
 // (issue #209: the rite matures over play in favourable conditions; fidelity
 // feeds the climb odds but no longer hard-gates it). A no-op below Sequence 5
-// (no rite defined there).
+// (no rite defined there). The fixture's intent is a fully-formed rite, so its
+// required SETTING is marked satisfied (narrator-confirmed) — otherwise a rite
+// bound to the open sea would never form at the generic fixture location (the
+// setting gate itself is exercised directly in `ritual.test.ts`).
 function performRitual(session: GameSession, target: number): GameSession {
-  let s = beginRitual(session, target);
+  let s = recordRitualSetting(beginRitual(session, target), true);
   // 40 private turns asymptotically forms the rite (fidelity → ~1).
   for (let i = 0; i < 40 && s.ritualState; i++) s = advanceRitual(s);
   return s;
@@ -82,6 +92,50 @@ describe("range helpers", () => {
     expect(ritualRequiredFor(6)).toBe(false);
     expect(ritualRequiredFor(5)).toBe(true);
     expect(ritualRequiredFor(4)).toBe(true);
+  });
+});
+
+describe("detectConsumePotionIntent (potion-consumption clarity)", () => {
+  it("catches typed drink-the-potion / make-the-climb intent", () => {
+    for (const input of [
+      "I drink the potion now",
+      "I quaff the Sequence 5 potion",
+      "consume the potion and ascend",
+      "I down the potion at the zenith",
+      "I take the potion",
+      "make the climb",
+      "I undergo the advancement",
+      "let me go through with the ascension",
+      "ascend to the next sequence",
+    ]) {
+      expect(detectConsumePotionIntent(input)).toBe(true);
+    }
+  });
+
+  it("does NOT catch ordinary actions or mundane drinks (tight patterns, review)", () => {
+    for (const input of [
+      "I drink my tea and watch the street",
+      "I pour a glass of ale",
+      "I examine the potion's colour",
+      "I ask the merchant about the formula",
+      "I walk toward the harbour",
+      "I wait for the full moon",
+      // False positives the tightened patterns must NOT swallow (review, issue #220):
+      "I make the climb up the cliff face",
+      "I make the climb to the rooftop",
+      "I put the vial down and study the potion formula",
+      "I drink my ale, then browse the potion shelves",
+      "I advance now, blade drawn",
+      "I complete my errand before the ascension festival",
+      "I take the letter from the desk",
+    ]) {
+      expect(detectConsumePotionIntent(input)).toBe(false);
+    }
+  });
+
+  it("exposes an in-world steer that points at the climb control", () => {
+    expect(CONSUME_VIA_PANEL_NARRATIVE).toMatch(/climb/i);
+    expect(CONSUME_VIA_PANEL_NARRATIVE).toContain("Drink and undergo the advancement");
   });
 });
 

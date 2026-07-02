@@ -1,17 +1,24 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { persistSession, useActiveSession } from "@/lib/react/session-store";
+import {
+  persistSession,
+  saveActiveSessionId,
+  useActiveSession,
+} from "@/lib/react/session-store";
 import {
   canTravelTo,
   CITIES,
   companionsPresentOnMove,
+  freeTextToChoice,
   locationLabel,
   mapAtlasFor,
+  planTravel,
   resolveTrackedNpcState,
+  transition,
   travelDays,
-  travelTo,
   type GameSession,
 } from "@/lib/game";
 import { addSessionFact } from "@/lib/ai";
@@ -32,6 +39,7 @@ export function MapPanel() {
   // or travelling re-renders this page live (active-character sync).
   const session = useActiveSession();
   const [notice, setNotice] = useState<string | null>(null);
+  const router = useRouter();
 
   // One shared resolver (Backlund location sync): the atlas city, the districts
   // (incl. the character's off-map custom venues), and the "you are here" marker
@@ -53,24 +61,50 @@ export function MapPanel() {
       // Companions and pursuers travel with the player (issue #101): the roster's
       // followers are re-asserted at the destination instead of being left behind.
       const roster = resolveTrackedNpcState(session.trackedNpcState);
-      const result = travelTo(session.gameState, cityId, session.turnCount, roster);
-      if (!result) return;
-      const memory = addSessionFact(session.memory, result.fact);
-      const next: GameSession = {
+      // Travel plays out as a narrated turn: usually a clean arrival, sometimes a
+      // chance encounter that leaves the character mid-road (the odds rise with the
+      // distance). The engine owns the roll; the React layer supplies the randomness.
+      const plan = planTravel(
+        session.gameState,
+        cityId,
+        session.turnCount,
+        roster,
+        Math.random(),
+      );
+      if (!plan) return;
+      const companions = companionsPresentOnMove(roster);
+      const withList =
+        companions.length > 0 ? `, travelling with ${companions.join(", ")}` : "";
+      // The composed player action the narrator resolves on the play screen. An
+      // arrival lands at the destination; an encounter opens on the road, so the
+      // narrator plays out what interrupts the journey (the character has NOT yet
+      // arrived — location is the road, not the city).
+      const action =
+        plan.kind === "arrival"
+          ? `I complete the journey to ${plan.destinationName}${withList}, and take in my new surroundings.`
+          : `I am partway along the road to ${plan.destinationName}${withList} when the journey is interrupted — something happens here on the way, before I ever reach the city.`;
+      const memory = addSessionFact(session.memory, plan.fact);
+      const traveled: GameSession = {
         ...session,
-        gameState: result.state,
+        gameState: plan.state,
         memory,
         updatedAt: Date.now(),
       };
-      const companions = companionsPresentOnMove(roster);
-      setNotice(
-        companions.length > 0
-          ? `You set out for ${result.state.location}. Travelling with: ${companions.join(", ")}.`
-          : `You set out for ${result.state.location}.`,
-      );
+      // Set up the resolution turn from whatever resting phase the session is in,
+      // persist, make it the active character, and open the play screen — which
+      // narrates the arrival/encounter automatically (its effect runs on mount).
+      const choice = freeTextToChoice(action);
+      const next = transition(traveled, { type: "BEGIN_INJECTED_TURN", choice });
       persistSession(next);
+      saveActiveSessionId(session.id);
+      setNotice(
+        plan.kind === "arrival"
+          ? `You set out for ${plan.destinationName}${companions.length ? ` with ${companions.join(", ")}` : ""}. Opening the road ahead…`
+          : `The road to ${plan.destinationName} holds a surprise. Opening the scene…`,
+      );
+      router.push("/play?resume=travel");
     },
-    [session],
+    [session, router],
   );
 
   return (

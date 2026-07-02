@@ -83,4 +83,10 @@ describe("createTestCharacter", () => {
     const session = createTestCharacter(99999, 1000);
     expect(session.gameState.inventory).toEqual([]);
   });
+
+  it("seeds a grounded opening beat so turn 0 isn't a fresh Tingen becoming", () => {
+    const beat = createTestCharacter(1, 1000).gameState.openingBeat!;
+    expect(beat).toContain("Sequence 9");
+    expect(beat).toContain("settled and familiar");
+  });
 });

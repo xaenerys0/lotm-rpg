@@ -175,6 +175,21 @@ export function parseAIResponse(raw: string): AIResponse {
     response.actingMethodTaught = true;
   }
 
+  // Ritual-climax flag (issue #220 follow-up) — the fiction reached an in-progress
+  // rite's culminating moment. Carried only when literally true (drop-not-throw);
+  // the engine brings the rite to its peak, never advances the Sequence.
+  if (obj.ritualClimax === true) {
+    response.ritualClimax = true;
+  }
+
+  // Ritual-setting flag (issue #220 follow-up) — this turn's scene meets the
+  // in-progress advancement rite's required setting. Carried only when literally
+  // true (drop-not-throw); the engine records it so the rite matures in the right
+  // place. Absent → the location-keyword backstop decides.
+  if (obj.ritualSettingMet === true) {
+    response.ritualSettingMet = true;
+  }
+
   // Pursuers (issue #101) — the narrator's channel for who is hunting the
   // character. Normalize to clean, de-duplicated, non-empty names; an empty
   // result is dropped (drop-not-throw, like sanityEventTags).

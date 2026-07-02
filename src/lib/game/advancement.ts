@@ -87,6 +87,58 @@ export function ritualRequiredFor(targetSeq: number): boolean {
   return targetSeq <= RITUAL_REQUIRED_AT_OR_BELOW;
 }
 
+// ---------------------------------------------------------------------------
+// Consume-the-potion intent (potion-consumption clarity)
+// ---------------------------------------------------------------------------
+//
+// Drinking the next Sequence's potion IS the advancement — the rules engine owns
+// the commit (`attemptAdvancement`, routed through ENGINE_RESOLUTION), never the
+// narrator. But a player may TYPE the intent ("I drink the potion", "make the
+// climb") the same way they might type "I put on the disguise" for identity. Left
+// to flow to the AI as an ordinary turn, that produces narration with no engine
+// advancement — the game state and story diverge (the issue-#220 class of bug,
+// one step later at the drink). So the React layer catches the typed intent and
+// steers the player to the dedicated climb control instead of calling the AI —
+// exactly the `detectAssumeIdentityIntent` / `ASSUME_VIA_PANEL_NARRATIVE` pattern.
+
+// Patterns are deliberately TIGHT: a drink verb must sit DIRECTLY on the potion
+// (only an article/qualifier may intervene), so no clause bridges to a later,
+// unrelated "potion" and a mundane "drink my tea …" never reaches it. False
+// negatives are acceptable — the `prompts.ts` narrator rule is the backstop (it
+// forbids depicting the drink regardless), whereas a false positive would swallow
+// a legitimate mundane action, which is the worse failure (review, issue #220).
+const CONSUME_POTION_PATTERNS: readonly RegExp[] = [
+  // A drink verb immediately on the advancement potion.
+  /\b(?:drink|drank|drinking|consume|consuming|quaff|swallow|imbibe|ingest|gulp|down|sip|take)\s+(?:the|my|this|that|a|an|its|next|new|advancement|beyonder|sequence\s+\d+)\s+(?:new\s+|next\s+|beyonder\s+|advancement\s+|sequence\s+\d+\s+)*potion\b/i,
+  // "Make the climb" as the advancement act — NOT a physical climb ("… up/to …").
+  /\bmake\s+the\s+climb\b(?!\s+(?:up|over|onto|out|down|across|along|through|into|back|to|toward|towards))/i,
+  // Undergoing the advancement / ascension itself.
+  /\b(?:undergo|go\s+through\s+with)\s+(?:the\s+|my\s+|this\s+)?(?:advancement|ascension)\b/i,
+  // Advancing / ascending a Sequence explicitly.
+  /\b(?:advance|ascend)\s+to\s+(?:the\s+next\s+sequence|sequence\b|my\s+next\s+rung)/i,
+];
+
+/**
+ * Whether a free-text action is the player trying to DRINK the next potion / make
+ * the climb (the engine-owned advancement) by typing it. The caller (game loop)
+ * fires this only when the climb is actually in reach (digested + advanceable) and
+ * short-circuits to {@link CONSUME_VIA_PANEL_NARRATIVE} instead of the AI. Pure.
+ */
+export function detectConsumePotionIntent(input: string): boolean {
+  return CONSUME_POTION_PATTERNS.some((pattern) => pattern.test(input));
+}
+
+/**
+ * The in-world steer shown when the player types a drink-the-potion intent while
+ * the climb is in reach — pointing them at the dedicated control instead of
+ * letting the narrator depict a drink the engine never commits (narration, never
+ * an error, like `freeTextRejection` / `ASSUME_VIA_PANEL_NARRATIVE`).
+ */
+export const CONSUME_VIA_PANEL_NARRATIVE =
+  "Draining the next Sequence's potion IS the climb itself — an act the world " +
+  "commits, not one the telling can. When you judge the moment right, make the " +
+  'climb through "Drink and undergo the advancement" in The Climb below.';
+
 export interface AdvancementRequirement {
   id: "sequence" | "digestion" | "ingredients" | "ritual" | "anchors" | "sanity";
   label: string;

@@ -91,6 +91,8 @@ export const AI_RESPONSE_JSON_SCHEMA = {
       },
     },
     actingMethodTaught: { type: "boolean" },
+    ritualClimax: { type: "boolean" },
+    ritualSettingMet: { type: "boolean" },
     itemsDiscovered: {
       type: "array",
       items: {

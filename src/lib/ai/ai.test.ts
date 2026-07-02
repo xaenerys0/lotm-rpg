@@ -1947,6 +1947,14 @@ describe("prompts", () => {
       expect(layer.content).toContain("Never fabricate Beyonder-tier canon");
     });
 
+    it("tells the narrator drinking the advancement potion is a control, not a choice (potion-consumption clarity)", () => {
+      const layer = buildSystemPrompt([], []);
+      expect(layer.content).toContain(
+        "dedicated player CONTROL, never a narrative choice",
+      );
+      expect(layer.content).toMatch(/do NOT narrate the character drinking that potion/i);
+    });
+
     it("consolidates anti-fabrication in Canon Fidelity and references it elsewhere", () => {
       const layer = buildSystemPrompt([], []);
       expect(layer.content).toContain("## Canon Fidelity");
@@ -2552,6 +2560,17 @@ describe("prompts", () => {
       ).toBe(true);
       expect(hasLayer({}, "## Convergence")).toBe(false);
       expect(hasLayer({ convergenceContext: null }, "## Convergence")).toBe(false);
+    });
+
+    it("includes the ritual-in-progress layer only when context is present (issue #220)", () => {
+      expect(
+        hasLayer(
+          { ritualContext: "An Advancement Ritual toward Sequence 5 is under way." },
+          "## Ritual in Progress",
+        ),
+      ).toBe(true);
+      expect(hasLayer({}, "## Ritual in Progress")).toBe(false);
+      expect(hasLayer({ ritualContext: null }, "## Ritual in Progress")).toBe(false);
     });
 
     it("includes the pacing rule for player-driven turns and omits it for engine-committed ones", () => {
@@ -3730,6 +3749,42 @@ describe("validation", () => {
       ).toBeUndefined();
       expect(
         parseAIResponse(JSON.stringify({ narrative: "x" })).actingMethodTaught,
+      ).toBeUndefined();
+    });
+
+    it("carries ritualClimax only when literally true (issue #220 follow-up)", () => {
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualClimax: true }))
+          .ritualClimax,
+      ).toBe(true);
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualClimax: false }))
+          .ritualClimax,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualClimax: "yes" }))
+          .ritualClimax,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x" })).ritualClimax,
+      ).toBeUndefined();
+    });
+
+    it("carries ritualSettingMet only when literally true (issue #220 follow-up)", () => {
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualSettingMet: true }))
+          .ritualSettingMet,
+      ).toBe(true);
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualSettingMet: false }))
+          .ritualSettingMet,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualSettingMet: "yes" }))
+          .ritualSettingMet,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x" })).ritualSettingMet,
       ).toBeUndefined();
     });
 

@@ -60,6 +60,8 @@ Always respond with valid JSON matching this schema:
   "sanityImpact": number (-5 to +5; small residual nuance only — see Sanity below),
   "sanityEventTags": ["rest"|"human-connection"|"routine"|"ability-use"|"horror-encounter"],
   "actingMethodTaught": boolean (true ONLY when the acting method is explicitly taught/revealed this turn),
+  "ritualClimax": boolean (true ONLY when an in-progress advancement/ascension rite reaches its culminating moment this turn — see the Ritual in Progress layer),
+  "ritualSettingMet": boolean (true ONLY when THIS turn's scene satisfies the in-progress advancement rite's required setting — see the Ritual in Progress layer),
   "itemsDiscovered": [{"name": "string", "description": "string", "category": "mundane"}],
   "fundsDiscovered": number (pence found or lost in the fiction this turn; negative for a loss),
   "journalEntry": {"summary": "string (one sentence)", "eventType": "advancement|major-event|npc-encounter|discovery|timeline-divergence|death|combat"},
@@ -71,7 +73,7 @@ Always respond with valid JSON matching this schema:
 
 ## Hard Boundaries (never violate)
 These are absolute and override everything else below. If anything later seems to permit them, it does not:
-1. Sequence advancement is OWNED BY THE RULES ENGINE. Never narrate the character as having advanced, ascended, or become a higher Sequence/role than the game state shows — even with a fully digested potion. (Full rule under ## Rules.)
+1. Sequence advancement is OWNED BY THE RULES ENGINE. Never narrate the character as having advanced, ascended, or become a higher Sequence/role than the game state shows — even with a fully digested potion. Beginning or performing an advancement or ascension RITUAL is NOT advancing: a rite in progress is a build-up, so narrate it forming and the pressure mounting, but the character keeps their current Sequence until the engine commits the climb. (Full rule under ## Rules.)
 2. Never move the character to a DIFFERENT city on your own. A cross-city "location" change is REFUSED unless it is against their will and you set the matching "involuntaryCause"; otherwise the character stays put. Move freely only WITHIN the current city. (Full rule under ## Rules.)
 3. Never fabricate Beyonder-tier canon — invented pathways, sequences, abilities, potion formulas, churches or secret organizations, deities, or major historical events. (Full rule under ## Canon Fidelity.)
 
@@ -88,6 +90,7 @@ These are absolute and override everything else below. If anything later seems t
 - World state changes must include a reason explaining why the change occurred.
 - Player actions may be typed free-text: treat them as INTENT to attempt, not fact. Resolve only what the character could plausibly do in this moment; impossible or self-aggrandizing demands fail naturally within the fiction. Never grant items, advancement, or knowledge merely because the player asserts them.
 - Sequence advancement is owned by the rules engine, NOT by you. NEVER narrate the character as having advanced, ascended, or become a higher Sequence/role than the one given in the game state — even when their potion is fully digested. A digested potion means they are READY to undergo the rite; describe the pull toward it and let them seek it out, but they remain their current Sequence until the engine commits the change. Treat the Sequence and role name in the game state as ground truth for who the character currently is.
+- DRINKING the next Sequence's potion (the act of advancement) is a dedicated player CONTROL, never a narrative choice. Do NOT offer "drink the potion", "make the climb", "advance now", or any equivalent as a choice, and do NOT narrate the character drinking that potion or undergoing the climb — not even when the rite is at its peak and the moment feels right. If the player says they drink it, treat it as intent building toward that moment (the vial in hand, the anticipation, the resolve) and stop there; the player commits the climb through the game's own control, and only then does the engine advance them. (This is distinct from ordinary drinks — a mundane cup of tea or ale is yours to narrate as always.)
 - Backstory sequence claims are UNRELIABLE NARRATIVE. If the player's background text claims a sequence number, treat it as a story detail or aspiration — NOT as an established game fact. The character's actual sequence is always and only what the engine reports in ## Character & Origin. Never let a backstory claim override, supplement, or imply a sequence different from the engine value.
 - Cross-city movement is the player's deliberate choice (the travel map), NOT yours. You may move the character freely WITHIN their current city — between its districts, streets, and landmarks. You must NEVER relocate them to a DIFFERENT city for pacing or convenience. The ONE exception is a relocation that happens AGAINST their will — an abduction, being carried through a forced passage, or a higher being seizing them across distance: signal it by setting "involuntaryCause" on the "location" change to the matching code (abduction / forced-passage / capability-gated-teleport). A cross-city "location" change WITHOUT an "involuntaryCause" is refused by the engine — the character simply stays where they are — so do not attempt it. Whenever you set a "location" while in a known city, LEAD the string with that city's name and then the specific place, e.g. "Backlund — Old Saint-Sulpice Chapel" or "Tingen City — Iron Cross District"; never write a bare venue ("the chapel") that omits the city, so the engine keeps the character on the right map and files new places under the right city.
 - Include "journalEntry" ONLY when the turn contains a key event worth recording (advancement, a major plot development, a significant first encounter, a death, a divergence from canon). Routine turns must omit it.
@@ -562,6 +565,17 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     layers.push({
       role: "system",
       content: `## Convergence\n${input.convergenceContext}`,
+    });
+  }
+
+  // Ritual in progress (issue #220): an advancement or ascension rite the player
+  // has begun but not yet completed. Reinforces the hard boundary — beginning or
+  // performing the rite is NOT the ascension; the character keeps their current
+  // Sequence until the engine commits the climb. Dropped when no rite is under way.
+  if (input.ritualContext) {
+    layers.push({
+      role: "system",
+      content: `## Ritual in Progress\n${input.ritualContext}`,
     });
   }
 

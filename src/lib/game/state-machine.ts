@@ -67,6 +67,29 @@ export function transition(
       };
     }
 
+    case "BEGIN_INJECTED_TURN": {
+      // An externally-composed turn (a travel arrival/encounter from the Map),
+      // set up as a `resolution` so the GameLoop's effect narrates it on mount
+      // (→ PRESENT_NEXT_CHOICES like any player turn). Accepted from ANY phase:
+      // the player has left the game screen to travel, so whatever turn was in
+      // flight on the (now-unmounted) game route is deliberately discarded and
+      // replaced by this one — there is no "mid-turn" to protect here. It does
+      // NOT touch VALID_TRANSITIONS, so the in-loop transitions stay tight.
+      return {
+        ...session,
+        phase: "resolution",
+        currentChoices: [action.choice],
+        selectedChoiceId: action.choice.id,
+        currentNarrative: null,
+        lastResolution: null,
+        pendingPlayerAction: null,
+        pendingTurnKind: action.kind ?? null,
+        errorMessage: null,
+        errorCode: null,
+        updatedAt: now,
+      };
+    }
+
     case "RESOLUTION_READY": {
       assertTransition(session.phase, "consequences");
       return {

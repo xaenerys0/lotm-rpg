@@ -231,6 +231,30 @@ export function seedArchetype(
   return next;
 }
 
+/**
+ * A grounded Turn-0 opening beat for an ENGINE-BUILT or canon-takeover character
+ * — one that skips character creation and so never receives a scenario/archetype
+ * `openingBeat`. Without one the game loop's first turn falls back to
+ * `epochOpeningBeat`, whose Fifth-Epoch beat is hardcoded to a FRESH becoming in
+ * **Tingen** — which contradicts a build standing at another city and an
+ * already-established Sequence (the inconsistency an admin sees when a Bayam Seq-6
+ * character opens narrated as just-becoming in Tingen, and a canon Audrey Hall in
+ * Backlund the same). This names the character's ACTUAL location and their
+ * `standing` (the caller composes it — e.g. "a Sequence 6 Seer" or the apex
+ * honorific — so it never leaks a raw "Sequence 0"/"Sequence -1"); `digested`
+ * frames an established power vs a still-settling fresh potion. Pure.
+ */
+export function establishedOpeningBeat(
+  location: string,
+  standing: string,
+  digested: boolean,
+): string {
+  const settled = digested
+    ? "the power settled and familiar"
+    : "the newest potion still settling in me";
+  return `I take my bearings in ${location} as ${standing}, ${settled}. Describe the opening scene and give me choices.`;
+}
+
 export function sessionToSummary(session: GameSession): GameSessionSummary {
   return {
     id: session.id,

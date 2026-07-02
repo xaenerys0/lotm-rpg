@@ -219,6 +219,12 @@ export type GameLoopAction =
       kind?: import("@/lib/ai").TurnKind;
     }
   | { type: "APPLY_CONSEQUENCES" }
+  // An externally-composed player turn injected from OUTSIDE the game loop (e.g. a
+  // travel arrival/encounter from the Map route): sets up the `resolution` phase
+  // with the given choice so the GameLoop narrates it on mount. Accepted from ANY
+  // phase — the player left the game screen to travel, so any turn in flight on the
+  // unmounted game route is deliberately discarded and replaced by this one.
+  | { type: "BEGIN_INJECTED_TURN"; choice: Choice; kind?: import("@/lib/ai").TurnKind }
   | { type: "ERROR"; message: string; errorCode?: AIErrorCode | "CONFIG_MISSING" }
   | { type: "RETRY" };
 

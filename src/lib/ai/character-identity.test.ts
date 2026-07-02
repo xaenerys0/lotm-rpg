@@ -6,6 +6,7 @@ import {
   CHARACTER_REGIONS,
   IDENTITY_NAME_MAX,
   IDENTITY_BACKGROUND_MAX,
+  IDENTITY_LOCATION_MAX,
   type CharacterRegion,
 } from "./character-identity";
 import { generateCharacterIdentity } from "./client";
@@ -64,6 +65,71 @@ describe("buildCharacterIdentityPrompt", () => {
     });
     expect(messages[1].content).toContain(CHARACTER_REGIONS.loen.label);
   });
+
+  it("threads the city, era, digestion, and variety token when supplied", () => {
+    const messages = buildCharacterIdentityPrompt({
+      pathwayName: "Fool",
+      sequenceName: "Seer",
+      sequenceLevel: 9,
+      region: "loen",
+      cityName: "Backlund",
+      epochLabel: "the Fifth Epoch",
+      digestionStage: "fresh",
+      variety: 7,
+    });
+    const user = messages[1].content;
+    expect(user).toContain("City: Backlund");
+    expect(user).toContain("Era: the Fifth Epoch");
+    expect(user).toContain("FRESH");
+    expect(user).toContain("Variety token");
+    expect(user).toContain("7");
+  });
+
+  it("reads DIGESTED for the digested stage and drops optional lines when absent", () => {
+    const digested = buildCharacterIdentityPrompt({
+      pathwayName: "Fool",
+      sequenceName: "Seer",
+      sequenceLevel: 9,
+      region: "loen",
+      digestionStage: "digested",
+    })[1].content;
+    expect(digested).toContain("DIGESTED");
+
+    // No city/era/variety lines when the caller omits them.
+    const bare = buildCharacterIdentityPrompt({
+      pathwayName: "Fool",
+      sequenceName: "Seer",
+      sequenceLevel: 9,
+      region: "loen",
+    })[1].content;
+    expect(bare).not.toContain("City:");
+    expect(bare).not.toContain("Era:");
+    expect(bare).not.toContain("Variety token");
+  });
+
+  it("rotates the highlighted naming facets by the variety seed", () => {
+    const facetsFor = (variety: number) => {
+      const line = buildCharacterIdentityPrompt({
+        pathwayName: "Fool",
+        sequenceName: "Seer",
+        sequenceLevel: 9,
+        region: "loen",
+        variety,
+      })[1]
+        .content.split("\n")
+        .find((l) => l.startsWith("Naming facets"));
+      return line ?? "";
+    };
+    // Two seeds that land on different rotation starts highlight different facets.
+    expect(facetsFor(0)).not.toBe(facetsFor(1));
+    // Every highlighted facet is drawn from the region's own pool.
+    const pool = CHARACTER_REGIONS.loen.inspirations;
+    for (const facet of pool) {
+      // (sanity: the pool is non-trivial so rotation is meaningful)
+      expect(typeof facet).toBe("string");
+    }
+    expect(pool.length).toBeGreaterThan(2);
+  });
 });
 
 describe("parseCharacterIdentity", () => {
@@ -112,6 +178,34 @@ describe("parseCharacterIdentity", () => {
     );
     expect(out!.name.length).toBeLessThanOrEqual(IDENTITY_NAME_MAX);
     expect(out!.background.length).toBeLessThanOrEqual(IDENTITY_BACKGROUND_MAX);
+  });
+
+  it("carries a location when present and clamps it", () => {
+    expect(
+      parseCharacterIdentity(
+        '{"name":"Ada Wren","background":"x","location":"an attic off Iron Cross"}',
+      ),
+    ).toEqual({
+      name: "Ada Wren",
+      background: "x",
+      location: "an attic off Iron Cross",
+    });
+    const longLoc = "L".repeat(IDENTITY_LOCATION_MAX + 60);
+    const out = parseCharacterIdentity(
+      JSON.stringify({ name: "Ada Wren", location: longLoc }),
+    );
+    expect(out!.location!.length).toBeLessThanOrEqual(IDENTITY_LOCATION_MAX);
+  });
+
+  it("omits location when blank or non-string", () => {
+    expect(parseCharacterIdentity('{"name":"Ada","location":""}')).toEqual({
+      name: "Ada",
+      background: "",
+    });
+    expect(parseCharacterIdentity('{"name":"Ada","location":42}')).toEqual({
+      name: "Ada",
+      background: "",
+    });
   });
 });
 

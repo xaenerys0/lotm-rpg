@@ -52,11 +52,48 @@ export interface RitualState {
    * at any point, at whatever fidelity has accrued.
    */
   fidelity: number;
+  /**
+   * The narrator's most recent per-turn read of whether the CURRENT scene meets
+   * the rite's required SETTING (issue #220 follow-up) — e.g. the Fool's
+   * Marionettist rite demands the open sea and the mermaids' song, so it barely
+   * takes hold in a city or the catacombs. Recorded from the drop-not-throw
+   * `ritualSettingMet` flag each turn (absent → false, so leaving the setting
+   * self-corrects); OR'd with a location-keyword backstop by `ritualSettingSuitable`.
+   */
+  settingMet?: boolean;
 }
+
+/**
+ * The core issue-#220 guardrail sentence, shared verbatim by both the advancement
+ * (`ritualNarratorContext`) and apex (`ascensionRiteNarratorContext`) narrator
+ * blocks so a future rewording can never drift between the two paths.
+ */
+export const RITE_IN_PROGRESS_GUARD =
+  "never narrate the ascension as accomplished, and do not declare the rite " +
+  'finished or announce it is "ready".';
+
+/**
+ * The shared instruction that lets the FICTION drive a rite to its peak (issue
+ * #220 follow-up): when a turn genuinely reaches the rite's culminating moment,
+ * the narrator sets `ritualClimax`, and the engine brings the rite to its peak
+ * (`climaxRitual`/`climaxAscensionRite`). Shared verbatim by both narrator blocks
+ * so the two paths can't drift.
+ */
+export const RITE_CLIMAX_INSTRUCTION =
+  "If THIS turn the rite genuinely reaches its culminating moment — the chosen " +
+  "hour or omen has come, the materials are laid, and the character is " +
+  'undisturbed — set "ritualClimax": true in your response (otherwise omit it); ' +
+  "the game will then bring the rite to its peak.";
 
 /** Fraction of the remaining gap to a faithful rite closed per ideal turn. */
 export const RITUAL_PROGRESS_RATE = 0.3;
-/** At/above this fidelity the rite counts as fully matured (avoids endless churn). */
+/**
+ * At/above this fidelity the rite counts as fully matured (avoids endless churn)
+ * AND has reached its PEAK — the "complete", safest moment to drink (issue #220
+ * follow-up: `ritualReady`). The peak is reached either by full turn-accrual or
+ * when the narrator marks the fiction's culminating moment (`climaxRitual`); the
+ * UI reads it to show a clear "ready" nudge instead of an endless sub-100% meter.
+ */
 export const RITUAL_FIDELITY_CAP = 0.99;
 
 /** Fidelity progress lost to performing the rite with witnesses (a crowd) near. */
@@ -65,6 +102,137 @@ export const RITUAL_WITNESS_PENALTY = 0.3;
 export const RITUAL_WOUNDED_PENALTY = 0.4;
 /** Fidelity progress lost to performing the rite while actively hunted. */
 export const RITUAL_HUNTED_PENALTY = 0.4;
+/**
+ * The hard CEILING on how far the rite can mature while the character is NOT in
+ * its required setting (issue #220 follow-up). Canon: the advancement ritual's
+ * conditions are not decorative — Klein "had to consume the potion while listening
+ * to the Mermaids' singing so he wouldn't lose himself … and turn into a puppet",
+ * travelling to the Sonia Sea for it. So a rite performed in the wrong place barely
+ * takes hold: fidelity is pinned near zero regardless of privacy, which flows
+ * through `advancementSuccessChance`/`advancementHighRisk` into canon danger. It is
+ * a heavy penalty, NOT a hard gate — drinking anyway is always allowed (canon: "it
+ * is possible to advance without the ritual … although this is quite unlikely").
+ */
+export const RITUAL_WRONG_SETTING_CEILING = 0.1;
+
+/**
+ * The natural SETTINGS a rite's condition prose can demand, matched by WHOLE WORD
+ * in BOTH the condition text and the scene's location string (the keyword backstop
+ * half of the hybrid detection). Deliberately CONSERVATIVE — only words that
+ * unambiguously name a natural place, because a false positive (gating a rite that
+ * canon never bound to a place — many rites use "altar"/"ancient"/"buried"
+ * metaphorically or for an OBJECT) applies a wrong penalty, whereas a false
+ * negative just leaves the rite ungated and lets the narrator flag decide. So the
+ * list omits ambiguous words (ancient/altar/peak/wild/wood/tide/…) and there is no
+ * catch-all "ruins" group; the whole-word match (not substring) also keeps "sea"
+ * from hitting "disease" and lets a location like "Sea of Ruins" match. Corpus:
+ * the Fool's Marionettist rite is at the open sea amid the mermaids' song; a Death
+ * rite by an underground river. Ordered so the first match wins.
+ */
+interface RitualSetting {
+  id: string;
+  /** Whole-word, case-insensitive match over any of the setting's keywords. */
+  regex: RegExp;
+}
+
+function buildSetting(id: string, keywords: readonly string[]): RitualSetting {
+  return { id, regex: new RegExp(`\\b(?:${keywords.join("|")})\\b`, "i") };
+}
+
+const RITUAL_SETTINGS: readonly RitualSetting[] = [
+  buildSetting("the open sea", [
+    "sea",
+    "seas",
+    "ocean",
+    "oceans",
+    "mermaid",
+    "mermaids",
+    "siren",
+    "sirens",
+    "undersea",
+  ]),
+  buildSetting("underground", [
+    "underground",
+    "catacomb",
+    "catacombs",
+    "cavern",
+    "caverns",
+    "cave",
+    "caves",
+    "crypt",
+    "crypts",
+    "tunnel",
+    "tunnels",
+    "sewer",
+    "sewers",
+  ]),
+  buildSetting("the high mountains", [
+    "mountain",
+    "mountains",
+    "summit",
+    "summits",
+    "glacier",
+    "glaciers",
+  ]),
+  buildSetting("the deep wilderness", [
+    "forest",
+    "forests",
+    "jungle",
+    "jungles",
+    "swamp",
+    "swamps",
+    "marsh",
+    "marshes",
+  ]),
+  buildSetting("a storm", ["storm", "storms", "tempest", "tempests"]),
+];
+
+/** The first setting whose whole-word keyword appears in `text`, or null. */
+function matchSetting(text: string): RitualSetting | null {
+  return RITUAL_SETTINGS.find((s) => s.regex.test(text)) ?? null;
+}
+
+/**
+ * The setting the rite for `targetSeq` demands, derived from its CONDITION steps
+ * (issue #220 follow-up). `null` when the rung's rite names no place-specific
+ * condition (then it is ungated). Private object form; `ritualRequiredSetting`
+ * exposes the id and `ritualSettingSuitable` reuses the compiled regex.
+ */
+function requiredSetting(session: GameSession, targetSeq: number): RitualSetting | null {
+  const conditions = ritualStepsFor(session, targetSeq).filter(
+    (s) => s.kind === "condition",
+  );
+  if (conditions.length === 0) return null;
+  return matchSetting(conditions.map((c) => c.text).join(" "));
+}
+
+/**
+ * The id of the setting the rite for `targetSeq` demands — e.g. "amidst the singing
+ * of mermaids" → "the open sea". `null` when the rite names no place (ungated — it
+ * may be borne out anywhere). Pure.
+ */
+export function ritualRequiredSetting(
+  session: GameSession,
+  targetSeq: number,
+): string | null {
+  return requiredSetting(session, targetSeq)?.id ?? null;
+}
+
+/**
+ * Whether the CURRENT scene suits the rite for `targetSeq` (issue #220 follow-up).
+ * `true` when the rung's rite names no place-specific setting (ungated), OR the
+ * narrator has confirmed it this turn (`ritualState.settingMet`), OR the location
+ * string names the required setting (the keyword backstop) — the hybrid
+ * narrator-primary + keyword detection. Pure. Drives both the maturation ceiling
+ * and the UI's "wrong setting" warning.
+ */
+export function ritualSettingSuitable(session: GameSession, targetSeq: number): boolean {
+  const setting = requiredSetting(session, targetSeq);
+  if (!setting) return true;
+  const state = session.ritualState;
+  if (state && state.targetSeq === targetSeq && state.settingMet) return true;
+  return setting.regex.test(session.gameState.location);
+}
 
 /**
  * The ordered steps of the rite for `targetSeq`: the corpus-tagged `steps`
@@ -92,19 +260,62 @@ export function ritualStepsFor(session: GameSession, targetSeq: number): RitualS
  */
 export function ritualCircumstanceFidelity(session: GameSession): number {
   const { npcsPresent, injuries } = session.gameState;
-  const pursuers = (session.trackedNpcState?.roster ?? []).filter(
-    (npc) => npc.disposition === "hostile" && npc.follows,
+  const roster = session.trackedNpcState?.roster ?? [];
+  const pursuers = roster.filter((npc) => npc.disposition === "hostile" && npc.follows);
+  // A deliberate ceremony attended only by the character's OWN circle is not
+  // "witnessed" — a chosen rite among trusted allies keeps its secrecy, so only
+  // strangers/onlookers who are NOT tracked allies slow it (issue #220 follow-up).
+  // Match present names against the ally roster, case-insensitively.
+  const allyNames = new Set(
+    roster
+      .filter((npc) => npc.disposition === "ally")
+      .map((npc) => npc.name.toLowerCase()),
   );
+  const witnesses = (npcsPresent ?? []).filter((n) => !allyNames.has(n.toLowerCase()));
   let fidelity = 1;
   if ((injuries?.length ?? 0) > 0) fidelity -= RITUAL_WOUNDED_PENALTY;
   if (pursuers.length > 0) fidelity -= RITUAL_HUNTED_PENALTY;
-  if ((npcsPresent?.length ?? 0) > 0) fidelity -= RITUAL_WITNESS_PENALTY;
+  if (witnesses.length > 0) fidelity -= RITUAL_WITNESS_PENALTY;
   return clamp(fidelity, 0, 1);
+}
+
+/**
+ * How favourable the scene is for the ADVANCEMENT rite toward `targetSeq`, in
+ * [0, 1] — the privacy/safety signal (`ritualCircumstanceFidelity`) AND the
+ * required-SETTING gate (issue #220 follow-up): in the wrong place the rite barely
+ * takes hold, so the value is capped at `RITUAL_WRONG_SETTING_CEILING` however
+ * private the moment. This is the advancement rite's own scene signal (the apex
+ * ascension keeps the plain circumstance signal — its settings are handled
+ * separately), so the setting gate never leaks onto the endgame rite. Pure.
+ */
+export function ritualSceneFidelity(session: GameSession, targetSeq: number): number {
+  const circumstance = ritualCircumstanceFidelity(session);
+  return ritualSettingSuitable(session, targetSeq)
+    ? circumstance
+    : Math.min(circumstance, RITUAL_WRONG_SETTING_CEILING);
 }
 
 /** Close part of the remaining gap to a faithful rite, scaled by the scene. */
 function accrueFidelity(current: number, circumstance: number): number {
   return clamp(current + (1 - current) * RITUAL_PROGRESS_RATE * circumstance, 0, 1);
+}
+
+/**
+ * Record the narrator's per-turn read of whether the scene meets the rite's
+ * required setting (issue #220 follow-up) onto the rite under way, so this turn's
+ * maturation and the UI warning reflect it. A no-op when no rite is under way.
+ * Called each turn BEFORE `advanceRitual` so the tick sees the fresh signal; the
+ * absent flag records `false`, so leaving the setting self-corrects. Pure.
+ */
+export function recordRitualSetting(
+  session: GameSession,
+  settingMet: boolean,
+  now: number = Date.now(),
+): GameSession {
+  const state = session.ritualState;
+  if (!state) return session;
+  if ((state.settingMet ?? false) === settingMet) return session;
+  return { ...session, ritualState: { ...state, settingMet }, updatedAt: now };
 }
 
 /**
@@ -141,7 +352,7 @@ export function beginRitual(
   if (existing && existing.targetSeq === targetSeq) return session;
 
   const ritual = getSequence(session.gameState.pathwayId, targetSeq)?.advancementRitual;
-  const fidelity = accrueFidelity(0, ritualCircumstanceFidelity(session));
+  const fidelity = accrueFidelity(0, ritualSceneFidelity(session, targetSeq));
   const label = ritualQuestLabel(targetSeq);
   // Re-targeting (a stale rite for a different rung) — drop its label first so a
   // superseded quest can't linger in `activeQuests`.
@@ -191,7 +402,10 @@ export function advanceRitual(
 
   const label = ritualQuestLabel(state.targetSeq);
   const labelled = session.gameState.activeQuests.includes(label);
-  const fidelity = accrueFidelity(state.fidelity, ritualCircumstanceFidelity(session));
+  const fidelity = accrueFidelity(
+    state.fidelity,
+    ritualSceneFidelity(session, state.targetSeq),
+  );
 
   // Nothing to commit when the rite is already labelled AND this turn changed
   // nothing — either it has fully matured (past the cap) or the scene is so
@@ -238,6 +452,97 @@ export function ritualInProgress(session: GameSession, targetSeq: number): boole
   return state !== undefined && state.targetSeq === targetSeq;
 }
 
+/**
+ * Whether the rite for `targetSeq` has reached its PEAK — fully formed, the
+ * safest moment to make the climb (issue #220 follow-up). Backs the "the rite has
+ * reached its peak" nudge; the climb itself is still always the player's call.
+ */
+export function ritualReady(session: GameSession, targetSeq: number): boolean {
+  return (
+    ritualInProgress(session, targetSeq) &&
+    ritualFidelity(session, targetSeq) >= RITUAL_FIDELITY_CAP
+  );
+}
+
+/**
+ * Bring the rite under way straight to its peak — the fiction has reached the
+ * rite's culminating moment (the narrator's `ritualClimax` flag: the chosen hour
+ * or omen has come, the materials are laid, the character is undisturbed). So
+ * "wait until the full-moon zenith" actually resolves when the narrator plays
+ * that beat, rather than only accruing over idle turns. A no-op when no rite is
+ * under way or it is already at the cap. Pure.
+ */
+export function climaxRitual(
+  session: GameSession,
+  now: number = Date.now(),
+): GameSession {
+  const state = session.ritualState;
+  if (!state || state.fidelity >= RITUAL_FIDELITY_CAP) return session;
+  return {
+    ...session,
+    ritualState: { ...state, fidelity: RITUAL_FIDELITY_CAP },
+    updatedAt: now,
+  };
+}
+
+/**
+ * The binding `## Ritual in Progress` narrator block (threaded via
+ * `GenerateOptions.ritualContext` → `prompts.ts`), or `null` when no advancement
+ * rite is under way. Tells the narrator that beginning/performing the rite is NOT
+ * the advancement itself: the character remains their current role and has not
+ * ascended — portray the rite forming and the surge building, never a completed
+ * becoming, which only the engine-committed climb may narrate (issue #220). Pure.
+ */
+export function ritualNarratorContext(session: GameSession): string | null {
+  const state = session.ritualState;
+  if (!state) return null;
+
+  const { pathwayId, sequenceLevel } = session.gameState;
+  // Only surface the rite the character can actually be performing now — a stale
+  // rite for a rung they are no longer one below is inert (never fed to advancement).
+  if (state.targetSeq !== sequenceLevel - 1) return null;
+
+  const targetRole =
+    getSequence(pathwayId, state.targetSeq)?.name ?? `Sequence ${state.targetSeq}`;
+  const currentRole =
+    getSequence(pathwayId, sequenceLevel)?.name ?? `Sequence ${sequenceLevel}`;
+
+  // The rite's place-specific conditions (issue #220 follow-up): a rite demanding a
+  // particular setting — the Fool's Marionettist rite the open sea and the mermaids'
+  // song — barely forms elsewhere, so tell the narrator to lead the character toward
+  // that setting and to signal (`ritualSettingMet`) when the scene genuinely fits.
+  // Only when a place-specific setting was actually DETECTED (the mechanical gate is
+  // on), so a placeless rite is never told to find a "setting" its conditions don't
+  // name.
+  const detectedSetting = ritualRequiredSetting(session, state.targetSeq);
+  const conditions = ritualStepsFor(session, state.targetSeq)
+    .filter((s) => s.kind === "condition")
+    .map((s) => s.text);
+  const settingLine =
+    detectedSetting !== null && conditions.length > 0
+      ? ` This rite can only truly take hold in its proper setting (${detectedSetting}): ${conditions.join(
+          "; ",
+        )}. If THIS turn's scene genuinely satisfies that setting, set ` +
+        `"ritualSettingMet": true in your response (otherwise omit it); until the ` +
+        `character reaches it the rite barely forms, so lead them toward that place ` +
+        `rather than portraying the rite maturing where it cannot.`
+      : "";
+
+  return (
+    `An Advancement Ritual toward Sequence ${state.targetSeq}, ${targetRole}, is ` +
+    `under way. This rite is the protective scaffolding a Beyonder performs to ` +
+    `survive the surge of the new Beyonder characteristic at the moment of drinking ` +
+    `the next potion — it is NOT the advancement itself, and beginning or performing ` +
+    `it does NOT make the character that role. The character REMAINS ${currentRole} ` +
+    `and has NOT ascended, become ${targetRole}, or gained its powers. Portray the ` +
+    `rite taking shape and the coming characteristic's pressure building — the strain, ` +
+    `the danger, the threshold drawing nearer — but ${RITE_IN_PROGRESS_GUARD} ` +
+    `Whether the character truly becomes ${targetRole} is decided only later, when ` +
+    `they drink the potion and the game commits the change.${settingLine} ` +
+    `${RITE_CLIMAX_INSTRUCTION}`
+  );
+}
+
 /** Drop any rite under way (consumed on a successful climb, or abandoned). */
 export function clearRitual(session: GameSession, now: number = Date.now()): GameSession {
   const state = session.ritualState;
@@ -266,5 +571,9 @@ export function isValidRitualStateShape(obj: unknown): boolean {
   ) {
     return false;
   }
+  // The setting-met flag is optional (older saves predate it) but strict when
+  // present — a boolean. Rides the deserialize `...s` spread; absent means the
+  // narrator has not yet confirmed the scene, so the keyword backstop decides.
+  if (s.settingMet !== undefined && typeof s.settingMet !== "boolean") return false;
   return true;
 }
