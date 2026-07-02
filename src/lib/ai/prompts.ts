@@ -61,6 +61,7 @@ Always respond with valid JSON matching this schema:
   "sanityEventTags": ["rest"|"human-connection"|"routine"|"ability-use"|"horror-encounter"],
   "actingMethodTaught": boolean (true ONLY when the acting method is explicitly taught/revealed this turn),
   "ritualClimax": boolean (true ONLY when an in-progress advancement/ascension rite reaches its culminating moment this turn — see the Ritual in Progress layer),
+  "ritualSettingMet": boolean (true ONLY when THIS turn's scene satisfies the in-progress advancement rite's required setting — see the Ritual in Progress layer),
   "itemsDiscovered": [{"name": "string", "description": "string", "category": "mundane"}],
   "fundsDiscovered": number (pence found or lost in the fiction this turn; negative for a loss),
   "journalEntry": {"summary": "string (one sentence)", "eventType": "advancement|major-event|npc-encounter|discovery|timeline-divergence|death|combat"},

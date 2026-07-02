@@ -3770,6 +3770,24 @@ describe("validation", () => {
       ).toBeUndefined();
     });
 
+    it("carries ritualSettingMet only when literally true (issue #220 follow-up)", () => {
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualSettingMet: true }))
+          .ritualSettingMet,
+      ).toBe(true);
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualSettingMet: false }))
+          .ritualSettingMet,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x", ritualSettingMet: "yes" }))
+          .ritualSettingMet,
+      ).toBeUndefined();
+      expect(
+        parseAIResponse(JSON.stringify({ narrative: "x" })).ritualSettingMet,
+      ).toBeUndefined();
+    });
+
     it("carries sanitized codexUpdates (history-context Codex)", () => {
       const result = parseAIResponse(
         JSON.stringify({

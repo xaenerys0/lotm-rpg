@@ -109,11 +109,14 @@ import {
   advanceRitual,
   beginRitual,
   clearRitual,
+  recordRitualSetting,
   ritualFidelity,
   ritualCircumstanceFidelity,
   ritualInProgress,
   ritualNarratorContext,
   ritualReady,
+  ritualSettingSuitable,
+  ritualRequiredSetting,
   ritualStepsFor,
   ritualRequiredFor,
   climaxRitual,
@@ -1946,9 +1949,18 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // A turn of play likewise advances the search for the next potion's
       // formula, when one is being sought through the story (issue #171).
       const seeking = advanceFormulaPursuit(tracked);
+      // Record the narrator's read of whether THIS turn's scene meets the rite's
+      // required setting BEFORE it matures (issue #220 follow-up), so a rite borne
+      // out in the wrong place (the Fool's Marionettist rite away from the open
+      // sea) barely takes hold. Absent flag → false, so leaving the setting
+      // self-corrects; the location-keyword backstop still applies inside the tick.
+      const situated = recordRitualSetting(
+        seeking,
+        resolution.response.ritualSettingMet === true,
+      );
       // And it lives out one turn of the Advancement Ritual, when one is under
       // way (issue #209) — the rite spans turns rather than per-step clicks.
-      const riting = advanceRitual(seeking);
+      const riting = advanceRitual(situated);
       // Likewise the rite of ascension (apotheosis / Pillar) matures one turn —
       // the apex endgame is a multi-turn rite, not a single click.
       const ascending = advanceAscensionRite(riting);
@@ -4049,6 +4061,13 @@ function RitualPerformancePanel({
   const materials = steps.filter((s) => s.kind === "material");
   const conditions = steps.filter((s) => s.kind === "condition");
   const roleName = targetSeq?.name ?? `Sequence ${target}`;
+  // The rite's required SETTING (issue #220 follow-up): a rite bound to a place
+  // (the Fool's Marionettist rite to the open sea) barely forms elsewhere, so warn
+  // when the current scene doesn't suit it — the conditions above already say what
+  // it needs, so this is a warning, not new guidance.
+  const requiredSetting = ritualRequiredSetting(session, target);
+  const settingUnmet =
+    requiredSetting !== null && !ritualSettingSuitable(session, target);
   const inProgress = ritualInProgress(session, target);
   // At its peak the rite reads as fully formed (100%) with a clear "safest moment
   // to drink" nudge, rather than an endless sub-100% meter (issue #220 follow-up).
@@ -4086,6 +4105,17 @@ function RitualPerformancePanel({
       {materials.length > 0 && (
         <p className="mt-3 text-xs leading-relaxed text-muted">
           Laid out for the rite: {materials.map((m) => m.text).join(", ")}.
+        </p>
+      )}
+
+      {settingUnmet && (
+        <p
+          role="alert"
+          className="mt-3 rounded-md border border-crimson/40 bg-crimson/[0.06] p-3 text-sm leading-relaxed text-crimson"
+        >
+          This is not {requiredSetting} — the rite can barely take hold here. Reach the
+          setting it demands, or drinking the potion is far more likely to end in loss of
+          control.
         </p>
       )}
 
@@ -4391,6 +4421,13 @@ function AdvancementPanel({
   const target = targetSequence(session.gameState.sequenceLevel);
   const roleName =
     getSequence(session.gameState.pathwayId, target)?.name ?? `Sequence ${target}`;
+  // Warn at the drink control when the rite's required setting isn't met (issue
+  // #220 follow-up): the odds already reflect the stalled rite, but name the reason.
+  // A non-null required setting already implies a ritual-tier rung with conditions
+  // (matches RitualPerformancePanel's guard), so no separate ritualRequiredFor term.
+  const settingUnmet =
+    ritualRequiredSetting(session, target) !== null &&
+    !ritualSettingSuitable(session, target);
 
   return (
     <RitualAttemptPanel
@@ -4404,7 +4441,11 @@ function AdvancementPanel({
       confirmLabel="Drink and undergo the advancement"
       confirmBusyLabel="The potion takes hold…"
       cancelLabel="Not yet"
-      oddsText={`You judge your odds of holding control near ${chance}%.`}
+      oddsText={
+        settingUnmet
+          ? `You judge your odds of holding control near ${chance}% — and this is not the rite's proper setting, so the surge is far more likely to take you.`
+          : `You judge your odds of holding control near ${chance}%.`
+      }
       onAttempt={onAttempt}
     />
   );

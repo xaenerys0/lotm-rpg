@@ -5,28 +5,45 @@ import {
   beginRitual,
   clearRitual,
   isValidRitualStateShape,
+  recordRitualSetting,
   ritualCircumstanceFidelity,
+  ritualSceneFidelity,
   ritualFidelity,
   ritualInProgress,
   ritualNarratorContext,
   ritualQuestLabel,
   ritualReady,
+  ritualRequiredSetting,
+  ritualSettingSuitable,
   ritualStepsFor,
   climaxRitual,
   RITUAL_FIDELITY_CAP,
   RITUAL_WITNESS_PENALTY,
+  RITUAL_WRONG_SETTING_CEILING,
 } from "./ritual";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
 
 // A Fool at Sequence 6 — the target rung (Seq 5, Marionettist) carries a canon
 // Advancement Ritual, so the rite has materials/conditions and matures over play.
+// That rite is bound to the open sea ("amidst the singing of mermaids"), so the
+// default location is a SUITABLE setting — the maturation tests exercise a rite
+// that can actually form; the setting-gate tests below use `sessionInland()` for
+// the wrong place (issue #220 follow-up).
 function sessionAt(sequenceLevel = 6, pathwayId = 1): GameSession {
   const gameState = {
     ...createDefaultGameState(pathwayId, "char-1", "Klein"),
     sequenceLevel,
+    location: "The Sonia Sea, aboard a chartered ship",
   };
   return createSession(gameState, "session-1");
+}
+
+/** The same session parked INLAND (Tingen) — the wrong setting for the sea rite. */
+function sessionInland(): GameSession {
+  const s = sessionAt();
+  s.gameState.location = "Tingen City";
+  return s;
 }
 
 // Mature the rite over `n` turns of play (the per-turn tick).
@@ -56,6 +73,95 @@ describe("ritualStepsFor", () => {
     const steps = ritualStepsFor(sessionAt(6, 10), 5);
     expect(steps.length).toBeGreaterThan(0);
     expect(steps.every((s) => s.kind === "condition")).toBe(true);
+  });
+});
+
+describe("ritual setting gate (issue #220 follow-up)", () => {
+  it("derives the required setting from the rite's condition prose", () => {
+    expect(ritualRequiredSetting(sessionAt(), TARGET)).toBe("the open sea");
+  });
+
+  it("returns null for a rung whose rite names no place-specific condition", () => {
+    // Seq 9 → 8 has no ritual at all, so nothing to gate on.
+    expect(ritualRequiredSetting(sessionAt(9), 8)).toBeNull();
+  });
+
+  it("is unsuitable in the wrong place, suitable once the location names the setting", () => {
+    expect(ritualSettingSuitable(sessionInland(), TARGET)).toBe(false); // Tingen City
+    expect(ritualSettingSuitable(sessionAt(), TARGET)).toBe(true); // the Sonia Sea
+  });
+
+  it("matches by WHOLE WORD — 'Sea of Ruins' suits it, 'disease' does not (review)", () => {
+    const seaLead = sessionAt();
+    seaLead.gameState.location = "The Sea of Ruins";
+    expect(ritualSettingSuitable(seaLead, TARGET)).toBe(true);
+    const disease = sessionAt();
+    disease.gameState.location = "The Disease Ward, Greenhill Asylum";
+    expect(ritualSettingSuitable(disease, TARGET)).toBe(false);
+  });
+
+  it("does NOT gate a rite whose conditions use place words metaphorically (review)", () => {
+    // Regression: the conservative taxonomy drops ambiguous words — many rites use
+    // "altar"/"ancient"/"buried" for an object or as metaphor, not a location, so
+    // those rungs stay ungated (the narrator flag can still gate a real setting).
+    for (const [pathwayId, sequenceLevel, target] of [
+      [11, 4, 3], // Twilight Giant "Arrange a complex altar…"
+      [22, 3, 2], // Chained "Find an ancient, evil item…"
+      [20, 2, 1], // Wheel of Fortune "…buried deep within your soul…"
+    ] as const) {
+      const s = sessionAt(sequenceLevel, pathwayId);
+      // The rung must actually carry conditions for this to be a real regression.
+      expect(ritualStepsFor(s, target).some((step) => step.kind === "condition")).toBe(
+        true,
+      );
+      expect(ritualRequiredSetting(s, target)).toBeNull();
+    }
+  });
+
+  it("is always suitable when the rung has no required setting", () => {
+    expect(ritualSettingSuitable(sessionAt(9), 8)).toBe(true);
+  });
+
+  it("treats a narrator-confirmed setting as met even when the location doesn't name it", () => {
+    const begun = beginRitual(sessionInland(), TARGET); // in Tingen — unsuitable
+    expect(ritualSettingSuitable(begun, TARGET)).toBe(false);
+    const confirmed = recordRitualSetting(begun, true);
+    expect(ritualSettingSuitable(confirmed, TARGET)).toBe(true);
+  });
+
+  it("caps scene fidelity in the wrong setting, however private the moment", () => {
+    // A perfectly private Tingen scene: circumstance 1, but the wrong setting.
+    expect(ritualSceneFidelity(sessionInland(), TARGET)).toBe(
+      RITUAL_WRONG_SETTING_CEILING,
+    );
+    expect(ritualSceneFidelity(sessionAt(), TARGET)).toBe(1);
+  });
+
+  it("makes a rite in the wrong place barely take hold", () => {
+    const wrong = beginRitual(sessionInland(), TARGET).ritualState!.fidelity;
+    const right = beginRitual(sessionAt(), TARGET).ritualState!.fidelity;
+    expect(wrong).toBeLessThan(RITUAL_WRONG_SETTING_CEILING);
+    expect(right).toBeGreaterThan(wrong);
+  });
+
+  it("records the narrator's per-turn setting read onto the rite (no-op without one)", () => {
+    expect(recordRitualSetting(sessionAt(), true).ritualState).toBeUndefined();
+    const begun = beginRitual(sessionInland(), TARGET);
+    expect(recordRitualSetting(begun, true).ritualState?.settingMet).toBe(true);
+    // Leaving the setting (absent flag → false) self-corrects.
+    const confirmed = recordRitualSetting(begun, true);
+    expect(recordRitualSetting(confirmed, false).ritualState?.settingMet).toBe(false);
+  });
+
+  it("is a no-op (same reference) when the setting read is unchanged", () => {
+    const confirmed = recordRitualSetting(beginRitual(sessionInland(), TARGET), true);
+    expect(recordRitualSetting(confirmed, true)).toBe(confirmed);
+  });
+
+  it("surfaces the required conditions and the ritualSettingMet cue to the narrator", () => {
+    const context = ritualNarratorContext(beginRitual(sessionAt(), TARGET));
+    expect(context).toContain("mermaids");
+    expect(context).toContain("ritualSettingMet");
   });
 });
 
@@ -277,6 +383,12 @@ describe("isValidRitualStateShape", () => {
 
   it("accepts a well-formed state", () => {
     expect(isValidRitualStateShape(ok)).toBe(true);
+  });
+
+  it("accepts an optional boolean settingMet, rejects a non-boolean one", () => {
+    expect(isValidRitualStateShape({ ...ok, settingMet: true })).toBe(true);
+    expect(isValidRitualStateShape({ ...ok, settingMet: false })).toBe(true);
+    expect(isValidRitualStateShape({ ...ok, settingMet: "yes" })).toBe(false);
   });
 
   it("rejects malformed states", () => {

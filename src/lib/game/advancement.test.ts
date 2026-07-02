@@ -16,16 +16,24 @@ import {
   CONSUME_VIA_PANEL_NARRATIVE,
 } from "./advancement";
 import { consecrateAnchor, emptyAnchorState, requiredSupport } from "./anchors";
-import { advanceRitual, beginRitual, ritualQuestLabel } from "./ritual";
+import {
+  advanceRitual,
+  beginRitual,
+  recordRitualSetting,
+  ritualQuestLabel,
+} from "./ritual";
 import { createDefaultGameState, createSession } from "./session";
 import type { GameSession } from "./types";
 
 // Begin the advancement rite for `target` and mature it to a fully-formed rite
 // (issue #209: the rite matures over play in favourable conditions; fidelity
 // feeds the climb odds but no longer hard-gates it). A no-op below Sequence 5
-// (no rite defined there).
+// (no rite defined there). The fixture's intent is a fully-formed rite, so its
+// required SETTING is marked satisfied (narrator-confirmed) — otherwise a rite
+// bound to the open sea would never form at the generic fixture location (the
+// setting gate itself is exercised directly in `ritual.test.ts`).
 function performRitual(session: GameSession, target: number): GameSession {
-  let s = beginRitual(session, target);
+  let s = recordRitualSetting(beginRitual(session, target), true);
   // 40 private turns asymptotically forms the rite (fidelity → ~1).
   for (let i = 0; i < 40 && s.ritualState; i++) s = advanceRitual(s);
   return s;

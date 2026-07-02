@@ -158,6 +158,16 @@ export interface AIResponse {
    * turns — can complete a rite. Never itself advances the Sequence.
    */
   ritualClimax?: boolean;
+  /**
+   * THIS turn's scene genuinely satisfies the in-progress advancement rite's
+   * required SETTING (issue #220 follow-up) — e.g. the Fool's Marionettist rite
+   * demands the open sea and the mermaids' song. Drop-not-throw flag (carried only
+   * when `true`); the game records it onto the rite (`recordRitualSetting`) so it
+   * matures in the right place and barely forms in the wrong one. The narrator sets
+   * it per turn from the Ritual in Progress layer's stated conditions; absent means
+   * "not confirmed this turn" and the location-keyword backstop decides.
+   */
+  ritualSettingMet?: boolean;
   itemsDiscovered?: Item[];
   /**
    * Currency found (or lost) in the fiction this turn, in pence (issue #16
