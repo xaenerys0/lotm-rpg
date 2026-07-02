@@ -104,6 +104,8 @@ import {
   anchorHighRisk,
   ADVANCEMENT_SANITY_RATIO,
   isAdvanceableSequence,
+  detectConsumePotionIntent,
+  CONSUME_VIA_PANEL_NARRATIVE,
   advanceRitual,
   beginRitual,
   clearRitual,
@@ -2154,6 +2156,18 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         );
         return;
       }
+      // Drinking the next potion IS the advancement — an engine-owned commit (the
+      // AdvancementPanel below), never something the narrator depicts from typed
+      // intent (potion-consumption clarity). When the climb is in reach, catch a
+      // typed "I drink the potion" / "make the climb" and steer to the control so
+      // it can't dissolve into narration the engine never commits.
+      const climbInReach =
+        session.gameState.digestion?.complete === true &&
+        isAdvanceableSequence(session.gameState.sequenceLevel);
+      if (climbInReach && detectConsumePotionIntent(input)) {
+        setFreeTextNotice(CONSUME_VIA_PANEL_NARRATIVE);
+        return;
+      }
       const validation = validateFreeText(input);
       if (!validation.ok) {
         setFreeTextNotice(freeTextRejection(validation.reason));
@@ -3817,6 +3831,12 @@ function TheClimb({ session, children }: { session: GameSession; children: React
             );
           })}
         </ol>
+        {currentIdx === stages.length - 1 && (
+          <p className="mt-3 text-sm font-medium text-amber" role="status">
+            Everything is in hand — drinking the potion below is the climb itself. Make it
+            when you judge the moment right.
+          </p>
+        )}
       </header>
       {children}
     </section>

@@ -1947,6 +1947,14 @@ describe("prompts", () => {
       expect(layer.content).toContain("Never fabricate Beyonder-tier canon");
     });
 
+    it("tells the narrator drinking the advancement potion is a control, not a choice (potion-consumption clarity)", () => {
+      const layer = buildSystemPrompt([], []);
+      expect(layer.content).toContain(
+        "dedicated player CONTROL, never a narrative choice",
+      );
+      expect(layer.content).toMatch(/do NOT narrate the character drinking that potion/i);
+    });
+
     it("consolidates anti-fabrication in Canon Fidelity and references it elsewhere", () => {
       const layer = buildSystemPrompt([], []);
       expect(layer.content).toContain("## Canon Fidelity");

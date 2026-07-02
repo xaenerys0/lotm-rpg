@@ -8,10 +8,12 @@ import {
   advancementSuccessChance,
   attemptAdvancement,
   canAdvance,
+  detectConsumePotionIntent,
   isAdvanceableSequence,
   ritualRequiredFor,
   targetSequence,
   ADVANCEMENT_SANITY_RATIO,
+  CONSUME_VIA_PANEL_NARRATIVE,
 } from "./advancement";
 import { consecrateAnchor, emptyAnchorState, requiredSupport } from "./anchors";
 import { advanceRitual, beginRitual, ritualQuestLabel } from "./ritual";
@@ -82,6 +84,50 @@ describe("range helpers", () => {
     expect(ritualRequiredFor(6)).toBe(false);
     expect(ritualRequiredFor(5)).toBe(true);
     expect(ritualRequiredFor(4)).toBe(true);
+  });
+});
+
+describe("detectConsumePotionIntent (potion-consumption clarity)", () => {
+  it("catches typed drink-the-potion / make-the-climb intent", () => {
+    for (const input of [
+      "I drink the potion now",
+      "I quaff the Sequence 5 potion",
+      "consume the potion and ascend",
+      "I down the potion at the zenith",
+      "I take the potion",
+      "make the climb",
+      "I undergo the advancement",
+      "let me go through with the ascension",
+      "ascend to the next sequence",
+    ]) {
+      expect(detectConsumePotionIntent(input)).toBe(true);
+    }
+  });
+
+  it("does NOT catch ordinary actions or mundane drinks (tight patterns, review)", () => {
+    for (const input of [
+      "I drink my tea and watch the street",
+      "I pour a glass of ale",
+      "I examine the potion's colour",
+      "I ask the merchant about the formula",
+      "I walk toward the harbour",
+      "I wait for the full moon",
+      // False positives the tightened patterns must NOT swallow (review, issue #220):
+      "I make the climb up the cliff face",
+      "I make the climb to the rooftop",
+      "I put the vial down and study the potion formula",
+      "I drink my ale, then browse the potion shelves",
+      "I advance now, blade drawn",
+      "I complete my errand before the ascension festival",
+      "I take the letter from the desk",
+    ]) {
+      expect(detectConsumePotionIntent(input)).toBe(false);
+    }
+  });
+
+  it("exposes an in-world steer that points at the climb control", () => {
+    expect(CONSUME_VIA_PANEL_NARRATIVE).toMatch(/climb/i);
+    expect(CONSUME_VIA_PANEL_NARRATIVE).toContain("Drink and undergo the advancement");
   });
 });
 
