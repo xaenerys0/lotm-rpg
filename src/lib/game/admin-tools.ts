@@ -1,4 +1,4 @@
-import type { GameState, MemoryState } from "@/lib/ai";
+import type { AccessFlag, CharacterRegion, GameState, MemoryState } from "@/lib/ai";
 import { getSequence, siblingPathwayIds } from "@/lib/rules";
 import type { Item } from "@/lib/types/rules";
 
@@ -25,6 +25,7 @@ import { adjustFunds, getFunds } from "./marketplace";
 import { clamp } from "./math";
 import { evaluateLossOfControl, type LossOfControlSeverity } from "./sanity";
 import { createDefaultGameState, createSession } from "./session";
+import { getCity } from "./travel";
 import type { GameSession } from "./types";
 import { applySanityImpact, grantSealedArtifact } from "./world-state";
 
@@ -54,6 +55,47 @@ const DEFAULT_ADMIN_FUNDS = 100_000;
 const DEFAULT_TEMPORARY_POWER_TURNS = 10;
 /** Distinct id prefix so admin-built saves are recognisable in the index. */
 export const ADMIN_CHARACTER_ID_PREFIX = "admin-";
+
+/**
+ * The engine-chosen home city + seeded capability flags for a generated-identity
+ * region (the Hybrid location contract): the admin picks a NAMING region, the
+ * engine anchors the build in that region's canonical Fifth-Epoch travel city,
+ * and the AI names a venue within it. A Forsaken-Land region seeds a COHERENT
+ * origin — the dream-world passage plus the city's own awareness flag — so the
+ * character can actually move within the sealed continent and the map/gazetteer
+ * resolve, exactly like a Forsaken origin start (`createDefaultGameState`).
+ */
+export interface RegionOrigin {
+  /** Canonical city id (also the tracked `currentCity`). */
+  cityId: string;
+  /** The city's display name (leads the composed `location` so it resolves). */
+  cityName: string;
+  /** Capability flags a coherent origin in this region requires (Forsaken only). */
+  accessFlags?: AccessFlag[];
+}
+
+const REGION_ORIGIN_CITY: Record<CharacterRegion, string> = {
+  loen: "backlund",
+  intis: "trier",
+  feysac: "feysac",
+  rorsted: "bayam",
+  forsaken: "silver-city",
+  balam: "balam",
+};
+
+/** The Forsaken-Land passages a City-of-Silver origin holds (mirrors session.ts). */
+const SILVER_CITY_FLAGS: AccessFlag[] = ["dream-world-passage", "silver-city-passage"];
+
+/** Resolve a naming region to its engine-anchored home city + origin flags. */
+export function regionOrigin(region: CharacterRegion): RegionOrigin {
+  const cityId = REGION_ORIGIN_CITY[region] ?? REGION_ORIGIN_CITY.loen;
+  const cityName = getCity(cityId)?.name ?? cityId;
+  return {
+    cityId,
+    cityName,
+    ...(region === "forsaken" ? { accessFlags: [...SILVER_CITY_FLAGS] } : {}),
+  };
+}
 
 /**
  * Anchors consecrated for an endgame-ready build — four congregations at full
@@ -106,6 +148,19 @@ export interface AdminCharacterOptions {
   digestion: "start" | "end";
   characterName?: string;
   characterBackground?: string;
+  /**
+   * Full starting location string (Hybrid location, generated-identity flow):
+   * the AI-named venue LED by the region's city name so `currentCity` resolves.
+   * Overrides the epoch's default starting location. Paired with `originCityId`.
+   */
+  location?: string;
+  /** Tracked home city id (set alongside `location` so the map opens correctly). */
+  originCityId?: string;
+  /**
+   * Capability flags to seed for a coherent origin (a Forsaken-Land region needs
+   * its dream-world + per-city passages, else the character can't move at home).
+   */
+  accessFlags?: readonly AccessFlag[];
   /** Wallet in pence (defaults to a deep dev wallet). */
   funds?: number;
   /** Sanity to seed (clamped to the rung's max); defaults to full. */
@@ -215,6 +270,20 @@ export function buildAdminCharacter(
     digestion,
     funds: options.funds ?? DEFAULT_ADMIN_FUNDS,
   };
+
+  // Generated-identity origin (Hybrid location): override the epoch default with
+  // the region's city-led location, track that city, and seed any origin flags so
+  // the map/gazetteer resolve and a Forsaken-Land build can move at home. Applied
+  // together so `location`/`currentCity` never disagree.
+  if (options.location) {
+    gameState = { ...gameState, location: options.location };
+  }
+  if (options.originCityId) {
+    gameState = { ...gameState, currentCity: options.originCityId };
+  }
+  if (options.accessFlags && options.accessFlags.length > 0) {
+    gameState = { ...gameState, accessFlags: [...options.accessFlags] };
+  }
 
   if (options.sanity !== undefined) {
     gameState = {

@@ -893,6 +893,7 @@ export {
 export {
   ADMIN_CHARACTER_ID_PREFIX,
   buildAdminCharacter,
+  regionOrigin,
   makeAdvancementReadyState,
   makeAdvancementReady,
   setSessionSanity,
@@ -904,6 +905,7 @@ export {
   type AdminAcquiredPowerSpec,
   type AdminAnchorSpec,
   type AdminEndgame,
+  type RegionOrigin,
 } from "./admin-tools";
 
 export {

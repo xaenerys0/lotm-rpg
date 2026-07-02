@@ -126,9 +126,11 @@ export {
   CHARACTER_REGIONS,
   IDENTITY_NAME_MAX,
   IDENTITY_BACKGROUND_MAX,
+  IDENTITY_LOCATION_MAX,
   type CharacterRegion,
   type CharacterIdentityInput,
   type CharacterIdentity,
+  type DigestionStage,
 } from "./character-identity";
 
 export {

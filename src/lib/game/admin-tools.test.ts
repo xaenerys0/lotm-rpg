@@ -10,9 +10,11 @@ import {
   lossOfControlPreview,
   makeAdvancementReady,
   makeAdvancementReadyState,
+  regionOrigin,
   setSessionFunds,
   setSessionSanity,
 } from "./admin-tools";
+import { cityIdFromLocation, getCity, hasAccessFlag } from "./travel";
 import { effectiveSupport, requiredSupport } from "./anchors";
 import { uniquenessItemFor } from "./apotheosis";
 import { canAttemptApotheosis } from "./apotheosis";
@@ -245,6 +247,60 @@ describe("buildAdminCharacter", () => {
     expect(siblingPathwayIds(JUSTICIAR)).toHaveLength(0);
     expect(session.gameState.sequenceLevel).toBe(0);
     expect(session.ascensionRite).toBeUndefined();
+  });
+});
+
+describe("regionOrigin", () => {
+  it("maps central naming regions to their canonical Fifth-Epoch city, no flags", () => {
+    for (const [region, cityId] of [
+      ["loen", "backlund"],
+      ["intis", "trier"],
+      ["feysac", "feysac"],
+      ["rorsted", "bayam"],
+      ["balam", "balam"],
+    ] as const) {
+      const origin = regionOrigin(region);
+      expect(origin.cityId).toBe(cityId);
+      expect(origin.cityName).toBe(getCity(cityId)!.name);
+      expect(origin.accessFlags).toBeUndefined();
+    }
+  });
+
+  it("seeds a coherent City-of-Silver origin for the Forsaken region", () => {
+    const origin = regionOrigin("forsaken");
+    expect(origin.cityId).toBe("silver-city");
+    expect(origin.accessFlags).toEqual(["dream-world-passage", "silver-city-passage"]);
+  });
+});
+
+describe("buildAdminCharacter — generated-identity origin", () => {
+  it("applies a city-led location, tracked city, and origin flags", () => {
+    const origin = regionOrigin("forsaken");
+    const session = buildAdminCharacter({
+      pathwayId: FOOL,
+      sequenceLevel: 9,
+      digestion: "start",
+      location: `${origin.cityName} — the Rod-Works`,
+      originCityId: origin.cityId,
+      accessFlags: origin.accessFlags,
+    });
+    const gs = session.gameState;
+    // The location leads with the city name so the map resolves the right city.
+    expect(cityIdFromLocation(gs.location)).toBe("silver-city");
+    expect(gs.currentCity).toBe("silver-city");
+    expect(hasAccessFlag(gs, "dream-world-passage")).toBe(true);
+    expect(hasAccessFlag(gs, "silver-city-passage")).toBe(true);
+  });
+
+  it("leaves the epoch default when no origin is supplied", () => {
+    const gs = buildAdminCharacter({
+      pathwayId: FOOL,
+      sequenceLevel: 9,
+      digestion: "start",
+    }).gameState;
+    expect(gs.accessFlags).toBeUndefined();
+    // The bare build still resolves to the default start city (Tingen), untouched.
+    expect(gs.currentCity).toBe("tingen");
   });
 });
 
