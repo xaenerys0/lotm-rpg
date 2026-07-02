@@ -14,15 +14,10 @@ export type { CumulativeAbility, SequenceAbilityGroup } from "./pathways";
 
 export { PATHWAY_GROUPS, getGroupForPathway, areInSameGroup } from "./groups";
 
-export {
-  validateIndestructibility,
-  validateConservation,
-  validateConvergence,
-  validatePrerequisites,
-  validateCharacteristicTransfer,
-} from "./laws";
-
-export { validateAdvancement, validateTransfer } from "./validation";
+// The two cosmic-law helpers wired into live simulation (issue #212); the
+// whole-world weight-census + advancement-gate validators were retired — see
+// `laws.ts` and `docs/laws-simulation-design.md`.
+export { validateConvergence, validateCharacteristicTransfer } from "./laws";
 
 // Canon sequence names (generated from corpus/wiki Module:Sequence/standard) —
 // the source of truth the reconciliation test holds pathways.ts + TRUE_GOD_NAMES

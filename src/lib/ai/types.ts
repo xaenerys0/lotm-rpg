@@ -529,6 +529,13 @@ export interface PromptInput {
    */
   artifactEffectsContext?: string | null;
   /**
+   * Convergence context (issue #212) — the binding `## Convergence` block from
+   * `convergenceNarratorContext` (`@/lib/game/characteristic-ledger`): the Law of
+   * Convergence steering fate toward the same/neighbouring pathway the character's
+   * recorded characteristics resonate with. null/absent when nothing is attracted.
+   */
+  convergenceContext?: string | null;
+  /**
    * True-self ground-truth context (character-info storage) — one narrator-facing
    * line from `profilePromptContext` (pronouns, gender, appearance, demeanor);
    * null/absent when the profile is empty.

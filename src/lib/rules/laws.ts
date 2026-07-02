@@ -1,5 +1,4 @@
 import type {
-  AdvancementAttempt,
   BeyonderCharacteristic,
   CharacteristicTransfer,
   ConvergenceCheck,
@@ -8,41 +7,26 @@ import type {
   Violation,
   WorldCharacteristicLedger,
 } from "@/lib/types/rules";
-import { areNeighboringPathways, getPathway, getSequence } from "./pathways";
+import { areNeighboringPathways } from "./pathways";
 
-function totalCharacteristicCount(characteristics: BeyonderCharacteristic[]): number {
-  let total = 0;
-  for (const c of characteristics) {
-    total += c.quantity;
-  }
-  return total;
-}
-
-export function validateIndestructibility(
-  ledgerBefore: WorldCharacteristicLedger,
-  ledgerAfter: WorldCharacteristicLedger,
-): ValidationResult {
-  const violations: Violation[] = [];
-
-  const weightBefore = totalCharacteristicCount(ledgerBefore.characteristics);
-  const weightAfter = totalCharacteristicCount(ledgerAfter.characteristics);
-
-  if (weightAfter > weightBefore) {
-    violations.push({
-      law: "indestructibility",
-      message: `Beyonder characteristics cannot be created. Total weight increased from ${weightBefore} to ${weightAfter}.`,
-    });
-  }
-
-  if (weightAfter < weightBefore) {
-    violations.push({
-      law: "indestructibility",
-      message: `Beyonder characteristics cannot be destroyed. Total weight decreased from ${weightBefore} to ${weightAfter}.`,
-    });
-  }
-
-  return { valid: violations.length === 0, violations };
-}
+// ---------------------------------------------------------------------------
+// The cosmic Laws of Beyonder Characteristics (issue #212) — the two wired into
+// live simulation via `@/lib/game/characteristic-ledger`:
+//
+// - **Convergence** (`validateConvergence`): high-Sequence items of the same or
+//   a neighbouring pathway unconsciously draw a character's fate — the narrator
+//   Convergence beat.
+// - **Indestructibility** (`validateCharacteristicTransfer`): a characteristic is
+//   never destroyed, only passed from one carrier to the next — the guard on a
+//   slain Beyonder's characteristic precipitating into the recoverable ledger.
+//
+// The former whole-world `validateIndestructibility` weight-census and the
+// `validateConservation`/`validatePrerequisites` advancement gates were retired
+// in issue #212: the light per-save recoverable ledger cannot maintain a whole-
+// world census, and the advancement gate is already owned by
+// `@/lib/game/advancement.ts` + `potion-preparation.ts`. See
+// `docs/laws-simulation-design.md`.
+// ---------------------------------------------------------------------------
 
 export function validateCharacteristicTransfer(
   transfer: CharacteristicTransfer,
@@ -73,40 +57,6 @@ export function validateCharacteristicTransfer(
   return { valid: violations.length === 0, violations };
 }
 
-export function validateConservation(attempt: AdvancementAttempt): ValidationResult {
-  const violations: Violation[] = [];
-
-  if (attempt.targetSequence >= attempt.currentSequence) {
-    violations.push({
-      law: "conservation",
-      message: `Target sequence ${attempt.targetSequence} must be lower (more powerful) than current sequence ${attempt.currentSequence}.`,
-    });
-  }
-
-  if (attempt.targetSequence !== attempt.currentSequence - 1) {
-    violations.push({
-      law: "conservation",
-      message: `Cannot skip sequences. Must advance from ${attempt.currentSequence} to ${attempt.currentSequence - 1}, not ${attempt.targetSequence}.`,
-    });
-  }
-
-  const consumed = attempt.consumedCharacteristics;
-  const ownPathwayConsumed = consumed.find(
-    (c) =>
-      c.pathwayId === attempt.currentPathwayId &&
-      c.sequenceLevel === attempt.currentSequence,
-  );
-
-  if (!ownPathwayConsumed || ownPathwayConsumed.quantity < 1) {
-    violations.push({
-      law: "conservation",
-      message: `Advancement requires consuming at least one Sequence ${attempt.currentSequence} characteristic of Pathway ${attempt.currentPathwayId}.`,
-    });
-  }
-
-  return { valid: violations.length === 0, violations };
-}
-
 export function validateConvergence(check: ConvergenceCheck): ConvergenceResult {
   const attracted: BeyonderCharacteristic[] = [];
 
@@ -131,80 +81,4 @@ export function validateConvergence(check: ConvergenceCheck): ConvergenceResult 
   }
 
   return { attracted, strength };
-}
-
-export function validatePrerequisites(attempt: AdvancementAttempt): ValidationResult {
-  const violations: Violation[] = [];
-
-  const pathway = getPathway(attempt.currentPathwayId);
-  if (!pathway) {
-    violations.push({
-      law: "prerequisite",
-      message: `Unknown pathway: ${attempt.currentPathwayId}.`,
-    });
-    return { valid: false, violations };
-  }
-
-  const targetSeq = getSequence(attempt.currentPathwayId, attempt.targetSequence);
-  if (!targetSeq) {
-    violations.push({
-      law: "prerequisite",
-      message: `Unknown target sequence: ${attempt.targetSequence} for pathway ${pathway.name}.`,
-    });
-    return { valid: false, violations };
-  }
-
-  const requiredFormula = targetSeq.prerequisiteItems.find(
-    (i) => i.category === "potion-formula",
-  );
-  if (requiredFormula) {
-    const hasFormula = attempt.availableItems.some(
-      (i) => i.category === "potion-formula" && i.name === requiredFormula.name,
-    );
-    if (!hasFormula) {
-      violations.push({
-        law: "prerequisite",
-        message: `Missing potion formula: "${requiredFormula.name}".`,
-      });
-    }
-  }
-
-  const requiredMainIngredients = targetSeq.prerequisiteItems.filter(
-    (i) => i.category === "main-ingredient",
-  );
-  for (const ingredient of requiredMainIngredients) {
-    const has = attempt.availableItems.some(
-      (i) => i.category === "main-ingredient" && i.name === ingredient.name,
-    );
-    if (!has) {
-      violations.push({
-        law: "prerequisite",
-        message: `Missing main ingredient: "${ingredient.name}".`,
-      });
-    }
-  }
-
-  const requiredSupplementary = targetSeq.prerequisiteItems.filter(
-    (i) => i.category === "supplementary-ingredient",
-  );
-  for (const ingredient of requiredSupplementary) {
-    const has = attempt.availableItems.some(
-      (i) => i.category === "supplementary-ingredient" && i.name === ingredient.name,
-    );
-    if (!has) {
-      violations.push({
-        law: "prerequisite",
-        message: `Missing supplementary ingredient: "${ingredient.name}".`,
-      });
-    }
-  }
-
-  if (targetSeq.advancementRitual && !attempt.ritualCompleted) {
-    violations.push({
-      law: "prerequisite",
-      message: `Advancement ritual not completed: "${targetSeq.advancementRitual.description}".`,
-    });
-  }
-
-  return { valid: violations.length === 0, violations };
 }

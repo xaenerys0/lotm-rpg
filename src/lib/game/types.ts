@@ -155,6 +155,16 @@ export interface GameSession {
    */
   pathwayLineage?: import("./pathway-lineage").PathwayLineageState;
   /**
+   * World characteristic ledger (issue #212): the light per-save tally of the
+   * Beyonder Characteristics that have entered play — chiefly the ones a slain
+   * Beyonder precipitated into the recoverable pool (Indestructibility), which
+   * also feed the Convergence narrator beat. Absent on saves that never recorded
+   * one; strictly validated when present (`isValidCharacteristicLedgerShape`) and
+   * preserved on the deserialize `...s` spread (no seeding), exactly like
+   * `ritualState`. No DB migration — it serializes inside the session blob.
+   */
+  characteristicLedger?: import("@/lib/types/rules").WorldCharacteristicLedger;
+  /**
    * Tracked-NPC roster (issue #101): the durable cast the player is bound to —
    * allies who follow (a party) and hostiles who follow (pursuers) — distinct
    * from the transient, scene-scoped `gameState.npcsPresent`. Followers are

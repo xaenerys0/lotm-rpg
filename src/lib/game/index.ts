@@ -598,6 +598,17 @@ export {
   type PathwayLineageState,
 } from "./pathway-lineage";
 export {
+  emptyLedger,
+  resolveCharacteristicLedger,
+  isValidCharacteristicLedgerShape,
+  ledgerCharacteristicItemName,
+  precipitatedItemsFor,
+  recordPrecipitation,
+  convergenceFor,
+  convergenceNarratorContext,
+  precipitationFact,
+} from "./characteristic-ledger";
+export {
   switchUnlockSequence,
   switchTargetSequence,
   switchRelation,

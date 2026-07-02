@@ -554,6 +554,17 @@ export function assemblePrompt(input: PromptInput): PromptAssembly {
     });
   }
 
+  // Convergence (issue #212): the cosmic Law of Convergence — the character's
+  // recorded Beyonder Characteristics draw same/neighbouring-pathway Beyonders
+  // and fate toward them. A subtle steering directive, dropped when nothing is
+  // attracted.
+  if (input.convergenceContext) {
+    layers.push({
+      role: "system",
+      content: `## Convergence\n${input.convergenceContext}`,
+    });
+  }
+
   // True self (character-info storage): ground-truth self facts the narrator must
   // honour — pronouns, gender, appearance, demeanor. Dropped when the profile is
   // empty.
