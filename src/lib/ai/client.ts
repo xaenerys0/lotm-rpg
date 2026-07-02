@@ -142,6 +142,8 @@ export interface GenerateOptions {
   identityContext?: string | null;
   /** Carried Sealed Artifact effects, from `artifactNarratorContext`. */
   artifactEffectsContext?: string | null;
+  /** Convergence steering (issue #212), from `convergenceNarratorContext`. */
+  convergenceContext?: string | null;
   /** True-self ground-truth context, from `profilePromptContext`. */
   profileContext?: string | null;
   /** Recognition-gap context, from `recognitionPromptContext`. */
@@ -176,6 +178,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     retrievedChunks: options.retrievedChunks,
     identityContext: options.identityContext,
     artifactEffectsContext: options.artifactEffectsContext,
+    convergenceContext: options.convergenceContext,
     profileContext: options.profileContext,
     recognitionContext: options.recognitionContext,
     epochContext: options.epochContext,

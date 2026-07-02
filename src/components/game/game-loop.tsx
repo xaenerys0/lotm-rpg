@@ -131,6 +131,11 @@ import {
   startHunt,
   clearHunt,
   advanceActiveHunts,
+  convergenceNarratorContext,
+  resolveCharacteristicLedger,
+  recordPrecipitation,
+  precipitatedItemsFor,
+  precipitationFact,
   findHunt,
   isHuntReady,
   huntQuestLabel,
@@ -198,6 +203,7 @@ import {
   generate,
   TOKEN_BUDGET,
   AIError,
+  addSessionFact,
   addUsage,
   deserializeUsage,
   emptyUsage,
@@ -505,6 +511,10 @@ function buildAICallParams(currentSession: GameSession) {
     // list of powers the character's artifacts grant, so the narrator enforces
     // them (the real path for an effect with no engine subsystem). "" → dropped.
     artifactEffectsContext: artifactNarratorContext(currentSession) || null,
+    // Convergence (issue #212): the cosmic Law of Convergence steering fate
+    // toward the same/neighbouring pathway the character's recorded Beyonder
+    // Characteristics resonate with. null (dropped) when nothing is attracted.
+    convergenceContext: convergenceNarratorContext(currentSession),
     // Curated guardrail selection lives in @/lib/lore (tested); the component
     // stays a thin caller (issue #63).
     loreContext: selectCuratedLore(
@@ -708,6 +718,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             epochContext,
             cityNarration,
             artifactEffectsContext,
+            convergenceContext,
           } = buildAICallParams(session);
           const result = await generate({
             config: providerConfig,
@@ -720,6 +731,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             epochContext,
             cityNarration,
             artifactEffectsContext,
+            convergenceContext,
             verbosity: preferences.narrativeVerbosity,
             instruction: "narrative",
             playerAction: descentAction,
@@ -905,6 +917,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               epochContext,
               cityNarration,
               artifactEffectsContext,
+              convergenceContext,
             } = buildAICallParams(advanced);
             const res = await generate({
               config: providerConfig,
@@ -917,6 +930,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               epochContext,
               cityNarration,
               artifactEffectsContext,
+              convergenceContext,
               verbosity: preferences.narrativeVerbosity,
               instruction: "advancement",
               playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
@@ -1164,6 +1178,44 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         next = clearHunt(next, huntTarget);
       }
 
+      // Indestructibility (issue #212): a slain Beyonder's characteristic is
+      // never destroyed — it precipitates into a recoverable `main-ingredient`
+      // item and is recorded in the world ledger (which also feeds the
+      // Convergence narrator beat). Skipped for a HUNT, whose quarry's
+      // characteristic is already granted by `deliverHuntedItem` above — this is
+      // the reward for felling a Beyonder in any OTHER fight. `characteristicsDropped`
+      // is set by the engine only on a lethal victory over a Beyonder.
+      if (!huntTarget && result.characteristicsDropped.length > 0) {
+        const recovered = precipitatedItemsFor(result.characteristicsDropped);
+        if (recovered.length > 0) {
+          const ledger = recordPrecipitation(
+            resolveCharacteristicLedger(next),
+            result.characteristicsDropped,
+          );
+          next = {
+            ...next,
+            gameState: {
+              ...next.gameState,
+              inventory: [...next.gameState.inventory, ...recovered],
+            },
+            characteristicLedger: ledger,
+            memory: addSessionFact(
+              next.memory,
+              precipitationFact(recovered, next.turnCount),
+            ),
+          };
+          appendJournalEntries(session.id, [
+            buildJournalEntry(next.gameState, next.turnCount, {
+              eventType: "discovery",
+              summary: `A slain Beyonder's characteristic precipitated into your hands.`,
+              narrative: `${enemyName} falls, and the indestructible core of their power does not die with them — it precipitates into your grasp: ${recovered
+                .map((i) => i.name)
+                .join(", ")}.`,
+            }),
+          ]);
+        }
+      }
+
       // World ripple (issue #187, Phase 4): snapping a mind-controlled / coerced
       // ally free restores them to the roster as a companion who travels with you.
       if (result.outcome === "freed" && combat.context?.isKnownPerson) {
@@ -1243,6 +1295,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             epochContext,
             cityNarration,
             artifactEffectsContext,
+            convergenceContext,
           } = buildAICallParams(next);
           const res = await generate({
             config: providerConfig,
@@ -1255,6 +1308,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             epochContext,
             cityNarration,
             artifactEffectsContext,
+            convergenceContext,
             verbosity: preferences.narrativeVerbosity,
             instruction: "advancement",
             playerAction: viaTrade
@@ -1406,6 +1460,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 epochContext,
                 cityNarration,
                 artifactEffectsContext,
+                convergenceContext,
               } = buildAICallParams(switched);
               const res = await generate({
                 config: providerConfig,
@@ -1418,6 +1473,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 epochContext,
                 cityNarration,
                 artifactEffectsContext,
+                convergenceContext,
                 verbosity: preferences.narrativeVerbosity,
                 instruction: "advancement",
                 playerAction: `Narrate my exchange of pathways to the ${toName} pathway, Sequence ${newSeq}, ${result.roleName}. ${
@@ -1647,6 +1703,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         epochContext,
         cityNarration,
         artifactEffectsContext,
+        convergenceContext,
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
@@ -1680,6 +1737,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           epochContext,
           cityNarration,
           artifactEffectsContext,
+          convergenceContext,
           verbosity: preferences.narrativeVerbosity,
           pinnedEntities,
           instruction,
@@ -1917,6 +1975,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         epochContext,
         cityNarration,
         artifactEffectsContext,
+        convergenceContext,
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
@@ -1936,6 +1995,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           epochContext,
           cityNarration,
           artifactEffectsContext,
+          convergenceContext,
           verbosity: preferences.narrativeVerbosity,
           pinnedEntities,
           instruction,

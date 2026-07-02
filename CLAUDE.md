@@ -76,6 +76,7 @@ docs/
 ├── anchors-design.md      # Anchors system design (issue #35) — canon + data model
 ├── codex-design.md        # Story-consistency Codex — entity registry, pinned ground-truth, sheet tab
 ├── pathway-switching-design.md  # Pathway switching & cross-pathway ability fusion (issue #211) — canon, lineage data model, fusion algorithm
+├── laws-simulation-design.md    # Cosmic Laws of Beyonder Characteristics wired into play (issue #212) — precipitation ledger, Convergence beat, validator retirement
 ├── cloud-migration-research.md  # Cross-device cloud-sync research notes
 ├── scene-art-testing.md   # Scene-art / image-generation testing notes
 └── rules/                 # Shared rule files (@-imported by scoped CLAUDE.md)

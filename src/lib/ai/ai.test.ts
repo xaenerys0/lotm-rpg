@@ -2543,6 +2543,17 @@ describe("prompts", () => {
       );
     });
 
+    it("includes the convergence layer only when context is present (issue #212)", () => {
+      expect(
+        hasLayer(
+          { convergenceContext: "Fate bends toward the Fool line." },
+          "## Convergence",
+        ),
+      ).toBe(true);
+      expect(hasLayer({}, "## Convergence")).toBe(false);
+      expect(hasLayer({ convergenceContext: null }, "## Convergence")).toBe(false);
+    });
+
     it("includes the pacing rule for player-driven turns and omits it for engine-committed ones", () => {
       expect(hasLayer({ instruction: "narrative" }, "Pacing & Agency")).toBe(true);
       expect(hasLayer({ instruction: "choices" }, "Pacing & Agency")).toBe(true);

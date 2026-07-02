@@ -115,16 +115,6 @@ export interface Violation {
   message: string;
 }
 
-export interface AdvancementAttempt {
-  characterId: string;
-  currentPathwayId: number;
-  currentSequence: number;
-  targetSequence: number;
-  consumedCharacteristics: BeyonderCharacteristic[];
-  availableItems: Item[];
-  ritualCompleted: boolean;
-}
-
 export interface CharacteristicTransfer {
   fromEntityId?: string;
   toEntityId: string;

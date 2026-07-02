@@ -20,6 +20,7 @@ import { isValidCustomArtifactStateShape } from "./custom-artifacts";
 import { isValidRitualStateShape } from "./ritual";
 import { isValidAscensionRiteShape } from "./ascension-rite";
 import { isValidPathwayLineageShape } from "./pathway-lineage";
+import { isValidCharacteristicLedgerShape } from "./characteristic-ledger";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
 import { joinRoster, isValidTrackedNpcStateShape } from "./tracked-npcs";
@@ -527,6 +528,16 @@ export function isValidSessionShape(obj: unknown): boolean {
   // Pathway lineage (issue #211) is optional but strict when present — it rides
   // the deserialize `...s` spread (no seeding); absent means never switched.
   if (s.pathwayLineage !== undefined && !isValidPathwayLineageShape(s.pathwayLineage)) {
+    return false;
+  }
+
+  // World characteristic ledger (issue #212) is optional but strict when present —
+  // it rides the deserialize `...s` spread (no seeding); absent means no
+  // characteristic has yet been recorded (e.g. no Beyonder slain).
+  if (
+    s.characteristicLedger !== undefined &&
+    !isValidCharacteristicLedgerShape(s.characteristicLedger)
+  ) {
     return false;
   }
 

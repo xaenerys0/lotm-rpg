@@ -13,10 +13,10 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 - `main-ingredients-canon.ts` — **AUTO-GENERATED** by the same `pnpm rag:advancement-canon` run (do not hand-edit). `MAIN_INGREDIENTS[pathwayId][level]` — the canon main-ingredient MATERIALS for the rungs the wiki documents one for (46 rungs across 10 pathways), cleaned of wiki cruft (parentheticals dropped, capitalized). `pathways.ts`'s `applyCanonMainIngredient` overlays the PRIMARY (first) material as that rung's single main ingredient; rungs absent here take the same-tier role Beyonder Characteristic. `main-ingredients-canon.test.ts` is the permanent reconciliation guard (the `sequence-names-canon.test.ts` pattern).
 - `pillars.ts` — The four **Pillars** ("Above the Sequence", issue #99 Part B): `Pillar {id, name, title, sefirah, pathwayIds}`, `PILLARS`, `pillarForPathway(id)`/`getPillar(id)`, and `siblingPathwayIds`/`siblingPathwayNames`. Canon data only — the mechanical apex above Seq 0 lives in `@/lib/game/pillars`. The four families (Lord of Mysteries {1,7,8}, God Almighty {2,3,6,9,10}, Eternal Darkness {4,5,11}, Mother Goddess of Depravity {16,17}) map exactly onto the pathways' canon `sefirah`/`group` data; the other nine pathways have no Pillar (`pillarForPathway` → `undefined`) and cap at True God. Eternal Darkness is the real fourth Pillar the Evernight Goddess ascends into (sequel canon).
 - `groups.ts` — Pathway group clustering (nine groups partitioning all 22 pathways) and neighbor relationships.
-- `laws.ts` — Three cosmic laws: indestructibility (conservation of total characteristic weight), conservation (sequential advancement only), convergence (same/neighboring pathway attraction).
-- `validation.ts` — High-level validation API: `validateAdvancement()` and `validateTransfer()`.
+- `laws.ts` — The cosmic Laws of Beyonder Characteristics, wired into live simulation (issue #212) via `@/lib/game/characteristic-ledger`: **`validateConvergence`** (same/neighbouring-pathway attraction → the narrator Convergence beat) and **`validateCharacteristicTransfer`** (Indestructibility — "passed from one carrier to the next" → the guard on a slain Beyonder's characteristic precipitating into the recoverable ledger). The former whole-world `validateIndestructibility` weight-census and the `validateConservation`/`validatePrerequisites` advancement gates were **retired** in #212 (the light per-save recoverable ledger can't maintain a whole-world census; the advancement gate is already owned by `@/lib/game/advancement.ts` + `potion-preparation.ts`). Rationale: `docs/laws-simulation-design.md`.
+- `validation.ts` — **Removed (issue #212).** The high-level `validateAdvancement()`/`validateTransfer()` API composed only retired checks and was a dead orchestration layer; the two live validators are called directly from `@/lib/game/characteristic-ledger`.
 - `index.ts` — Public exports.
-- `rules.test.ts` — Comprehensive test suite (8 describe blocks, ~55 test cases).
+- `rules.test.ts` — Comprehensive test suite (pathway definitions/groups/cumulative abilities + the two retained laws — `characteristic transfer` and `convergence`; the retired-validator blocks were removed in issue #212).
 - `sequence-names-canon.test.ts` — Permanent **canon reconciliation** guard (issue #99 Part A): holds `pathways.ts` (Seq 9-1) and `apotheosis.ts`'s `TRUE_GOD_NAMES`/pathway names (Seq 0) against the generated `SEQUENCE_NAMES`, so curated names can never silently drift from the wiki corpus.
 - `pillars.test.ts` — Pillar canon-data tests (issue #99 Part B): the four Pillars, the family→pathway mapping (cross-checked against each pathway's `sefirah`), `pillarForPathway`/`getPillar`, and `siblingPathwayIds`/`siblingPathwayNames`.
 - `advancement-canon.test.ts` — Data-integrity guard for the generated Advancement Ritual `steps` (issue #209): rituals only at Seq 5-1, every step tagged `material`|`condition` with non-empty text, each rite carries ≥1 condition beat, and the material steps reconcile one-for-one with the canon `requirements`.
@@ -26,7 +26,7 @@ Game logic implementing the Lord of the Mysteries Beyonder power system. Referen
 
 - `Pathway`, `Sequence`, `Ability`, `Item`, `Ritual`
 - `BeyonderCharacteristic` — `{ pathwayId, sequenceLevel, quantity }`
-- `AdvancementAttempt`, `CharacteristicTransfer`, `WorldCharacteristicLedger`
+- `CharacteristicTransfer`, `WorldCharacteristicLedger`, `ConvergenceCheck`/`ConvergenceResult`
 - `ValidationResult` with `Violation[]` (each tagged by `LawType`)
 
 ## Current Scope
