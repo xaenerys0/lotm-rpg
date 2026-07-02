@@ -54,9 +54,37 @@ export interface RitualState {
   fidelity: number;
 }
 
+/**
+ * The core issue-#220 guardrail sentence, shared verbatim by both the advancement
+ * (`ritualNarratorContext`) and apex (`ascensionRiteNarratorContext`) narrator
+ * blocks so a future rewording can never drift between the two paths.
+ */
+export const RITE_IN_PROGRESS_GUARD =
+  "never narrate the ascension as accomplished, and do not declare the rite " +
+  'finished or announce it is "ready".';
+
+/**
+ * The shared instruction that lets the FICTION drive a rite to its peak (issue
+ * #220 follow-up): when a turn genuinely reaches the rite's culminating moment,
+ * the narrator sets `ritualClimax`, and the engine brings the rite to its peak
+ * (`climaxRitual`/`climaxAscensionRite`). Shared verbatim by both narrator blocks
+ * so the two paths can't drift.
+ */
+export const RITE_CLIMAX_INSTRUCTION =
+  "If THIS turn the rite genuinely reaches its culminating moment — the chosen " +
+  "hour or omen has come, the materials are laid, and the character is " +
+  'undisturbed — set "ritualClimax": true in your response (otherwise omit it); ' +
+  "the game will then bring the rite to its peak.";
+
 /** Fraction of the remaining gap to a faithful rite closed per ideal turn. */
 export const RITUAL_PROGRESS_RATE = 0.3;
-/** At/above this fidelity the rite counts as fully matured (avoids endless churn). */
+/**
+ * At/above this fidelity the rite counts as fully matured (avoids endless churn)
+ * AND has reached its PEAK — the "complete", safest moment to drink (issue #220
+ * follow-up: `ritualReady`). The peak is reached either by full turn-accrual or
+ * when the narrator marks the fiction's culminating moment (`climaxRitual`); the
+ * UI reads it to show a clear "ready" nudge instead of an endless sub-100% meter.
+ */
 export const RITUAL_FIDELITY_CAP = 0.99;
 
 /** Fidelity progress lost to performing the rite with witnesses (a crowd) near. */
@@ -92,13 +120,22 @@ export function ritualStepsFor(session: GameSession, targetSeq: number): RitualS
  */
 export function ritualCircumstanceFidelity(session: GameSession): number {
   const { npcsPresent, injuries } = session.gameState;
-  const pursuers = (session.trackedNpcState?.roster ?? []).filter(
-    (npc) => npc.disposition === "hostile" && npc.follows,
+  const roster = session.trackedNpcState?.roster ?? [];
+  const pursuers = roster.filter((npc) => npc.disposition === "hostile" && npc.follows);
+  // A deliberate ceremony attended only by the character's OWN circle is not
+  // "witnessed" — a chosen rite among trusted allies keeps its secrecy, so only
+  // strangers/onlookers who are NOT tracked allies slow it (issue #220 follow-up).
+  // Match present names against the ally roster, case-insensitively.
+  const allyNames = new Set(
+    roster
+      .filter((npc) => npc.disposition === "ally")
+      .map((npc) => npc.name.toLowerCase()),
   );
+  const witnesses = (npcsPresent ?? []).filter((n) => !allyNames.has(n.toLowerCase()));
   let fidelity = 1;
   if ((injuries?.length ?? 0) > 0) fidelity -= RITUAL_WOUNDED_PENALTY;
   if (pursuers.length > 0) fidelity -= RITUAL_HUNTED_PENALTY;
-  if ((npcsPresent?.length ?? 0) > 0) fidelity -= RITUAL_WITNESS_PENALTY;
+  if (witnesses.length > 0) fidelity -= RITUAL_WITNESS_PENALTY;
   return clamp(fidelity, 0, 1);
 }
 
@@ -236,6 +273,75 @@ export function ritualFidelity(session: GameSession, targetSeq: number): number 
 export function ritualInProgress(session: GameSession, targetSeq: number): boolean {
   const state = session.ritualState;
   return state !== undefined && state.targetSeq === targetSeq;
+}
+
+/**
+ * Whether the rite for `targetSeq` has reached its PEAK — fully formed, the
+ * safest moment to make the climb (issue #220 follow-up). Backs the "the rite has
+ * reached its peak" nudge; the climb itself is still always the player's call.
+ */
+export function ritualReady(session: GameSession, targetSeq: number): boolean {
+  return (
+    ritualInProgress(session, targetSeq) &&
+    ritualFidelity(session, targetSeq) >= RITUAL_FIDELITY_CAP
+  );
+}
+
+/**
+ * Bring the rite under way straight to its peak — the fiction has reached the
+ * rite's culminating moment (the narrator's `ritualClimax` flag: the chosen hour
+ * or omen has come, the materials are laid, the character is undisturbed). So
+ * "wait until the full-moon zenith" actually resolves when the narrator plays
+ * that beat, rather than only accruing over idle turns. A no-op when no rite is
+ * under way or it is already at the cap. Pure.
+ */
+export function climaxRitual(
+  session: GameSession,
+  now: number = Date.now(),
+): GameSession {
+  const state = session.ritualState;
+  if (!state || state.fidelity >= RITUAL_FIDELITY_CAP) return session;
+  return {
+    ...session,
+    ritualState: { ...state, fidelity: RITUAL_FIDELITY_CAP },
+    updatedAt: now,
+  };
+}
+
+/**
+ * The binding `## Ritual in Progress` narrator block (threaded via
+ * `GenerateOptions.ritualContext` → `prompts.ts`), or `null` when no advancement
+ * rite is under way. Tells the narrator that beginning/performing the rite is NOT
+ * the advancement itself: the character remains their current role and has not
+ * ascended — portray the rite forming and the surge building, never a completed
+ * becoming, which only the engine-committed climb may narrate (issue #220). Pure.
+ */
+export function ritualNarratorContext(session: GameSession): string | null {
+  const state = session.ritualState;
+  if (!state) return null;
+
+  const { pathwayId, sequenceLevel } = session.gameState;
+  // Only surface the rite the character can actually be performing now — a stale
+  // rite for a rung they are no longer one below is inert (never fed to advancement).
+  if (state.targetSeq !== sequenceLevel - 1) return null;
+
+  const targetRole =
+    getSequence(pathwayId, state.targetSeq)?.name ?? `Sequence ${state.targetSeq}`;
+  const currentRole =
+    getSequence(pathwayId, sequenceLevel)?.name ?? `Sequence ${sequenceLevel}`;
+
+  return (
+    `An Advancement Ritual toward Sequence ${state.targetSeq}, ${targetRole}, is ` +
+    `under way. This rite is the protective scaffolding a Beyonder performs to ` +
+    `survive the surge of the new Beyonder characteristic at the moment of drinking ` +
+    `the next potion — it is NOT the advancement itself, and beginning or performing ` +
+    `it does NOT make the character that role. The character REMAINS ${currentRole} ` +
+    `and has NOT ascended, become ${targetRole}, or gained its powers. Portray the ` +
+    `rite taking shape and the coming characteristic's pressure building — the strain, ` +
+    `the danger, the threshold drawing nearer — but ${RITE_IN_PROGRESS_GUARD} ` +
+    `Whether the character truly becomes ${targetRole} is decided only later, when ` +
+    `they drink the potion and the game commits the change. ${RITE_CLIMAX_INSTRUCTION}`
+  );
 }
 
 /** Drop any rite under way (consumed on a successful climb, or abandoned). */

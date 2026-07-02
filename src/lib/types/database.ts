@@ -350,6 +350,9 @@ export interface Database {
         // Cloud-synced character saves (cross-device sync). The full
         // serialized GameSession as jsonb; owner-scoped by RLS. is_active is
         // the active-character pointer, flipped via set_active_session.
+        // `id` is an opaque client string (text, migration 20260702110642) —
+        // NOT always a UUID (admin "admin-<uuid>" / dev "dev-test-character"
+        // saves), so every character syncs; matches journal_entries.session_id.
         Row: {
           id: string;
           user_id: string;

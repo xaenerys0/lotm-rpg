@@ -175,6 +175,13 @@ export function parseAIResponse(raw: string): AIResponse {
     response.actingMethodTaught = true;
   }
 
+  // Ritual-climax flag (issue #220 follow-up) — the fiction reached an in-progress
+  // rite's culminating moment. Carried only when literally true (drop-not-throw);
+  // the engine brings the rite to its peak, never advances the Sequence.
+  if (obj.ritualClimax === true) {
+    response.ritualClimax = true;
+  }
+
   // Pursuers (issue #101) — the narrator's channel for who is hunting the
   // character. Normalize to clean, de-duplicated, non-empty names; an empty
   // result is dropped (drop-not-throw, like sanityEventTags).

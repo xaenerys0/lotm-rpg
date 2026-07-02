@@ -110,15 +110,20 @@ import {
   ritualFidelity,
   ritualCircumstanceFidelity,
   ritualInProgress,
+  ritualNarratorContext,
+  ritualReady,
   ritualStepsFor,
   ritualRequiredFor,
+  climaxRitual,
   RITUAL_FIDELITY_CAP,
   advanceAscensionRite,
   beginAscensionRite,
   clearAscensionRite,
   ascensionRiteFidelity,
   ascensionRiteInProgress,
+  ascensionRiteNarratorContext,
   ascensionRiteReady,
+  climaxAscensionRite,
   ascensionTierFor,
   type AscensionTier,
   meetsRequirements,
@@ -515,6 +520,12 @@ function buildAICallParams(currentSession: GameSession) {
     // toward the same/neighbouring pathway the character's recorded Beyonder
     // Characteristics resonate with. null (dropped) when nothing is attracted.
     convergenceContext: convergenceNarratorContext(currentSession),
+    // Ritual in progress (issue #220): while an advancement/ascension rite is
+    // under way, the narrator must portray it forming — never a completed
+    // ascension, which only the engine-committed climb narrates. null → dropped.
+    ritualContext:
+      ritualNarratorContext(currentSession) ??
+      ascensionRiteNarratorContext(currentSession),
     // Curated guardrail selection lives in @/lib/lore (tested); the component
     // stays a thin caller (issue #63).
     loreContext: selectCuratedLore(
@@ -719,6 +730,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             cityNarration,
             artifactEffectsContext,
             convergenceContext,
+            ritualContext,
           } = buildAICallParams(session);
           const result = await generate({
             config: providerConfig,
@@ -732,6 +744,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             cityNarration,
             artifactEffectsContext,
             convergenceContext,
+            ritualContext,
             verbosity: preferences.narrativeVerbosity,
             instruction: "narrative",
             playerAction: descentAction,
@@ -918,6 +931,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               cityNarration,
               artifactEffectsContext,
               convergenceContext,
+              ritualContext,
             } = buildAICallParams(advanced);
             const res = await generate({
               config: providerConfig,
@@ -931,6 +945,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
               cityNarration,
               artifactEffectsContext,
               convergenceContext,
+              ritualContext,
               verbosity: preferences.narrativeVerbosity,
               instruction: "advancement",
               playerAction: `Narrate my advancement to Sequence ${result.newSequenceLevel}, ${result.roleName}${
@@ -1296,6 +1311,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             cityNarration,
             artifactEffectsContext,
             convergenceContext,
+            ritualContext,
           } = buildAICallParams(next);
           const res = await generate({
             config: providerConfig,
@@ -1309,6 +1325,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
             cityNarration,
             artifactEffectsContext,
             convergenceContext,
+            ritualContext,
             verbosity: preferences.narrativeVerbosity,
             instruction: "advancement",
             playerAction: viaTrade
@@ -1461,6 +1478,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 cityNarration,
                 artifactEffectsContext,
                 convergenceContext,
+                ritualContext,
               } = buildAICallParams(switched);
               const res = await generate({
                 config: providerConfig,
@@ -1474,6 +1492,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                 cityNarration,
                 artifactEffectsContext,
                 convergenceContext,
+                ritualContext,
                 verbosity: preferences.narrativeVerbosity,
                 instruction: "advancement",
                 playerAction: `Narrate my exchange of pathways to the ${toName} pathway, Sequence ${newSeq}, ${result.roleName}. ${
@@ -1704,6 +1723,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         cityNarration,
         artifactEffectsContext,
         convergenceContext,
+        ritualContext,
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
@@ -1738,6 +1758,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           cityNarration,
           artifactEffectsContext,
           convergenceContext,
+          ritualContext,
           verbosity: preferences.narrativeVerbosity,
           pinnedEntities,
           instruction,
@@ -1929,10 +1950,18 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       // Likewise the rite of ascension (apotheosis / Pillar) matures one turn —
       // the apex endgame is a multi-turn rite, not a single click.
       const ascending = advanceAscensionRite(riting);
+      // Fiction-driven peak (issue #220 follow-up): when the narrator marks the
+      // rite's culminating moment (the chosen hour/omen, materials laid,
+      // undisturbed), bring whichever rite is under way straight to its peak — so
+      // "wait until the full-moon zenith" resolves through the story, not just
+      // idle turns. Only one rite is ever active, so both are safe to apply.
+      const climaxed = resolution.response.ritualClimax
+        ? climaxAscensionRite(climaxRitual(ascending))
+        : ascending;
       // Temporary copied/stolen powers fade by one turn; expired ones are
       // released (acquired-powers subsystem), so a Polymath's Imitation or an
       // artifact-stolen ability does not linger forever.
-      const powered = tickAcquiredPowers(ascending);
+      const powered = tickAcquiredPowers(climaxed);
       // Story-consistency Codex (history-context Codex): fold the narrator's
       // entity deltas into the registry and auto-touch the entities the engine
       // knows are present (current location + present NPCs), so a recurring
@@ -1976,6 +2005,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         cityNarration,
         artifactEffectsContext,
         convergenceContext,
+        ritualContext,
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
@@ -1996,6 +2026,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           cityNarration,
           artifactEffectsContext,
           convergenceContext,
+          ritualContext,
           verbosity: preferences.narrativeVerbosity,
           pinnedEntities,
           instruction,
@@ -2157,7 +2188,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     // Engine first (captures the opening progress + the quest label), then narrate
     // the rite's opening as a player turn through the validated pipeline.
     const begun = beginRitual(session, target);
-    const action = `I begin the Advancement Ritual to become a ${roleName}, performing its rite in earnest here and now.`;
+    const action = `I begin the Advancement Ritual for the ascent to ${roleName} — performing its opening rites here and now and bracing for the surge of the new characteristic to come. The rite is only beginning; the climb itself still lies ahead, and I have not yet become a ${roleName}.`;
     const choice = freeTextToChoice(action);
     const withChoice = {
       ...begun,
@@ -2179,8 +2210,8 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
     const begun = beginAscensionRite(session);
     const action =
       tier === "pillar"
-        ? `I begin the rite of ascension above the sequences, drawing my family's godhoods together to become ${pillarName(session.gameState.pathwayId)} — performing it in earnest here and now.`
-        : `I begin the rite of apotheosis, opening the ceremony to seize the throne of ${trueGodName(session.gameState.pathwayId)} — performing it in earnest here and now.`;
+        ? `I begin the rite of ascension above the sequences, opening the ceremony to draw my family's godhoods together toward becoming ${pillarName(session.gameState.pathwayId)} — performing its opening rites here and now. The rite is only beginning; the ascension itself still lies ahead, and I have not yet become a Pillar.`
+        : `I begin the rite of apotheosis, opening the ceremony to seize the throne of ${trueGodName(session.gameState.pathwayId)} — performing its opening rites here and now. The rite is only beginning; the ascension itself still lies ahead, and I have not yet become a True God.`;
     const choice = freeTextToChoice(action);
     const withChoice = {
       ...begun,
@@ -3999,7 +4030,10 @@ function RitualPerformancePanel({
   const conditions = steps.filter((s) => s.kind === "condition");
   const roleName = targetSeq?.name ?? `Sequence ${target}`;
   const inProgress = ritualInProgress(session, target);
-  const fidelityPct = Math.round(ritualFidelity(session, target) * 100);
+  // At its peak the rite reads as fully formed (100%) with a clear "safest moment
+  // to drink" nudge, rather than an endless sub-100% meter (issue #220 follow-up).
+  const ready = ritualReady(session, target);
+  const fidelityPct = ready ? 100 : Math.round(ritualFidelity(session, target) * 100);
   // How the current scene will shape the rite if begun / as it matures.
   const circumstanceHint = ritualCircumstanceHint(session);
 
@@ -4043,15 +4077,28 @@ function RitualPerformancePanel({
             aria-valuenow={fidelityPct}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuetext={`The rite is ${fidelityPct}% formed`}
+            aria-valuetext={
+              ready
+                ? "The rite has reached its peak"
+                : `The rite is ${fidelityPct}% formed`
+            }
             className="mt-4 h-2 overflow-hidden rounded-full bg-surface"
           >
             <div className="h-full bg-occult/60" style={{ width: `${fidelityPct}%` }} />
           </div>
           <p className="mt-2 text-sm text-foreground/85">
-            The rite is {fidelityPct}% formed and matures as you play on.{" "}
-            {circumstanceHint} Drink below whenever you judge it ready — sooner is more
-            dangerous.
+            {ready ? (
+              <span className="font-medium text-occult-bright">
+                The rite has reached its peak — this is the safest moment to make the
+                climb below.
+              </span>
+            ) : (
+              <>
+                The rite is {fidelityPct}% formed and matures as you play on.{" "}
+                {circumstanceHint} Drink below whenever you judge it ready — sooner is
+                more dangerous.
+              </>
+            )}
           </p>
         </>
       ) : (
@@ -4367,7 +4414,9 @@ function AscensionRitePanel({
   const riteName = tier === "pillar" ? "ascension above the sequences" : "apotheosis";
   const inRite = ascensionRiteInProgress(session);
   const ready = ascensionRiteReady(session);
-  const fidelityPct = Math.round(ascensionRiteFidelity(session) * 100);
+  // At its peak the rite reads as fully formed (100%), matching RitualPerformancePanel
+  // rather than the endless sub-100% asymptote (issue #220 follow-up).
+  const fidelityPct = ready ? 100 : Math.round(ascensionRiteFidelity(session) * 100);
   const circumstanceHint = ritualCircumstanceHint(session);
 
   return (
@@ -4400,7 +4449,11 @@ function AscensionRitePanel({
             aria-valuenow={fidelityPct}
             aria-valuemin={0}
             aria-valuemax={100}
-            aria-valuetext={`The rite is ${fidelityPct}% formed`}
+            aria-valuetext={
+              ready
+                ? "The rite has reached its peak"
+                : `The rite is ${fidelityPct}% formed`
+            }
             className="mt-4 h-2 overflow-hidden rounded-full bg-surface"
           >
             <div className="h-full bg-occult/60" style={{ width: `${fidelityPct}%` }} />

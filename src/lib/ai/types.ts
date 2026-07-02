@@ -149,6 +149,15 @@ export interface AIResponse {
    * ONLY AI-driven acting-method discovery trigger and is NEVER a sanity scare.
    */
   actingMethodTaught?: boolean;
+  /**
+   * The fiction reached an in-progress advancement/ascension rite's culminating
+   * moment this turn (issue #220 follow-up) — the chosen hour/omen has come, the
+   * materials are laid, the character is undisturbed. Drop-not-throw flag (carried
+   * only when `true`); the game brings whichever rite is under way to its peak
+   * (`climaxRitual`/`climaxAscensionRite`), so narrative timing — not just idle
+   * turns — can complete a rite. Never itself advances the Sequence.
+   */
+  ritualClimax?: boolean;
   itemsDiscovered?: Item[];
   /**
    * Currency found (or lost) in the fiction this turn, in pence (issue #16
@@ -535,6 +544,16 @@ export interface PromptInput {
    * recorded characteristics resonate with. null/absent when nothing is attracted.
    */
   convergenceContext?: string | null;
+  /**
+   * Ritual-in-progress context (issue #220) — the binding `## Advancement Ritual
+   * (in progress)` / `## Rite of Ascension (in progress)` block from
+   * `ritualNarratorContext` / `ascensionRiteNarratorContext` (`@/lib/game`): tells
+   * the narrator that beginning or performing an advancement/ascension rite is NOT
+   * the ascension itself — the character keeps their current Sequence and only the
+   * engine-committed climb may narrate the becoming. null/absent when no rite is
+   * under way.
+   */
+  ritualContext?: string | null;
   /**
    * True-self ground-truth context (character-info storage) — one narrator-facing
    * line from `profilePromptContext` (pronouns, gender, appearance, demeanor);
