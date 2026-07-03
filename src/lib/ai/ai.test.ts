@@ -4450,7 +4450,7 @@ describe("client", () => {
         apiKey: "k",
         baseUrl: undefined,
         model: "gpt-oss:120b",
-        thinkingLevel: "low",
+        thinkingLevel: "off",
       });
     });
 
@@ -4497,7 +4497,7 @@ describe("client", () => {
         model: "llama3.2",
         thinkingLevel: "bogus",
       });
-      expect(migrated?.thinkingLevel).toBe("low");
+      expect(migrated?.thinkingLevel).toBe("off");
       expect(migrated?.apiKey).toBe("");
     });
 

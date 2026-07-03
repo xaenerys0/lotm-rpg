@@ -17,8 +17,8 @@ describe("thinking level constants", () => {
     expect(THINKING_LEVELS).toEqual(["off", "low", "medium", "high"]);
   });
 
-  it("defaults to low — the floor every thinking model accepts", () => {
-    expect(DEFAULT_THINKING_LEVEL).toBe("low");
+  it("defaults to off — the fastest baseline (resolvers clamp per model)", () => {
+    expect(DEFAULT_THINKING_LEVEL).toBe("off");
   });
 });
 

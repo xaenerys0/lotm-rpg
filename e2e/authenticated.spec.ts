@@ -86,8 +86,8 @@ test("the settings provider config exposes a single model + reasoning-depth cont
   await expect(page.getByLabel(/^Premium/)).toHaveCount(0);
 
   const depth = page.getByLabel(/^Reasoning depth/);
-  // Default baseline is Low.
-  await expect(depth).toHaveValue("low");
+  // Default baseline is Off (fastest).
+  await expect(depth).toHaveValue("off");
 
   // Change to High and save.
   await depth.selectOption("high");

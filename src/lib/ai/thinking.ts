@@ -26,8 +26,14 @@ export const THINKING_LEVELS: readonly ThinkingLevel[] = [
   "high",
 ] as const;
 
-/** The default baseline for player-driven (routine) turns. */
-export const DEFAULT_THINKING_LEVEL: ThinkingLevel = "low";
+/**
+ * The default baseline for player-driven (routine) turns — thinking OFF, the
+ * fastest option. Models that can't fully disable (gpt-oss) clamp up to their
+ * own floor in the resolvers, and non-thinking models drop the parameter
+ * entirely, so `off` is always a safe default. Premium (combat/advancement)
+ * turns still nudge up one notch.
+ */
+export const DEFAULT_THINKING_LEVEL: ThinkingLevel = "off";
 
 export function isThinkingLevel(value: unknown): value is ThinkingLevel {
   return typeof value === "string" && THINKING_LEVELS.includes(value as ThinkingLevel);
