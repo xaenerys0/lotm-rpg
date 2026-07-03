@@ -205,7 +205,6 @@ import type {
   ProviderConfig,
   ImageProviderConfig,
   Choice,
-  InstructionType,
   AIErrorCode,
   ValidatedAIResponse,
   AIResponse,
@@ -1734,8 +1733,6 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
-      const instruction: InstructionType = "narrative";
-
       const playerAction =
         currentSession.turnCount === 0
           ? (currentSession.gameState.openingBeat ??
@@ -1766,7 +1763,9 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
           ritualContext,
           verbosity: preferences.narrativeVerbosity,
           pinnedEntities,
-          instruction,
+          // A fresh scene is always plain narration — the pillar-keyed
+          // instructions apply only to resolving a chosen action (resolveChoice).
+          instruction: "narrative",
           playerAction,
           abilities,
           actingRequirements: actingReqs,
@@ -4659,12 +4658,15 @@ function ResolutionRecap({
   // The numeric digestion/alignment readout is doubly gated (issue #95): the
   // player must have discovered the method AND opted the meter on.
   const showDigestionNumbers = knowsMethod && digestionMeterVisible;
-  // Scene art (issue #20): the AI's journal flag marks the key moments. The
-  // turn stamp always accompanies a set `lastResolution`; the null check is a
-  // type-level guard, not a reachable branch.
+  // Scene art (issue #20): the AI's journal flag marks the key moments, keyed
+  // to the stamped committed turn (which always accompanies a set
+  // `lastResolution`). One nullable gate so the policy can't diverge between
+  // the decision and the render.
   const artFlag = validateJournalFlag(response.journalEntry);
-  const illustrate =
-    artFlag !== null && artTurn !== null && shouldGenerateSceneArt(artFlag.eventType);
+  const art =
+    artFlag !== null && artTurn !== null && shouldGenerateSceneArt(artFlag.eventType)
+      ? { flag: artFlag, turn: artTurn }
+      : null;
   const hasStateChanges =
     response.worldStateChanges && response.worldStateChanges.length > 0;
   // Only mundane loot actually enters inventory; advancement-critical reagents
@@ -4723,11 +4725,11 @@ function ResolutionRecap({
             {response.narrative}
           </p>
         </div>
-        {illustrate && artFlag && artTurn !== null && (
+        {art && (
           <SceneArt
-            artKey={sceneArtKey(session.id, artTurn)}
+            artKey={sceneArtKey(session.id, art.turn)}
             context={{
-              summary: artFlag.summary,
+              summary: art.flag.summary,
               location: session.gameState.location,
               ...(seq ? { pathwayName: seq.name } : {}),
             }}
