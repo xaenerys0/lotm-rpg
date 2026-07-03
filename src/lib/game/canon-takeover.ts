@@ -14,6 +14,7 @@ import {
   establishedOpeningBeat,
   type CreateSessionOptions,
 } from "./session";
+import { seedCanonSociety } from "./society";
 import { cityIdFromLocation } from "./travel";
 import type { GameSession } from "./types";
 
@@ -123,10 +124,17 @@ export function createCanonCharacterSession(
   // Seed the timeline gate at the character's introduction chapter (issue #63);
   // accept the full options so a future creation-time model pick threads through
   // (defaults are correct today).
-  return createSession(gameState, undefined, undefined, memory, {
+  const session = createSession(gameState, undefined, undefined, memory, {
     ...options,
     canonPosition: preset.canonPosition,
   });
+
+  // A taken-over canon CONVENER begins already holding their circle (Klein → the
+  // empty Tarot Club), bypassing the Sequence-gated `foundSociety` exactly as the
+  // archetype pre-membership seam does. `null` for a non-founder (they pull
+  // members in via the invitation mechanic), leaving the save with no society.
+  const society = seedCanonSociety(preset.id);
+  return society ? { ...session, societyState: society } : session;
 }
 
 /**

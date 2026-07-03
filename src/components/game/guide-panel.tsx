@@ -104,7 +104,7 @@ const DESTINATIONS: Destination[] = [
   {
     title: "Society",
     blurb:
-      "The Gathering — find a pathway-fitting secret society, extend invitations, and convene above the gray fog to trade intel, favours, and goods.",
+      "The Gathering — find a pathway-fitting secret society, extend invitations, and convene gatherings to trade intel, favours, and goods.",
     href: "/society",
   },
   {

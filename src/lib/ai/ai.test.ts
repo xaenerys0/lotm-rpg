@@ -82,6 +82,10 @@ import {
   selectModel,
   generate,
   generateCodexRebuild,
+  generateSocietyIdentity,
+  generateSocietyCandidates,
+  generateInvitationOutcome,
+  generateGathering,
   validateProviderConfig,
   listProviderModels,
   findUnservedModels,
@@ -5172,6 +5176,161 @@ describe("client", () => {
       const lastMsg = secondBody.messages[secondBody.messages.length - 1];
       expect(lastMsg.role).toBe("user");
       expect(lastMsg.content).toMatch(/valid JSON|cut off/);
+    });
+  });
+
+  describe("society generators", () => {
+    beforeEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    const openAiReply = (content: string): Response =>
+      ({
+        ok: true,
+        status: 200,
+        text: () =>
+          Promise.resolve(
+            JSON.stringify({
+              choices: [{ message: { content } }],
+              model: "gpt-4o-mini",
+              usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 },
+            }),
+          ),
+      }) as Response;
+
+    it("generateSocietyIdentity parses a suggested identity on the routine model", async () => {
+      const identity = JSON.stringify({
+        name: "The Tarot Club",
+        description: "A circle of hidden faces.",
+        ethos: "Mutual benefit.",
+        meetingPlace: "Above the gray fog.",
+      });
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(openAiReply(identity));
+      const result = await generateSocietyIdentity(makeProviderConfig(), {
+        kindLabel: "The Tarot Club",
+        pathwayName: "Fool",
+        sequenceName: "Seer",
+      });
+      expect(result?.name).toBe("The Tarot Club");
+      // The bespoke generators run on the ROUTINE model.
+      const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
+      expect(body.model).toBe(makeProviderConfig().routineModel);
+    });
+
+    it("generateSocietyIdentity returns null when every attempt is unparseable", async () => {
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValue(openAiReply("the fog is silent"));
+      const result = await generateSocietyIdentity(makeProviderConfig(), {
+        kindLabel: "A Circle of Scholars",
+        pathwayName: "Visionary",
+        sequenceName: "Spectator",
+      });
+      expect(result).toBeNull();
+      expect(fetchSpy.mock.calls.length).toBeGreaterThan(1);
+    });
+
+    it("generateSocietyCandidates parses a slate, and retries an empty parse", async () => {
+      const slate = JSON.stringify({
+        candidates: [
+          {
+            origin: "canon",
+            canonId: "audrey-hall",
+            codeName: "Justice",
+            pathwayHint: "reads hearts",
+            arc: "build power",
+            dossier: "She would answer.",
+          },
+        ],
+      });
+      const fetchSpy = vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(openAiReply(JSON.stringify({ candidates: [] }))) // empty → retry
+        .mockResolvedValueOnce(openAiReply(slate));
+      const result = await generateSocietyCandidates(makeProviderConfig(), {
+        societyName: "The Tarot Club",
+        kindLabel: "The Tarot Club",
+        pathwayName: "Fool",
+        sequenceLevel: 9,
+        canonSeeds: [],
+        inventCount: 1,
+      });
+      expect(result).toHaveLength(1);
+      expect(result[0].canonId).toBe("audrey-hall");
+      expect(fetchSpy.mock.calls.length).toBe(2);
+    });
+
+    it("generateSocietyCandidates returns [] after exhausting the retries", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(openAiReply("no slate here"));
+      const result = await generateSocietyCandidates(makeProviderConfig(), {
+        societyName: "A Circle",
+        kindLabel: "A Circle of Scholars",
+        pathwayName: "Visionary",
+        sequenceLevel: 7,
+        canonSeeds: [],
+        inventCount: 2,
+      });
+      expect(result).toEqual([]);
+    });
+
+    it("generateInvitationOutcome parses the accept/decline verdict", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        openAiReply(JSON.stringify({ accepted: false, narrative: "She declines." })),
+      );
+      const result = await generateInvitationOutcome(makeProviderConfig(), {
+        societyName: "The Tarot Club",
+        kindLabel: "The Tarot Club",
+        inviterRoleName: "Seer",
+        candidate: {
+          codeName: "Justice",
+          dossier: "A Visionary noble.",
+          origin: "canon",
+        },
+      });
+      expect(result).toEqual({ accepted: false, narrative: "She declines." });
+    });
+
+    it("generateGathering parses the scene + intel narration", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+        openAiReply(
+          JSON.stringify({
+            narrative: "The table gleams.",
+            intel: ["A warehouse on the docks"],
+            tradedItemName: "A sealed letter",
+          }),
+        ),
+      );
+      const result = await generateGathering(makeProviderConfig(), {
+        societyName: "The Tarot Club",
+        kindLabel: "The Tarot Club",
+        members: [
+          {
+            codeName: "Justice",
+            pathwayHint: "reads hearts",
+            arc: "build power",
+            disposition: 20,
+          },
+        ],
+        sharerCodeNames: ["Justice"],
+        itemTraded: true,
+      });
+      expect(result?.narrative).toBe("The table gleams.");
+      expect(result?.intel).toEqual(["A warehouse on the docks"]);
+      expect(result?.tradedItemName).toBe("A sealed letter");
+    });
+
+    it("generateGathering returns null when unparseable", async () => {
+      vi.spyOn(globalThis, "fetch").mockResolvedValue(openAiReply("no json"));
+      const result = await generateGathering(makeProviderConfig(), {
+        societyName: "A Circle",
+        kindLabel: "A Circle of Scholars",
+        members: [],
+        sharerCodeNames: [],
+        itemTraded: false,
+      });
+      expect(result).toBeNull();
     });
   });
 

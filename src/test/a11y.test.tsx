@@ -52,6 +52,8 @@ import {
   isExchangeComplete,
   resolveEncounter,
   emptyPreparation,
+  seedCanonSociety,
+  commitInvitedMember,
 } from "@/lib/game";
 import type { GameState } from "@/lib/ai";
 import { getSequence } from "@/lib/rules";
@@ -1219,6 +1221,31 @@ describe("accessibility — stub pages", () => {
     const session = createSession(gameState, "soc-1", 1000);
     localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["soc-1"]));
     localStorage.setItem(SESSION_KEY_PREFIX + "soc-1", serializeSession(session));
+    await expectNoAxeViolations(<SocietyPage />);
+  });
+
+  it("society page (founded society with a member) has no violations", async () => {
+    // A pre-founded Tarot Club with an AI/canon member — exercises the society
+    // header fiction (description/creed/meeting place), the member card with a
+    // real name + trust bar, and the arc-resolution control markup.
+    const society = commitInvitedMember(
+      seedCanonSociety("klein-moretti")!,
+      {
+        codeName: "Justice",
+        realName: "Audrey Hall",
+        pathwayHintProse: "reads the hearts of others",
+        arcProse: "are quietly building a following of their own",
+        origin: "canon",
+        canonId: "audrey-hall",
+      },
+      "soc-member-1",
+    );
+    const session = {
+      ...createSession(createDefaultGameState(1, "char-soc2", "Klein"), "soc-2", 1000),
+      societyState: { ...society, members: [{ ...society.members[0], arcStage: 3 }] },
+    };
+    localStorage.setItem(SESSION_INDEX_KEY, JSON.stringify(["soc-2"]));
+    localStorage.setItem(SESSION_KEY_PREFIX + "soc-2", serializeSession(session));
     await expectNoAxeViolations(<SocietyPage />);
   });
 

@@ -33,6 +33,24 @@ import {
   type CharacterIdentity,
   type CharacterIdentityInput,
 } from "./character-identity";
+import {
+  buildGatheringPrompt,
+  buildInvitationOutcomePrompt,
+  buildSocietyCandidatesPrompt,
+  buildSocietyIdentityPrompt,
+  parseGatheringNarration,
+  parseInvitationOutcome,
+  parseSocietyCandidates,
+  parseSocietyIdentity,
+  type GatheringInput,
+  type GatheringNarration,
+  type InvitationOutcome,
+  type InvitationOutcomeInput,
+  type SocietyCandidate,
+  type SocietyCandidatesInput,
+  type SocietyIdentity,
+  type SocietyIdentityInput,
+} from "./society-generation";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [2000, 4000, 8000];
@@ -47,6 +65,9 @@ const MAX_OUTPUT_TOKENS = 3072;
 const REBUILD_MAX_TOKENS = 4096;
 // A name + a short background is tiny — a small cap keeps the dev generator cheap.
 const IDENTITY_MAX_TOKENS = 512;
+// A society identity / candidate slate / gathering narration is a handful of short
+// fields or a small list; roomy enough for an 8-candidate slate without truncation.
+const SOCIETY_MAX_TOKENS = 1536;
 // Total attempts to obtain parseable JSON: the initial call plus corrective
 // retries that feed the bad output back with an instruction to fix it.
 const MAX_PARSE_ATTEMPTS = 3;
@@ -328,6 +349,122 @@ export async function generateCharacterIdentity(
     );
   }
   return null;
+}
+
+/**
+ * Shared routine-model generation loop for the bespoke society generators — the
+ * same adapter + `executeWithRetry` seam and corrective parse-retry loop as
+ * `generateCharacterIdentity`, factored so the four `generateSociety*` shells
+ * don't each re-implement it. Runs the routine model with a hot first attempt
+ * (society prose wants variety), re-prompts with a corrective instruction on an
+ * unparseable reply, and returns `null` after exhausting the retries. The `parse`
+ * callback returns `null` to signal "not usable, retry" (a shell that treats an
+ * empty result as a failure passes a callback that maps empty → `null`).
+ */
+async function generateStructured<T>(
+  config: ProviderConfig,
+  messages: ChatMessage[],
+  maxTokens: number,
+  parse: (raw: string) => T | null,
+): Promise<T | null> {
+  const adapter = createAdapter(config.providerId, config.baseUrl);
+  const model = selectModel(config, "routine");
+  const convo = [...messages];
+  for (let attempt = 0; attempt < MAX_PARSE_ATTEMPTS; attempt++) {
+    const response = await executeWithRetry(
+      adapter,
+      {
+        messages: convo,
+        model,
+        temperature: attempt === 0 ? 0.85 : 0.5,
+        maxTokens,
+        responseFormat: { type: "json_object" },
+      },
+      config.apiKey,
+    );
+    const parsed = parse(response.content);
+    if (parsed !== null) return parsed;
+    logUnparseableOutput(config.providerId, model, attempt + 1, response);
+    convo.push(
+      { role: "assistant", content: response.content },
+      { role: "user", content: correctiveMessage(response.truncated ?? false) },
+    );
+  }
+  return null;
+}
+
+/**
+ * Generate a society's identity (name/description/ethos/meeting place) via the
+ * player's BYOK provider (AI society overhaul). The pure prompt/parse live in
+ * `society-generation.ts`. Returns `null` after exhausting the parse retries, so
+ * the caller falls back to the deterministic `foundSociety`.
+ */
+export async function generateSocietyIdentity(
+  config: ProviderConfig,
+  input: SocietyIdentityInput,
+): Promise<SocietyIdentity | null> {
+  return generateStructured(
+    config,
+    buildSocietyIdentityPrompt(input),
+    SOCIETY_MAX_TOKENS,
+    parseSocietyIdentity,
+  );
+}
+
+/**
+ * Generate a slate of invitation candidates (canon seeds enriched + invented
+ * originals). Returns `[]` after exhausting the retries — the caller then falls
+ * back to the deterministic `recruitMember`. An empty parse is treated as a
+ * failure worth retrying (the model should always echo the canon seeds).
+ */
+export async function generateSocietyCandidates(
+  config: ProviderConfig,
+  input: SocietyCandidatesInput,
+): Promise<SocietyCandidate[]> {
+  const result = await generateStructured(
+    config,
+    buildSocietyCandidatesPrompt(input),
+    SOCIETY_MAX_TOKENS,
+    (raw) => {
+      const candidates = parseSocietyCandidates(raw);
+      return candidates.length > 0 ? candidates : null;
+    },
+  );
+  return result ?? [];
+}
+
+/**
+ * Generate the "summoning above the gray fog" outcome for an extended invitation
+ * (accept/decline + narration). Returns `null` after exhausting the retries.
+ */
+export async function generateInvitationOutcome(
+  config: ProviderConfig,
+  input: InvitationOutcomeInput,
+): Promise<InvitationOutcome | null> {
+  return generateStructured(
+    config,
+    buildInvitationOutcomePrompt(input),
+    SOCIETY_MAX_TOKENS,
+    parseInvitationOutcome,
+  );
+}
+
+/**
+ * Generate the prose of a gathering (scene + one intel line per sharer + an
+ * optional traded-item name) to overlay onto the deterministic `holdGathering`
+ * outcome. Returns `null` after exhausting the retries — the caller keeps the
+ * engine's template prose.
+ */
+export async function generateGathering(
+  config: ProviderConfig,
+  input: GatheringInput,
+): Promise<GatheringNarration | null> {
+  return generateStructured(
+    config,
+    buildGatheringPrompt(input),
+    SOCIETY_MAX_TOKENS,
+    parseGatheringNarration,
+  );
 }
 
 export function correctiveMessage(truncated: boolean): string {
