@@ -2,7 +2,6 @@ import type { SessionFact } from "@/lib/ai";
 import { pickRandom, randomIndex } from "@/lib/lore/random";
 import type { Item } from "@/lib/types/rules";
 import { applyCodexUpdate, resolveCodexState } from "./codex";
-import { joinRoster } from "./tracked-npcs";
 import type { GameSession } from "./types";
 
 // ---------------------------------------------------------------------------
@@ -538,21 +537,22 @@ export function commitInvitedMember(
   return { ...society, members: [...society.members, member] };
 }
 
-/** A committed member plus the fields its full-world integration needs. */
+/** A committed member plus the fields its story-world integration needs. */
 export interface IntegratedMemberInput extends SocietyMemberCommit {
   /** A short note for the Codex person entry (the dossier); defaults to the hint. */
   note?: string;
 }
 
 /**
- * Commit an accepted invitation candidate AND integrate them into the wider world
- * (the locked "full integration" decision): seat them via `commitInvitedMember`,
- * roster them as a tracked ally who travels with the player (`joinRoster`), and
- * register them as a Codex `person` the narrator holds in `## Established Facts`
- * (`applyCodexUpdate` — the code name becomes an alias, the dossier/hint the note).
- * Returns a NEW `GameSession` (a no-op when there is no society). Propagates
- * `commitInvitedMember`'s throws (full table / duplicate canon / missing code
- * name) so the caller can surface them. Pure + deterministic (injected id).
+ * Commit an accepted invitation candidate AND register them in the story world so
+ * the narrator knows them: seat them via `commitInvitedMember` and file them as a
+ * Codex `person` in `## Established Facts` (`applyCodexUpdate` — the code name
+ * becomes an alias, the dossier/hint the note). A society member is a CONTACT met
+ * above the gray fog, NOT a travelling companion, so they are deliberately NOT
+ * added to the tracked-NPC follower roster (the player adds companions themselves
+ * from the character sheet). Returns a NEW `GameSession` (a no-op when there is no
+ * society). Propagates `commitInvitedMember`'s throws (full table / duplicate canon
+ * / missing code name) so the caller can surface them. Pure + deterministic.
  */
 export function commitAndIntegrateMember(
   session: GameSession,
@@ -564,15 +564,10 @@ export function commitAndIntegrateMember(
   const nextSociety = commitInvitedMember(society, input, idFactory());
   const displayName = input.realName?.trim() || input.codeName.trim();
 
-  const next = joinRoster(
-    { ...session, societyState: nextSociety },
-    { name: displayName, disposition: "ally", follows: true },
-  );
-
   const aliases = displayName !== input.codeName.trim() ? [input.codeName.trim()] : [];
   const note = (input.note ?? input.pathwayHintProse)?.trim() || undefined;
   const codexState = applyCodexUpdate(
-    resolveCodexState(next.codexState),
+    resolveCodexState(session.codexState),
     {
       kind: "person",
       name: displayName,
@@ -580,9 +575,9 @@ export function commitAndIntegrateMember(
       ...(aliases.length ? { aliases } : {}),
       ...(note ? { note } : {}),
     },
-    next.turnCount,
+    session.turnCount,
   );
-  return { ...next, codexState };
+  return { ...session, societyState: nextSociety, codexState };
 }
 
 /** Recruit one new member, deterministically under the injected randomness. */

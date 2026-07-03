@@ -17,11 +17,13 @@ existing `game_sessions.data` JSONB — **no DB migration**.
 
 ## Locked design decisions
 
-1. **Full world integration.** A recruited member is ALSO registered as a tracked
-   ally (`joinRoster`, so they travel with the player and re-assert into scenes) and
-   a Codex `person` entity (`applyCodexUpdate`, so the narrator holds them in
-   `## Established Facts`). A canon figure you pull in (Audrey/Justice) is thereafter
-   a real ally the story knows.
+1. **Story-world integration (Codex, not companions).** A recruited member is
+   registered as a Codex `person` entity (`applyCodexUpdate`, so the narrator holds
+   them in `## Established Facts`) — a canon figure you pull in (Audrey/Justice) is
+   thereafter someone the story knows. They are deliberately NOT added to the
+   tracked-NPC follower roster: a society member is a CONTACT met above the gray
+   fog, not a travelling companion trailing the player into every scene (the player
+   adds companions themselves from the character sheet).
 2. **Outgoing invitations only.** The player reaches out from their society to pull
    others in (the Sefirah Castle framing). There is no incoming-invitation subsystem.
 3. **Free canon divergence.** Any corpus-appropriate canon figure is invitable at any
@@ -91,8 +93,8 @@ Provider-gated (loads `ProviderConfig` from localStorage) with `role="status"`/
 - **Header:** renders the society's description/creed/meeting-place fiction.
 - **Invitation:** "Seek someone to invite" → a candidate **slate** (canon/original
   badge, dossier) → "Extend the invitation" → AI summoning narration → accept commits
-  (+ tracked-ally + Codex integration) / "Pass" dismisses. No provider → the slate
-  step runs the deterministic recruit instead.
+  (+ Codex person registration — NOT a travelling companion) / "Pass" dismisses. No
+  provider → the slate step runs the deterministic recruit instead.
 - **Gatherings:** the AI narrative + intel render when produced; the template prose
   otherwise. Intel still lands in `sessionFacts` + a `major-event` journal entry.
 

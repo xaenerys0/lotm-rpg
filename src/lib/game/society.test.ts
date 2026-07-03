@@ -582,7 +582,7 @@ describe("commitAndIntegrateMember — full-world integration", () => {
     };
   }
 
-  it("seats the member AND rosters them as an ally AND files a Codex person", () => {
+  it("seats the member AND files a Codex person, but does NOT roster them as a companion", () => {
     const next = commitAndIntegrateMember(
       baseSession(),
       {
@@ -598,15 +598,8 @@ describe("commitAndIntegrateMember — full-world integration", () => {
     );
     // Seated in the society.
     expect(next.societyState?.members.map((m) => m.realName)).toContain("Audrey Hall");
-    // Rostered as a following ally.
-    const roster = resolveTrackedNpcState(next.trackedNpcState).roster;
-    expect(roster).toContainEqual(
-      expect.objectContaining({
-        name: "Audrey Hall",
-        disposition: "ally",
-        follows: true,
-      }),
-    );
+    // A society member is a CONTACT, not a travelling companion — never rostered.
+    expect(resolveTrackedNpcState(next.trackedNpcState).roster).toHaveLength(0);
     // Filed as a Codex person, code name as an alias, dossier as the note.
     const person = resolveCodexState(next.codexState).entities.find(
       (e) => e.name === "Audrey Hall",
@@ -640,9 +633,10 @@ describe("commitAndIntegrateMember — full-world integration", () => {
         canonId: "audrey-hall",
       }),
     ).toThrow(/seat/i);
-    // Only one member + one roster entry — no duplicate integration.
+    // Only one member seated, and no companion rostered (society members are
+    // contacts, not travelling allies).
     expect(session.societyState?.members).toHaveLength(1);
-    expect(resolveTrackedNpcState(session.trackedNpcState).roster).toHaveLength(1);
+    expect(resolveTrackedNpcState(session.trackedNpcState).roster).toHaveLength(0);
   });
 
   it("is a no-op when the session has no society", () => {
