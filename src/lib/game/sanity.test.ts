@@ -25,6 +25,7 @@ import {
   classifySanityTier,
   sanityEffects,
   sanityDescriptor,
+  sanityDeltaProse,
   sanityDelta,
   sanityDeltaForTags,
   inRoleDrainMultiplier,
@@ -147,6 +148,27 @@ describe("sanity", () => {
       expect(sanityDescriptor(50, 100)).toBe(SANITY_DESCRIPTORS.medium);
       expect(sanityDescriptor(20, 100)).toBe(SANITY_DESCRIPTORS.low);
       expect(sanityDescriptor(5, 100)).toBe(SANITY_DESCRIPTORS.critical);
+    });
+  });
+
+  describe("sanityDeltaProse", () => {
+    it("scales the hidden-meter recap prose by magnitude, gains and losses", () => {
+      // Gentle nudges keep the familiar vague lines…
+      expect(sanityDeltaProse(2)).toBe("your mind steadies a little");
+      expect(sanityDeltaProse(-2)).toBe("your mind frays a little");
+      // …while a heavy, engine-scored event (past the ±5 residual cap the AI
+      // alone could explain) reads as a real shock or a real reprieve.
+      expect(sanityDeltaProse(-5)).toBe(
+        "something whispers at the edge of hearing, and your thoughts run cold",
+      );
+      expect(sanityDeltaProse(-12)).toBe(sanityDeltaProse(-5));
+      expect(sanityDeltaProse(5)).toBe(
+        "the fog lifts from your thoughts; you feel almost yourself again",
+      );
+      expect(sanityDeltaProse(9)).toBe(sanityDeltaProse(5));
+      // The exact ±5 boundary belongs to the heavy tier on both sides.
+      expect(sanityDeltaProse(4)).toBe("your mind steadies a little");
+      expect(sanityDeltaProse(-4)).toBe("your mind frays a little");
     });
   });
 

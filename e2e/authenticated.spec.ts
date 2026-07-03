@@ -1,11 +1,6 @@
 import { expect, test } from "@playwright/test";
-import {
-  createDefaultGameState,
-  createSession,
-  serializeSession,
-  SESSION_INDEX_KEY,
-  SESSION_KEY_PREFIX,
-} from "@/lib/game";
+import { createDefaultGameState, createSession } from "@/lib/game";
+import { seedActiveSession } from "./seed";
 
 // Authenticated-tier specs (run only with a Supabase backend; gated in
 // playwright.config.ts and seeded with a signed-in storageState). These prove
@@ -108,18 +103,7 @@ test("the character sheet's delete control runs the two-step confirm", async ({
     createDefaultGameState(1, "e2e-char", "Klein E2E"),
     "e2e-delete-1",
   );
-  await page.addInitScript(
-    ({ indexKey, sessionKey, indexValue, sessionValue }) => {
-      localStorage.setItem(indexKey, indexValue);
-      localStorage.setItem(sessionKey, sessionValue);
-    },
-    {
-      indexKey: SESSION_INDEX_KEY,
-      sessionKey: SESSION_KEY_PREFIX + session.id,
-      indexValue: JSON.stringify([session.id]),
-      sessionValue: serializeSession(session),
-    },
-  );
+  await seedActiveSession(page, session);
 
   await page.goto("/character");
 
@@ -151,18 +135,7 @@ test("a Beyonder climbing into the Saint tier can consecrate an anchor", async (
     sequenceLevel: 5,
   };
   const session = createSession(gameState, "e2e-anchor-1");
-  await page.addInitScript(
-    ({ indexKey, sessionKey, indexValue, sessionValue }) => {
-      localStorage.setItem(indexKey, indexValue);
-      localStorage.setItem(sessionKey, sessionValue);
-    },
-    {
-      indexKey: SESSION_INDEX_KEY,
-      sessionKey: SESSION_KEY_PREFIX + session.id,
-      indexValue: JSON.stringify([session.id]),
-      sessionValue: serializeSession(session),
-    },
-  );
+  await seedActiveSession(page, session);
 
   await page.goto("/character");
 
@@ -216,18 +189,7 @@ test("the character sheet tabs switch sections and the Codex tab browses entitie
       ],
     },
   };
-  await page.addInitScript(
-    ({ indexKey, sessionKey, indexValue, sessionValue }) => {
-      localStorage.setItem(indexKey, indexValue);
-      localStorage.setItem(sessionKey, sessionValue);
-    },
-    {
-      indexKey: SESSION_INDEX_KEY,
-      sessionKey: SESSION_KEY_PREFIX + session.id,
-      indexValue: JSON.stringify([session.id]),
-      sessionValue: serializeSession(session),
-    },
-  );
+  await seedActiveSession(page, session);
 
   await page.goto("/character");
 

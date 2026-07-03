@@ -40,6 +40,7 @@ import {
   companionsPresentOnMove,
   markPursuer,
   previewSanityImpact,
+  sanityDeltaProse,
   CHOICE_PILLAR_MAP,
   PILLAR_INSTRUCTION_MAP,
   PROVIDER_CONFIG_KEY,
@@ -1733,9 +1734,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
         pinnedEntities,
       } = buildAICallParams(currentSession);
 
-      const instruction: InstructionType = currentSession.activePillar
-        ? PILLAR_INSTRUCTION_MAP[currentSession.activePillar]
-        : "narrative";
+      const instruction: InstructionType = "narrative";
 
       const playerAction =
         currentSession.turnCount === 0
@@ -2489,7 +2488,7 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
                     )}
                     <ResolutionRecap
                       session={session}
-                      artTurn={session.turnCount - 1}
+                      isEngineTurn={false}
                       imageConfig={imageConfig}
                       sceneArtEnabled={preferences.sceneArtEnabled}
                       knowsMethod={knowsMethod}
@@ -4629,11 +4628,15 @@ function PillarAscensionPanel({
 // world-state / items) for a resolved turn. Shared by the merged choices screen
 // (a normal player turn — shown above its own next choices, no Continue) and the
 // engine-turn `ConsequencesPhase` (advancement / combat — shown with a Continue).
-// `artTurn` keys the key-moment scene art to the turn the resolution belongs to
-// (the committed turn), which is also the journal entry's `turnNumber`.
+// The key-moment scene art is keyed to `session.lastResolutionTurn` — the turn
+// the resolution belongs to, stamped by the state machine at set time (issue
+// #195), which is also the journal entry's `turnNumber`. `isEngineTurn` is the
+// explicit engine-vs-normal signal: an engine turn's resolution is narration
+// only (the engine committed its own consequences), so the recap must not read
+// the committed digestion as if this turn advanced it.
 function ResolutionRecap({
   session,
-  artTurn,
+  isEngineTurn,
   imageConfig,
   sceneArtEnabled,
   knowsMethod,
@@ -4641,7 +4644,7 @@ function ResolutionRecap({
   sanityMeterVisible,
 }: {
   session: GameSession;
-  artTurn: number;
+  isEngineTurn: boolean;
   imageConfig: ImageProviderConfig | null;
   sceneArtEnabled: boolean;
   knowsMethod: boolean;
@@ -4650,14 +4653,18 @@ function ResolutionRecap({
 }) {
   const resolution = session.lastResolution;
   if (!resolution) return null;
+  const artTurn = session.lastResolutionTurn;
 
   const response = resolution.response;
   // The numeric digestion/alignment readout is doubly gated (issue #95): the
   // player must have discovered the method AND opted the meter on.
   const showDigestionNumbers = knowsMethod && digestionMeterVisible;
-  // Scene art (issue #20): the AI's journal flag marks the key moments.
+  // Scene art (issue #20): the AI's journal flag marks the key moments. The
+  // turn stamp always accompanies a set `lastResolution`; the null check is a
+  // type-level guard, not a reachable branch.
   const artFlag = validateJournalFlag(response.journalEntry);
-  const illustrate = artFlag !== null && shouldGenerateSceneArt(artFlag.eventType);
+  const illustrate =
+    artFlag !== null && artTurn !== null && shouldGenerateSceneArt(artFlag.eventType);
   const hasStateChanges =
     response.worldStateChanges && response.worldStateChanges.length > 0;
   // Only mundane loot actually enters inventory; advancement-critical reagents
@@ -4685,12 +4692,17 @@ function ResolutionRecap({
   // applyDigestion here would double-count it, since applyDigestionProgress is
   // additive. The per-turn change is the acting eval's own progress delta
   // (`computeProgressDelta`, the same value applyResolution applied, modulo the
-  // 0/100 clamp). The engine-turn ConsequencesPhase has no actingEvaluation, so
-  // the whole digestion display is skipped.
-  const digestionDelta = response.actingEvaluation
-    ? computeProgressDelta(response.actingEvaluation.alignment)
-    : null;
-  const digestionState = hasActingEval ? session.gameState.digestion : undefined;
+  // 0/100 clamp). On an engine turn the whole digestion display is skipped —
+  // gated on the EXPLICIT `isEngineTurn` prop (issue #195), not on the absence
+  // of an actingEvaluation, so a future engine path forwarding a richer
+  // response can never make the recap claim a digestion advance the engine
+  // never applied.
+  const digestionDelta =
+    !isEngineTurn && response.actingEvaluation
+      ? computeProgressDelta(response.actingEvaluation.alignment)
+      : null;
+  const digestionState =
+    !isEngineTurn && hasActingEval ? session.gameState.digestion : undefined;
   const seq = hasActingEval
     ? getSequence(session.gameState.pathwayId, session.gameState.sequenceLevel)
     : null;
@@ -4711,7 +4723,7 @@ function ResolutionRecap({
             {response.narrative}
           </p>
         </div>
-        {illustrate && artFlag && (
+        {illustrate && artFlag && artTurn !== null && (
           <SceneArt
             artKey={sceneArtKey(session.id, artTurn)}
             context={{
@@ -4748,9 +4760,7 @@ function ResolutionRecap({
                 </span>
               ) : (
                 <span className="font-serif italic text-foreground/70">
-                  {sanityTotal > 0
-                    ? "your mind steadies a little"
-                    : "your mind frays a little"}
+                  {sanityDeltaProse(sanityTotal)}
                 </span>
               )}
             </div>
@@ -4959,7 +4969,7 @@ function ConsequencesPhase({
       {reveal && <AscensionReveal session={session} tier={reveal} />}
       <ResolutionRecap
         session={session}
-        artTurn={session.turnCount}
+        isEngineTurn
         imageConfig={imageConfig}
         sceneArtEnabled={sceneArtEnabled}
         knowsMethod={knowsMethod}

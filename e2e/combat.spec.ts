@@ -5,12 +5,9 @@ import {
   createEncounter,
   createSession,
   emptyPreparation,
-  serializeSession,
-  ACTIVE_SESSION_KEY,
   COMBAT_KEY_PREFIX,
-  SESSION_INDEX_KEY,
-  SESSION_KEY_PREFIX,
 } from "@/lib/game";
+import { seedActiveSession } from "./seed";
 
 // Authenticated-tier spec (runs only with a Supabase backend; gated in
 // playwright.config.ts and seeded with a signed-in storageState). Combat is an
@@ -57,33 +54,9 @@ test("an in-progress combat encounter renders the framed clarity surfaces", asyn
     emptyPreparation(),
   );
 
-  await page.addInitScript(
-    ({
-      indexKey,
-      sessionKey,
-      activeKey,
-      combatKey,
-      id,
-      indexValue,
-      sessionValue,
-      combatValue,
-    }) => {
-      localStorage.setItem(indexKey, indexValue);
-      localStorage.setItem(sessionKey, sessionValue);
-      localStorage.setItem(activeKey, id);
-      localStorage.setItem(combatKey, combatValue);
-    },
-    {
-      indexKey: SESSION_INDEX_KEY,
-      sessionKey: SESSION_KEY_PREFIX + session.id,
-      activeKey: ACTIVE_SESSION_KEY,
-      combatKey: COMBAT_KEY_PREFIX + session.id,
-      id: session.id,
-      indexValue: JSON.stringify([session.id]),
-      sessionValue: serializeSession(session),
-      combatValue: JSON.stringify(encounter),
-    },
-  );
+  await seedActiveSession(page, session, {
+    [COMBAT_KEY_PREFIX + session.id]: JSON.stringify(encounter),
+  });
 
   await page.goto("/play");
 

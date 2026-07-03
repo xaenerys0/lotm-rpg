@@ -84,6 +84,27 @@ export function sanityDescriptor(sanity: number, maxSanity: number): string {
   return SANITY_DESCRIPTORS[classifySanityTier(sanity, maxSanity)];
 }
 
+/**
+ * The in-world prose for a per-turn sanity CHANGE, shown in the resolution
+ * recap when the numeric meter is hidden. Vague by design (hidden-meter), but
+ * scaled by magnitude so a brush with the mysteries reads differently from a
+ * true shock — in canon, deep sanity loss announces itself as whispers and
+ * cold, irrational thoughts, not as a bookkeeping line. The ±5 threshold
+ * mirrors `SANITY_RESIDUAL_CAP`: anything past what the AI's residual nuance
+ * could explain is a heavy, engine-scored event. One canonical helper so the
+ * wording can't drift across the UI (the `SANITY_DESCRIPTORS` pattern).
+ */
+export function sanityDeltaProse(total: number): string {
+  if (total > 0) {
+    return total >= 5
+      ? "the fog lifts from your thoughts; you feel almost yourself again"
+      : "your mind steadies a little";
+  }
+  return total <= -5
+    ? "something whispers at the edge of hearing, and your thoughts run cold"
+    : "your mind frays a little";
+}
+
 // ─── Drain / Recovery / Decay Triggers ───────────────────────────────
 
 /**

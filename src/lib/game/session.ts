@@ -78,7 +78,7 @@ export function createSession(
     currentChoices: null,
     selectedChoiceId: null,
     lastResolution: null,
-    activePillar: null,
+    lastResolutionTurn: null,
     errorMessage: null,
     errorCode: null,
     // A fresh character has established nothing yet — the Codex (history-context
@@ -322,6 +322,17 @@ export function deserializeSession(json: string): GameSession | null {
     canonPosition: (s.canonPosition as number | undefined) ?? DEFAULT_CANON_POSITION,
     embeddingModelId:
       (s.embeddingModelId as string | undefined) ?? DEFAULT_EMBEDDING_MODEL_ID,
+    // Backfill the resolution's turn stamp (issue #195) for a save written
+    // before the field existed and loaded mid-recap: on the merged choices
+    // screen PRESENT_NEXT_CHOICES had already incremented `turnCount` past the
+    // committed turn; in `consequences` the increment hadn't happened yet.
+    lastResolutionTurn:
+      (s.lastResolutionTurn as number | null | undefined) ??
+      (s.lastResolution != null
+        ? s.phase === "choices"
+          ? (s.turnCount as number) - 1
+          : (s.turnCount as number)
+        : null),
     // Convert legacy society members (which stored arc/hint prose) to the
     // id-based shape so member descriptions are re-derived from current copy.
     ...(s.societyState !== undefined
