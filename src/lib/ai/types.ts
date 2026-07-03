@@ -1,6 +1,7 @@
 import type { Item, ValidationResult } from "@/lib/types/rules";
 import type { Injury } from "@/lib/types/combat";
 import type { LoreEntry } from "@/lib/lore/types";
+import type { ThinkingLevel } from "./thinking";
 
 export type ProviderId =
   | "anthropic"
@@ -18,8 +19,21 @@ export interface ProviderConfig {
   providerId: ProviderId;
   apiKey: string;
   baseUrl?: string;
-  routineModel: string;
-  premiumModel: string;
+  /**
+   * The single model used for every turn. Replaces the former routine/premium
+   * two-model split — one model plus a `thinkingLevel` dial (resolved per-model
+   * in `thinking.ts`) is the quality/speed control now, so a routine narrative
+   * turn and a premium combat turn run the same model at different reasoning
+   * depth. See `docs/rules/ai` and `thinking.ts`.
+   */
+  model: string;
+  /**
+   * The player's baseline reasoning/thinking depth. Routine turns run at this
+   * level; premium (advancement/combat) turns nudge one notch up. Resolved to a
+   * model-appropriate value (or omitted for non-thinking models) by
+   * `resolveReasoningEffort` / `resolveAnthropicEffort`.
+   */
+  thinkingLevel: ThinkingLevel;
 }
 
 export interface ModelOption {
@@ -629,6 +643,13 @@ export interface ProviderRequest {
    * path is a fallback rather than the primary mechanism.
    */
   jsonSchema?: Record<string, unknown>;
+  /**
+   * Model-aware reasoning depth for this call (thinking.ts). Each adapter
+   * resolves it to the parameter its transport accepts — `reasoning_effort` for
+   * the OpenAI-shaped adapters, `output_config.effort` for Anthropic, the native
+   * `think` control for local Ollama — or omits it for a non-thinking model.
+   */
+  thinkingLevel?: ThinkingLevel;
 }
 
 export interface ProviderResponse {

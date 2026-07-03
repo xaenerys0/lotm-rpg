@@ -1152,8 +1152,8 @@ describe("accessibility — stub pages", () => {
       JSON.stringify({
         providerId: "openai",
         apiKey: "sk-test",
-        routineModel: "gpt-4o-mini",
-        premiumModel: "gpt-4o",
+        model: "gpt-4o",
+        thinkingLevel: "low",
       }),
     );
     const { container } = render(<CharacterPage />);

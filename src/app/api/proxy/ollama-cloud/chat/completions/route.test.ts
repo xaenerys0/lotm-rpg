@@ -19,6 +19,13 @@ const okChat = (content: string, finish = "stop") =>
     { status: 200 },
   );
 
+// The route streams the upstream body through a passthrough and emits its
+// diagnostic in the stream's `flush` — so the response has to be fully read
+// before the log fires. Draining the body is what a real client does too.
+async function drain(res: Response): Promise<string> {
+  return res.text();
+}
+
 beforeEach(() => {
   vi.restoreAllMocks();
   vi.spyOn(console, "error").mockImplementation(() => {});
@@ -42,11 +49,28 @@ describe("ollama-cloud chat proxy", () => {
       .mockResolvedValue(okChat('{"narrative":"ok"}'));
     const res = await POST(request());
     expect(res.status).toBe(200);
+    // The relayed body streams through unchanged (the upstream JSON envelope).
+    expect(await drain(res)).toContain("narrative");
     const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("https://ollama.com/v1/chat/completions");
     expect((init.headers as Record<string, string>).Authorization).toBe("Bearer key-123");
     // A parseable game body logs nothing.
     expect(console.error).not.toHaveBeenCalled();
+  });
+
+  it("streams the body through the buffered path when the upstream has no body", async () => {
+    // A Response built from a string still exposes a body; force the no-body
+    // branch with a bodyless Response (e.g. an upstream 204-style reply).
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(null, { status: 200 }));
+    const res = await POST(request());
+    expect(res.status).toBe(200);
+    expect(await drain(res)).toBe("");
+  });
+
+  it("exposes an explicit maxDuration and Node runtime", async () => {
+    const mod = await import("./route");
+    expect(mod.maxDuration).toBe(60);
+    expect(mod.runtime).toBe("nodejs");
   });
 
   it("502s when the upstream is unreachable", async () => {
@@ -61,6 +85,7 @@ describe("ollama-cloud chat proxy", () => {
     );
     const res = await POST(request({ body: { model: "ghost", messages: [] } }));
     expect(res.status).toBe(404);
+    await drain(res);
     const logged = JSON.stringify((console.error as ReturnType<typeof vi.fn>).mock.calls);
     expect(logged).toContain("ghost");
     expect(logged).not.toContain("key-123");
@@ -68,7 +93,7 @@ describe("ollama-cloud chat proxy", () => {
 
   it("diagnoses a 2xx body that is missing the game JSON key", async () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(okChat("just prose, no json key"));
-    await POST(request());
+    await drain(await POST(request()));
     expect(console.error).toHaveBeenCalledWith(
       expect.stringContaining("unparseable 2xx body"),
       expect.any(String),
@@ -92,7 +117,7 @@ describe("ollama-cloud chat proxy", () => {
         { status: 200 },
       ),
     );
-    await POST(request());
+    await drain(await POST(request()));
     const logged = JSON.stringify((console.error as ReturnType<typeof vi.fn>).mock.calls);
     expect(logged).toContain("length");
     expect(logged).toContain("reasoning");
@@ -102,7 +127,7 @@ describe("ollama-cloud chat proxy", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("<html>gateway</html>", { status: 200 }),
     );
-    await POST(request());
+    await drain(await POST(request()));
     expect(console.error).toHaveBeenCalled();
   });
 
@@ -115,7 +140,7 @@ describe("ollama-cloud chat proxy", () => {
         { status: 200 },
       ),
     );
-    await POST(request());
+    await drain(await POST(request()));
     const logged = JSON.stringify((console.error as ReturnType<typeof vi.fn>).mock.calls);
     expect(logged).toContain("thinking");
   });
@@ -124,7 +149,7 @@ describe("ollama-cloud chat proxy", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(JSON.stringify({}), { status: 200 }),
     );
-    await POST(request());
+    await drain(await POST(request()));
     expect(console.error).toHaveBeenCalledWith(
       expect.stringContaining("unparseable 2xx body"),
       expect.any(String),
@@ -135,7 +160,7 @@ describe("ollama-cloud chat proxy", () => {
     vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response("boom", { status: 500 }),
     );
-    await POST(request({ body: { messages: [] } }));
+    await drain(await POST(request({ body: { messages: [] } })));
     const payload = (console.error as ReturnType<typeof vi.fn>).mock
       .calls[0][1] as string;
     expect(payload).toContain('"model":null');
@@ -149,7 +174,7 @@ describe("ollama-cloud chat proxy", () => {
       "http://localhost/api/proxy/ollama-cloud/chat/completions",
       { method: "POST", headers: { Authorization: "Bearer k" }, body: "{not json" },
     );
-    await POST(bad);
+    await drain(await POST(bad));
     const payload = (console.error as ReturnType<typeof vi.fn>).mock
       .calls[0][1] as string;
     expect(payload).toContain('"model":null');

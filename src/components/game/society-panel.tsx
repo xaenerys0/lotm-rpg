@@ -39,6 +39,7 @@ import {
   generateInvitationOutcome,
   generateSocietyCandidates,
   generateSocietyIdentity,
+  migrateProviderConfig,
   type ProviderConfig,
   type SocietyCandidate,
 } from "@/lib/ai";
@@ -68,7 +69,7 @@ const INVENT_COUNT = 3;
 function loadProviderConfig(): ProviderConfig | null {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
-    return raw ? (JSON.parse(raw) as ProviderConfig) : null;
+    return raw ? migrateProviderConfig(JSON.parse(raw)) : null;
   } catch {
     return null;
   }

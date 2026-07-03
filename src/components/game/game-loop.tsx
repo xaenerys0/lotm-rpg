@@ -211,6 +211,7 @@ import type {
 } from "@/lib/ai";
 import {
   generate,
+  migrateProviderConfig,
   TOKEN_BUDGET,
   AIError,
   addSessionFact,
@@ -283,7 +284,7 @@ function loadProviderConfig(): ProviderConfig | null {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as ProviderConfig;
+    return migrateProviderConfig(JSON.parse(raw));
   } catch {
     return null;
   }
