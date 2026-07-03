@@ -45,7 +45,7 @@ function makeSession(roster?: TrackedNpc[]): GameSession {
     currentChoices: null,
     selectedChoiceId: null,
     lastResolution: null,
-    activePillar: null,
+    lastResolutionTurn: null,
     errorMessage: null,
     errorCode: null,
     createdAt: 1,

@@ -74,7 +74,7 @@ function makeSession(overrides: Partial<GameSession> = {}): GameSession {
     currentChoices: null,
     selectedChoiceId: null,
     lastResolution: null,
-    activePillar: null,
+    lastResolutionTurn: null,
     errorMessage: null,
     errorCode: null,
     // Present (empty) so deserialize's legacy Codex backfill is a no-op and the
@@ -270,6 +270,7 @@ describe("transition", () => {
       expect(next.currentChoices).toBeNull();
       expect(next.selectedChoiceId).toBeNull();
       expect(next.lastResolution).toBeNull();
+      expect(next.lastResolutionTurn).toBeNull();
       expect(next.errorMessage).toBeNull();
       expect(next.updatedAt).toBe(NOW);
     });
@@ -367,6 +368,7 @@ describe("transition", () => {
       });
       const next = transition(session, { type: "SELECT_CHOICE", choiceId: "c1" }, NOW);
       expect(next.lastResolution).toBeNull();
+      expect(next.lastResolutionTurn).toBeNull();
     });
 
     it("throws for invalid choice ID", () => {
@@ -419,6 +421,7 @@ describe("transition", () => {
       expect(next.currentChoices).toEqual([travelChoice]);
       expect(next.selectedChoiceId).toBe("travel-turn");
       expect(next.lastResolution).toBeNull();
+      expect(next.lastResolutionTurn).toBeNull();
       expect(next.updatedAt).toBe(NOW);
     });
 
@@ -456,11 +459,14 @@ describe("transition", () => {
   describe("RESOLUTION_READY", () => {
     it("transitions from resolution to consequences", () => {
       const result = makeValidatedResponse();
-      const session = makeSession({ phase: "resolution" });
+      const session = makeSession({ phase: "resolution", turnCount: 2 });
       const next = transition(session, { type: "RESOLUTION_READY", result }, NOW);
 
       expect(next.phase).toBe("consequences");
       expect(next.lastResolution).toEqual(result);
+      // `turnCount` has not been incremented yet (APPLY_CONSEQUENCES does that),
+      // so the stamp is the current count (issue #195).
+      expect(next.lastResolutionTurn).toBe(2);
       expect(next.updatedAt).toBe(NOW);
     });
 
@@ -486,7 +492,6 @@ describe("transition", () => {
         phase: "resolution",
         turnCount: 3,
         selectedChoiceId: "c2",
-        activePillar: "combat",
         currentNarrative: "stale scene text",
         lastResolution: null,
         pendingPlayerAction: "irrelevant",
@@ -502,12 +507,15 @@ describe("transition", () => {
       // One beat per action: the resolution's outcome + choices become the next
       // decision point inline — no separate forward-narration turn.
       expect(next.turnCount).toBe(4);
+      // The resolution was committed against the PRE-increment turn — the same
+      // value the journal entry's `turnNumber` (and the scene-art key) uses
+      // (issue #195): stamped at set time, never re-derived from the count.
+      expect(next.lastResolutionTurn).toBe(3);
       // The choices screen renders the outcome from `lastResolution`; the
       // fresh-scene `currentNarrative` slot is cleared.
       expect(next.currentNarrative).toBeNull();
       expect(next.currentChoices).toEqual(choices);
       expect(next.selectedChoiceId).toBeNull();
-      expect(next.activePillar).toBeNull();
       expect(next.pendingPlayerAction).toBeNull();
       expect(next.pendingTurnKind).toBeNull();
       expect(next.updatedAt).toBe(NOW);
@@ -566,7 +574,11 @@ describe("transition", () => {
   describe("ENGINE_RESOLUTION", () => {
     it("carries an engine-decided narration straight from choices into consequences", () => {
       const result = makeValidatedResponse();
-      const session = makeSession({ phase: "choices", selectedChoiceId: "c1" });
+      const session = makeSession({
+        phase: "choices",
+        selectedChoiceId: "c1",
+        turnCount: 5,
+      });
       const next = transition(
         session,
         { type: "ENGINE_RESOLUTION", result, playerAction: "I drink and advance." },
@@ -575,6 +587,8 @@ describe("transition", () => {
 
       expect(next.phase).toBe("consequences");
       expect(next.lastResolution).toEqual(result);
+      // Pre-increment stamp (issue #195): APPLY_CONSEQUENCES increments later.
+      expect(next.lastResolutionTurn).toBe(5);
       expect(next.currentNarrative).toBe(result.response.narrative);
       expect(next.selectedChoiceId).toBeNull();
       expect(next.pendingPlayerAction).toBe("I drink and advance.");
@@ -623,12 +637,11 @@ describe("transition", () => {
   });
 
   describe("APPLY_CONSEQUENCES", () => {
-    it("transitions from consequences to situation, increments turn, clears activePillar", () => {
+    it("transitions from consequences to situation, increments turn, resets turn state", () => {
       const session = makeSession({
         phase: "consequences",
         turnCount: 3,
         lastResolution: makeValidatedResponse(),
-        activePillar: "combat",
         pendingPlayerAction: "I drink and advance.",
       });
       const next = transition(session, { type: "APPLY_CONSEQUENCES" }, NOW);
@@ -639,7 +652,7 @@ describe("transition", () => {
       expect(next.currentChoices).toBeNull();
       expect(next.selectedChoiceId).toBeNull();
       expect(next.lastResolution).toBeNull();
-      expect(next.activePillar).toBeNull();
+      expect(next.lastResolutionTurn).toBeNull();
       expect(next.pendingPlayerAction).toBeNull();
       expect(next.pendingTurnKind).toBeNull();
       expect(next.updatedAt).toBe(NOW);
@@ -719,7 +732,6 @@ describe("transition", () => {
         currentChoices: makeChoices(),
         selectedChoiceId: "c1",
         lastResolution: makeValidatedResponse(),
-        activePillar: "combat",
       });
       const next = transition(session, { type: "RETRY" }, NOW);
 
@@ -730,7 +742,7 @@ describe("transition", () => {
       expect(next.currentChoices).toBeNull();
       expect(next.selectedChoiceId).toBeNull();
       expect(next.lastResolution).toBeNull();
-      expect(next.activePillar).toBeNull();
+      expect(next.lastResolutionTurn).toBeNull();
       expect(next.updatedAt).toBe(NOW);
     });
 
@@ -2533,7 +2545,6 @@ describe("createSession", () => {
     expect(session.currentChoices).toBeNull();
     expect(session.selectedChoiceId).toBeNull();
     expect(session.lastResolution).toBeNull();
-    expect(session.activePillar).toBeNull();
     expect(session.errorMessage).toBeNull();
     expect(session.createdAt).toBe(5000);
     expect(session.updatedAt).toBe(5000);
@@ -2847,6 +2858,43 @@ describe("deserializeSession", () => {
     const restored = deserializeSession(JSON.stringify(legacy));
     expect(restored).not.toBeNull();
     expect(restored?.gameState.accessFlags).toBeUndefined();
+  });
+
+  it("backfills lastResolutionTurn for a legacy save loaded mid-recap (issue #195)", () => {
+    // A save written before the turn stamp existed, sitting on the merged
+    // choices screen: PRESENT_NEXT_CHOICES had already incremented turnCount
+    // past the committed turn, so the backfill undoes that one increment.
+    const base = makeSession({
+      gameState: makeGameState({ currentCity: "tingen" }),
+      lastResolution: makeValidatedResponse(),
+      turnCount: 4,
+    });
+    const onChoices = JSON.parse(serializeSession({ ...base, phase: "choices" }));
+    delete onChoices.lastResolutionTurn;
+    expect(deserializeSession(JSON.stringify(onChoices))?.lastResolutionTurn).toBe(3);
+
+    // In `consequences` (an engine turn awaiting Continue) the increment hasn't
+    // happened yet — the resolution belongs to the current count.
+    const onConsequences = JSON.parse(
+      serializeSession({ ...base, phase: "consequences" }),
+    );
+    delete onConsequences.lastResolutionTurn;
+    expect(deserializeSession(JSON.stringify(onConsequences))?.lastResolutionTurn).toBe(
+      4,
+    );
+
+    // No in-flight resolution → nothing to stamp.
+    const idle = JSON.parse(
+      serializeSession({ ...base, phase: "idle", lastResolution: null }),
+    );
+    delete idle.lastResolutionTurn;
+    expect(deserializeSession(JSON.stringify(idle))?.lastResolutionTurn).toBeNull();
+
+    // A save that already carries the stamp keeps it untouched.
+    const stamped = JSON.parse(
+      serializeSession({ ...base, phase: "choices", lastResolutionTurn: 3 }),
+    );
+    expect(deserializeSession(JSON.stringify(stamped))?.lastResolutionTurn).toBe(3);
   });
 
   it("registers the off-map venue a legacy save is parked at, on load", () => {

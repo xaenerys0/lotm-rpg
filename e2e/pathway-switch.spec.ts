@@ -5,12 +5,9 @@ import {
   createDefaultGameState,
   createSession,
   emptyAnchorState,
-  serializeSession,
-  ACTIVE_SESSION_KEY,
-  SESSION_INDEX_KEY,
-  SESSION_KEY_PREFIX,
   type GameSession,
 } from "@/lib/game";
+import { seedActiveSession } from "./seed";
 
 // Authenticated-tier spec (runs only with a Supabase backend; gated in
 // playwright.config.ts and seeded with a signed-in storageState). The game loop
@@ -51,21 +48,7 @@ function switchReadySession(id: string): GameSession {
 }
 
 async function seed(page: import("@playwright/test").Page, session: GameSession) {
-  await page.addInitScript(
-    ({ indexKey, sessionKey, activeKey, id, indexValue, sessionValue }) => {
-      localStorage.setItem(indexKey, indexValue);
-      localStorage.setItem(sessionKey, sessionValue);
-      localStorage.setItem(activeKey, id);
-    },
-    {
-      indexKey: SESSION_INDEX_KEY,
-      sessionKey: SESSION_KEY_PREFIX + session.id,
-      activeKey: ACTIVE_SESSION_KEY,
-      id: session.id,
-      indexValue: JSON.stringify([session.id]),
-      sessionValue: serializeSession(session),
-    },
-  );
+  await seedActiveSession(page, session);
   await page.goto("/play");
   await page.getByRole("button", { name: /Resume Klein Switch/ }).click();
 }

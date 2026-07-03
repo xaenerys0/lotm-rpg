@@ -41,7 +41,14 @@ export interface GameSession {
   currentChoices: Choice[] | null;
   selectedChoiceId: string | null;
   lastResolution: ValidatedAIResponse | null;
-  activePillar: GameplayPillar | null;
+  /**
+   * The turn number `lastResolution` belongs to (the committed turn — the same
+   * value written as the journal entry's `turnNumber`). Stamped by the state
+   * machine wherever `lastResolution` is set, BEFORE any `turnCount` increment,
+   * so consumers (the recap's scene-art key) never re-derive it from the
+   * increment-skewed `turnCount`. Always null when `lastResolution` is null.
+   */
+  lastResolutionTurn: number | null;
   errorMessage: string | null;
   errorCode: AIErrorCode | "CONFIG_MISSING" | null;
   /**

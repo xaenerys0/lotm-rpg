@@ -947,6 +947,7 @@ export {
   sanityEffects,
   SANITY_DESCRIPTORS,
   sanityDescriptor,
+  sanityDeltaProse,
   sanityDelta,
   sanityDeltaForTags,
   inRoleDrainMultiplier,

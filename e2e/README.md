@@ -16,10 +16,20 @@ under `src/**`, and cover:
   `src/proxy.ts`. Backstops the proxy unit test against a real response.
 - **PWA surface** (`pwa.spec.ts`) — the web app manifest parses with the right
   fields, the icon routes return PNGs, and `/sw.js` is scoped to `/`.
-- **Real-browser accessibility** (`a11y.spec.ts`) — runs axe (the existing
-  `axe-core` dep, injected via `page.evaluate` so the strict CSP doesn't block
-  it) on the public pages with **`color-contrast` enabled**, which the jsdom
-  suite must disable.
+- **Real-browser accessibility** (`a11y.spec.ts`) — runs axe on the public
+  pages with **`color-contrast` enabled**, which the jsdom suite must disable.
+  `a11y-authenticated.spec.ts` (issue #197) extends the same run to the gated
+  game loop: it seeds a `choices`-phase session with a `lastResolution` so the
+  merged `ResolutionRecap` (outcome narrative, world-change reasons, discovered
+  items, a blocked-reagent lead, the vague sanity line) is contrast-checked too.
+  Both consume the shared harness in `e2e/axe.ts` (`expectNoAxeViolations`):
+  one copy of the WCAG AA tag list, the CSP-safe `page.evaluate` injection of
+  the existing `axe-core` dep, and the violation-summary assertion.
+
+Authenticated-tier specs share the `seedActiveSession` helper in `e2e/seed.ts`
+(issue #196): it writes the session index, the serialized save, and the
+active-character pointer via one `addInitScript`, with an `extraKeys` escape
+hatch for sibling state (e.g. `combat.spec.ts`'s persisted encounter).
 
 Specs run across three public-tier browser projects: **mobile** (Pixel 5,
 Chromium), **mobile-webkit** (iPhone 13, WebKit/iOS Safari — the PWA's real
@@ -81,6 +91,8 @@ seeds a Seq-7 founder and drives the NO-PROVIDER deterministic path end-to-end �
 found the society, "Seek someone to invite" (the random-recruit fallback) seats a
 member, then "Convene the gathering" renders the latest-gathering region (the
 AI affordances need a provider + live model, so they are covered by unit tests).
+`a11y-authenticated.spec.ts` (issue #197) seeds the merged recap screen and runs
+the real-browser axe WCAG AA pass — `color-contrast` included — against it.
 
 Enable it by exporting:
 

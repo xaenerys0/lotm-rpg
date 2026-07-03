@@ -32,6 +32,7 @@ export function transition(
         currentChoices: null,
         selectedChoiceId: null,
         lastResolution: null,
+        lastResolutionTurn: null,
         errorMessage: null,
         errorCode: null,
         updatedAt: now,
@@ -63,6 +64,7 @@ export function transition(
         // on the merged choices screen; picking the next action moves to the
         // resolution loading state, so drop it.
         lastResolution: null,
+        lastResolutionTurn: null,
         updatedAt: now,
       };
     }
@@ -82,6 +84,7 @@ export function transition(
         selectedChoiceId: action.choice.id,
         currentNarrative: null,
         lastResolution: null,
+        lastResolutionTurn: null,
         pendingPlayerAction: null,
         pendingTurnKind: action.kind ?? null,
         errorMessage: null,
@@ -96,6 +99,9 @@ export function transition(
         ...session,
         phase: "consequences",
         lastResolution: action.result,
+        // The resolution belongs to the turn being played — `turnCount` has not
+        // been incremented yet (APPLY_CONSEQUENCES does that).
+        lastResolutionTurn: session.turnCount,
         updatedAt: now,
       };
     }
@@ -117,8 +123,10 @@ export function transition(
         currentNarrative: null,
         currentChoices: action.choices,
         lastResolution: action.result,
+        // The result was committed against the PRE-increment turn (the journal
+        // entry's `turnNumber`); stamp it so consumers never undo the increment.
+        lastResolutionTurn: session.turnCount,
         selectedChoiceId: null,
-        activePillar: null,
         pendingPlayerAction: null,
         pendingTurnKind: null,
         updatedAt: now,
@@ -136,6 +144,9 @@ export function transition(
         ...session,
         phase: "consequences",
         lastResolution: action.result,
+        // `turnCount` increments later, on APPLY_CONSEQUENCES — the engine turn
+        // (and its explicit journal entry) belongs to the current count.
+        lastResolutionTurn: session.turnCount,
         currentNarrative: action.result.response.narrative,
         selectedChoiceId: null,
         pendingPlayerAction: action.playerAction,
@@ -156,7 +167,7 @@ export function transition(
         currentChoices: null,
         selectedChoiceId: null,
         lastResolution: null,
-        activePillar: null,
+        lastResolutionTurn: null,
         pendingPlayerAction: null,
         pendingTurnKind: null,
         updatedAt: now,
@@ -184,7 +195,7 @@ export function transition(
         currentChoices: null,
         selectedChoiceId: null,
         lastResolution: null,
-        activePillar: null,
+        lastResolutionTurn: null,
         errorMessage: null,
         errorCode: null,
         updatedAt: now,
