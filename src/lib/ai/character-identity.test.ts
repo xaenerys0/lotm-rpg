@@ -16,8 +16,8 @@ function makeConfig(): ProviderConfig {
   return {
     providerId: "openai",
     apiKey: "sk-test",
-    routineModel: "gpt-4o-mini",
-    premiumModel: "gpt-4o",
+    model: "gpt-4o",
+    thinkingLevel: "low",
   };
 }
 
@@ -227,9 +227,9 @@ describe("generateCharacterIdentity", () => {
       name: "Benson Carter",
       background: "A Tingen clerk.",
     });
-    // Uses the routine model.
+    // Uses the single configured model.
     const body = JSON.parse((fetchSpy.mock.calls[0][1]!.body as string) ?? "{}");
-    expect(body.model).toBe("gpt-4o-mini");
+    expect(body.model).toBe("gpt-4o");
   });
 
   it("recovers via the corrective retry loop after one bad reply", async () => {

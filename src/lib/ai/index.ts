@@ -107,7 +107,8 @@ export {
   generateInvitationOutcome,
   generateGathering,
   classifyCall,
-  selectModel,
+  selectThinking,
+  migrateProviderConfig,
   validateProviderConfig,
   listProviderModels,
   findUnservedModels,
@@ -115,6 +116,17 @@ export {
   type GenerateOptions,
   type ModelAccessResult,
 } from "./client";
+
+export {
+  THINKING_LEVELS,
+  DEFAULT_THINKING_LEVEL,
+  isThinkingLevel,
+  bumpThinkingLevel,
+  resolveReasoningEffort,
+  resolveAnthropicEffort,
+  resolveOllamaThink,
+  type ThinkingLevel,
+} from "./thinking";
 
 export {
   buildCodexRebuildPrompt,

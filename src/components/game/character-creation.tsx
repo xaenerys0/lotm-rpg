@@ -53,6 +53,7 @@ import {
   generatePrologueFinale,
   generateCanonPrologueScene,
   generateCanonPrologueFinale,
+  migrateProviderConfig,
   MIN_PROLOGUE_SCENES,
   MAX_PROLOGUE_SCENES,
 } from "@/lib/ai";
@@ -126,7 +127,7 @@ export function CharacterCreation({ onComplete, onBack }: CharacterCreationProps
       if (configCacheRef.current === undefined) {
         try {
           const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
-          configCacheRef.current = raw ? (JSON.parse(raw) as ProviderConfig) : null;
+          configCacheRef.current = raw ? migrateProviderConfig(JSON.parse(raw)) : null;
         } catch {
           configCacheRef.current = null;
         }

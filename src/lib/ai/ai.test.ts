@@ -79,7 +79,8 @@ import {
 import { parseAIResponse, validateAIResponse, sanitizeAIResponse } from "./validation";
 import {
   classifyCall,
-  selectModel,
+  selectThinking,
+  migrateProviderConfig,
   generate,
   generateCodexRebuild,
   generateSocietyIdentity,
@@ -162,8 +163,8 @@ function makeProviderConfig(overrides?: Partial<ProviderConfig>): ProviderConfig
   return {
     providerId: "openai",
     apiKey: "sk-test-key",
-    routineModel: "gpt-4o-mini",
-    premiumModel: "gpt-4o",
+    model: "gpt-4o",
+    thinkingLevel: "low",
     ...overrides,
   };
 }
@@ -4419,15 +4420,91 @@ describe("client", () => {
     });
   });
 
-  describe("selectModel", () => {
-    it("selects routine model for routine classification", () => {
-      const config = makeProviderConfig();
-      expect(selectModel(config, "routine")).toBe("gpt-4o-mini");
+  describe("selectThinking", () => {
+    it("uses the player's baseline level for routine classification", () => {
+      const config = makeProviderConfig({ thinkingLevel: "low" });
+      expect(selectThinking(config, "routine")).toBe("low");
     });
 
-    it("selects premium model for premium classification", () => {
-      const config = makeProviderConfig();
-      expect(selectModel(config, "premium")).toBe("gpt-4o");
+    it("nudges one notch up for premium classification", () => {
+      const config = makeProviderConfig({ thinkingLevel: "low" });
+      expect(selectThinking(config, "premium")).toBe("medium");
+    });
+
+    it("caps the premium nudge at the top of the scale", () => {
+      const config = makeProviderConfig({ thinkingLevel: "high" });
+      expect(selectThinking(config, "premium")).toBe("high");
+    });
+  });
+
+  describe("migrateProviderConfig", () => {
+    it("adopts a legacy premium model as the single model + defaults the level", () => {
+      const migrated = migrateProviderConfig({
+        providerId: "ollama-cloud",
+        apiKey: "k",
+        routineModel: "gpt-oss:20b",
+        premiumModel: "gpt-oss:120b",
+      });
+      expect(migrated).toEqual({
+        providerId: "ollama-cloud",
+        apiKey: "k",
+        baseUrl: undefined,
+        model: "gpt-oss:120b",
+        thinkingLevel: "off",
+      });
+    });
+
+    it("falls back to the routine model when there is no premium model", () => {
+      const migrated = migrateProviderConfig({
+        providerId: "openai",
+        apiKey: "k",
+        routineModel: "gpt-4o-mini",
+        premiumModel: "   ",
+      });
+      expect(migrated?.model).toBe("gpt-4o-mini");
+    });
+
+    it("passes a current-shape config through and keeps its thinking level", () => {
+      const migrated = migrateProviderConfig({
+        providerId: "openai",
+        apiKey: "k",
+        baseUrl: "https://x/v1",
+        model: "gpt-4o",
+        thinkingLevel: "high",
+      });
+      expect(migrated).toEqual({
+        providerId: "openai",
+        apiKey: "k",
+        baseUrl: "https://x/v1",
+        model: "gpt-4o",
+        thinkingLevel: "high",
+      });
+    });
+
+    it("prefers an explicit model over the legacy fields", () => {
+      const migrated = migrateProviderConfig({
+        providerId: "openai",
+        apiKey: "k",
+        model: "kept",
+        premiumModel: "ignored",
+      });
+      expect(migrated?.model).toBe("kept");
+    });
+
+    it("defaults a missing/invalid thinking level and a missing key", () => {
+      const migrated = migrateProviderConfig({
+        providerId: "ollama",
+        model: "llama3.2",
+        thinkingLevel: "bogus",
+      });
+      expect(migrated?.thinkingLevel).toBe("off");
+      expect(migrated?.apiKey).toBe("");
+    });
+
+    it("returns null for a non-object or a config with no provider id", () => {
+      expect(migrateProviderConfig(null)).toBeNull();
+      expect(migrateProviderConfig("nope")).toBeNull();
+      expect(migrateProviderConfig({ apiKey: "k", model: "x" })).toBeNull();
     });
   });
 
@@ -4557,8 +4634,7 @@ describe("client", () => {
         config: makeProviderConfig({
           providerId: "anthropic",
           apiKey: "sk-ant",
-          routineModel: "claude-haiku-4-5-20251001",
-          premiumModel: "claude-opus-4-8",
+          model: "claude-haiku-4-5-20251001",
         }),
         gameState: makeGameState(),
         memory: makeMemoryState(),
@@ -4600,8 +4676,7 @@ describe("client", () => {
         config: makeProviderConfig({
           providerId: "anthropic",
           apiKey: "sk-ant",
-          routineModel: "claude-haiku-4-5-20251001",
-          premiumModel: "claude-opus-4-8",
+          model: "claude-haiku-4-5-20251001",
         }),
         gameState: makeGameState(),
         memory: makeMemoryState(),
@@ -4636,8 +4711,7 @@ describe("client", () => {
           config: makeProviderConfig({
             providerId: "anthropic",
             apiKey: "bad-key",
-            routineModel: "claude-haiku-4-5-20251001",
-            premiumModel: "claude-opus-4-8",
+            model: "claude-haiku-4-5-20251001",
           }),
           gameState: makeGameState(),
           memory: makeMemoryState(),
@@ -4970,8 +5044,7 @@ describe("client", () => {
       await generate({
         config: makeProviderConfig({
           providerId: "anthropic",
-          routineModel: "claude-sonnet-4-6",
-          premiumModel: "claude-opus-4-7",
+          model: "claude-sonnet-4-6",
         }),
         gameState: makeGameState(),
         memory: makeMemoryState(),
@@ -5118,9 +5191,9 @@ describe("client", () => {
         },
         { kind: "object", name: "The Gilded Eye" },
       ]);
-      // Used the premium model for the one-shot extraction.
+      // Runs on the single configured model.
       const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
-      expect(body.model).toBe(makeProviderConfig().premiumModel);
+      expect(body.model).toBe(makeProviderConfig().model);
     });
 
     const openAiReply = (content: string): Response =>
@@ -5214,9 +5287,9 @@ describe("client", () => {
         sequenceName: "Seer",
       });
       expect(result?.name).toBe("The Tarot Club");
-      // The bespoke generators run on the ROUTINE model.
+      // The bespoke generators run on the single configured model.
       const body = JSON.parse(fetchSpy.mock.calls[0][1]!.body as string);
-      expect(body.model).toBe(makeProviderConfig().routineModel);
+      expect(body.model).toBe(makeProviderConfig().model);
     });
 
     it("generateSocietyIdentity returns null when every attempt is unparseable", async () => {
@@ -5360,40 +5433,23 @@ describe("client", () => {
       { id: "gpt-oss:120b", name: "GPT-OSS 120B", tier: "premium" as const },
     ];
 
-    it("returns nothing when both models are in the catalog", () => {
-      const config = makeProviderConfig({
-        routineModel: "gpt-oss:20b",
-        premiumModel: "gpt-oss:120b",
-      });
+    it("returns nothing when the model is in the catalog", () => {
+      const config = makeProviderConfig({ model: "gpt-oss:120b" });
       expect(findUnservedModels(config, catalog)).toEqual([]);
     });
 
-    it("flags a premium model absent from the catalog (the 403 case)", () => {
-      const config = makeProviderConfig({
-        routineModel: "gpt-oss:20b",
-        premiumModel: "gpt-oss:120b-cloud",
-      });
+    it("flags a model absent from the catalog (the 403 case)", () => {
+      const config = makeProviderConfig({ model: "gpt-oss:120b-cloud" });
       expect(findUnservedModels(config, catalog)).toEqual(["gpt-oss:120b-cloud"]);
     });
 
-    it("flags both models and collapses duplicates", () => {
-      const config = makeProviderConfig({
-        routineModel: "phantom",
-        premiumModel: "phantom",
-      });
-      expect(findUnservedModels(config, catalog)).toEqual(["phantom"]);
-    });
-
     it("returns nothing when the catalog is empty (unavailable)", () => {
-      const config = makeProviderConfig({ routineModel: "whatever" });
+      const config = makeProviderConfig({ model: "whatever" });
       expect(findUnservedModels(config, [])).toEqual([]);
     });
 
-    it("ignores blank model ids", () => {
-      const config = makeProviderConfig({
-        routineModel: "  ",
-        premiumModel: "gpt-oss:20b",
-      });
+    it("ignores a blank model id", () => {
+      const config = makeProviderConfig({ model: "  " });
       expect(findUnservedModels(config, catalog)).toEqual([]);
     });
   });

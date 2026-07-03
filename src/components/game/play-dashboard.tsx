@@ -4,6 +4,7 @@ import { useCallback, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { noopSubscribe } from "@/lib/react";
+import { migrateProviderConfig } from "@/lib/ai";
 import type { ProviderConfig, MemoryState } from "@/lib/ai";
 import type { GameSessionSummary } from "@/lib/game";
 import {
@@ -72,7 +73,7 @@ function loadConfig(): ProviderConfig | null {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as ProviderConfig;
+    return migrateProviderConfig(JSON.parse(raw));
   } catch {
     return null;
   }

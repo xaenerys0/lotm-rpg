@@ -23,7 +23,11 @@ import {
   type GameSession,
   type Journal,
 } from "@/lib/game";
-import { generateCodexRebuild, type ProviderConfig } from "@/lib/ai";
+import {
+  generateCodexRebuild,
+  migrateProviderConfig,
+  type ProviderConfig,
+} from "@/lib/ai";
 
 // ---------------------------------------------------------------------------
 // CodexSection — the player-facing Codex tab (history-context Codex)
@@ -72,7 +76,7 @@ type KindFilter = CodexKind | "all";
 function loadProviderConfig(): ProviderConfig | null {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
-    return raw ? (JSON.parse(raw) as ProviderConfig) : null;
+    return raw ? migrateProviderConfig(JSON.parse(raw)) : null;
   } catch {
     return null;
   }

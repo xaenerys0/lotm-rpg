@@ -21,6 +21,7 @@ import {
   generateCharacterIdentity,
   CHARACTER_REGIONS,
   type CharacterRegion,
+  migrateProviderConfig,
   type ProviderConfig,
 } from "@/lib/ai";
 import {
@@ -47,7 +48,7 @@ function firstUnrelatedPathway(pathwayId: number): number | undefined {
 function loadProviderConfig(): ProviderConfig | null {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
-    return raw ? (JSON.parse(raw) as ProviderConfig) : null;
+    return raw ? migrateProviderConfig(JSON.parse(raw)) : null;
   } catch {
     return null;
   }

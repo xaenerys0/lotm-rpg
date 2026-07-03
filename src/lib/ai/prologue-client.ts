@@ -440,10 +440,11 @@ async function executePrologueRequest(
       adapter,
       {
         messages,
-        model: config.routineModel,
+        model: config.model,
         temperature: attempt === 0 ? PROLOGUE_TEMPERATURE : PROLOGUE_TEMPERATURE * 0.5,
         maxTokens: PROLOGUE_MAX_TOKENS,
         responseFormat: { type: "json_object" },
+        thinkingLevel: config.thinkingLevel,
       },
       config.apiKey,
     );
@@ -454,12 +455,7 @@ async function executePrologueRequest(
       return { content: providerResponse.content, obj, narrative };
     } catch (parseError) {
       if (parseError instanceof AIError && parseError.code === "MALFORMED_OUTPUT") {
-        logUnparseableOutput(
-          config.providerId,
-          config.routineModel,
-          attempt,
-          providerResponse,
-        );
+        logUnparseableOutput(config.providerId, config.model, attempt, providerResponse);
       }
       if (
         !(parseError instanceof AIError) ||

@@ -6,6 +6,7 @@ import type {
   ProviderConfig,
   ModelOption,
   ModelAccessResult,
+  ThinkingLevel,
 } from "@/lib/ai";
 import {
   PROVIDER_MODELS,
@@ -13,6 +14,9 @@ import {
   listProviderModels,
   findUnservedModels,
   probeModelAccess,
+  THINKING_LEVELS,
+  DEFAULT_THINKING_LEVEL,
+  isThinkingLevel,
 } from "@/lib/ai";
 import { PROVIDER_CONFIG_KEY, MODELS_CACHE_KEY } from "@/lib/game";
 import { noopSubscribe } from "@/lib/react";
@@ -79,11 +83,20 @@ interface FormState {
   providerId: ProviderId;
   apiKey: string;
   baseUrl: string;
-  routineModel: string;
-  premiumModel: string;
-  customRoutineModel: string;
-  customPremiumModel: string;
+  /** The single model used for every turn (built-in dropdown pick). */
+  model: string;
+  /** The single model id typed into the free-form field (custom provider). */
+  customModel: string;
+  /** Player's baseline reasoning depth; premium turns nudge one notch up. */
+  thinkingLevel: ThinkingLevel;
 }
+
+const THINKING_LEVEL_LABELS: Record<ThinkingLevel, string> = {
+  off: "Off — fastest",
+  low: "Low",
+  medium: "Medium",
+  high: "High — deepest",
+};
 
 function getDefaultBaseUrl(providerId: ProviderId): string {
   if (providerId === "ollama") return "http://localhost:11434";
@@ -144,18 +157,15 @@ function saveCachedModels(
   }
 }
 
-// Picks sensible default routine/premium models from a list (live or static),
-// using the inferred tier and falling back to the first/last entry.
-function pickDefaultModels(models: ModelOption[]) {
-  return {
-    routine: models.find((m) => m.tier === "routine")?.id ?? models[0]?.id ?? "",
-    premium:
-      models.find((m) => m.tier === "premium")?.id ?? models[models.length - 1]?.id ?? "",
-  };
+// Picks a sensible single default model from a list (live or static). Prefers a
+// premium-tier entry (the more capable model — depth is the quality dial now, so
+// there's no reason to default to the weaker one), then any first entry.
+function pickDefaultModel(models: ModelOption[]): string {
+  return models.find((m) => m.tier === "premium")?.id ?? models[0]?.id ?? "";
 }
 
-function getDefaultModels(providerId: ProviderId) {
-  return pickDefaultModels(PROVIDER_MODELS[providerId]);
+function getDefaultModel(providerId: ProviderId): string {
+  return pickDefaultModel(PROVIDER_MODELS[providerId]);
 }
 
 // Ensures a saved selection that isn't in the catalog still appears as an
@@ -167,16 +177,32 @@ function withSelected(models: ModelOption[], selected: string): ModelOption[] {
   return models;
 }
 
+// A pre-single-model saved config carried `routineModel`/`premiumModel`. Migrate
+// it: adopt the premium (more capable) model as the single `model`, and default
+// the new thinking dial. Reading through this shape means an existing player's
+// save upgrades transparently on first load — no data loss, no forced re-pick.
+interface LegacyProviderConfig extends ProviderConfig {
+  routineModel?: string;
+  premiumModel?: string;
+}
+
+function resolveSavedModel(config: LegacyProviderConfig, providerId: ProviderId): string {
+  const saved =
+    config.model?.trim() ||
+    config.premiumModel?.trim() ||
+    config.routineModel?.trim() ||
+    "";
+  return saved || getDefaultModel(providerId);
+}
+
 function loadInitialState(): FormState {
-  const defaults = getDefaultModels("anthropic");
   const defaultState: FormState = {
     providerId: "anthropic",
     apiKey: "",
     baseUrl: "",
-    routineModel: defaults.routine,
-    premiumModel: defaults.premium,
-    customRoutineModel: "",
-    customPremiumModel: "",
+    model: getDefaultModel("anthropic"),
+    customModel: "",
+    thinkingLevel: DEFAULT_THINKING_LEVEL,
   };
 
   if (typeof window === "undefined") {
@@ -185,19 +211,22 @@ function loadInitialState(): FormState {
   try {
     const raw = localStorage.getItem(PROVIDER_CONFIG_KEY);
     if (raw) {
-      const config = JSON.parse(raw) as ProviderConfig;
+      const config = JSON.parse(raw) as LegacyProviderConfig;
       // Reject stale provider IDs that no longer exist in PROVIDERS
       if (!PROVIDERS.some((p) => p.id === config.providerId)) {
         return defaultState;
       }
+      const isCustom = config.providerId === "custom";
+      const model = resolveSavedModel(config, config.providerId);
       return {
         providerId: config.providerId,
         apiKey: config.apiKey,
         baseUrl: config.baseUrl ?? "",
-        routineModel: config.providerId === "custom" ? "" : config.routineModel,
-        premiumModel: config.providerId === "custom" ? "" : config.premiumModel,
-        customRoutineModel: config.providerId === "custom" ? config.routineModel : "",
-        customPremiumModel: config.providerId === "custom" ? config.premiumModel : "",
+        model: isCustom ? "" : model,
+        customModel: isCustom ? model : "",
+        thinkingLevel: isThinkingLevel(config.thinkingLevel)
+          ? config.thinkingLevel
+          : DEFAULT_THINKING_LEVEL,
       };
     }
   } catch {
@@ -206,18 +235,14 @@ function loadInitialState(): FormState {
   return defaultState;
 }
 
-const defaultFormState: FormState = (() => {
-  const defaults = getDefaultModels("anthropic");
-  return {
-    providerId: "anthropic" as ProviderId,
-    apiKey: "",
-    baseUrl: "",
-    routineModel: defaults.routine,
-    premiumModel: defaults.premium,
-    customRoutineModel: "",
-    customPremiumModel: "",
-  };
-})();
+const defaultFormState: FormState = {
+  providerId: "anthropic" as ProviderId,
+  apiKey: "",
+  baseUrl: "",
+  model: getDefaultModel("anthropic"),
+  customModel: "",
+  thinkingLevel: DEFAULT_THINKING_LEVEL,
+};
 
 export function ProviderConfig() {
   const cacheRef = useRef<FormState | null>(null);
@@ -290,8 +315,8 @@ export function ProviderConfig() {
           {
             providerId: form.providerId,
             apiKey: form.apiKey,
-            routineModel: form.routineModel,
-            premiumModel: form.premiumModel,
+            model: form.model,
+            thinkingLevel: form.thinkingLevel,
           },
           availableModels,
         )
@@ -323,38 +348,40 @@ export function ProviderConfig() {
     [initialState],
   );
 
-  const handleProviderChange = useCallback((newId: ProviderId) => {
-    const newBaseUrl = getDefaultBaseUrl(newId);
-    const cached = loadCachedModels(newId, newBaseUrl);
-    const list = cached ?? PROVIDER_MODELS[newId];
-    const defaults = pickDefaultModels(list);
+  const handleProviderChange = useCallback(
+    (newId: ProviderId) => {
+      const newBaseUrl = getDefaultBaseUrl(newId);
+      const cached = loadCachedModels(newId, newBaseUrl);
+      const list = cached ?? PROVIDER_MODELS[newId];
 
-    setAvailableModels(cached);
-    setModelsStatus("idle");
-    probeIdRef.current++;
-    setModelAccess(null);
-    setAccessStatus("idle");
-    setFormOverride({
-      providerId: newId,
-      apiKey: "",
-      baseUrl: newBaseUrl,
-      routineModel: defaults.routine,
-      premiumModel: defaults.premium,
-      customRoutineModel: "",
-      customPremiumModel: "",
-    });
-    setConnectionStatus("idle");
-    setConnectionError("");
-    setSaveStatus("unsaved");
-  }, []);
+      setAvailableModels(cached);
+      setModelsStatus("idle");
+      probeIdRef.current++;
+      setModelAccess(null);
+      setAccessStatus("idle");
+      setFormOverride({
+        providerId: newId,
+        apiKey: "",
+        baseUrl: newBaseUrl,
+        model: pickDefaultModel(list),
+        customModel: "",
+        // The thinking depth is provider-independent — carry the player's pick.
+        thinkingLevel: form.thinkingLevel,
+      });
+      setConnectionStatus("idle");
+      setConnectionError("");
+      setSaveStatus("unsaved");
+    },
+    [form.thinkingLevel],
+  );
 
   const buildConfig = useCallback((): ProviderConfig => {
     return {
       providerId: form.providerId,
       apiKey: form.apiKey,
       baseUrl: providerMeta.needsBaseUrl ? form.baseUrl : undefined,
-      routineModel: isCustom ? form.customRoutineModel : form.routineModel,
-      premiumModel: isCustom ? form.customPremiumModel : form.premiumModel,
+      model: isCustom ? form.customModel : form.model,
+      thinkingLevel: form.thinkingLevel,
     };
   }, [form, isCustom, providerMeta.needsBaseUrl]);
 
@@ -370,19 +397,16 @@ export function ProviderConfig() {
     }
   }, [buildConfig, form.providerId, form.baseUrl]);
 
-  // Verify the account can actually RUN the two selected models, not just that
-  // they're listed. Scoped to Ollama Cloud: there the live /models catalog spans
-  // every cloud model regardless of plan, so a selectable model can still 403
-  // ("requires a subscription") at chat time. A minimal probe call per model
-  // surfaces that here instead of mid-game.
+  // Verify the account can actually RUN the selected model, not just that it's
+  // listed. Scoped to Ollama Cloud: there the live /models catalog spans every
+  // cloud model regardless of plan, so a selectable model can still 403
+  // ("requires a subscription") at chat time. A minimal probe call surfaces that
+  // here instead of mid-game.
   const handleCheckModels = useCallback(async () => {
     const probeId = ++probeIdRef.current;
     setAccessStatus("checking");
     try {
-      const results = await probeModelAccess(buildConfig(), [
-        form.routineModel,
-        form.premiumModel,
-      ]);
+      const results = await probeModelAccess(buildConfig(), [form.model]);
       // Discard if the selection/provider changed (or another probe started)
       // while this one was in flight.
       if (probeId !== probeIdRef.current) return;
@@ -392,7 +416,7 @@ export function ProviderConfig() {
       if (probeId !== probeIdRef.current) return;
       setAccessStatus("error");
     }
-  }, [buildConfig, form.routineModel, form.premiumModel]);
+  }, [buildConfig, form.model]);
 
   const handleTestConnection = useCallback(async () => {
     setConnectionStatus("testing");
@@ -604,32 +628,32 @@ export function ProviderConfig() {
           </div>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
-          {/* Routine Model */}
+          {/* Single model */}
           <div>
             <label
-              htmlFor="routine-model"
+              htmlFor="model"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              Routine <span className="text-muted">— narration, choices, evaluation</span>
+              Model <span className="text-muted">— used for every turn</span>
             </label>
             {isCustom ? (
               <input
-                id="routine-model"
+                id="model"
                 type="text"
-                value={form.customRoutineModel}
-                onChange={(e) => updateField("customRoutineModel", e.target.value)}
-                placeholder="e.g. gpt-4o-mini"
+                value={form.customModel}
+                onChange={(e) => updateField("customModel", e.target.value)}
+                placeholder="e.g. gpt-4o"
                 className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               />
             ) : (
               <select
-                id="routine-model"
-                value={form.routineModel}
-                onChange={(e) => updateField("routineModel", e.target.value)}
+                id="model"
+                value={form.model}
+                onChange={(e) => updateField("model", e.target.value)}
                 className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
               >
                 {displayModels.length === 0 && <option value="">No models found</option>}
-                {withSelected(displayModels, form.routineModel).map((m) => (
+                {withSelected(displayModels, form.model).map((m) => (
                   <option key={m.id} value={m.id}>
                     {m.name}
                   </option>
@@ -638,40 +662,41 @@ export function ProviderConfig() {
             )}
           </div>
 
-          {/* Premium Model */}
+          {/* Thinking / reasoning depth */}
           <div>
             <label
-              htmlFor="premium-model"
+              htmlFor="thinking-level"
               className="mb-1.5 block text-sm font-medium text-foreground"
             >
-              Premium <span className="text-muted">— advancement, combat</span>
+              Reasoning depth <span className="text-muted">— quality vs. speed</span>
             </label>
-            {isCustom ? (
-              <input
-                id="premium-model"
-                type="text"
-                value={form.customPremiumModel}
-                onChange={(e) => updateField("customPremiumModel", e.target.value)}
-                placeholder="e.g. gpt-4o"
-                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 font-mono text-sm text-foreground placeholder:text-muted focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
-              />
-            ) : (
-              <select
-                id="premium-model"
-                value={form.premiumModel}
-                onChange={(e) => updateField("premiumModel", e.target.value)}
-                className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
-              >
-                {displayModels.length === 0 && <option value="">No models found</option>}
-                {withSelected(displayModels, form.premiumModel).map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
-            )}
+            <select
+              id="thinking-level"
+              value={form.thinkingLevel}
+              onChange={(e) =>
+                updateField(
+                  "thinkingLevel",
+                  isThinkingLevel(e.target.value)
+                    ? e.target.value
+                    : DEFAULT_THINKING_LEVEL,
+                )
+              }
+              className="w-full rounded-lg border border-border bg-surface-raised px-3.5 py-2.5 text-sm text-foreground focus:border-amber focus:outline-none focus:ring-2 focus:ring-amber/30"
+            >
+              {THINKING_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {THINKING_LEVEL_LABELS[level]}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
+        <p className="mt-2 text-xs leading-relaxed text-muted">
+          One model runs the whole game; reasoning depth is the quality dial. Combat and
+          advancement automatically think one step deeper. The depth applies only to
+          models that support it (gemma, gpt-oss, the o-series, Claude, …) — for a model
+          with no reasoning control it has no effect.
+        </p>
         {unservedModels.length > 0 && (
           <p
             role="alert"

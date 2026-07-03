@@ -14,6 +14,13 @@ import type {
 } from "./types";
 import { AIError } from "./errors";
 import {
+  bumpThinkingLevel,
+  isThinkingLevel,
+  DEFAULT_THINKING_LEVEL,
+  type ThinkingLevel,
+} from "./thinking";
+import type { ProviderId } from "./types";
+import {
   createAdapter,
   anthropicSupportsStructuredOutput,
   type LLMProviderAdapter,
@@ -80,11 +87,49 @@ export function classifyCall(instruction: InstructionType): CallClassification {
   return PREMIUM_INSTRUCTIONS.includes(instruction) ? "premium" : "routine";
 }
 
-export function selectModel(
+/**
+ * The player runs a SINGLE model now; depth is the quality dial. Routine turns
+ * run at the player's baseline `thinkingLevel`; premium (advancement/combat)
+ * turns nudge one notch up — the single-model equivalent of the old
+ * routine/premium model split. Resolved to a model-appropriate parameter (or
+ * omitted) by the adapters via `thinking.ts`.
+ */
+export function selectThinking(
   config: ProviderConfig,
   classification: CallClassification,
-): string {
-  return classification === "premium" ? config.premiumModel : config.routineModel;
+): ThinkingLevel {
+  return classification === "premium"
+    ? bumpThinkingLevel(config.thinkingLevel)
+    : config.thinkingLevel;
+}
+
+/**
+ * Normalize a raw persisted provider config into the current single-model shape.
+ * A pre-single-model save carried `routineModel`/`premiumModel` and no
+ * `model`/`thinkingLevel`. Those saves are read raw from localStorage all over
+ * the app (game-loop, society, codex, admin, character-creation, play-dashboard),
+ * so the migration lives here at the read boundary — not only in the Settings
+ * form — otherwise an existing chronicle would reach `generate()` with an
+ * undefined `model` and every AI turn would fail. Adopts the old premium model
+ * (the more capable one) as the single `model`, then routine, then any `model`
+ * already present. Returns `null` for anything without a provider id.
+ */
+export function migrateProviderConfig(raw: unknown): ProviderConfig | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const c = raw as Record<string, unknown>;
+  if (typeof c.providerId !== "string") return null;
+  const pick = (v: unknown): string =>
+    typeof v === "string" && v.trim().length > 0 ? v : "";
+  const model = pick(c.model) || pick(c.premiumModel) || pick(c.routineModel);
+  return {
+    providerId: c.providerId as ProviderId,
+    apiKey: typeof c.apiKey === "string" ? c.apiKey : "",
+    baseUrl: typeof c.baseUrl === "string" ? c.baseUrl : undefined,
+    model,
+    thinkingLevel: isThinkingLevel(c.thinkingLevel)
+      ? c.thinkingLevel
+      : DEFAULT_THINKING_LEVEL,
+  };
 }
 
 function getTemperature(classification: CallClassification): number {
@@ -195,7 +240,8 @@ export interface GenerateOptions {
 export async function generate(options: GenerateOptions): Promise<ValidatedAIResponse> {
   const adapter = createAdapter(options.config.providerId, options.config.baseUrl);
   const classification = classifyCall(options.instruction);
-  const model = selectModel(options.config, classification);
+  const model = options.config.model;
+  const thinkingLevel = selectThinking(options.config, classification);
   const temperature = getTemperature(classification);
 
   const assembly = assemblePrompt({
@@ -237,6 +283,7 @@ export async function generate(options: GenerateOptions): Promise<ValidatedAIRes
     temperature,
     options.config.apiKey,
     jsonSchema,
+    thinkingLevel,
   );
 
   const validation = validateAIResponse(aiResponse);
@@ -271,9 +318,10 @@ export async function generateCodexRebuild(
   input: CodexRebuildInput,
 ): Promise<CodexUpdateInput[]> {
   const adapter = createAdapter(config.providerId, config.baseUrl);
-  // Premium model: a one-time, accuracy-sensitive extraction over the whole
-  // chronicle — worth the better model, and it runs at most once per rebuild.
-  const model = selectModel(config, "premium");
+  // A one-time, accuracy-sensitive extraction over the whole chronicle — worth
+  // the deeper reasoning (premium depth), and it runs at most once per rebuild.
+  const model = config.model;
+  const thinkingLevel = selectThinking(config, "premium");
   const messages = buildCodexRebuildPrompt(input);
 
   // Parse-retry loop (mirrors the main turn's `requestAndParse`): the rebuild
@@ -294,6 +342,7 @@ export async function generateCodexRebuild(
         temperature: attempt === 0 ? 0 : 0.4,
         maxTokens: REBUILD_MAX_TOKENS,
         responseFormat: { type: "json_object" },
+        thinkingLevel,
       },
       config.apiKey,
     );
@@ -322,7 +371,8 @@ export async function generateCharacterIdentity(
   input: CharacterIdentityInput,
 ): Promise<CharacterIdentity | null> {
   const adapter = createAdapter(config.providerId, config.baseUrl);
-  const model = selectModel(config, "routine");
+  const model = config.model;
+  const thinkingLevel = selectThinking(config, "routine");
   const messages = buildCharacterIdentityPrompt(input);
 
   const convo = [...messages];
@@ -337,6 +387,7 @@ export async function generateCharacterIdentity(
         temperature: attempt === 0 ? 0.9 : 0.5,
         maxTokens: IDENTITY_MAX_TOKENS,
         responseFormat: { type: "json_object" },
+        thinkingLevel,
       },
       config.apiKey,
     );
@@ -368,7 +419,8 @@ async function generateStructured<T>(
   parse: (raw: string) => T | null,
 ): Promise<T | null> {
   const adapter = createAdapter(config.providerId, config.baseUrl);
-  const model = selectModel(config, "routine");
+  const model = config.model;
+  const thinkingLevel = selectThinking(config, "routine");
   const convo = [...messages];
   for (let attempt = 0; attempt < MAX_PARSE_ATTEMPTS; attempt++) {
     const response = await executeWithRetry(
@@ -379,6 +431,7 @@ async function generateStructured<T>(
         temperature: attempt === 0 ? 0.85 : 0.5,
         maxTokens,
         responseFormat: { type: "json_object" },
+        thinkingLevel,
       },
       config.apiKey,
     );
@@ -507,6 +560,7 @@ async function requestAndParse(
   temperature: number,
   apiKey: string,
   jsonSchema?: Record<string, unknown>,
+  thinkingLevel?: ThinkingLevel,
 ): Promise<AIResponse> {
   let messages = baseMessages;
   // Use server-side structured output when a schema was supplied (Anthropic only,
@@ -514,6 +568,11 @@ async function requestAndParse(
   // model/proxy that doesn't support `output_config` — drop the schema and fall
   // back to the system-directive path once, so a BYOK edge case never hard-fails.
   let useSchema = jsonSchema !== undefined;
+  // On the Anthropic path, `thinkingLevel` also flows through `output_config`
+  // (as `effort`). A structured-output 400 means the endpoint doesn't accept
+  // `output_config` at all, so the fallback must drop the effort too — keeping it
+  // would just 400 again for the same reason. Only suppressed after that 400.
+  let dropThinking = false;
 
   for (let attempt = 0; attempt < MAX_PARSE_ATTEMPTS; attempt++) {
     let providerResponse: ProviderResponse;
@@ -527,12 +586,14 @@ async function requestAndParse(
           maxTokens: MAX_OUTPUT_TOKENS,
           responseFormat: { type: "json_object" },
           ...(useSchema ? { jsonSchema } : {}),
+          ...(thinkingLevel && !dropThinking ? { thinkingLevel } : {}),
         },
         apiKey,
       );
     } catch (err) {
       if (useSchema && err instanceof AIError && err.status === 400) {
         useSchema = false;
+        dropThinking = true;
         attempt--; // the format fallback does not consume a parse attempt
         continue;
       }
@@ -583,13 +644,12 @@ export async function listProviderModels(config: ProviderConfig): Promise<ModelO
 }
 
 /**
- * Return the configured model ids (`routineModel`/`premiumModel`) that are NOT
- * present in the provider's live catalog. A non-empty result means a turn using
- * that model will likely be rejected upstream — e.g. an Ollama-Cloud account
- * that does not serve `gpt-oss:120b` returns a 403 only when a premium
- * (advancement/combat) call is made. Surfacing it at config time turns that
- * mid-game failure into an actionable Settings warning. Pure: blank ids and an
- * empty catalog (catalog unavailable) yield no findings, and duplicates collapse.
+ * Return the configured `model` id if it is NOT present in the provider's live
+ * catalog (else an empty list). A non-empty result means a turn will likely be
+ * rejected upstream — e.g. an Ollama-Cloud account that does not serve the model
+ * returns a 403 at chat time. Surfacing it at config time turns that mid-game
+ * failure into an actionable Settings warning. Pure: a blank id and an empty
+ * catalog (catalog unavailable) yield no findings.
  */
 export function findUnservedModels(
   config: ProviderConfig,
@@ -597,10 +657,9 @@ export function findUnservedModels(
 ): string[] {
   if (catalog.length === 0) return [];
   const served = new Set(catalog.map((m) => m.id));
-  const configured = [config.routineModel, config.premiumModel].filter(
-    (id) => id.trim().length > 0,
-  );
-  return [...new Set(configured)].filter((id) => !served.has(id));
+  const id = config.model.trim();
+  if (id.length === 0 || served.has(id)) return [];
+  return [id];
 }
 
 export interface ModelAccessResult {

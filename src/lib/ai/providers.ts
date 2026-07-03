@@ -8,6 +8,11 @@ import type {
 } from "./types";
 import { AIError, classifyHttpError, createNetworkError } from "./errors";
 import { CHARS_PER_TOKEN } from "./memory";
+import {
+  resolveAnthropicEffort,
+  resolveOllamaThink,
+  resolveReasoningEffort,
+} from "./thinking";
 
 export interface LLMProviderAdapter {
   readonly name: ProviderId;
@@ -168,6 +173,12 @@ export class OpenAIAdapter implements LLMProviderAdapter {
   }
 
   async makeRequest(request: ProviderRequest, apiKey: string): Promise<ProviderResponse> {
+    // Model-aware reasoning depth (thinking.ts): the OpenAI-compatible transport
+    // takes `reasoning_effort`. Resolved to a value the model actually accepts
+    // (gemma4 "none" to fully disable, gpt-oss floored at "low", …) or `null` for
+    // a non-thinking model or no requested level, in which case the parameter is
+    // omitted so it can't 400.
+    const reasoningEffort = resolveReasoningEffort(request.model, request.thinkingLevel);
     const raw = await fetchWithErrorHandling(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -180,6 +191,7 @@ export class OpenAIAdapter implements LLMProviderAdapter {
         temperature: request.temperature,
         max_tokens: request.maxTokens,
         response_format: request.responseFormat,
+        ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
       }),
     });
     return this.parseResponse(raw);
@@ -320,6 +332,22 @@ export class AnthropicAdapter implements LLMProviderAdapter {
       wantsJson && !useStructured
         ? [system, ANTHROPIC_JSON_DIRECTIVE].filter(Boolean).join("\n\n")
         : system;
+    // Anthropic has no `reasoning_effort`; reasoning depth is `output_config.effort`
+    // (thinking.ts), GA on the current first-party models and omitted (null) on
+    // the rest so an unsupported model can't 400. It shares `output_config` with
+    // the structured-output `format`, so both are merged into one object. Gated on
+    // the DEFAULT base URL — like the structured-output path — so an
+    // Anthropic-compatible proxy that doesn't accept `output_config` never gets it
+    // (the client passes no schema there, so the 400-fallback wouldn't fire).
+    const effort =
+      this.baseUrl === ANTHROPIC_DEFAULT_BASE_URL
+        ? resolveAnthropicEffort(request.model, request.thinkingLevel)
+        : null;
+    const outputConfig: Record<string, unknown> = {};
+    if (useStructured) {
+      outputConfig.format = { type: "json_schema", schema: request.jsonSchema };
+    }
+    if (effort) outputConfig.effort = effort;
     const raw = await fetchWithErrorHandling(`${this.baseUrl}/messages`, {
       method: "POST",
       headers: {
@@ -338,13 +366,7 @@ export class AnthropicAdapter implements LLMProviderAdapter {
             }
           : {}),
         messages,
-        ...(useStructured
-          ? {
-              output_config: {
-                format: { type: "json_schema", schema: request.jsonSchema },
-              },
-            }
-          : {}),
+        ...(Object.keys(outputConfig).length > 0 ? { output_config: outputConfig } : {}),
         // `temperature` is deliberately omitted. Newer Claude models (Opus 4.7+,
         // Fable 5) reject any sampling parameter with HTTP 400 ("temperature is
         // deprecated for this model"), and it is optional (defaulted) on every
@@ -535,6 +557,10 @@ export class OllamaAdapter implements LLMProviderAdapter {
   async makeRequest(request: ProviderRequest, apiKey: string): Promise<ProviderResponse> {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (apiKey) headers["Authorization"] = `Bearer ${apiKey}`;
+    // Native `/api/chat` controls reasoning with a top-level `think` field
+    // (boolean, or a level string), not `reasoning_effort` — `null` for a
+    // non-thinking model or no requested level so the field is omitted.
+    const think = resolveOllamaThink(request.model, request.thinkingLevel);
     const raw = await fetchWithErrorHandling(`${this.baseUrl}/api/chat`, {
       method: "POST",
       headers,
@@ -542,6 +568,7 @@ export class OllamaAdapter implements LLMProviderAdapter {
         model: request.model,
         messages: this.formatMessages(request.messages),
         stream: false,
+        ...(think !== null ? { think } : {}),
         options: {
           temperature: request.temperature,
           num_predict: request.maxTokens,
@@ -643,6 +670,9 @@ export class CustomAdapter implements LLMProviderAdapter {
   }
 
   async makeRequest(request: ProviderRequest, apiKey: string): Promise<ProviderResponse> {
+    // A custom OpenAI-compatible endpoint may front any model; resolve the
+    // reasoning depth by model family and omit it for anything non-thinking.
+    const reasoningEffort = resolveReasoningEffort(request.model, request.thinkingLevel);
     const raw = await fetchWithErrorHandling(`${this.baseUrl}/chat/completions`, {
       method: "POST",
       headers: {
@@ -655,6 +685,7 @@ export class CustomAdapter implements LLMProviderAdapter {
         temperature: request.temperature,
         max_tokens: request.maxTokens,
         response_format: request.responseFormat,
+        ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
       }),
     });
     return this.parseResponse(raw);

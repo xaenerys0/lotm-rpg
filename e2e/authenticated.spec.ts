@@ -73,6 +73,31 @@ test("the settings narration-length control selects and persists a verbosity pre
   ).toHaveAttribute("aria-checked", "true");
 });
 
+test("the settings provider config exposes a single model + reasoning-depth control that persists", async ({
+  page,
+}) => {
+  await page.goto("/settings");
+
+  // Single-model design: one Model select plus a Reasoning depth select (the
+  // old routine/premium pair is gone).
+  await expect(page.getByLabel(/^Reasoning depth/)).toBeVisible();
+  await expect(page.getByLabel(/^Model/)).toBeVisible();
+  await expect(page.getByLabel(/^Routine/)).toHaveCount(0);
+  await expect(page.getByLabel(/^Premium/)).toHaveCount(0);
+
+  const depth = page.getByLabel(/^Reasoning depth/);
+  // Default baseline is Off (fastest).
+  await expect(depth).toHaveValue("off");
+
+  // Change to High and save.
+  await depth.selectOption("high");
+  await page.getByRole("button", { name: /Save Configuration/ }).click();
+
+  // The choice persists across a reload (localStorage-backed).
+  await page.reload();
+  await expect(page.getByLabel(/^Reasoning depth/)).toHaveValue("high");
+});
+
 test("the character sheet's delete control runs the two-step confirm", async ({
   page,
 }) => {
