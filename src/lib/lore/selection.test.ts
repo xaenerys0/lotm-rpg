@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { selectCuratedLore, passesSequenceGate } from "./selection";
+import {
+  selectCuratedLore,
+  passesSequenceGate,
+  passesActiveEpochGate,
+  passesEncounterGate,
+} from "./selection";
 import { ALL_PATHWAYS } from "@/lib/rules";
+import type { LoreEntry } from "./types";
 
 describe("selectCuratedLore", () => {
   it("selects pathway lore, the epoch setting, then city lore, deduped by slug", () => {
@@ -143,6 +149,144 @@ describe("passesSequenceGate", () => {
 
   it("uses the highest-numbered (earliest) sequence of a multi-rung entry", () => {
     expect(passesSequenceGate([9, 8, 7, 6, 5], 9)).toBe(true);
+  });
+});
+
+describe("passesActiveEpochGate (issue #213)", () => {
+  const baseEntry: LoreEntry = {
+    slug: "npc-azik",
+    title: "Azik Eggers",
+    category: "npc",
+    content: "A history lecturer.",
+    epoch: 5,
+    npcs: ["Azik Eggers"],
+    sequences: [],
+    tags: [],
+    tokenCount: 100,
+  };
+
+  it("passes when no encounterConfig.activeEpochs is set", () => {
+    expect(passesActiveEpochGate(baseEntry, 5)).toBe(true);
+    expect(passesActiveEpochGate(baseEntry, 3)).toBe(true);
+  });
+
+  it("passes when current epoch is in activeEpochs", () => {
+    const entry = { ...baseEntry, encounterConfig: { activeEpochs: [2, 3, 5] } };
+    expect(passesActiveEpochGate(entry, 3)).toBe(true);
+  });
+
+  it("blocks when current epoch is not in activeEpochs", () => {
+    const entry = { ...baseEntry, encounterConfig: { activeEpochs: [2, 3] } };
+    expect(passesActiveEpochGate(entry, 5)).toBe(false);
+  });
+
+  it("treats undefined epoch as pass-through", () => {
+    const entry = { ...baseEntry, encounterConfig: { activeEpochs: [5] } };
+    expect(passesActiveEpochGate(entry, undefined)).toBe(true);
+  });
+});
+
+describe("passesEncounterGate (issue #213)", () => {
+  const baseEntry: LoreEntry = {
+    slug: "npc-roselle",
+    title: "Roselle Gustav",
+    category: "npc",
+    content: "First transmigrator.",
+    epoch: 5,
+    npcs: ["Roselle Gustav"],
+    sequences: [],
+    tags: [],
+    tokenCount: 100,
+  };
+
+  it("passes when entry has no encounterConfig", () => {
+    expect(passesEncounterGate(baseEntry, 9, { currentChapter: 1 })).toBe(true);
+  });
+
+  it("blocks before earliestChapter", () => {
+    const entry = { ...baseEntry, encounterConfig: { earliestChapter: 50 } };
+    expect(passesEncounterGate(entry, 9, { currentChapter: 30 })).toBe(false);
+    expect(passesEncounterGate(entry, 9, { currentChapter: 50 })).toBe(true);
+    expect(passesEncounterGate(entry, 9, { currentChapter: 100 })).toBe(true);
+  });
+
+  it("blocks after latestChapter", () => {
+    const entry = { ...baseEntry, encounterConfig: { latestChapter: 200 } };
+    expect(passesEncounterGate(entry, 9, { currentChapter: 150 })).toBe(true);
+    expect(passesEncounterGate(entry, 9, { currentChapter: 201 })).toBe(false);
+  });
+
+  it("sequence floor blocks low-sequence players", () => {
+    const entry = { ...baseEntry, encounterConfig: { minPlayerSequence: 5 } };
+    expect(passesEncounterGate(entry, 9, {})).toBe(true);
+    expect(passesEncounterGate(entry, 5, {})).toBe(true);
+    expect(passesEncounterGate(entry, 4, {})).toBe(false);
+  });
+
+  it("faction gate requires matching player faction", () => {
+    const entry = { ...baseEntry, encounterConfig: { factionGates: ["tarot-club"] } };
+    expect(passesEncounterGate(entry, 9, {})).toBe(false);
+    expect(passesEncounterGate(entry, 9, { playerFactions: ["nighthawks"] })).toBe(false);
+    expect(passesEncounterGate(entry, 9, { playerFactions: ["tarot-club"] })).toBe(true);
+  });
+
+  it("relationship gate requires all prior encounters", () => {
+    const entry = {
+      ...baseEntry,
+      encounterConfig: { requiresPriorEncounter: ["npc-roselle"] },
+    };
+    expect(passesEncounterGate(entry, 9, {})).toBe(false);
+    expect(passesEncounterGate(entry, 9, { metNpcSlugs: ["npc-roselle"] })).toBe(true);
+    expect(passesEncounterGate(entry, 9, { metNpcSlugs: ["npc-someone-else"] })).toBe(
+      false,
+    );
+  });
+
+  it("faction gate blocks when playerFactions is absent or mismatched, even if other gates are skipped", () => {
+    const entry = {
+      ...baseEntry,
+      encounterConfig: {
+        earliestChapter: 50,
+        minPlayerSequence: 5,
+        factionGates: ["tarot-club"],
+      },
+    };
+    // Chapter gate is skipped because currentChapter is absent; sequence gate passes for 9 and 5.
+    // Faction gate is enforced with an empty faction list, so the entry is blocked.
+    expect(passesEncounterGate(entry, 9, {})).toBe(false);
+    expect(passesEncounterGate(entry, 5, {})).toBe(false);
+    // Supplying the matching faction lets the entry through.
+    expect(passesEncounterGate(entry, 9, { playerFactions: ["tarot-club"] })).toBe(true);
+  });
+});
+
+describe("selectCuratedLore encounter integration (issue #213)", () => {
+  it("still works without an encounterFilter (backward compatible)", () => {
+    const ctx = selectCuratedLore("fool", "Tingen City", 100000, 5, 9);
+    expect(ctx.entries.length).toBeGreaterThan(0);
+  });
+
+  it("drops an NPC with an earliestChapter gate before the player's chapter", () => {
+    // Roselle is not normally in Tingen lore, so we can't assert a drop there.
+    // Instead, use the public helper which selectCuratedLore calls.
+    expect(
+      passesEncounterGate(
+        {
+          slug: "npc-roselle",
+          title: "Roselle Gustav",
+          category: "npc",
+          content: "First transmigrator.",
+          epoch: 5,
+          npcs: ["Roselle Gustav"],
+          sequences: [],
+          tags: [],
+          tokenCount: 100,
+          encounterConfig: { earliestChapter: 50 },
+        },
+        9,
+        { currentChapter: 10 },
+      ),
+    ).toBe(false);
   });
 });
 
