@@ -8,7 +8,11 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
 
 ## Structure
 
-- `types.ts` — `LoreEntry` and `LoreCategory` type definitions.
+- `types.ts` — `LoreEntry`, `LoreCategory`, and `EncounterConfig` type definitions.
+  `EncounterConfig` (issue #213) adds optional encounter-registry gating to any
+  lore entry: `earliestChapter`/`latestChapter` spoiler gates, `factionGates`,
+  `minPlayerSequence`, `requiresPriorEncounter`, `encounterWeight`,
+  `encounterType`, and `activeEpochs`.
 - `retrieval.ts` — Runtime retrieval (issue #63): `retrieveChunks(query, options)`
   embeds the query with the save's **locked** embedding model (per-character
   model lock — mismatches throw) and calls the gated `match_source_chunks` RPC.
@@ -30,7 +34,7 @@ Structured lore data for RAG retrieval by the AI integration layer. Each entry i
   `buildRetrievalQuery` from `@/lib/game`), feeding `generate({ retrievedChunks })`;
   it no-ops to `[]` when no embedding endpoint/corpus is available, so curated
   lore always stands alone as the floor.
-- `selection.ts` — `selectCuratedLore(pathway, location, budget, epoch?, sequenceLevel?, excludeNpc?)`: greedy first-fit over pathway → epoch-setting → city lore, deduped, epoch-gated, and (when `sequenceLevel` is given) **sequence-gated** via `passesSequenceGate` — a pathway rung's lore is revealed only once the character has reached its earliest (highest-numbered) sequence, mirroring the glossary's `revealAtSequence` progressive disclosure. Entries with no `sequences` (geography/era/orgs) always pass. **`excludeNpc` (issue #92, canon-character takeover):** when the player IS a canon figure, any `LoreEntry` whose `npcs` includes that name (normalized via `normalizeCanonName`) is dropped — so the narrator never receives the player's OWN NPC dossier (with its forward-arc spoilers) framed as a separate present character. Pathway _mechanics_ still reach the narrator via the rules engine (`buildAICallParams`), so suppressing the prose lore costs no gameplay grounding.
+- `selection.ts` — `selectCuratedLore(pathway, location, budget, epoch?, sequenceLevel?, excludeNpc?, encounterFilter?)`: greedy first-fit over pathway → epoch-setting → city lore, deduped, epoch-gated, and (when `sequenceLevel` is given) **sequence-gated** via `passesSequenceGate` — a pathway rung's lore is revealed only once the character has reached its earliest (highest-numbered) sequence, mirroring the glossary's `revealAtSequence` progressive disclosure. Entries with no `sequences` (geography/era/orgs) always pass. **`excludeNpc` (issue #92, canon-character takeover):** when the player IS a canon figure, any `LoreEntry` whose `npcs` includes that name (normalized via `normalizeCanonName`) is dropped — so the narrator never receives the player's OWN NPC dossier (with its forward-arc spoilers) framed as a separate present character. Pathway _mechanics_ still reach the narrator via the rules engine (`buildAICallParams`), so suppressing the prose lore costs no gameplay grounding. **`encounterFilter` (issue #213, encounter registry):** optional gating that makes NPC entries encounterable based on chapter progress, faction membership, prior encounters, and encounter weight/type. `passesActiveEpochGate` enforces `encounterConfig.activeEpochs`; `passesEncounterGate` checks `earliestChapter`, `latestChapter`, `minPlayerSequence`, `factionGates`, and `requiresPriorEncounter`.
 - `canon-characters.ts` — **Canon-character takeover roster (issue #92).** Pure data + matcher for "play AS a novel character": `CanonCharacterPreset` (id/displayName/aliases/pathwayId/startSequence/**becomesOnScreen**/**personalityTraits**/startLocation/epoch/canonPosition/background + optional openingRecap/earlySalienceFacts) and `CANON_PLAYABLE_CHARACTERS` — the corpus-verified roster of KNOWN NOVEL FIGURES who, at their OWN introduction in the novel, are low Beyonders (Seq 7-9, "under Sequence 6") on **any of the 22 playable pathways** (NOT just ids 1-9 — all 22 are fully playable, and takeover is pathway-agnostic): **Klein Moretti** (Fool, Seq 9, Tingen), **Dunn Smith** (Darkness, Seq 7, Tingen), **Daly Simone** (Death, Seq 7, Tingen), **Leonard Mitchell** (Darkness, **Seq 8 Midnight Poet**, Tingen — corpus: he meets Klein as "Sequence 8's Midnight Poet", NOT a Seq 9 Sleepless), **Old Neil** (Hermit, Seq 9, Tingen), **Audrey Hall** (Visionary, Seq 9, Backlund), **Isengard Stanton** (White Tower, Seq 7, Backlund), **Derrick Berg** (Sun, Seq 9, City of Silver — a sealed-continent native who carries the dream-world + silver-city access flags via the optional `accessFlags` field), **Fors Wall** (Door, Seq 9, Backlund — Tarot "Magician"), **Xio Derecha** (Justiciar, Seq 9, Backlund — Tarot "Judgment"), **Trissy** (Demoness, Seq 7, Tingen — formerly the man "Tris," remade female on reaching Seq 7), **Emlyn White** (Moon, Seq 7 Vampire, Backlund — a Sanguine, born at Seq 7; Tarot "Moon"). Each preset's `startSequence`/`startLocation`/`canonPosition` reflect WHERE AND WHEN that figure is INTRODUCED (not chapter 1), and `background` is SPOILER-BOUNDED to that introduction point (durable identity/family/relationships, never the later arc). **`becomesOnScreen`** marks the figures whose novel introduction IS their becoming — they drink their first potion on-screen (**Klein**, **Audrey**, **Derrick**); the rest are already-established Beyonders, so the guided takeover prologue ends on the potion for the former and runs only up to the first appearance (no potion) for the latter. **`personalityTraits`** is the corpus-grounded disposition used to bias the choices the narrator presents toward what the figure would canonically do (seeded onto `GameState.canonPersonality`). `matchCanonCharacter(name, pathwayId)` requires BOTH a name (display name or alias, normalized) AND the exact pathway; **`matchCanonCharacterByName(name)`** matches the NAME alone (used by character creation to detect a takeover BEFORE a pathway is chosen, so the guided canon prologue can lock the fixed pathway); `getCanonCharacter(id)` is the O(1) suppression lookup; `normalizeCanonName` is the shared lower/collapse-whitespace/trim used by the matchers, the curated-lore `excludeNpc` filter, and the world-state self-suppression. The seeding helper + doppelganger suppression live in `@/lib/game/canon-takeover.ts`; the canon-faithful guided prologue generators live in `@/lib/ai/prologue-client.ts`. All canon corpus-verified.
 - `sealed-artifacts.ts` — **Sealed Artifacts catalogue (corpus-verified).** The dangerous, church-catalogued mystical items (numbered by GRADE-sequential code, e.g. `0-08`, `2-049`, `3-0782`; graded 0-3 by danger — 0 ≈ Angel, cathedral-basement-only … 3 ≈ low-Sequence Beyonder). `SealedArtifact` (number/name/grade/description/**drawback**/powerEquivalence/holder?/location?/pathwayHint?/sourceRef) + the `SEALED_ARTIFACTS` const (~30 entries across all four grades, every field fact-checked against `corpus/`; the **drawback** — the "loss of control" cost — is the defining trait, never omitted). `mintArtifactItem(artifact)` produces the lightweight carried `Item` (category `"sealed-artifact"`, the code embedded in the name + the grade/drawback in the description) — the rich metadata stays out of the serialized save. `getSealedArtifact(number)`, `sealedArtifactsForGrade`, `sealedArtifactsForPathway`, `GRADE_POWER_BAND`; `sealedArtifactNumberFromItemName(name)` + `gradeForArtifactItem(item)` recover the code/grade from a minted item (the single grade resolver the combat backlash uses — `@/lib/game/combat.ts` `artifactBacklash`; now also reads the grade from a player-crafted `C<grade>-<NNN>` synthetic code via `CRAFTED_CODE_RE`/`isCraftedArtifactCode`). **Custody (Sealed Artifacts subsystem):** `ArtifactCustody` (`church`|`individual`|`unowned`) + a per-`number` `ARTIFACT_CUSTODY` table (every entry authored; dynasty/royal-line holders are `church`) drives acquisition + tradeability — `classifyHolder(holder)` derives the same from the prose and is asserted to AGREE in tests; `getArtifactCustody(number)`, `custodyForArtifactItem(item)` (a crafted `C`-code → `individual`), `ownerNameForArtifactItem(item)`, `isArtifactTradeable(item)` (everything but `church`). **Effects (the POWERS):** `ArtifactEffect {label, description, hook: EffectHook, params?}` + a per-`number` `ARTIFACT_EFFECTS` table (authored corpus-verified on ALL ~30 entries; `effectsForArtifactNumber`/`hasAuthoredEffects`); the game layer (`@/lib/game/artifact-effects`) makes them real per hook / binds them via the narrator. Acquired via `grantSealedArtifact`/`grantChurchArtifact` (`world-state.ts`), combat spoils, or **artifice** (`@/lib/game/artifice` crafting); a NON-church / crafted artifact is now market-traded + fenced (`@/lib/game/marketplace`), a church one never is. Never AI-minted (`world-state.partitionDiscoveredItems` blocks the category like a reagent). The player-facing `sealed-artifact`/`sealed-artifact-grades`/`artifice` glossary terms live in `glossary.ts`.
 - `bestiary.ts` — **Combat bestiary (corpus-verified, issue #187 Phase 1).** A curated catalogue of region/Sequence-appropriate FOES the combat engine draws on so a fight never falls back to a bare "a lurking Beyonder" string. `BestiaryFoe` (id/name/`framing`/isBeyonder/pathwayId?/`sequenceBand` `[strongest,weakest]`/regions?/description/signatureAbilities/motive?/sourceRef) + `BESTIARY` (named foes corpus-verified against `corpus/` — e.g. the Devil Dog (Abyss Seq 6, Backlund), Meursault (Red Priest Seq 9), Sirius Arapis (Hanged Man Seq 9, Aurora Order), Rosago (Fool Seq 5) — plus clearly-FLAGGED generic filler — desperate thugs, a rogue Beyonder who lost control — where the corpus offers a region no named low-Seq antagonist, never invented as false canon). `getBestiaryFoe(id)`, `bestiaryFor(regionId, playerSequence)` (region + Sequence-band filter — a foe whose canon band overlaps ±2 rungs of the player), `bestiaryForPathwaySequence(pathwayId, targetSeq, regionId?)` (the ingredient-HUNT carrier filter — catalogued Beyonders of that EXACT pathway whose canon band CONTAINS `targetSeq`, region-preferred but not region-bound, so an Abyss hunter after a Seq 6-7 Characteristic finds the Devil Dog while no other pathway ever does — the alignment the engine's `deriveHuntQuarry` prefers before synthesizing a bearer), `bestiaryFoeSequence(foe, playerSequence)` (the concrete Sequence a derived enemy fights at — clamped into the canon band so the Devil Dog stays a Seq 6-7 Devil, never a Seq 9). Each entry's `framing` (an `EncounterFraming` from `@/lib/types/combat`) feeds the engine's `selectOpponents` (`@/lib/game/combat.ts`). The `sealed-artifacts.ts` data-module pattern: rich reference data here, the engine derives a lightweight `Enemy` via `bestiaryFoeToEnemy`.
@@ -86,3 +90,56 @@ Metadata columns for filtering: `category`, `pathway`, `epoch`, `city`, `npcs`, 
 - Slugs are URL-safe unique identifiers: `category-qualifier` pattern.
 - TypeScript source is the canonical data; SQL seed is generated from it.
 - When adding new lore, add to the appropriate `.ts` file and regenerate the seed migration.
+
+## Encounter Registry & Corpus Extraction (issue #213)
+
+Phase 5 introduces the **encounter registry**: optional `encounterConfig` on
+`LoreEntry` that turns a character dossier into an encounterable NPC with
+spoiler-safe gating. The canonical fields live in `types.ts` and the runtime
+gates in `selection.ts` (`passesEncounterGate`, `passesActiveEpochGate`).
+
+### Authoring an encounterable NPC
+
+1. Add the dossier to `npcs.ts` with `category: "npc"`.
+2. Include a `// CORPUS:` comment above the entry citing the wiki page and/or
+   novel chapter range used for verification.
+3. Populate `encounterConfig` only when special gating is needed; absent config
+   keeps the default city/pathway injection behaviour.
+4. Use `sequences: []` for NPC entries; rely on `encounterConfig.minPlayerSequence`
+   for player-sequence gating (the `passesSequenceGate` helper is designed for
+   progressive pathway disclosure, not NPC encounterability).
+5. Keep faction-gate strings lower-kebab-case (e.g. `tarot-club`,
+   `moses-ascetic-order`, `city-of-silver`).
+6. Set `encounterType` to `story-critical` only for figures that must appear when
+   conditions are met; prefer `optional` and `rare` to avoid starving the lore
+   budget.
+
+### Corpus extraction scripts
+
+Helper scripts live under `scripts/corpus/` for discovering and ranking
+characters from the raw corpus:
+
+- `pnpm corpus:wiki-characters` — streams `corpus/wiki/lordofthemystery_pages_current.xml`,
+  extracts pages in Character categories, and writes `scripts/.cache/wiki-characters.json`.
+- `pnpm corpus:novel-names` — parses `corpus/novel/LordofMysteriesCuttlefishTha1.EPUB`,
+  counts capitalized multi-word phrases per chapter, and writes
+  `scripts/.cache/novel-names.json`.
+- `pnpm corpus:character-report` — combines the two cache files with the existing
+  `NPC_LORE` and `CANON_PLAYABLE_CHARACTERS` registries, ranks candidates by the
+  formula in `docs/phase5-character-encounter-planning.md`, and writes
+  `scripts/.cache/tier2-report.json`.
+
+`scripts/.cache/` is `.gitignore`d; the generated artifacts are for local
+analysis and should not be committed.
+
+### Verification standard
+
+- **Hard requirement:** every encounter gate (`earliestChapter`,
+  `latestChapter`, `minPlayerSequence`, `factionGates`, `city`, `pathway`,
+  `epoch`/`activeEpochs`) must be traceable to the corpus and have an inline
+  `// CORPUS:` citation comment.
+- **Recommended:** major biographical claims in `content` should also cite a
+  source.
+- **Acceptable:** flavor text and brief descriptors may use "reasonable
+  confidence" without a per-sentence citation, as long as they are
+  spoiler-bounded to the character's introduction.

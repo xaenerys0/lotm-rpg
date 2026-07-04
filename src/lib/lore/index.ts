@@ -1,6 +1,12 @@
-export type { LoreCategory, LoreEntry } from "./types";
+export type { LoreCategory, LoreEntry, EncounterConfig } from "./types";
 
-export { selectCuratedLore, passesSequenceGate } from "./selection";
+export {
+  selectCuratedLore,
+  passesSequenceGate,
+  passesActiveEpochGate,
+  passesEncounterGate,
+  type EncounterFilter,
+} from "./selection";
 export {
   CANON_PLAYABLE_CHARACTERS,
   getCanonCharacter,
