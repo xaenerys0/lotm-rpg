@@ -10,9 +10,12 @@
 //   player is a canon-character takeover; non-canon chronicles do not have a
 //   meaningful novel-chapter position, so the gate is skipped.
 // - `playerFactions` merges `GameState.factions` with the canonical faction id
-//   mapped from `societyState.kind`, when present.
+//   mapped from `societyState.kind`, when present, plus durable origin/location
+//   affiliation for isolated communities such as the City of Silver.
 // - `metNpcSlugs` derives from the tracked-NPC roster: roster names are matched
 //   back to lore entries via `getLoreByNpc` and their slugs are collected.
+// - `includeRare` is enabled only for special engine occasions such as active
+//   advancement rituals, ascension rites, or advancement-scripted turns.
 //
 // Pure; lives next to the other session subsystems. No DB migration — it reads
 // only fields that serialize inside the session blob.
@@ -54,6 +57,21 @@ export function loreFactionFromOrgSlug(orgSlug: string): LoreFaction | undefined
   return ORG_SLUG_TO_FACTION[orgSlug];
 }
 
+function addCommunityFaction(session: GameSession, factions: Set<string>): void {
+  const currentCity = session.gameState.currentCity;
+  const accessFlags = new Set(session.gameState.accessFlags ?? []);
+
+  // Forsaken-Land origin starts are not modeled as `societyState`, but their
+  // current-city/access flags are durable proof of community membership. Feed
+  // those communities into the same canonical faction gate used by encounters.
+  if (currentCity === "silver-city" || accessFlags.has("silver-city-passage")) {
+    factions.add("city-of-silver");
+  }
+  if (currentCity === "moon-city" || accessFlags.has("moon-city-passage")) {
+    factions.add("moon-city");
+  }
+}
+
 /**
  * Build an `EncounterFilter` from the current session state. Returns
  * `undefined` when no useful gating state is present, preserving backward
@@ -69,14 +87,26 @@ export function buildEncounterFilter(session: GameSession): EncounterFilter | un
     filter.currentChapter = session.canonPosition;
   }
 
-  // Factions: engine-maintained list on GameState plus society membership.
+  // Factions: engine-maintained list on GameState plus society membership and
+  // durable community-origin state for isolated regions.
   const factions = new Set<string>(session.gameState.factions ?? []);
   if (session.societyState) {
     const mapped = SOCIETY_TO_FACTION[session.societyState.kind];
     if (mapped) factions.add(mapped);
   }
+  addCommunityFaction(session, factions);
   if (factions.size > 0) {
-    filter.playerFactions = [...factions].filter(isLoreFaction);
+    const canonicalFactions = [...factions].filter(isLoreFaction);
+    if (canonicalFactions.length > 0) {
+      filter.playerFactions = canonicalFactions;
+    }
+  }
+
+  // Rare encounter unlocks: by default rare entries are suppressed; active
+  // rites and advancement-scripted turns are the explicit special occasions
+  // where the registry may surface high-risk or quasi-divine figures.
+  if (session.ritualState || session.ascensionRite || session.pendingTurnKind === "advancement") {
+    filter.includeRare = true;
   }
 
   // Met NPCs: map tracked-roster names back to lore slugs. A name may match
@@ -96,7 +126,8 @@ export function buildEncounterFilter(session: GameSession): EncounterFilter | un
   if (
     filter.currentChapter === undefined &&
     filter.playerFactions === undefined &&
-    filter.metNpcSlugs === undefined
+    filter.metNpcSlugs === undefined &&
+    filter.includeRare === undefined
   ) {
     return undefined;
   }
