@@ -10,7 +10,8 @@
 //   pnpm tsx scripts/corpus/extract-novel-names.ts --output scripts/.cache/novel-names.json
 //   pnpm tsx scripts/corpus/extract-novel-names.ts --min-frequency 20
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { stdout } from "node:process";
 
 import { parseEpub, stripHtml } from "../../src/lib/rag";
@@ -86,6 +87,11 @@ function addToCounter(
   entry.byChapter.set(chapterIdx, (entry.byChapter.get(chapterIdx) ?? 0) + 1);
 }
 
+function writeJson(path: string, json: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, json);
+}
+
 function main(): void {
   const args = parseArgs(process.argv.slice(2));
   const inputPath = "corpus/novel/LordofMysteriesCuttlefishTha1.EPUB";
@@ -135,7 +141,7 @@ function main(): void {
 
   const json = JSON.stringify(report, null, 2);
   if (args.outputPath) {
-    writeFileSync(args.outputPath, json);
+    writeJson(args.outputPath, json);
     process.stderr.write(
       `Parsed ${chapters.length} chapters, found ${candidates.length} name candidates (>=${minFrequency}). Wrote ${args.outputPath}\n`,
     );
