@@ -10,7 +10,8 @@
 //   pnpm tsx scripts/corpus/extract-wiki-characters.ts
 //   pnpm tsx scripts/corpus/extract-wiki-characters.ts --output scripts/.cache/wiki-characters.json
 
-import { createReadStream, writeFileSync } from "node:fs";
+import { createReadStream, mkdirSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { stdout } from "node:process";
 
 import {
@@ -106,6 +107,11 @@ function normalizeTitle(title: string): string {
     .replace(/^-|-$/g, "");
 }
 
+function writeJson(path: string, json: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, json);
+}
+
 async function main(): Promise<void> {
   const args = parseArgs(process.argv.slice(2));
   const inputPath = "corpus/wiki/lordofthemystery_pages_current.xml";
@@ -162,7 +168,7 @@ async function main(): Promise<void> {
 
   const json = JSON.stringify(report, null, 2);
   if (args.outputPath) {
-    writeFileSync(args.outputPath, json);
+    writeJson(args.outputPath, json);
     process.stderr.write(
       `Parsed ${seen} pages, found ${characters.length} character pages. Wrote ${args.outputPath}\n`,
     );
