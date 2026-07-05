@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { NPC_LORE } from "./npcs";
 import { ALL_LORE_ENTRIES } from "./index";
 import type { LoreEntry } from "./types";
+import { LORE_FACTION_SET } from "./factions";
 
 // Tier 1 characters explicitly identified as gaps in issue #213.
 const TIER_1_SLUGS = [
@@ -134,6 +135,26 @@ describe("encounterConfig data integrity", () => {
       for (const loc of locations) {
         expect(loc).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
       }
+    }
+  });
+
+  it("every factionGate references a canonical lore faction", () => {
+    for (const entry of entriesWithConfig) {
+      const factions = entry.encounterConfig!.factionGates ?? [];
+      for (const faction of factions) {
+        expect(LORE_FACTION_SET.has(faction)).toBe(true);
+      }
+    }
+  });
+
+  it("every Tier 1 entry is suppressible via its own canonical name (issue #92 safety)", () => {
+    // If a future canon-takeover path ever allows a Tier 1 figure, the
+    // excludeNpc mechanism must drop that figure's own dossier. The title's
+    // leading portion is the canonical display name; it must appear in `npcs`.
+    for (const slug of TIER_1_SLUGS) {
+      const entry = getEntry(slug)!;
+      const displayName = entry.title.split(" — ")[0].trim();
+      expect(entry.npcs).toContain(displayName);
     }
   });
 });

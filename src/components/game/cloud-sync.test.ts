@@ -100,6 +100,7 @@ const createClient = vi.fn(() => ({ auth: { getUser, onAuthStateChange } }));
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => createClient() }));
 
 const flush = () => new Promise((r) => setTimeout(r, 0));
+const flushMs = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 async function load() {
   return import("./cloud-sync");
@@ -149,6 +150,17 @@ describe("startCloudSync", () => {
     await flush();
     expect(g.fetchSessions.mock.calls.length).toBeGreaterThan(before);
   });
+
+  it("re-hydrates when an existing session is recovered (INITIAL_SESSION)", async () => {
+    const mod = await load();
+    mod.startCloudSync();
+    await flush();
+    const handler = onAuthStateChange.mock.calls[0][0] as (e: string) => void;
+    const before = g.fetchSessions.mock.calls.length;
+    handler("INITIAL_SESSION");
+    await flush();
+    expect(g.fetchSessions.mock.calls.length).toBeGreaterThan(before);
+  });
 });
 
 describe("hydrate via startCloudSync", () => {
@@ -184,8 +196,19 @@ describe("hydrate via startCloudSync", () => {
     getUser.mockResolvedValue({ data: { user: null } });
     const mod = await load();
     mod.startCloudSync();
-    await flush();
+    await flushMs(250);
     expect(g.reconcile).not.toHaveBeenCalled();
+  });
+
+  it("retries getUser once before giving up, then hydrates when the session appears", async () => {
+    getUser
+      .mockResolvedValueOnce({ data: { user: null } })
+      .mockResolvedValueOnce({ data: { user: { id: "u1" } } });
+    const mod = await load();
+    mod.startCloudSync();
+    await flushMs(250);
+    expect(getUser).toHaveBeenCalledTimes(2);
+    expect(g.reconcile).toHaveBeenCalled();
   });
 
   it("leaves localStorage intact if reconcile throws", async () => {

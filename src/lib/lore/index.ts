@@ -1,4 +1,5 @@
-export type { LoreCategory, LoreEntry, EncounterConfig } from "./types";
+export type { LoreCategory, LoreEntry, EncounterConfig, LoreFaction } from "./types";
+export { LORE_FACTIONS, LORE_FACTION_SET, isLoreFaction } from "./factions";
 
 export {
   selectCuratedLore,

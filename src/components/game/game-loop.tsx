@@ -231,6 +231,7 @@ import {
   getCanonCharacter,
   getEpoch,
 } from "@/lib/lore";
+import { buildEncounterFilter } from "@/lib/game/encounter-filter";
 import { createClient } from "@/lib/supabase/client";
 import { retrieveLoreForTurn } from "./lore-retrieval-client";
 import { SceneArt } from "./scene-art";
@@ -533,7 +534,8 @@ function buildAICallParams(currentSession: GameSession) {
       ritualNarratorContext(currentSession) ??
       ascensionRiteNarratorContext(currentSession),
     // Curated guardrail selection lives in @/lib/lore (tested); the component
-    // stays a thin caller (issue #63).
+    // stays a thin caller (issue #63). Encounter registry gating (issue #213)
+    // is derived from durable session state and passed as the filter.
     loreContext: selectCuratedLore(
       pathway?.name ?? "fool",
       currentSession.gameState.location,
@@ -551,6 +553,7 @@ function buildAICallParams(currentSession: GameSession) {
         ? (getCanonCharacter(currentSession.gameState.canonCharacterId)?.displayName ??
             currentSession.gameState.characterName)
         : undefined,
+      buildEncounterFilter(currentSession),
     ),
   };
 }

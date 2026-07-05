@@ -108,11 +108,15 @@ gates in `selection.ts` (`passesEncounterGate`, `passesActiveEpochGate`).
 4. Use `sequences: []` for NPC entries; rely on `encounterConfig.minPlayerSequence`
    for player-sequence gating (the `passesSequenceGate` helper is designed for
    progressive pathway disclosure, not NPC encounterability).
-5. Keep faction-gate strings lower-kebab-case (e.g. `tarot-club`,
-   `moses-ascetic-order`, `city-of-silver`).
+5. Keep faction-gate strings lower-kebab-case and limited to the canonical
+   `LORE_FACTIONS` list in `src/lib/lore/factions.ts`. The encounter test suite
+   validates every `factionGates` value against this closed set.
 6. Set `encounterType` to `story-critical` only for figures that must appear when
    conditions are met; prefer `optional` and `rare` to avoid starving the lore
-   budget.
+   budget. `selectCuratedLore` now packs entries in three tiers: baseline
+   (unconfigured entries) → story-critical → optional/rare sorted by
+   `encounterWeight`. Rare entries only appear when the caller passes
+   `includeRare: true`.
 
 ### Corpus extraction scripts
 
@@ -131,6 +135,29 @@ characters from the raw corpus:
 
 `scripts/.cache/` is `.gitignore`d; the generated artifacts are for local
 analysis and should not be committed.
+
+### Runtime bridge
+
+`buildEncounterFilter` (`src/lib/game/encounter-filter.ts`) translates durable
+session state into the `EncounterFilter` consumed by `selectCuratedLore`:
+
+- `currentChapter` is inferred from `session.canonPosition` for canon-character
+  takeovers only; non-canon chronicles intentionally skip chapter gating.
+- `playerFactions` merges `GameState.factions` with the canonical faction mapped
+  from `societyState.kind`.
+- `metNpcSlugs` maps tracked-NPC roster names back to lore slugs via
+  `getLoreByNpc`.
+
+`GameState.factions` is seeded at creation from the archetype's
+`seeds.society.orgSlug` via `loreFactionFromOrgSlug` (issue #213). It is
+rules-engine-only and never AI-mutable.
+
+### Deferred fields
+
+- `specificLocations` is authored on some entries (e.g. City-of-Silver council
+  rooms) but is **not yet enforced** at runtime. City-level matching from
+  `location`/`currentCity` is the active gate; sub-location tracking will be
+  added before `specificLocations` is wired into `passesEncounterGate`.
 
 ### Verification standard
 
