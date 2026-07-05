@@ -23,7 +23,7 @@
     "rag:advancement-canon": "tsx scripts/rag/advancement-canon.ts",
     "corpus:wiki-characters": "tsx scripts/corpus/extract-wiki-characters.ts --output scripts/.cache/wiki-characters.json",
     "corpus:novel-names": "tsx scripts/corpus/extract-novel-names.ts --output scripts/.cache/novel-names.json",
-    "corpus:character-report": "tsx scripts/corpus/generate-character-report.ts > scripts/.cache/tier2-report.json"
+    "corpus:character-report": "tsx scripts/corpus/generate-character-report.ts --output scripts/.cache/tier2-report.json"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
