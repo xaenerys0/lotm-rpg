@@ -162,9 +162,10 @@ export function passesEncounterGate(
     }
   }
 
-  // Sequence floor: high-sequence figures do not appear to low-sequence players.
+  // Sequence floor: LOTM sequence numbers descend as power rises, so a higher
+  // numeric value is a lower-powered character and fails the minimum gate.
   if (sequenceLevel !== undefined && cfg.minPlayerSequence !== undefined) {
-    if (sequenceLevel < cfg.minPlayerSequence) return false;
+    if (sequenceLevel > cfg.minPlayerSequence) return false;
   }
 
   // Faction gate: NPCs tied to organizations only appear naturally for members.
