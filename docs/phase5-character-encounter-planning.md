@@ -1,8 +1,11 @@
 # Phase 5: Character Encounter Registry Planning
 
-> **Implementation status:** Steps 1–4 and 6–7 completed. Tier 1 entries added,
-> encounter registry type/gates implemented, and corpus extraction scripts created.
-> Tier 2 remains pending a full corpus sweep.
+> **Implementation status:** Steps 1–4, 6–7, and the runtime bridge completed.
+> Tier 1 entries added, encounter registry type/gates implemented, corpus
+> extraction scripts run, `GameState.factions` + `buildEncounterFilter` added,
+> three-tier encounter weight/type policy implemented, faction enum validation
+> and self-suppression tests added. `specificLocations` is deferred pending
+> sub-location tracking. Tier 2 population remains pending scope review.
 
 ## Part A: Extended LoreEntry Type
 

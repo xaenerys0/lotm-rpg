@@ -12,6 +12,13 @@ export interface EncounterFilter {
   playerFactions?: readonly string[];
   /** Normalized slugs of NPCs the player has already encountered. */
   metNpcSlugs?: readonly string[];
+  /**
+   * Whether to allow `encounterType: "rare"` entries into the optional pool.
+   * Rare entries are intentionally suppressed by default so they surface only
+   * on special occasions (engine events, rituals, scripted turns). Story-critical
+   * entries ignore this flag.
+   */
+  includeRare?: boolean;
 }
 
 // Curated lore selection (moved out of the game-loop client component per
@@ -41,10 +48,11 @@ export interface EncounterFilter {
  *
  * `encounterFilter` (issue #213, encounter registry): optional gating that makes
  * NPC entries encounterable based on chapter progress, faction membership, prior
- * encounters, and encounter weight/type. Story-critical entries are always
- * included when conditions are met; optional entries compete by weight; rare
- * entries are included only when explicitly requested by a caller and still
- * pass all gates.
+ * encounters, and encounter weight/type. The selection is now three-tier:
+ * (1) baseline entries without explicit encounter rules keep their original
+ * pathway → epoch → city precedence; (2) story-critical entries are packed
+ * next when conditions are met; (3) optional entries compete by weight, and
+ * rare entries are included only when `includeRare` is true.
  */
 export function selectCuratedLore(
   pathwayName: string,
@@ -61,17 +69,13 @@ export function selectCuratedLore(
   const excluded = excludeNpc ? normalizeCanonName(excludeNpc) : undefined;
 
   const seen = new Set<string>();
-  const combined: LoreEntry[] = [];
+  const baseline: LoreEntry[] = [];
+  const storyCritical: LoreEntry[] = [];
+  const optional: LoreEntry[] = [];
   for (const entry of [...pathwayLore, ...epochLore, ...cityLore]) {
-    if (!seen.has(entry.slug)) {
-      seen.add(entry.slug);
-      combined.push(entry);
-    }
-  }
+    if (seen.has(entry.slug)) continue;
+    seen.add(entry.slug);
 
-  let totalTokens = 0;
-  const selected: LoreEntry[] = [];
-  for (const entry of combined) {
     if (!passesEpochGate(entry.epoch, epoch)) continue;
     if (!passesActiveEpochGate(entry, epoch)) continue;
     if (!passesSequenceGate(entry.sequences, sequenceLevel)) continue;
@@ -79,6 +83,35 @@ export function selectCuratedLore(
     if (excluded && entry.npcs.some((n) => normalizeCanonName(n) === excluded)) {
       continue;
     }
+
+    const cfg = entry.encounterConfig;
+    if (!cfg || cfg.encounterType === undefined) {
+      baseline.push(entry);
+      continue;
+    }
+    if (cfg.encounterType === "story-critical") {
+      storyCritical.push(entry);
+    } else if (cfg.encounterType === "optional") {
+      optional.push(entry);
+    } else if (cfg.encounterType === "rare" && encounterFilter?.includeRare) {
+      optional.push(entry);
+    }
+  }
+
+  // Optional/rare pool competes by encounterWeight (default 1.0) so heavier
+  // entries float to the front without starving the baseline or story-critical
+  // guardrails packed before them.
+  optional.sort((a, b) => {
+    const weightA = a.encounterConfig?.encounterWeight ?? 1;
+    const weightB = b.encounterConfig?.encounterWeight ?? 1;
+    return weightB - weightA;
+  });
+
+  const combined = [...baseline, ...storyCritical, ...optional];
+
+  let totalTokens = 0;
+  const selected: LoreEntry[] = [];
+  for (const entry of combined) {
     if (totalTokens + entry.tokenCount > budgetTokens) break;
     selected.push(entry);
     totalTokens += entry.tokenCount;

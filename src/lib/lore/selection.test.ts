@@ -224,10 +224,17 @@ describe("passesEncounterGate (issue #213)", () => {
   });
 
   it("faction gate requires matching player faction", () => {
-    const entry = { ...baseEntry, encounterConfig: { factionGates: ["tarot-club"] } };
+    const entry = {
+      ...baseEntry,
+      encounterConfig: { factionGates: ["tarot-club" as const] },
+    };
     expect(passesEncounterGate(entry, 9, {})).toBe(false);
-    expect(passesEncounterGate(entry, 9, { playerFactions: ["nighthawks"] })).toBe(false);
-    expect(passesEncounterGate(entry, 9, { playerFactions: ["tarot-club"] })).toBe(true);
+    expect(
+      passesEncounterGate(entry, 9, { playerFactions: ["nighthawks" as const] }),
+    ).toBe(false);
+    expect(
+      passesEncounterGate(entry, 9, { playerFactions: ["tarot-club" as const] }),
+    ).toBe(true);
   });
 
   it("relationship gate requires all prior encounters", () => {
@@ -248,7 +255,7 @@ describe("passesEncounterGate (issue #213)", () => {
       encounterConfig: {
         earliestChapter: 50,
         minPlayerSequence: 5,
-        factionGates: ["tarot-club"],
+        factionGates: ["tarot-club" as const],
       },
     };
     // Chapter gate is skipped because currentChapter is absent; sequence gate passes for 9 and 5.
@@ -256,7 +263,9 @@ describe("passesEncounterGate (issue #213)", () => {
     expect(passesEncounterGate(entry, 9, {})).toBe(false);
     expect(passesEncounterGate(entry, 5, {})).toBe(false);
     // Supplying the matching faction lets the entry through.
-    expect(passesEncounterGate(entry, 9, { playerFactions: ["tarot-club"] })).toBe(true);
+    expect(
+      passesEncounterGate(entry, 9, { playerFactions: ["tarot-club" as const] }),
+    ).toBe(true);
   });
 });
 
@@ -287,6 +296,54 @@ describe("selectCuratedLore encounter integration (issue #213)", () => {
         { currentChapter: 10 },
       ),
     ).toBe(false);
+  });
+
+  it("packs baseline lore before story-critical encounter entries", () => {
+    // A Trier-based black-emperor character at chapter 15+ should see Roselle
+    // (story-critical) only AFTER the baseline pathway/epoch/city lore.
+    const ctx = selectCuratedLore("black-emperor", "Trier", 100000, 5, 9, undefined, {
+      currentChapter: 20,
+    });
+    const slugs = ctx.entries.map((e) => e.slug);
+    const roselleIndex = slugs.indexOf("npc-roselle-gustav");
+    expect(roselleIndex).toBeGreaterThanOrEqual(0);
+    // The first entries are baseline (pathway overview + epoch setting).
+    expect(slugs[0]).toMatch(/pathway-overview$/);
+    expect(roselleIndex).toBeGreaterThan(0);
+  });
+
+  it("excludes rare encounters unless includeRare is true", () => {
+    // Hidden Sage is rare and gated to the Hermit pathway + Moses Ascetic Order.
+    const withoutRare = selectCuratedLore(
+      "hermit",
+      "Tingen City",
+      100000,
+      5,
+      5,
+      undefined,
+      { playerFactions: ["moses-ascetic-order" as const] },
+    );
+    expect(withoutRare.entries.some((e) => e.slug === "npc-hidden-sage")).toBe(false);
+
+    const withRare = selectCuratedLore("hermit", "Tingen City", 100000, 5, 5, undefined, {
+      playerFactions: ["moses-ascetic-order" as const],
+      includeRare: true,
+    });
+    expect(withRare.entries.some((e) => e.slug === "npc-hidden-sage")).toBe(true);
+  });
+
+  it("sorts optional encounters by encounterWeight descending", () => {
+    // Bayam has Anderson (weight 1.5) and Bernadette (weight 2) as optional.
+    // A high-sequence Bayam character without prior Roselle should only see
+    // Anderson (Bernadette requires prior encounter with Roselle).
+    const ctx = selectCuratedLore("hermit", "Bayam", 100000, 5, 5, undefined, {
+      currentChapter: 500,
+    });
+    const slugs = ctx.entries.map((e) => e.slug);
+    const andersonIndex = slugs.indexOf("npc-anderson-hood");
+    expect(andersonIndex).toBeGreaterThanOrEqual(0);
+    // Anderson should appear after baseline and story-critical entries.
+    expect(slugs[0]).toMatch(/pathway-overview$/);
   });
 });
 

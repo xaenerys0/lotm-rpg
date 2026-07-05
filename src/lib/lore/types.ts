@@ -1,4 +1,7 @@
 import type { LoreCategoryEnum } from "@/lib/types/database";
+import type { LoreFaction } from "./factions";
+
+export type { LoreFaction } from "./factions";
 
 export type LoreCategory = LoreCategoryEnum;
 
@@ -20,7 +23,7 @@ export interface EncounterConfig {
    * (via GameState.factions) to encounter this character naturally.
    * Examples: "tarot-club", "aurora-order", "nighthawks", "moses-ascetic-order"
    */
-  factionGates?: string[];
+  factionGates?: LoreFaction[];
   /**
    * Minimum player sequence to encounter this character naturally.
    * Used for high-sequence figures who shouldn't appear to Sequence 9 players.

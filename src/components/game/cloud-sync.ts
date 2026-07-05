@@ -79,10 +79,29 @@ async function ensureContext(): Promise<SyncContext | null> {
       try {
         const client = createClient();
         const { data } = await client.auth.getUser();
-        if (!data.user) return null;
-        context = { client, userId: data.user.id };
-        return context;
-      } catch {
+        if (data.user) {
+          context = { client, userId: data.user.id };
+          return context;
+        }
+        // Local dev can race with cookie/session recovery (the app may mount
+        // before the browser client has read the auth cookies). Wait a beat and
+        // try once more before giving up for the session.
+        await new Promise((r) => setTimeout(r, 150));
+        const retry = await client.auth.getUser();
+        if (retry.data.user) {
+          context = { client, userId: retry.data.user.id };
+          return context;
+        }
+        if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.log("[cloud-sync] no signed-in user; cloud sync will no-op");
+        }
+        return null;
+      } catch (err) {
+        if (process.env.NODE_ENV === "development") {
+          // eslint-disable-next-line no-console
+          console.error("[cloud-sync] ensureContext failed", err);
+        }
         return null;
       }
     })();
@@ -231,7 +250,11 @@ function persistToCloud(session: GameSession): void {
         ledger.sessions.add(session.id);
         writeLedger(ledger);
       }
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("[cloud-sync] persistToCloud failed", err);
+      }
       // Offline / unreachable — localStorage already has the save.
     }
   })();
@@ -244,7 +267,11 @@ function setActiveToCloud(id: string | null): void {
       const ctx = await ensureContext();
       if (!ctx) return;
       await setActiveRemote(ctx.client as unknown as SessionSyncClient, id);
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("[cloud-sync] setActiveToCloud failed", err);
+      }
       // Best-effort — the local pointer already moved.
     }
   })();
@@ -261,7 +288,11 @@ export function deleteSessionFromCloud(sessionId: string): void {
       const ctx = await ensureContext();
       if (!ctx) return;
       await deleteSessionRemote(ctx.client as unknown as SessionSyncClient, sessionId);
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("[cloud-sync] deleteSessionFromCloud failed", err);
+      }
       // Network/permission failure — the local save is already gone.
     }
   })();
@@ -285,7 +316,11 @@ export function pushWorldMemoryToCloud(): void {
       ledger.legacyKeys = new Set(legacies.map(legacyKey));
       ledger.echoIds = new Set(echoes.map((e) => e.id));
       writeLedger(ledger);
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("[cloud-sync] pushWorldMemoryToCloud failed", err);
+      }
       // Best-effort.
     }
   })();
@@ -301,7 +336,11 @@ export function pushPreferencesToCloud(): void {
         preferences: loadPreferences(),
         dismissedHints: readDismissedHints(),
       });
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") {
+        // eslint-disable-next-line no-console
+        console.error("[cloud-sync] pushPreferencesToCloud failed", err);
+      }
       // Best-effort.
     }
   })();
@@ -393,7 +432,11 @@ async function doHydrate(): Promise<void> {
     );
 
     writeLedger(ledger);
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.error("[cloud-sync] hydrate failed", err);
+    }
     // Any failure leaves localStorage intact — the player keeps playing.
   } finally {
     setStatus("synced");
@@ -430,13 +473,24 @@ export function startCloudSync(): void {
       if (event === "SIGNED_OUT") {
         // Drop the cached identity; pushers no-op until a user signs back in.
         resetContext();
-      } else if (event === "SIGNED_IN") {
-        // A (possibly different) user signed in — re-resolve and re-hydrate.
+      } else if (
+        event === "SIGNED_IN" ||
+        event === "INITIAL_SESSION" ||
+        event === "TOKEN_REFRESHED" ||
+        event === "USER_UPDATED"
+      ) {
+        // A (possibly different) user signed in, or an existing session was
+        // recovered from cookies / refreshed. Re-resolve and re-hydrate so sync
+        // starts even when the first hydrate raced with cookie recovery.
         resetContext();
         void hydrate();
       }
     });
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.error("[cloud-sync] auth listener setup failed", err);
+    }
     // Auth listener unavailable — the initial hydrate below still runs.
   }
   void hydrate();

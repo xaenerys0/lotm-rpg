@@ -372,6 +372,16 @@ export interface GameState {
    */
   customLocations?: CustomLocation[];
   /**
+   * Faction ids the player is affiliated with (issue #213). Used by the
+   * encounter registry to gate character encounters: an NPC whose
+   * `encounterConfig.factionGates` lists a faction only appears naturally when
+   * the player is a member. Rules-engine-only — NEVER AI-mutable. Optional/absent
+   * on legacy saves; seeded from `StartArchetype.seeds.society.orgSlug` and from
+   * society membership at creation. Values should be canonical `LoreFaction`
+   * ids; `buildEncounterFilter` validates them before passing to the registry.
+   */
+  factions?: string[];
+  /**
    * Capability flags the character holds (world build-out, issue #130) — earned,
    * NOT-AI-mutable capabilities that gate access to otherwise-unreachable
    * surfaces (e.g. `dream-world-passage`, the shadow route into the access-gated

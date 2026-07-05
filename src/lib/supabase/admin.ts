@@ -19,9 +19,17 @@ export async function isAdmin(supabase: ServerClient, userId: string): Promise<b
       .select("is_admin")
       .eq("id", userId)
       .maybeSingle();
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.log("[isAdmin] userId:", userId, "data:", data, "error:", error);
+    }
     if (error || !data) return false;
     return (data as { is_admin?: boolean }).is_admin === true;
-  } catch {
+  } catch (err) {
+    if (process.env.NODE_ENV === "development") {
+      // eslint-disable-next-line no-console
+      console.error("[isAdmin] threw", err);
+    }
     return false;
   }
 }

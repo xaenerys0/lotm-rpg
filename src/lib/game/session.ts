@@ -24,6 +24,7 @@ import { isValidCharacteristicLedgerShape } from "./characteristic-ledger";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
 import { joinRoster, isValidTrackedNpcStateShape } from "./tracked-npcs";
+import { loreFactionFromOrgSlug } from "./encounter-filter";
 import {
   isValidSocietyShape,
   migrateSocietyState,
@@ -219,6 +220,19 @@ export function seedArchetype(
       societyState: seedSocietyMembership(archetype.seeds.society.orgSlug),
       updatedAt: now,
     };
+    // Issue #213: seed canonical faction affiliation from the archetype's org
+    // slug so the encounter registry can gate character encounters from turn 0.
+    const faction = loreFactionFromOrgSlug(archetype.seeds.society.orgSlug);
+    if (faction) {
+      next = {
+        ...next,
+        gameState: {
+          ...next.gameState,
+          factions: [...new Set([...(next.gameState.factions ?? []), faction])],
+        },
+        updatedAt: now,
+      };
+    }
   }
 
   // Relationship grounding facts, recorded in memory (supplementing the durable
