@@ -50,6 +50,34 @@ describe("buildEncounterFilter", () => {
     expect(filter?.playerFactions).toContain("nighthawks");
   });
 
+  it("derives City of Silver faction from durable Forsaken origin state", () => {
+    const session: GameSession = {
+      ...baseSession(),
+      gameState: {
+        ...baseSession().gameState,
+        location: "Silver City",
+        currentCity: "silver-city",
+        accessFlags: ["dream-world-passage", "silver-city-passage"],
+      },
+    };
+    const filter = buildEncounterFilter(session);
+    expect(filter?.playerFactions).toContain("city-of-silver");
+  });
+
+  it("derives Moon City faction from durable Forsaken origin state", () => {
+    const session: GameSession = {
+      ...baseSession(),
+      gameState: {
+        ...baseSession().gameState,
+        location: "Moon City",
+        currentCity: "moon-city",
+        accessFlags: ["dream-world-passage", "moon-city-passage"],
+      },
+    };
+    const filter = buildEncounterFilter(session);
+    expect(filter?.playerFactions).toContain("moon-city");
+  });
+
   it("merges GameState.factions and society-derived factions without duplicates", () => {
     const archetype = START_ARCHETYPES.find((a) => a.id === "tingen-junior-nighthawk")!;
     let session = seedArchetype(baseSession(), archetype);
@@ -74,6 +102,33 @@ describe("buildEncounterFilter", () => {
     };
     const filter = buildEncounterFilter(session);
     expect(filter?.playerFactions).toEqual(["tarot-club"]);
+  });
+
+  it("enables rare encounters during an active advancement ritual", () => {
+    const session: GameSession = {
+      ...baseSession(),
+      ritualState: {} as GameSession["ritualState"],
+    };
+    const filter = buildEncounterFilter(session);
+    expect(filter?.includeRare).toBe(true);
+  });
+
+  it("enables rare encounters during an ascension rite", () => {
+    const session: GameSession = {
+      ...baseSession(),
+      ascensionRite: {} as GameSession["ascensionRite"],
+    };
+    const filter = buildEncounterFilter(session);
+    expect(filter?.includeRare).toBe(true);
+  });
+
+  it("enables rare encounters for advancement-scripted turns", () => {
+    const session: GameSession = {
+      ...baseSession(),
+      pendingTurnKind: "advancement",
+    };
+    const filter = buildEncounterFilter(session);
+    expect(filter?.includeRare).toBe(true);
   });
 
   it("derives metNpcSlugs from the tracked-NPC roster", () => {
