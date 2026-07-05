@@ -105,7 +105,11 @@ export function buildEncounterFilter(session: GameSession): EncounterFilter | un
   // Rare encounter unlocks: by default rare entries are suppressed; active
   // rites and advancement-scripted turns are the explicit special occasions
   // where the registry may surface high-risk or quasi-divine figures.
-  if (session.ritualState || session.ascensionRite || session.pendingTurnKind === "advancement") {
+  if (
+    session.ritualState ||
+    session.ascensionRite ||
+    session.pendingTurnKind === "advancement"
+  ) {
     filter.includeRare = true;
   }
 
