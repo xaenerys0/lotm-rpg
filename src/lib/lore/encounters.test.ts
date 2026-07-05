@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+
 import { describe, expect, it } from "vitest";
 
 import { NPC_LORE } from "./npcs";
@@ -20,9 +22,23 @@ const TIER_1_SLUGS = [
 
 const ENCOUNTER_TYPE_VALUES = new Set(["story-critical", "optional", "rare"]);
 const VALID_EPOCHS = new Set([1, 2, 3, 4, 5]);
+const NPC_SOURCE = readFileSync(new URL("./npcs.ts", import.meta.url), "utf8");
 
 function getEntry(slug: string): LoreEntry | undefined {
   return ALL_LORE_ENTRIES.find((e) => e.slug === slug);
+}
+
+function sourceBlockForSlug(slug: string): string {
+  const slugNeedle = `slug: "${slug}"`;
+  const slugIndex = NPC_SOURCE.indexOf(slugNeedle);
+  expect(slugIndex).toBeGreaterThanOrEqual(0);
+
+  const blockStart = NPC_SOURCE.lastIndexOf("\n  {", slugIndex);
+  const nextBlockStart = NPC_SOURCE.indexOf("\n  {", slugIndex + slugNeedle.length);
+  return NPC_SOURCE.slice(
+    blockStart === -1 ? 0 : blockStart,
+    nextBlockStart === -1 ? NPC_SOURCE.length : nextBlockStart,
+  );
 }
 
 describe("Tier 1 encounter registry entries (issue #213)", () => {
@@ -42,16 +58,10 @@ describe("Tier 1 encounter registry entries (issue #213)", () => {
   });
 
   it("every Tier 1 entry has a // CORPUS: citation comment", () => {
-    // A lightweight structural check: the source file is string-searched for the
-    // comment near each slug. This is intentionally not a runtime data check;
-    // it audits the module source so reviewers can trace encounter gates.
     for (const slug of TIER_1_SLUGS) {
-      const entry = getEntry(slug)!;
-      // The corpus comment lives above the entry in npcs.ts; we verify the entry
-      // itself carries a tokenCount and non-empty content as a proxy for having
-      // been authored rather than stubbed.
-      expect(entry.content.trim().length).toBeGreaterThan(0);
-      expect(entry.tokenCount).toBeGreaterThanOrEqual(100);
+      const block = sourceBlockForSlug(slug);
+      expect(block).toContain("// CORPUS:");
+      expect(block.indexOf("// CORPUS:")).toBeLessThan(block.indexOf("encounterConfig"));
     }
   });
 });
