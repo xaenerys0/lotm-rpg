@@ -216,11 +216,11 @@ describe("passesEncounterGate (issue #213)", () => {
     expect(passesEncounterGate(entry, 9, { currentChapter: 201 })).toBe(false);
   });
 
-  it("sequence floor blocks low-sequence players", () => {
+  it("sequence floor blocks lower-powered players", () => {
     const entry = { ...baseEntry, encounterConfig: { minPlayerSequence: 5 } };
-    expect(passesEncounterGate(entry, 9, {})).toBe(true);
+    expect(passesEncounterGate(entry, 9, {})).toBe(false);
     expect(passesEncounterGate(entry, 5, {})).toBe(true);
-    expect(passesEncounterGate(entry, 4, {})).toBe(false);
+    expect(passesEncounterGate(entry, 4, {})).toBe(true);
   });
 
   it("faction gate requires matching player faction", () => {
@@ -258,13 +258,14 @@ describe("passesEncounterGate (issue #213)", () => {
         factionGates: ["tarot-club" as const],
       },
     };
-    // Chapter gate is skipped because currentChapter is absent; sequence gate passes for 9 and 5.
-    // Faction gate is enforced with an empty faction list, so the entry is blocked.
+    // Chapter gate is skipped because currentChapter is absent; sequence gate blocks
+    // Sequence 9 but passes Sequence 5 and stronger. Faction gate still blocks without
+    // a matching affiliation.
     expect(passesEncounterGate(entry, 9, {})).toBe(false);
     expect(passesEncounterGate(entry, 5, {})).toBe(false);
-    // Supplying the matching faction lets the entry through.
+    // Supplying the matching faction lets the eligible sequence through.
     expect(
-      passesEncounterGate(entry, 9, { playerFactions: ["tarot-club" as const] }),
+      passesEncounterGate(entry, 5, { playerFactions: ["tarot-club" as const] }),
     ).toBe(true);
   });
 });
