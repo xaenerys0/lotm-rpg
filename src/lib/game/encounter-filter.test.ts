@@ -45,7 +45,7 @@ describe("buildEncounterFilter", () => {
 
   it("maps societyState.kind to a canonical faction", () => {
     const archetype = START_ARCHETYPES.find((a) => a.id === "tingen-junior-nighthawk")!;
-    let session = seedArchetype(baseSession(), archetype);
+    const session = seedArchetype(baseSession(), archetype);
     const filter = buildEncounterFilter(session);
     expect(filter?.playerFactions).toContain("nighthawks");
   });
@@ -77,7 +77,7 @@ describe("buildEncounterFilter", () => {
   });
 
   it("derives metNpcSlugs from the tracked-NPC roster", () => {
-    let session = joinRoster(baseSession(), {
+    const session = joinRoster(baseSession(), {
       name: "Roselle Gustav",
       disposition: "neutral",
       follows: false,
@@ -87,7 +87,7 @@ describe("buildEncounterFilter", () => {
   });
 
   it("ignores tracked-NPC names that have no lore entry", () => {
-    let session = joinRoster(baseSession(), {
+    const session = joinRoster(baseSession(), {
       name: "Totally Unknown NPC",
       disposition: "neutral",
       follows: false,
