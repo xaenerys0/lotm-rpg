@@ -10,13 +10,19 @@
 // the formula in docs/phase5-character-encounter-planning.md §F.4.
 //
 // Usage:
-//   pnpm tsx scripts/corpus/generate-character-report.ts > scripts/.cache/tier2-report.json
+//   pnpm tsx scripts/corpus/generate-character-report.ts
+//   pnpm tsx scripts/corpus/generate-character-report.ts --output scripts/.cache/tier2-report.json
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { dirname } from "node:path";
 import { stdout } from "node:process";
 
 import { CANON_PLAYABLE_CHARACTERS } from "../../src/lib/lore/canon-characters";
 import { NPC_LORE } from "../../src/lib/lore/npcs";
+
+interface Args {
+  outputPath?: string;
+}
 
 interface WikiRecord {
   title: string;
@@ -67,7 +73,15 @@ interface CharacterCandidate {
 
 const WIKI_CACHE = "scripts/.cache/wiki-characters.json";
 const NOVEL_CACHE = "scripts/.cache/novel-names.json";
-const OUTPUT = "scripts/.cache/tier2-report.json";
+const DEFAULT_OUTPUT = "scripts/.cache/tier2-report.json";
+
+function parseArgs(argv: string[]): Args {
+  const args: Args = {};
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--output") args.outputPath = argv[++i];
+  }
+  return args;
+}
 
 function normalizedCanonName(name: string): string {
   return name
@@ -102,7 +116,14 @@ function loadJson<T>(path: string): T | undefined {
   }
 }
 
+function writeJson(path: string, json: string): void {
+  mkdirSync(dirname(path), { recursive: true });
+  writeFileSync(path, json);
+}
+
 function main(): void {
+  const args = parseArgs(process.argv.slice(2));
+  const outputPath = args.outputPath ?? DEFAULT_OUTPUT;
   const wiki = loadJson<WikiReport>(WIKI_CACHE);
   const novel = loadJson<NovelReport>(NOVEL_CACHE);
 
@@ -142,7 +163,7 @@ function main(): void {
     const wikiRecord = wikiByName.get(name);
     const novelRecord = novelByName.get(name);
 
-    // Threshold: ≥20 novel mentions AND a wiki character page, OR a missing canon playable.
+    // Threshold: >=20 novel mentions AND a wiki character page, OR a missing canon playable.
     const isCanonPlayable = canonNames.has(name);
     if (!isCanonPlayable && (!novelRecord || (novelRecord?.frequency ?? 0) < 20))
       continue;
@@ -197,8 +218,8 @@ function main(): void {
   };
 
   const json = JSON.stringify(report, null, 2);
-  writeFileSync(OUTPUT, json);
-  stdout.write(json);
+  writeJson(outputPath, json);
+  stdout.write(`${json}\n`);
 }
 
 try {
