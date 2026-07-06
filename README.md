@@ -64,12 +64,14 @@ cp .env.example .env.local
 # 3. (Recommended) Local Supabase stack
 supabase start                 # requires the Supabase CLI + Docker
 #    Copy the API URL + publishable (anon) key from `supabase status` into .env.local.
+#    Mailpit local email UI: http://127.0.0.1:54324 (signup confirmation emails are captured here).
 
 # 4. Run the dev server
 pnpm dev
+#    The dev server binds to http://127.0.0.1:3000 (HMR works on both 127.0.0.1 and localhost).
 ```
 
-Open [http://localhost:3000](http://localhost:3000). To play, you'll also need an
+Open [http://127.0.0.1:3000](http://127.0.0.1:3000) (localhost:3000 also works). To play, you'll also need an
 LLM provider key — the app is **BYOK**: enter your key in Settings; it is stored
 **client-side only** (localStorage) and calls the provider browser-direct, never
 through our backend.

@@ -6,9 +6,13 @@
 
 Config: `config.toml` (project ID: `lotm-rpg`, PostgreSQL 17, Deno v2 edge runtime).
 
-Local ports: DB 54322, API 54321, Studio 54323, Inbucket 54324.
+Local ports: DB 54322, API 54321, Studio 54323, Mailpit (local SMTP UI) 54324.
 
 Start local stack: `supabase start`. Copy URL + anon key from `supabase status` into `.env.local`.
+
+> **Local email testing:** `auth.email.enable_confirmations = true` in `config.toml`, so signups require email confirmation and the confirmation email is captured by Mailpit. The Mailpit UI is at http://127.0.0.1:54324.
+>
+> Open the app at http://127.0.0.1:3000 (the Next.js dev server is bound there so HMR works reliably).
 
 ## Migrations
 
