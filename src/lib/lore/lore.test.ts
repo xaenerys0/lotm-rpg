@@ -1057,6 +1057,15 @@ describe("Lore content coverage", () => {
     }
   });
 
+  it("Error pathway has a Sequence 4 Saint-threshold entry bridging to Amon", () => {
+    const entry = ALL_LORE_ENTRIES.find((e) => e.slug === "error-seq4-parasite");
+    expect(entry).toBeDefined();
+    expect(entry?.pathway).toBe("error");
+    expect(entry?.sequences).toContain(4);
+    expect(entry?.npcs).toContain("Amon");
+    expect(entry?.narratorOnly).toBe(true);
+  });
+
   it("each pathway has an overview entry", () => {
     for (const pathway of [
       "fool",
