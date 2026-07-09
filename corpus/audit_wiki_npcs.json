@@ -1,0 +1,3378 @@
+{
+  "total_character_pages": 556,
+  "mapped_count": 257,
+  "unmapped_count": 299,
+  "redirect_map": {
+    "Main Page": "Lord of Mysteries Wiki",
+    "Sealed Artifacts": "Sealed Artifact",
+    "Sailor Pathway": "Tyrant Pathway",
+    "Huang Tao": "Roselle Gustav",
+    "Mr. Door": "Bethel Abraham",
+    "Language": "Languages",
+    "Nighthawk": "Nighthawks",
+    "Marauder Pathway": "Error Pathway",
+    "Secrets Supplicant Pathway": "Hanged Man Pathway",
+    "Angel": "Angels",
+    "Earth Mother": "Lilith",
+    "Sanguine Ancestor Lilith": "Lilith",
+    "Savant Pathway": "Paragon Pathway",
+    "Planter Pathway": "Mother Pathway",
+    "User:MystyEyedKing": "User:MistyEyedKing",
+    "Reader Pathway": "White Tower Pathway",
+    "Apprentice Pathway": "Door Pathway",
+    "Warrior Pathway": "Twilight Giant Pathway",
+    "Mystery Pryer Pathway": "Hermit Pathway",
+    "Prisoner Pathway": "Chained Pathway",
+    "The Gray Fog": "Sefirah Castle",
+    "Primordial Moon": "Mother Goddess of Depravity",
+    "User:Evernight Best Girl": "User:Freak55LL",
+    "Message Wall:Evernight Best Girl": "Message Wall:Freak55LL",
+    "Author's Notes": "Cuttlefish That Loves Diving/Author's Notes",
+    "User:Disharmonious": "User:Lostinga",
+    "Message Wall:Disharmonious": "Message Wall:Lostinga",
+    "Side Story: Rebellious Teenager": "Rebellious Teenager (Side Story)",
+    "Side Story: A Day in The Year 1346": "A Day in The Year 1346 (Side Story)",
+    "Side Story: An Ordinary Person's Daily Life": "An Ordinary Person's Daily Life (Side Story)",
+    "Side Story: In Modern Day": "In Modern Day (Side Story)",
+    "Talk:Web Novel/@comment-122.155.35.46-20200215042022": "Talk:Lord of Mysteries (Novel)/@comment-122.155.35.46-20200215042022",
+    "Talk:Web Novel/@comment-122.155.35.46-20200215042022/@comment-44822048-20200215075147": "Talk:Lord of Mysteries (Novel)/@comment-122.155.35.46-20200215042022/@comment-44822048-20200215075147",
+    "Talk:Web Novel/@comment-122.155.35.46-20200215042022/@comment-5381052-20200329084523": "Talk:Lord of Mysteries (Novel)/@comment-122.155.35.46-20200215042022/@comment-5381052-20200329084523",
+    "Talk:Web Novel/@comment-175.158.49.15-20200624104349": "Talk:Lord of Mysteries (Novel)/@comment-175.158.49.15-20200624104349",
+    "Talk:Web Novel/@comment-175.158.49.15-20200624104349/@comment-171.96.190.218-20200624142918": "Talk:Lord of Mysteries (Novel)/@comment-175.158.49.15-20200624104349/@comment-171.96.190.218-20200624142918",
+    "Talk:Barros Hopkins/@comment-118.96.182.135-20200316111835": "Talk:Pauli Derlau/@comment-118.96.182.135-20200316111835",
+    "Talk:Barros Hopkins/@comment-124.122.187.205-20200530171853": "Talk:Pauli Derlau/@comment-124.122.187.205-20200530171853",
+    "Talk:Barros Hopkins/@comment-49.144.225.68-20200415115148": "Talk:Pauli Derlau/@comment-49.144.225.68-20200415115148",
+    "Talk:Barros Hopkins/@comment-49.144.225.68-20200415115148/@comment-47.34.133.213-20200415171700": "Talk:Pauli Derlau/@comment-49.144.225.68-20200415115148/@comment-47.34.133.213-20200415171700",
+    "Talk:Barros Hopkins/@comment-49.144.225.68-20200415115148/@comment-83.22.237.213-20200416213957": "Talk:Pauli Derlau/@comment-49.144.225.68-20200415115148/@comment-83.22.237.213-20200416213957",
+    "Talk:List of Orthodox Churches/@comment-113.172.177.131-20200310094851": "Talk:List of Orthodox Organizations/@comment-113.172.177.131-20200310094851",
+    "Talk:List of Orthodox Churches/@comment-119.56.105.93-20200102094751": "Talk:List of Orthodox Organizations/@comment-119.56.105.93-20200102094751",
+    "Talk:List of Orthodox Churches/@comment-119.56.105.93-20200102094751/@comment-158.140.180.108-20200102100254": "Talk:List of Orthodox Organizations/@comment-119.56.105.93-20200102094751/@comment-158.140.180.108-20200102100254",
+    "Talk:List of Orthodox Churches/@comment-119.56.105.93-20200102094751/@comment-44740207-20200102110820": "Talk:List of Orthodox Organizations/@comment-119.56.105.93-20200102094751/@comment-44740207-20200102110820",
+    "Talk:List of Orthodox Churches/@comment-124.120.192.138-20200320161406": "Talk:List of Orthodox Organizations/@comment-124.120.192.138-20200320161406",
+    "Talk:List of Orthodox Churches/@comment-124.120.192.138-20200320161406/@comment-36.68.11.218-20200321050848": "Talk:List of Orthodox Organizations/@comment-124.120.192.138-20200320161406/@comment-36.68.11.218-20200321050848",
+    "Talk:List of Orthodox Churches/@comment-124.120.192.138-20200320161406/@comment-43362576-20200320182256": "Talk:List of Orthodox Organizations/@comment-124.120.192.138-20200320161406/@comment-43362576-20200320182256",
+    "Talk:List of Orthodox Churches/@comment-171.60.240.168-20200401060239": "Talk:List of Orthodox Organizations/@comment-171.60.240.168-20200401060239",
+    "Talk:List of Orthodox Churches/@comment-171.60.240.168-20200401060239/@comment-43400390-20200401061004": "Talk:List of Orthodox Organizations/@comment-171.60.240.168-20200401060239/@comment-43400390-20200401061004",
+    "Talk:List of Orthodox Churches/@comment-2604:6000:1209:9A0:9956:9937:3200:BD7B-20190802182251": "Talk:List of Orthodox Organizations/@comment-2604:6000:1209:9A0:9956:9937:3200:BD7B-20190802182251",
+    "Talk:List of Orthodox Churches/@comment-2604:6000:1209:9A0:9956:9937:3200:BD7B-20190802182251/@comment-40054991-20190803083456": "Talk:List of Orthodox Organizations/@comment-2604:6000:1209:9A0:9956:9937:3200:BD7B-20190802182251/@comment-40054991-20190803083456",
+    "Talk:Leymano's Spellbook/@comment-119.56.106.216-20191118093842": "Talk:Leymano’s Travels/@comment-119.56.106.216-20191118093842",
+    "Talk:Leymano's Spellbook/@comment-119.56.106.216-20191118093842/@comment-114.124.204.249-20191118114117": "Talk:Leymano’s Travels/@comment-119.56.106.216-20191118093842/@comment-114.124.204.249-20191118114117",
+    "Talk:Leymano's Spellbook/@comment-50.98.116.129-20200208052933": "Talk:Leymano’s Travels/@comment-50.98.116.129-20200208052933",
+    "Talk:Leymano's Spellbook/@comment-50.98.116.129-20200208052933/@comment-113.172.168.47-20200707012902": "Talk:Leymano’s Travels/@comment-50.98.116.129-20200208052933/@comment-113.172.168.47-20200707012902",
+    "Dorian Gray": "Dorian Gray Abraham",
+    "Talk:Dorian Gray/@comment-36.68.67.123-20200305053135": "Talk:Dorian Gray Abraham/@comment-36.68.67.123-20200305053135",
+    "Talk:Dorian Gray/@comment-36.68.67.123-20200305053135/@comment-43362576-20200305064037": "Talk:Dorian Gray Abraham/@comment-36.68.67.123-20200305053135/@comment-43362576-20200305064037",
+    "Messengers": "Contracted Creatures",
+    "Talk:Messengers/@comment-179.186.134.200-20200418003841": "Talk:Contracted Creatures/@comment-179.186.134.200-20200418003841",
+    "Talk:Messengers/@comment-179.186.134.200-20200418003841/@comment-124.122.133.184-20200418013656": "Talk:Contracted Creatures/@comment-179.186.134.200-20200418003841/@comment-124.122.133.184-20200418013656",
+    "User:BazelJuice": "User:Pickle JhoJho",
+    "Message Wall:BazelJuice": "Message Wall:Pickle JhoJho",
+    "Yuggs Stiano": "God of Steam and Machinery",
+    "Dark Side of the Universe": "Farbauti",
+    "Queen of Calamity Cohinem": "Cohinem",
+    "Lucky Grass": "Mother of Success",
+    "Mysterious Island in Fog Sea": "Primitive Island in Fog Sea",
+    "Talk:Mysterious Island in Fog Sea": "Talk:Primitive Island in Fog Sea",
+    "Sefirah": "Sefirot",
+    "Talk:Sefirah/@comment-103.227.252.229-20200402073745": "Talk:Sefirot/@comment-103.227.252.229-20200402073745",
+    "Talk:Sefirah/@comment-103.227.252.229-20200402073745/@comment-45321982-20200402081529": "Talk:Sefirot/@comment-103.227.252.229-20200402073745/@comment-45321982-20200402081529",
+    "Talk:Sefirah/@comment-103.86.111.30-20200420054851": "Talk:Sefirot/@comment-103.86.111.30-20200420054851",
+    "Talk:Sefirah/@comment-103.86.111.30-20200420054851/@comment-103.86.111.30-20200421032716": "Talk:Sefirot/@comment-103.86.111.30-20200420054851/@comment-103.86.111.30-20200421032716",
+    "Talk:Sefirah/@comment-103.86.111.30-20200420054851/@comment-103.86.111.30-20200421033023": "Talk:Sefirot/@comment-103.86.111.30-20200420054851/@comment-103.86.111.30-20200421033023",
+    "Talk:Sefirah/@comment-103.86.111.30-20200420054851/@comment-138.11.24.24-20200421203609": "Talk:Sefirot/@comment-103.86.111.30-20200420054851/@comment-138.11.24.24-20200421203609",
+    "Talk:Sefirah/@comment-103.86.111.30-20200420054851/@comment-43362576-20200420061115": "Talk:Sefirot/@comment-103.86.111.30-20200420054851/@comment-43362576-20200420061115",
+    "Talk:Sefirah/@comment-103.86.111.30-20200504123022": "Talk:Sefirot/@comment-103.86.111.30-20200504123022",
+    "Talk:Sefirah/@comment-103.86.111.30-20200504123022/@comment-103.86.111.30-20200505061300": "Talk:Sefirot/@comment-103.86.111.30-20200504123022/@comment-103.86.111.30-20200505061300",
+    "Talk:Sefirah/@comment-103.86.111.30-20200504123022/@comment-103.86.111.30-20200505125756": "Talk:Sefirot/@comment-103.86.111.30-20200504123022/@comment-103.86.111.30-20200505125756",
+    "Talk:Sefirah/@comment-103.86.111.30-20200504123022/@comment-103.86.111.30-20200505130200": "Talk:Sefirot/@comment-103.86.111.30-20200504123022/@comment-103.86.111.30-20200505130200",
+    "Talk:Sefirah/@comment-103.86.111.30-20200504123022/@comment-44903057-20200505084312": "Talk:Sefirot/@comment-103.86.111.30-20200504123022/@comment-44903057-20200505084312",
+    "Talk:Sefirah/@comment-103.86.111.30-20200504123022/@comment-70.106.182.130-20200504194411": "Talk:Sefirot/@comment-103.86.111.30-20200504123022/@comment-70.106.182.130-20200504194411",
+    "Talk:Sefirah/@comment-113.173.104.226-20200507001917": "Talk:Sefirot/@comment-113.173.104.226-20200507001917",
+    "Talk:Sefirah/@comment-113.173.104.226-20200508013055": "Talk:Sefirot/@comment-113.173.104.226-20200508013055",
+    "Talk:Sefirah/@comment-113.173.104.226-20200508013055/@comment-124.120.192.27-20200508014446": "Talk:Sefirot/@comment-113.173.104.226-20200508013055/@comment-124.120.192.27-20200508014446",
+    "Talk:Sefirah/@comment-119.56.106.136-20200310012819": "Talk:Sefirot/@comment-119.56.106.136-20200310012819",
+    "Talk:Sefirah/@comment-124.122.192.182-20200102125444": "Talk:Sefirot/@comment-124.122.192.182-20200102125444",
+    "Talk:Sefirah/@comment-141.0.8.105-20200309101915": "Talk:Sefirot/@comment-141.0.8.105-20200309101915",
+    "Talk:Sefirah/@comment-152.237.81.213-20200518051031": "Talk:Sefirot/@comment-152.237.81.213-20200518051031",
+    "Talk:Sefirah/@comment-152.237.81.213-20200518051031/@comment-189.12.135.54-20200626174650": "Talk:Sefirot/@comment-152.237.81.213-20200518051031/@comment-189.12.135.54-20200626174650",
+    "Talk:Sefirah/@comment-152.237.81.213-20200518051031/@comment-44822048-20200616152215": "Talk:Sefirot/@comment-152.237.81.213-20200518051031/@comment-44822048-20200616152215",
+    "Talk:Sefirah/@comment-172.56.44.197-20200309072231": "Talk:Sefirot/@comment-172.56.44.197-20200309072231",
+    "Talk:Sefirah/@comment-172.56.44.197-20200309072231/@comment-185.220.100.241-20200309074221": "Talk:Sefirot/@comment-172.56.44.197-20200309072231/@comment-185.220.100.241-20200309074221",
+    "Talk:Sefirah/@comment-172.56.44.197-20200309072231/@comment-36512418-20200309122229": "Talk:Sefirot/@comment-172.56.44.197-20200309072231/@comment-36512418-20200309122229",
+    "Talk:Sefirah/@comment-172.58.45.216-20200316145311": "Talk:Sefirot/@comment-172.58.45.216-20200316145311",
+    "Talk:Sefirah/@comment-172.58.45.216-20200316145311/@comment-109.89.56.27-20200316153140": "Talk:Sefirot/@comment-172.58.45.216-20200316145311/@comment-109.89.56.27-20200316153140",
+    "Talk:Sefirah/@comment-172.58.45.216-20200316145311/@comment-113.210.205.222-20200318135430": "Talk:Sefirot/@comment-172.58.45.216-20200316145311/@comment-113.210.205.222-20200318135430",
+    "Talk:Sefirah/@comment-172.58.45.216-20200316145311/@comment-44903057-20200401065135": "Talk:Sefirot/@comment-172.58.45.216-20200316145311/@comment-44903057-20200401065135",
+    "Talk:Sefirah/@comment-172.58.45.216-20200316145311/@comment-45256875-20200319214923": "Talk:Sefirot/@comment-172.58.45.216-20200316145311/@comment-45256875-20200319214923",
+    "Talk:Sefirah/@comment-174.92.226.111-20200320164321": "Talk:Sefirot/@comment-174.92.226.111-20200320164321",
+    "Talk:Sefirah/@comment-174.92.226.111-20200320164321/@comment-104.232.37.224-20200320231046": "Talk:Sefirot/@comment-174.92.226.111-20200320164321/@comment-104.232.37.224-20200320231046",
+    "Talk:Sefirah/@comment-174.92.226.111-20200320164321/@comment-174.92.226.111-20200320190150": "Talk:Sefirot/@comment-174.92.226.111-20200320164321/@comment-174.92.226.111-20200320190150",
+    "Talk:Sefirah/@comment-174.92.226.111-20200320164321/@comment-178.175.63.125-20200411223936": "Talk:Sefirot/@comment-174.92.226.111-20200320164321/@comment-178.175.63.125-20200411223936",
+    "Talk:Sefirah/@comment-174.92.226.111-20200320164321/@comment-43362576-20200320165327": "Talk:Sefirot/@comment-174.92.226.111-20200320164321/@comment-43362576-20200320165327",
+    "Talk:Sefirah/@comment-180.246.193.100-20200320045137": "Talk:Sefirot/@comment-180.246.193.100-20200320045137",
+    "Talk:Sefirah/@comment-180.246.193.100-20200320045137/@comment-44822048-20200320090647": "Talk:Sefirot/@comment-180.246.193.100-20200320045137/@comment-44822048-20200320090647",
+    "Talk:Sefirah/@comment-207.237.105.8-20200616121013": "Talk:Sefirot/@comment-207.237.105.8-20200616121013",
+    "Talk:Sefirah/@comment-207.237.105.8-20200616121013/@comment-113.172.168.47-20200626155707": "Talk:Sefirot/@comment-207.237.105.8-20200616121013/@comment-113.172.168.47-20200626155707",
+    "Talk:Sefirah/@comment-207.237.105.8-20200616121013/@comment-44822048-20200616151952": "Talk:Sefirot/@comment-207.237.105.8-20200616121013/@comment-44822048-20200616151952",
+    "Talk:Sefirah/@comment-36.73.103.26-20200102113832": "Talk:Sefirot/@comment-36.73.103.26-20200102113832",
+    "Talk:Sefirah/@comment-36.73.103.26-20200102113832/@comment-122.155.46.142-20200102114717": "Talk:Sefirot/@comment-36.73.103.26-20200102113832/@comment-122.155.46.142-20200102114717",
+    "Talk:Sefirah/@comment-36.73.103.26-20200102113832/@comment-36.73.103.26-20200102120227": "Talk:Sefirot/@comment-36.73.103.26-20200102113832/@comment-36.73.103.26-20200102120227",
+    "Talk:Sefirah/@comment-37308181-20200331225110": "Talk:Sefirot/@comment-37308181-20200331225110",
+    "Talk:Sefirah/@comment-37308181-20200331225110/@comment-173.67.201.220-20200411202828": "Talk:Sefirot/@comment-37308181-20200331225110/@comment-173.67.201.220-20200411202828",
+    "Talk:Sefirah/@comment-37308181-20200331225110/@comment-45321982-20200401054305": "Talk:Sefirot/@comment-37308181-20200331225110/@comment-45321982-20200401054305",
+    "Talk:Sefirah/@comment-45073235-20200218104226": "Talk:Sefirot/@comment-45073235-20200218104226",
+    "Talk:Sefirah/@comment-45256875-20200319212618": "Talk:Sefirot/@comment-45256875-20200319212618",
+    "Talk:Sefirah/@comment-49.144.224.30-20200224053650": "Talk:Sefirot/@comment-49.144.224.30-20200224053650",
+    "Talk:Sefirah/@comment-49.144.232.53-20191208080003": "Talk:Sefirot/@comment-49.144.232.53-20191208080003",
+    "Talk:Sefirah/@comment-49.144.232.53-20191208080003/@comment-203.237.109.111-20191210111939": "Talk:Sefirot/@comment-49.144.232.53-20191208080003/@comment-203.237.109.111-20191210111939",
+    "Talk:Sefirah/@comment-49.144.232.53-20191208080003/@comment-43362576-20191208082113": "Talk:Sefirot/@comment-49.144.232.53-20191208080003/@comment-43362576-20191208082113",
+    "Talk:Sefirah/@comment-49.144.232.53-20191208080003/@comment-43400390-20191208102410": "Talk:Sefirot/@comment-49.144.232.53-20191208080003/@comment-43400390-20191208102410",
+    "Talk:Sefirah/@comment-49.144.232.53-20191208080003/@comment-45073235-20200218104459": "Talk:Sefirot/@comment-49.144.232.53-20191208080003/@comment-45073235-20200218104459",
+    "Talk:Sefirah/@comment-49.144.236.58-20200103003321": "Talk:Sefirot/@comment-49.144.236.58-20200103003321",
+    "Talk:Lord of the Mysteries/@comment-105.239.51.72-20200811133915": "Talk:Lord of Mysteries/@comment-105.239.51.72-20200811133915",
+    "Talk:Lord of the Mysteries/@comment-105.239.51.72-20200811133915/@comment-118.2.145.88-20200811150926": "Talk:Lord of Mysteries/@comment-105.239.51.72-20200811133915/@comment-118.2.145.88-20200811150926",
+    "Talk:Lord of the Mysteries/@comment-105.239.51.72-20200811133915/@comment-96.246.240.228-20200811203011": "Talk:Lord of Mysteries/@comment-105.239.51.72-20200811133915/@comment-96.246.240.228-20200811203011",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200428082420": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200428082420",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200508013010": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200508013010",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200525095913": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200525095913",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200526005509": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200526005509",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200611152253": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-113.173.104.226-20200611152253",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-177.134.157.243-20200617175519": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-177.134.157.243-20200617175519",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-43719986-20200428220001": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-43719986-20200428220001",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-44822048-20200525210851": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-44822048-20200525210851",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-44822048-20200525213809": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-44822048-20200525213809",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-45412298-20200420041055": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-45412298-20200420041055",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-45598762-20200526000003": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-45598762-20200526000003",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-47.34.133.213-20200420043322": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-47.34.133.213-20200420043322",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-5381052-20200526041457": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-5381052-20200526041457",
+    "Talk:Lord of the Mysteries/@comment-108.30.88.122-20200420035609/@comment-70.113.21.228-20200428205059": "Talk:Lord of Mysteries/@comment-108.30.88.122-20200420035609/@comment-70.113.21.228-20200428205059",
+    "Talk:Lord of the Mysteries/@comment-113.210.65.39-20200402082452": "Talk:Lord of Mysteries/@comment-113.210.65.39-20200402082452",
+    "Talk:Lord of the Mysteries/@comment-124.120.193.25-20200219150517": "Talk:Lord of Mysteries/@comment-124.120.193.25-20200219150517",
+    "Talk:Lord of the Mysteries/@comment-158.140.180.120-20200218122447": "Talk:Lord of Mysteries/@comment-158.140.180.120-20200218122447",
+    "Talk:Lord of the Mysteries/@comment-158.140.180.120-20200218122447/@comment-202.83.42.252-20200218123942": "Talk:Lord of Mysteries/@comment-158.140.180.120-20200218122447/@comment-202.83.42.252-20200218123942",
+    "Talk:Lord of the Mysteries/@comment-170.140.105.71-20200218232019": "Talk:Lord of Mysteries/@comment-170.140.105.71-20200218232019",
+    "Talk:Lord of the Mysteries/@comment-170.140.105.71-20200218232019/@comment-170.140.105.71-20200218232513": "Talk:Lord of Mysteries/@comment-170.140.105.71-20200218232019/@comment-170.140.105.71-20200218232513",
+    "Talk:Lord of the Mysteries/@comment-170.140.105.71-20200218232019/@comment-82.11.214.148-20200219150655": "Talk:Lord of Mysteries/@comment-170.140.105.71-20200218232019/@comment-82.11.214.148-20200219150655",
+    "Talk:Lord of the Mysteries/@comment-171.5.47.186-20200219003501": "Talk:Lord of Mysteries/@comment-171.5.47.186-20200219003501",
+    "Talk:Lord of the Mysteries/@comment-178.175.33.202-20200404105551": "Talk:Lord of Mysteries/@comment-178.175.33.202-20200404105551",
+    "Talk:Lord of the Mysteries/@comment-36.65.132.135-20200419143621": "Talk:Lord of Mysteries/@comment-36.65.132.135-20200419143621",
+    "Talk:Lord of the Mysteries/@comment-36.65.132.135-20200419143621/@comment-47.9.241.20-20200716182405": "Talk:Lord of Mysteries/@comment-36.65.132.135-20200419143621/@comment-47.9.241.20-20200716182405",
+    "Talk:Lord of the Mysteries/@comment-43400390-20200219014941": "Talk:Lord of Mysteries/@comment-43400390-20200219014941",
+    "Talk:Lord of the Mysteries/@comment-43400390-20200219014941/@comment-129.78.56.139-20200219031140": "Talk:Lord of Mysteries/@comment-43400390-20200219014941/@comment-129.78.56.139-20200219031140",
+    "Talk:Lord of the Mysteries/@comment-43400390-20200219014941/@comment-36.81.88.168-20200219145459": "Talk:Lord of Mysteries/@comment-43400390-20200219014941/@comment-36.81.88.168-20200219145459",
+    "Talk:Lord of the Mysteries/@comment-43400390-20200219014941/@comment-93.139.117.16-20200219144744": "Talk:Lord of Mysteries/@comment-43400390-20200219014941/@comment-93.139.117.16-20200219144744",
+    "Talk:Lord of the Mysteries/@comment-43400390-20200225020305": "Talk:Lord of Mysteries/@comment-43400390-20200225020305",
+    "Talk:Lord of the Mysteries/@comment-45321982-20200331183317": "Talk:Lord of Mysteries/@comment-45321982-20200331183317",
+    "Talk:Lord of the Mysteries/@comment-45321982-20200331183317/@comment-45321982-20200331183504": "Talk:Lord of Mysteries/@comment-45321982-20200331183317/@comment-45321982-20200331183504",
+    "Talk:Lord of the Mysteries/@comment-45321982-20200331183317/@comment-45341327-20200331215138": "Talk:Lord of Mysteries/@comment-45321982-20200331183317/@comment-45341327-20200331215138",
+    "Talk:Lord of the Mysteries/@comment-45321982-20200331183317/@comment-72.239.253.242-20200331184121": "Talk:Lord of Mysteries/@comment-45321982-20200331183317/@comment-72.239.253.242-20200331184121",
+    "Talk:Lord of the Mysteries/@comment-45660293-20200504015152": "Talk:Lord of Mysteries/@comment-45660293-20200504015152",
+    "Talk:Lord of the Mysteries/@comment-50.98.116.129-20200223190613": "Talk:Lord of Mysteries/@comment-50.98.116.129-20200223190613",
+    "Talk:Lord of the Mysteries/@comment-71.190.128.145-20200629011053": "Talk:Lord of Mysteries/@comment-71.190.128.145-20200629011053",
+    "Talk:Lord of the Mysteries/@comment-71.190.128.145-20200629011053/@comment-44822048-20200629092006": "Talk:Lord of Mysteries/@comment-71.190.128.145-20200629011053/@comment-44822048-20200629092006",
+    "Talk:Lord of the Mysteries/@comment-71.190.128.145-20200629011053/@comment-44822048-20200629093415": "Talk:Lord of Mysteries/@comment-71.190.128.145-20200629011053/@comment-44822048-20200629093415",
+    "Talk:Lord of the Mysteries/@comment-71.190.128.145-20200629011053/@comment-71.190.128.145-20200718071724": "Talk:Lord of Mysteries/@comment-71.190.128.145-20200629011053/@comment-71.190.128.145-20200718071724",
+    "Talk:Lord of the Mysteries/@comment-96.246.240.228-20200810230659": "Talk:Lord of Mysteries/@comment-96.246.240.228-20200810230659",
+    "Talk:Lord of the Mysteries/@comment-96.246.240.228-20200810230659/@comment-13.212.25.173-20200810232416": "Talk:Lord of Mysteries/@comment-96.246.240.228-20200810230659/@comment-13.212.25.173-20200810232416",
+    "Amanises": "Evernight Goddess",
+    "Standard Pathways": "Pathways#Standard Pathways",
+    "Non-Standard Pathways": "Pathways#Non-Standard Pathways",
+    "Talk:Key of Light (Sefirot)/@comment-14.12.128.32-20200522001938": "Talk:Key of Light (Sefirah)/@comment-14.12.128.32-20200522001938",
+    "Talk:Key of Light (Sefirot)/@comment-14.12.128.32-20200522001938/@comment-14.169.114.97-20200717161907": "Talk:Key of Light (Sefirah)/@comment-14.12.128.32-20200522001938/@comment-14.169.114.97-20200717161907",
+    "Talk:Key of Light (Sefirot)/@comment-14.12.128.32-20200522001938/@comment-177.206.191.247-20200726221618": "Talk:Key of Light (Sefirah)/@comment-14.12.128.32-20200522001938/@comment-177.206.191.247-20200726221618",
+    "Talk:Key of Light (Sefirot)/@comment-14.12.128.32-20200522001938/@comment-45598762-20200522173429": "Talk:Key of Light (Sefirah)/@comment-14.12.128.32-20200522001938/@comment-45598762-20200522173429",
+    "Talk:The Gray Fog of History": "Talk:Historical Void",
+    "Will Ceres": "Will Auceptin",
+    "Talk:Will Ceres/@comment-103.121.17.21-20190925100214": "Talk:Will Auceptin/@comment-103.121.17.21-20190925100214",
+    "Talk:Will Ceres/@comment-103.121.17.21-20190925100214/@comment-113.172.177.131-20200326023304": "Talk:Will Auceptin/@comment-103.121.17.21-20190925100214/@comment-113.172.177.131-20200326023304",
+    "Talk:Will Ceres/@comment-103.121.17.21-20190925100214/@comment-113.172.177.131-20200326235506": "Talk:Will Auceptin/@comment-103.121.17.21-20190925100214/@comment-113.172.177.131-20200326235506",
+    "Talk:Will Ceres/@comment-103.121.17.21-20190925100214/@comment-36.73.84.148-20200326032813": "Talk:Will Auceptin/@comment-103.121.17.21-20190925100214/@comment-36.73.84.148-20200326032813",
+    "Talk:Will Ceres/@comment-103.121.17.21-20190925100214/@comment-36.81.54.32-20200328051130": "Talk:Will Auceptin/@comment-103.121.17.21-20190925100214/@comment-36.81.54.32-20200328051130",
+    "Talk:Will Ceres/@comment-103.121.17.21-20190925100214/@comment-49.145.193.238-20200328045807": "Talk:Will Auceptin/@comment-103.121.17.21-20190925100214/@comment-49.145.193.238-20200328045807",
+    "Talk:Will Ceres/@comment-113.172.168.47-20200626151603": "Talk:Will Auceptin/@comment-113.172.168.47-20200626151603",
+    "Talk:Will Ceres/@comment-113.173.104.226-20200411161929": "Talk:Will Auceptin/@comment-113.173.104.226-20200411161929",
+    "Talk:Will Ceres/@comment-113.173.104.226-20200411161929/@comment-113.173.104.226-20200507105930": "Talk:Will Auceptin/@comment-113.173.104.226-20200411161929/@comment-113.173.104.226-20200507105930",
+    "Talk:Will Ceres/@comment-113.173.104.226-20200411161929/@comment-123.16.53.127-20200511065223": "Talk:Will Auceptin/@comment-113.173.104.226-20200411161929/@comment-123.16.53.127-20200511065223",
+    "Talk:Will Ceres/@comment-113.173.104.226-20200411161929/@comment-92.109.60.2-20200501215105": "Talk:Will Auceptin/@comment-113.173.104.226-20200411161929/@comment-92.109.60.2-20200501215105",
+    "Talk:Will Ceres/@comment-113.173.104.226-20200422004041": "Talk:Will Auceptin/@comment-113.173.104.226-20200422004041",
+    "Talk:Will Ceres/@comment-113.173.104.226-20200422004041/@comment-213.127.106.86-20200720222812": "Talk:Will Auceptin/@comment-113.173.104.226-20200422004041/@comment-213.127.106.86-20200720222812",
+    "Talk:Will Ceres/@comment-175.176.56.183-20200327092059": "Talk:Will Auceptin/@comment-175.176.56.183-20200327092059",
+    "Talk:Will Ceres/@comment-190.43.246.58-20190909051831": "Talk:Will Auceptin/@comment-190.43.246.58-20190909051831",
+    "Talk:Will Ceres/@comment-190.43.246.58-20190909052208": "Talk:Will Auceptin/@comment-190.43.246.58-20190909052208",
+    "Talk:Will Ceres/@comment-35525887-20191126115843": "Talk:Will Auceptin/@comment-35525887-20191126115843",
+    "Talk:Will Ceres/@comment-36.73.84.148-20200326033206": "Talk:Will Auceptin/@comment-36.73.84.148-20200326033206",
+    "Talk:Will Ceres/@comment-46.146.115.193-20200513220439": "Talk:Will Auceptin/@comment-46.146.115.193-20200513220439",
+    "Talk:Will Ceres/@comment-49.145.193.238-20200328045942": "Talk:Will Auceptin/@comment-49.145.193.238-20200328045942",
+    "Talk:Will Ceres/@comment-49.145.197.13-20200412025516": "Talk:Will Auceptin/@comment-49.145.197.13-20200412025516",
+    "Talk:Will Ceres/@comment-49.146.4.84-20200624104919": "Talk:Will Auceptin/@comment-49.146.4.84-20200624104919",
+    "Talk:Will Ceres/@comment-58.11.1.1-20190910182006": "Talk:Will Auceptin/@comment-58.11.1.1-20190910182006",
+    "Assassin Pathway": "Demoness Pathway",
+    "Hunter Pathway": "Red Priest Pathway",
+    "Spectator Pathway": "Visionary Pathway",
+    "Apothecary Pathway": "Moon Pathway",
+    "Bard Pathway": "Sun Pathway",
+    "Sleepless Pathway": "Darkness Pathway",
+    "Corpse Collector Pathway": "Death Pathway",
+    "Criminal Pathway": "Abyss Pathway",
+    "Lawyer Pathway": "Black Emperor Pathway",
+    "Arbiter Pathway": "Justiciar Pathway",
+    "Monster Pathway": "Wheel of Fortune Pathway",
+    "Sea God Kalvetua": "Kalvetua",
+    "Talk:Sea God Kalvetua/@comment-2804:14D:7E83:8177:40BA:C35D:DB8:AAA6-20191212032946": "Talk:Kalvetua/@comment-2804:14D:7E83:8177:40BA:C35D:DB8:AAA6-20191212032946",
+    "Talk:Sea God Kalvetua/@comment-2804:14D:7E83:8177:40BA:C35D:DB8:AAA6-20191212032946/@comment-43362576-20191212050104": "Talk:Kalvetua/@comment-2804:14D:7E83:8177:40BA:C35D:DB8:AAA6-20191212032946/@comment-43362576-20191212050104",
+    "Elf King Soniathrym": "Soniathrym",
+    "Giant King Aurmir": "Aurmir",
+    "Dragon of Imagination Ankewelt": "Ankewelt",
+    "Phoenix Ancestor Gregrace": "Gregrace",
+    "Talk:Phoenix Ancestor Gregrace/@comment-177.159.214.219-20200711102132": "Talk:Gregrace/@comment-177.159.214.219-20200711102132",
+    "Talk:Phoenix Ancestor Gregrace/@comment-28700136-20200330011908": "Talk:Gregrace/@comment-28700136-20200330011908",
+    "Talk:Phoenix Ancestor Gregrace/@comment-44822048-20200208142859": "Talk:Gregrace/@comment-44822048-20200208142859",
+    "Talk:Phoenix Ancestor Gregrace/@comment-49.144.234.187-20200207030925": "Talk:Gregrace/@comment-49.144.234.187-20200207030925",
+    "Mutated King Kvastir": "Kvastir",
+    "Demonic Wolf Flegrea": "Flegrea",
+    "Talk:Demonic Wolf Flegrea/@comment-36.81.73.245-20191223072630": "Talk:Flegrea/@comment-36.81.73.245-20191223072630",
+    "Talk:Demonic Wolf Flegrea/@comment-69.206.246.120-20191229165254": "Talk:Flegrea/@comment-69.206.246.120-20191229165254",
+    "Talk:Demonic Wolf Flegrea/@comment-69.206.246.120-20191229165254/@comment-125.163.228.117-20191229170953": "Talk:Flegrea/@comment-69.206.246.120-20191229165254/@comment-125.163.228.117-20191229170953",
+    "Devil Monarch Farbauti": "Farbauti",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039": "Talk:Farbauti/@comment-119.56.106.67-20200204080039",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039/@comment-158.140.180.86-20200204082246": "Talk:Farbauti/@comment-119.56.106.67-20200204080039/@comment-158.140.180.86-20200204082246",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039/@comment-36.78.50.29-20200204085851": "Talk:Farbauti/@comment-119.56.106.67-20200204080039/@comment-36.78.50.29-20200204085851",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039/@comment-36.78.50.29-20200204094056": "Talk:Farbauti/@comment-119.56.106.67-20200204080039/@comment-36.78.50.29-20200204094056",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039/@comment-36.81.89.72-20200207115419": "Talk:Farbauti/@comment-119.56.106.67-20200204080039/@comment-36.81.89.72-20200207115419",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039/@comment-43362576-20200204085913": "Talk:Farbauti/@comment-119.56.106.67-20200204080039/@comment-43362576-20200204085913",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039/@comment-44822048-20200204081126": "Talk:Farbauti/@comment-119.56.106.67-20200204080039/@comment-44822048-20200204081126",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039/@comment-44822048-20200204093221": "Talk:Farbauti/@comment-119.56.106.67-20200204080039/@comment-44822048-20200204093221",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039/@comment-44822048-20200204094734": "Talk:Farbauti/@comment-119.56.106.67-20200204080039/@comment-44822048-20200204094734",
+    "Talk:Devil Monarch Farbauti/@comment-119.56.106.67-20200204080039/@comment-44822048-20200207131645": "Talk:Farbauti/@comment-119.56.106.67-20200204080039/@comment-44822048-20200207131645",
+    "Talk:Devil Monarch Farbauti/@comment-177.79.29.141-20200205150155": "Talk:Farbauti/@comment-177.79.29.141-20200205150155",
+    "Talk:Devil Monarch Farbauti/@comment-177.79.29.141-20200205150155/@comment-44822048-20200205163224": "Talk:Farbauti/@comment-177.79.29.141-20200205150155/@comment-44822048-20200205163224",
+    "Talk:Devil Monarch Farbauti/@comment-177.79.29.141-20200205150155/@comment-45650641-20200806021822": "Talk:Farbauti/@comment-177.79.29.141-20200205150155/@comment-45650641-20200806021822",
+    "Talk:Devil Monarch Farbauti/@comment-83.22.237.213-20200424102617": "Talk:Farbauti/@comment-83.22.237.213-20200424102617",
+    "Talk:Devil Monarch Farbauti/@comment-83.22.237.213-20200424102617/@comment-113.173.104.226-20200510232906": "Talk:Farbauti/@comment-83.22.237.213-20200424102617/@comment-113.173.104.226-20200510232906",
+    "Talk:Devil Monarch Farbauti/@comment-83.22.237.213-20200424102617/@comment-45650641-20200806021911": "Talk:Farbauti/@comment-83.22.237.213-20200424102617/@comment-45650641-20200806021911",
+    "Viscount Glaint": "Glaint",
+    "Talk:Viscount Glaint/@comment-89.247.127.61-20200727133856": "Talk:Glaint/@comment-89.247.127.61-20200727133856",
+    "Talk:Viscount Glaint/@comment-89.247.127.61-20200727133856/@comment-42.108.58.188-20200816155002": "Talk:Glaint/@comment-89.247.127.61-20200727133856/@comment-42.108.58.188-20200816155002",
+    "Talk:Viscount Glaint/@comment-89.247.127.61-20200727133856/@comment-44822048-20200727163017": "Talk:Glaint/@comment-89.247.127.61-20200727133856/@comment-44822048-20200727163017",
+    "Talk:Madam Sharon/@comment-45915340-20200709063335": "Talk:Sharon/@comment-45915340-20200709063335",
+    "Talk:Madam Sharon/@comment-45915340-20200709063335/@comment-44822048-20200709075044": "Talk:Sharon/@comment-45915340-20200709063335/@comment-44822048-20200709075044",
+    "Talk:Madam Sharon/@comment-45915340-20200709063335/@comment-45915340-20200711082925": "Talk:Sharon/@comment-45915340-20200709063335/@comment-45915340-20200711082925",
+    "Talk:Primordial Demoness Cheek/@comment-103.86.111.30-20200328194708": "Talk:Primordial Demoness/@comment-103.86.111.30-20200328194708",
+    "Talk:Primordial Demoness Cheek/@comment-103.86.111.30-20200328194708/@comment-14.169.114.97-20200801233642": "Talk:Primordial Demoness/@comment-103.86.111.30-20200328194708/@comment-14.169.114.97-20200801233642",
+    "Talk:Primordial Demoness Cheek/@comment-14.169.114.97-20200801233837": "Talk:Primordial Demoness/@comment-14.169.114.97-20200801233837",
+    "Talk:Primordial Demoness Cheek/@comment-9885589-20200213031745": "Talk:Primordial Demoness/@comment-9885589-20200213031745",
+    "Talk:Primordial Demoness Cheek/@comment-9885589-20200213031745/@comment-36.80.234.56-20200213055415": "Talk:Primordial Demoness/@comment-9885589-20200213031745/@comment-36.80.234.56-20200213055415",
+    "Talk:Primordial Demoness Cheek/@comment-9885589-20200213031745/@comment-43362576-20200213043622": "Talk:Primordial Demoness/@comment-9885589-20200213031745/@comment-43362576-20200213043622",
+    "Talk:Primordial Demoness Cheek/@comment-9885589-20200213031745/@comment-43362576-20200213064610": "Talk:Primordial Demoness/@comment-9885589-20200213031745/@comment-43362576-20200213064610",
+    "Talk:Primordial Demoness Cheek/@comment-9885589-20200213031745/@comment-43400390-20200213061239": "Talk:Primordial Demoness/@comment-9885589-20200213031745/@comment-43400390-20200213061239",
+    "Talk:Primordial Demoness Cheek/@comment-9885589-20200213031745/@comment-45598762-20200518174014": "Talk:Primordial Demoness/@comment-9885589-20200213031745/@comment-45598762-20200518174014",
+    "Viscount Stratford": "Stratford",
+    "Lord of the Mysteries Wiki": "Lord of Mysteries Wiki",
+    "Lord of the Mysteries Wiki:Policy": "Lord_of_the_Mysteries_Wiki:Policies",
+    "Blood Emperor": "Alista Tudor",
+    "Talk:Blood Emperor/@comment-103.70.140.194-20190817102037": "Talk:Alista Tudor/@comment-103.70.140.194-20190817102037",
+    "Talk:Blood Emperor/@comment-119.56.108.153-20191030090917": "Talk:Alista Tudor/@comment-119.56.108.153-20191030090917",
+    "Talk:Blood Emperor/@comment-119.56.108.153-20191030090917/@comment-43303905-20191030111450": "Talk:Alista Tudor/@comment-119.56.108.153-20191030090917/@comment-43303905-20191030111450",
+    "Talk:Blood Emperor/@comment-177.207.73.193-20200502113743": "Talk:Alista Tudor/@comment-177.207.73.193-20200502113743",
+    "Talk:Blood Emperor/@comment-43303905-20190807093437": "Talk:Alista Tudor/@comment-43303905-20190807093437",
+    "Talk:Blood Emperor/@comment-43303905-20200118125828": "Talk:Alista Tudor/@comment-43303905-20200118125828",
+    "Death": "Salinger",
+    "Talk:Death/@comment-124.122.193.136-20200404161227": "Talk:Salinger/@comment-124.122.193.136-20200404161227",
+    "Talk:Death/@comment-124.122.193.136-20200404161227/@comment-72.239.253.242-20200404163232": "Talk:Salinger/@comment-124.122.193.136-20200404161227/@comment-72.239.253.242-20200404163232",
+    "Talk:Death/@comment-192.0.160.247-20200728203924": "Talk:Salinger/@comment-192.0.160.247-20200728203924",
+    "Talk:Death/@comment-192.0.160.247-20200728203924/@comment-124.122.193.45-20200729045418": "Talk:Salinger/@comment-192.0.160.247-20200728203924/@comment-124.122.193.45-20200729045418",
+    "Talk:Death/@comment-192.0.160.247-20200728203924/@comment-124.122.193.45-20200729045751": "Talk:Salinger/@comment-192.0.160.247-20200728203924/@comment-124.122.193.45-20200729045751",
+    "Talk:Death/@comment-192.0.160.247-20200728203924/@comment-124.122.193.45-20200729051716": "Talk:Salinger/@comment-192.0.160.247-20200728203924/@comment-124.122.193.45-20200729051716",
+    "Talk:Death/@comment-192.0.160.247-20200728203924/@comment-192.0.160.247-20200729050751": "Talk:Salinger/@comment-192.0.160.247-20200728203924/@comment-192.0.160.247-20200729050751",
+    "Talk:Death/@comment-192.0.160.247-20200728203924/@comment-192.0.160.247-20200729081418": "Talk:Salinger/@comment-192.0.160.247-20200728203924/@comment-192.0.160.247-20200729081418",
+    "Talk:Death/@comment-36.68.67.123-20200306100738": "Talk:Salinger/@comment-36.68.67.123-20200306100738",
+    "Night Emperor": "Trunsoest",
+    "Black Emperor": "Solomon",
+    "Talk:Black Emperor/@comment-119.56.108.153-20191030090402": "Talk:Solomon/@comment-119.56.108.153-20191030090402",
+    "Talk:Black Emperor/@comment-119.56.108.153-20191030090402/@comment-124.120.192.83-20191030090842": "Talk:Solomon/@comment-119.56.108.153-20191030090402/@comment-124.120.192.83-20191030090842",
+    "Talk:Black Emperor/@comment-119.56.108.153-20191030090402/@comment-32836691-20191031045137": "Talk:Solomon/@comment-119.56.108.153-20191030090402/@comment-32836691-20191031045137",
+    "Talk:Black Emperor/@comment-122.155.35.40-20200209215058": "Talk:Solomon/@comment-122.155.35.40-20200209215058",
+    "Talk:Black Emperor/@comment-122.155.35.40-20200209215058/@comment-122.155.35.40-20200209215157": "Talk:Solomon/@comment-122.155.35.40-20200209215058/@comment-122.155.35.40-20200209215157",
+    "Talk:Black Emperor/@comment-122.155.35.40-20200209215058/@comment-43400390-20200210020040": "Talk:Solomon/@comment-122.155.35.40-20200209215058/@comment-43400390-20200210020040",
+    "Talk:Black Emperor/@comment-199.188.193.122-20190820064550": "Talk:Solomon/@comment-199.188.193.122-20190820064550",
+    "Talk:Black Emperor/@comment-43303905-20190815120158": "Talk:Solomon/@comment-43303905-20190815120158",
+    "Tony Down": "Tony Twain",
+    "User:Altnormality": "User:MarquisJester",
+    "Message Wall:Altnormality": "Message Wall:MarquisJester",
+    "Code:Mystery": "Lord of the Mysteries (RPG game)",
+    "Leodero": "Lord of Storms",
+    "Aucuses": "Eternal Blazing Sun",
+    "Herabergen": "God of Knowledge and Wisdom",
+    "Armored Shadow": "Chen Tu",
+    "Danitz": "Danitz Dubois",
+    "Talk:Danitz/@comment-113.172.177.131-20200324093529": "Talk:Danitz Dubois/@comment-113.172.177.131-20200324093529",
+    "Talk:Danitz/@comment-124.122.194.220-20200806111245": "Talk:Danitz Dubois/@comment-124.122.194.220-20200806111245",
+    "Talk:Danitz/@comment-139.28.216.205-20200221221157": "Talk:Danitz Dubois/@comment-139.28.216.205-20200221221157",
+    "Talk:Danitz/@comment-2001:D08:D1:E7C5:2432:9B64:862F:787D-20191010123752": "Talk:Danitz Dubois/@comment-2001:D08:D1:E7C5:2432:9B64:862F:787D-20191010123752",
+    "Talk:Danitz/@comment-2001:D08:D1:E7C5:2432:9B64:862F:787D-20191010123752/@comment-32836691-20191010130923": "Talk:Danitz Dubois/@comment-2001:D08:D1:E7C5:2432:9B64:862F:787D-20191010123752/@comment-32836691-20191010130923",
+    "Talk:Danitz/@comment-2001:D08:D1:E7C5:2432:9B64:862F:787D-20191010123752/@comment-5381052-20191010132742": "Talk:Danitz Dubois/@comment-2001:D08:D1:E7C5:2432:9B64:862F:787D-20191010123752/@comment-5381052-20191010132742",
+    "Talk:Danitz/@comment-43489559-20190825173834": "Talk:Danitz Dubois/@comment-43489559-20190825173834",
+    "Talk:Danitz/@comment-43489559-20190825173834/@comment-40054991-20190825221658": "Talk:Danitz Dubois/@comment-43489559-20190825173834/@comment-40054991-20190825221658",
+    "Talk:Danitz/@comment-44740207-20200101070959": "Talk:Danitz Dubois/@comment-44740207-20200101070959",
+    "Talk:Danitz/@comment-44740207-20200101070959/@comment-158.140.180.108-20200101093313": "Talk:Danitz Dubois/@comment-44740207-20200101070959/@comment-158.140.180.108-20200101093313",
+    "Talk:Danitz/@comment-69.206.246.120-20200121223542": "Talk:Danitz Dubois/@comment-69.206.246.120-20200121223542",
+    "Talk:Danitz/@comment-69.206.246.120-20200121223542/@comment-113.172.177.131-20200324082432": "Talk:Danitz Dubois/@comment-69.206.246.120-20200121223542/@comment-113.172.177.131-20200324082432",
+    "Talk:Danitz/@comment-69.206.246.120-20200121223542/@comment-43362576-20200121235935": "Talk:Danitz Dubois/@comment-69.206.246.120-20200121223542/@comment-43362576-20200121235935",
+    "Talk:The Cosmos/@comment-1.136.105.164-20200129133905": "Talk:Cosmos/@comment-1.136.105.164-20200129133905",
+    "Talk:The Cosmos/@comment-103.86.111.30-20200405230448": "Talk:Cosmos/@comment-103.86.111.30-20200405230448",
+    "Talk:The Cosmos/@comment-103.86.111.30-20200405230448/@comment-103.86.111.30-20200406141926": "Talk:Cosmos/@comment-103.86.111.30-20200405230448/@comment-103.86.111.30-20200406141926",
+    "Talk:The Cosmos/@comment-103.86.111.30-20200405230448/@comment-43303905-20200406132533": "Talk:Cosmos/@comment-103.86.111.30-20200405230448/@comment-43303905-20200406132533",
+    "Talk:The Cosmos/@comment-124.120.197.81-20191015112320": "Talk:Cosmos/@comment-124.120.197.81-20191015112320",
+    "Talk:The Cosmos/@comment-124.120.197.81-20191015112320/@comment-32836691-20191015121239": "Talk:Cosmos/@comment-124.120.197.81-20191015112320/@comment-32836691-20191015121239",
+    "Talk:The Cosmos/@comment-171.96.191.27-20191017110612": "Talk:Cosmos/@comment-171.96.191.27-20191017110612",
+    "Talk:The Cosmos/@comment-171.96.191.27-20191017110612/@comment-32836691-20191017113129": "Talk:Cosmos/@comment-171.96.191.27-20191017110612/@comment-32836691-20191017113129",
+    "Talk:The Cosmos/@comment-171.96.191.27-20191017110612/@comment-43400390-20191018024854": "Talk:Cosmos/@comment-171.96.191.27-20191017110612/@comment-43400390-20191018024854",
+    "Talk:The Cosmos/@comment-180.254.114.79-20200323065307": "Talk:Cosmos/@comment-180.254.114.79-20200323065307",
+    "Talk:The Cosmos/@comment-180.254.114.79-20200323065307/@comment-124.120.193.173-20200323080827": "Talk:Cosmos/@comment-180.254.114.79-20200323065307/@comment-124.120.193.173-20200323080827",
+    "Talk:The Cosmos/@comment-180.254.114.79-20200323065307/@comment-43400390-20200323070712": "Talk:Cosmos/@comment-180.254.114.79-20200323065307/@comment-43400390-20200323070712",
+    "Talk:The Cosmos/@comment-34761294-20200510151350": "Talk:Cosmos/@comment-34761294-20200510151350",
+    "Talk:The Cosmos/@comment-82.42.246.16-20200205160536": "Talk:Cosmos/@comment-82.42.246.16-20200205160536",
+    "Talk:Zaratul (Senior)/@comment-115.87.151.62-20191211132131": "Talk:Zaratul Senior/@comment-115.87.151.62-20191211132131",
+    "Talk:Zaratul (Senior)/@comment-115.87.151.62-20191211132131/@comment-124.122.133.49-20191212110623": "Talk:Zaratul Senior/@comment-115.87.151.62-20191211132131/@comment-124.122.133.49-20191212110623",
+    "Talk:Zaratul (Senior)/@comment-115.87.151.62-20191211132131/@comment-124.122.133.49-20191212113253": "Talk:Zaratul Senior/@comment-115.87.151.62-20191211132131/@comment-124.122.133.49-20191212113253",
+    "Talk:Zaratul (Senior)/@comment-115.87.151.62-20191211132131/@comment-43362576-20191212105943": "Talk:Zaratul Senior/@comment-115.87.151.62-20191211132131/@comment-43362576-20191212105943",
+    "Talk:Zaratul (Senior)/@comment-115.87.151.62-20191211132131/@comment-43362576-20191212111022": "Talk:Zaratul Senior/@comment-115.87.151.62-20191211132131/@comment-43362576-20191212111022",
+    "Talk:Zaratul (Senior)/@comment-115.87.151.62-20191211132131/@comment-43400390-20191212092605": "Talk:Zaratul Senior/@comment-115.87.151.62-20191211132131/@comment-43400390-20191212092605",
+    "Talk:Zaratul (Senior)/@comment-115.87.151.62-20191211132131/@comment-43400390-20191212122208": "Talk:Zaratul Senior/@comment-115.87.151.62-20191211132131/@comment-43400390-20191212122208",
+    "Talk:Zaratul (Senior)/@comment-43362576-20191212111007": "Talk:Zaratul Senior/@comment-43362576-20191212111007",
+    "Spirit Medium’s Mirror": "Spirit Medium's Mirror",
+    "Cheek's Ring": "Cheek's Rings",
+    "True Creator's Spawn (Event)": "Tingen City Doomsday",
+    "Mirror World Fragment": "Mirror World Fragments",
+    "Tarot Card": "Tarot Cards",
+    "Roche Louise Sanson": "Aurore Lee",
+    "Ludwig": "Ludwig Phil",
+    "Talk:Medici/@comment-119.56.104.139-20200107091902": "Talk:Sauron-Einhorn-Medici/@comment-119.56.104.139-20200107091902",
+    "Talk:Medici/@comment-14.169.114.97-20200716103958": "Talk:Sauron-Einhorn-Medici/@comment-14.169.114.97-20200716103958",
+    "Talk:Medici/@comment-37308181-20191129232023": "Talk:Sauron-Einhorn-Medici/@comment-37308181-20191129232023",
+    "Talk:Medici/@comment-37308181-20191129232023/@comment-124.120.192.86-20191130014140": "Talk:Sauron-Einhorn-Medici/@comment-37308181-20191129232023/@comment-124.120.192.86-20191130014140",
+    "Talk:Medici/@comment-37308181-20191129232023/@comment-43362576-20191130020913": "Talk:Sauron-Einhorn-Medici/@comment-37308181-20191129232023/@comment-43362576-20191130020913",
+    "Talk:Medici/@comment-43400390-20191130091324": "Talk:Sauron-Einhorn-Medici/@comment-43400390-20191130091324",
+    "Talk:Medici/@comment-43400390-20191130091324/@comment-32836691-20191130100021": "Talk:Sauron-Einhorn-Medici/@comment-43400390-20191130091324/@comment-32836691-20191130100021",
+    "Talk:Medici/@comment-43958389-20200213140635": "Talk:Sauron-Einhorn-Medici/@comment-43958389-20200213140635",
+    "Talk:Medici/@comment-43958389-20200213140635/@comment-171.96.190.27-20200213141446": "Talk:Sauron-Einhorn-Medici/@comment-43958389-20200213140635/@comment-171.96.190.27-20200213141446",
+    "Talk:Medici/@comment-58.11.1.235-20190831022743": "Talk:Sauron-Einhorn-Medici/@comment-58.11.1.235-20190831022743",
+    "Talk:Medici/@comment-58.11.1.235-20190831022743/@comment-38356591-20190831055250": "Talk:Sauron-Einhorn-Medici/@comment-58.11.1.235-20190831022743/@comment-38356591-20190831055250",
+    "Bakerland": "Bakerland Jean Madan",
+    "Black Emperor (Ship)": "The Black Emperor",
+    "Uncertain Mist": "Son of Chaos",
+    "Cannon Gun": "Inevitable Gun",
+    "Rapus": "Rapus City",
+    "Cheek": "Primordial Demoness",
+    "The Primordial One": "Primordial God Almighty",
+    "Abscessed Hand": "Zedus",
+    "Dancer Pathway": "Eternal Aeon Pathway",
+    "Dancer Pathway/Abilities": "Eternal Aeon Pathway/Abilities",
+    "Dancer Pathway/Advancement": "Eternal Aeon Pathway/Advancement",
+    "Dancer Pathway/List of Beyonders": "Eternal Aeon Pathway/List of Beyonders",
+    "Tramp Pathway": "Tail-Devourer Pathway",
+    "Tramp Pathway/Abilities": "Tail-Devourer Pathway/Abilities",
+    "Tramp Pathway/List of Beyonders": "Tail-Devourer Pathway/List of Beyonders",
+    "Tramp Pathway/Misc": "Tail-Devourer Pathway/Misc",
+    "Tramp Pathway/Related Groups": "Tail-Devourer Pathway/Related Groups",
+    "Tramp Pathway/Advancement": "Tail-Devourer Pathway/Advancement",
+    "Villain Pathway": "Chaos Primogenitor Pathway",
+    "Villain Pathway/Abilities": "Chaos Primogenitor Pathway/Abilities",
+    "Villain Pathway/Advancement": "Chaos Primogenitor Pathway/Advancement",
+    "Villain Pathway/List of Beyonders": "Chaos Primogenitor Pathway/List of Beyonders",
+    "Villain Pathway/Misc": "Chaos Primogenitor Pathway/Misc",
+    "Villain Pathway/Related Groups": "Chaos Primogenitor Pathway/Related Groups",
+    "User:Metacreature": "User:Trouffle",
+    "Message Wall:Metacreature": "Message Wall:Trouffle",
+    "Orator Pathway": "Everlasting Pathway",
+    "Orator Pathway/Abilities": "Everlasting Pathway/Abilities",
+    "Orator Pathway/Advancement": "Everlasting Pathway/Advancement",
+    "Orator Pathway/List of Beyonders": "Everlasting Pathway/List of Beyonders",
+    "Orator Pathway/Misc": "Everlasting Pathway/Misc",
+    "Orator Pathway/Related Groups": "Everlasting Pathway/Related Groups",
+    "Eternal Kalpas Pathway": "Eternal Aeon Pathway",
+    "Eternal Kalpas Pathway/Abilities": "Eternal Aeon Pathway/Abilities",
+    "Eternal Kalpas Pathway/Advancement": "Eternal Aeon Pathway/Advancement",
+    "Eternal Kalpas Pathway/List of Beyonders": "Eternal Aeon Pathway/List of Beyonders",
+    "Eternal Kalpas Pathway/Misc": "Eternal Aeon Pathway/Misc",
+    "Eternal Kalpas Pathway/Related Groups": "Eternal Aeon Pathway/Related Groups",
+    "Shaman Pathway": "Sublunary Eye Pathway",
+    "Shaman Pathway/Abilities": "Sublunary Eye Pathway/Abilities",
+    "Shaman Pathway/Advancement": "Sublunary Eye Pathway/Advancement",
+    "Shaman Pathway/List of Beyonders": "Sublunary Eye Pathway/List of Beyonders",
+    "Shaman Pathway/Misc": "Sublunary Eye Pathway/Misc",
+    "Shaman Pathway/Related Groups": "Sublunary Eye Pathway/Related Groups",
+    "Broker Pathway": "Chaos Mist Pathway",
+    "Broker Pathway/Abilities": "Chaos Mist Pathway/Abilities",
+    "Broker Pathway/Advancement": "Chaos Mist Pathway/Advancement",
+    "Broker Pathway/List of Beyonders": "Chaos Mist Pathway/List of Beyonders",
+    "Broker Pathway/Misc": "Chaos Mist Pathway/Misc",
+    "Broker Pathway/Related Groups": "Chaos Mist Pathway/Related Groups",
+    "Initiator Pathway": "Everlasting Pathway",
+    "Initiator Pathway/Abilities": "Everlasting Pathway/Abilities",
+    "Initiator Pathway/Advancement": "Everlasting Pathway/Advancement",
+    "Initiator Pathway/List of Beyonders": "Everlasting Pathway/List of Beyonders",
+    "Initiator Pathway/Misc": "Everlasting Pathway/Misc",
+    "Initiator Pathway/Related Groups": "Everlasting Pathway/Related Groups",
+    "Pillar": "Pillars",
+    "Scrooge Pathway": "Patriarch Pathway",
+    "Klein's Niece": "Alice Moretti",
+    "Gluttony Pathway": "Tail-Devourer Pathway",
+    "Gluttony Pathway/Abilities": "Tail-Devourer Pathway/Abilities",
+    "Gluttony Pathway/Advancement": "Tail-Devourer Pathway/Advancement",
+    "Gluttony Pathway/List of Beyonders": "Tail-Devourer Pathway/List of Beyonders",
+    "Gluttony Pathway/Misc": "Tail-Devourer Pathway/Misc",
+    "Gluttony Pathway/Related Groups": "Tail-Devourer Pathway/Related Groups",
+    "Reality": "Physical World",
+    "Badheil": "God of Combat",
+    "Astronomy Aficionado Pathway": "Condenser Pathway",
+    "Astronomy Aficionado Pathway/Abilities": "Condenser Pathway/Abilities",
+    "Astronomy Aficionado Pathway/Advancement": "Condenser Pathway/Advancement",
+    "Astronomy Aficionado Pathway/List of Beyonders": "Condenser Pathway/List of Beyonders",
+    "Astronomy Aficionado Pathway/Misc": "Condenser Pathway/Misc",
+    "Astronomy Aficionado Pathway/Related Groups": "Condenser Pathway/Related Groups",
+    "Talk:Astronomy Aficionado Pathway/Abilities": "Talk:Condenser Pathway/Abilities",
+    "Beyonder Characteristics": "Beyonders",
+    "Beyonder Characteristic": "Beyonders",
+    "Great Old Ones": "Above the Sequence",
+    "Great Old Dominators": "Above the Sequence",
+    "Uniqueness": "Uniquenesses",
+    "Talk:Uniqueness/@comment-103.253.27.181-20200419054716": "Talk:Uniquenesses/@comment-103.253.27.181-20200419054716",
+    "Talk:Uniqueness/@comment-103.253.27.181-20200419054716/@comment-109.89.56.27-20200419074522": "Talk:Uniquenesses/@comment-103.253.27.181-20200419054716/@comment-109.89.56.27-20200419074522",
+    "Talk:Uniqueness/@comment-103.253.27.181-20200419054716/@comment-44822048-20200419105846": "Talk:Uniquenesses/@comment-103.253.27.181-20200419054716/@comment-44822048-20200419105846",
+    "Talk:Uniqueness/@comment-104.37.106.14-20200109032957": "Talk:Uniquenesses/@comment-104.37.106.14-20200109032957",
+    "Talk:Uniqueness/@comment-104.37.106.14-20200109032957/@comment-43362576-20200109040124": "Talk:Uniquenesses/@comment-104.37.106.14-20200109032957/@comment-43362576-20200109040124",
+    "Talk:Uniqueness/@comment-104.37.106.14-20200109032957/@comment-43362576-20200109043022": "Talk:Uniquenesses/@comment-104.37.106.14-20200109032957/@comment-43362576-20200109043022",
+    "Talk:Uniqueness/@comment-104.37.106.14-20200109032957/@comment-43400390-20200109042014": "Talk:Uniquenesses/@comment-104.37.106.14-20200109032957/@comment-43400390-20200109042014",
+    "Talk:Uniqueness/@comment-113.173.104.226-20200427114648": "Talk:Uniquenesses/@comment-113.173.104.226-20200427114648",
+    "Talk:Uniqueness/@comment-122.155.35.231-20200122003046": "Talk:Uniquenesses/@comment-122.155.35.231-20200122003046",
+    "Talk:Uniqueness/@comment-122.155.47.19-20191118055653": "Talk:Uniquenesses/@comment-122.155.47.19-20191118055653",
+    "Talk:Uniqueness/@comment-122.155.47.19-20191118055653/@comment-32836691-20191118072133": "Talk:Uniquenesses/@comment-122.155.47.19-20191118055653/@comment-32836691-20191118072133",
+    "Talk:Uniqueness/@comment-187.19.191.27-20200421145456": "Talk:Uniquenesses/@comment-187.19.191.27-20200421145456",
+    "Talk:Uniqueness/@comment-187.19.191.27-20200421145456/@comment-118.137.65.123-20200422023600": "Talk:Uniquenesses/@comment-187.19.191.27-20200421145456/@comment-118.137.65.123-20200422023600",
+    "Talk:Uniqueness/@comment-187.19.191.27-20200421145456/@comment-43362576-20200421155058": "Talk:Uniquenesses/@comment-187.19.191.27-20200421145456/@comment-43362576-20200421155058",
+    "Talk:Uniqueness/@comment-2600:6C51:7D80:307F:AC72:E224:B4DD:9D9A-20191215214658": "Talk:Uniquenesses/@comment-2600:6C51:7D80:307F:AC72:E224:B4DD:9D9A-20191215214658",
+    "Talk:Uniqueness/@comment-2600:6C51:7D80:307F:AC72:E224:B4DD:9D9A-20191215214658/@comment-158.140.180.67-20191215224751": "Talk:Uniquenesses/@comment-2600:6C51:7D80:307F:AC72:E224:B4DD:9D9A-20191215214658/@comment-158.140.180.67-20191215224751",
+    "Talk:Uniqueness/@comment-2600:6C51:7D80:307F:AC72:E224:B4DD:9D9A-20191215214658/@comment-43351821-20191215221832": "Talk:Uniquenesses/@comment-2600:6C51:7D80:307F:AC72:E224:B4DD:9D9A-20191215214658/@comment-43351821-20191215221832",
+    "Talk:Uniqueness/@comment-36.78.38.147-20200220095731": "Talk:Uniquenesses/@comment-36.78.38.147-20200220095731",
+    "Talk:Uniqueness/@comment-44329413-20191209045026": "Talk:Uniquenesses/@comment-44329413-20191209045026",
+    "Talk:Uniqueness/@comment-44329413-20191209045026/@comment-104.37.106.14-20191216233435": "Talk:Uniquenesses/@comment-44329413-20191209045026/@comment-104.37.106.14-20191216233435",
+    "Talk:Uniqueness/@comment-44822048-20200120215244": "Talk:Uniquenesses/@comment-44822048-20200120215244",
+    "Talk:Uniqueness/@comment-44822048-20200120215244/@comment-124.122.194.127-20200121002450": "Talk:Uniquenesses/@comment-44822048-20200120215244/@comment-124.122.194.127-20200121002450",
+    "Talk:Uniqueness/@comment-44822048-20200212093500": "Talk:Uniquenesses/@comment-44822048-20200212093500",
+    "Talk:Uniqueness/@comment-44822048-20200212093500/@comment-104.232.37.240-20200212095551": "Talk:Uniquenesses/@comment-44822048-20200212093500/@comment-104.232.37.240-20200212095551",
+    "Talk:Uniqueness/@comment-44822048-20200212093500/@comment-122.155.38.58-20200212121636": "Talk:Uniquenesses/@comment-44822048-20200212093500/@comment-122.155.38.58-20200212121636",
+    "Talk:Uniqueness/@comment-44822048-20200212093500/@comment-14.201.241.89-20200212123658": "Talk:Uniquenesses/@comment-44822048-20200212093500/@comment-14.201.241.89-20200212123658",
+    "Talk:Uniqueness/@comment-44822048-20200212093500/@comment-43400390-20200212101610": "Talk:Uniquenesses/@comment-44822048-20200212093500/@comment-43400390-20200212101610",
+    "Talk:Uniqueness/@comment-44822048-20200213053039": "Talk:Uniquenesses/@comment-44822048-20200213053039",
+    "Talk:Uniqueness/@comment-44822048-20200213053039/@comment-104.37.106.14-20200214004029": "Talk:Uniquenesses/@comment-44822048-20200213053039/@comment-104.37.106.14-20200214004029",
+    "Talk:Uniqueness/@comment-44822048-20200213053039/@comment-32836691-20200214073532": "Talk:Uniquenesses/@comment-44822048-20200213053039/@comment-32836691-20200214073532",
+    "Talk:Uniqueness/@comment-44822048-20200213053039/@comment-36.80.234.56-20200214020049": "Talk:Uniquenesses/@comment-44822048-20200213053039/@comment-36.80.234.56-20200214020049",
+    "Talk:Uniqueness/@comment-44822048-20200213053039/@comment-43362576-20200214030757": "Talk:Uniquenesses/@comment-44822048-20200213053039/@comment-43362576-20200214030757",
+    "Talk:Uniqueness/@comment-44822048-20200213053039/@comment-43457290-20200214024519": "Talk:Uniquenesses/@comment-44822048-20200213053039/@comment-43457290-20200214024519",
+    "Talk:Uniqueness/@comment-44822048-20200213053039/@comment-44822048-20200214104926": "Talk:Uniquenesses/@comment-44822048-20200213053039/@comment-44822048-20200214104926",
+    "Talk:Uniqueness/@comment-4528153-20191123145514": "Talk:Uniquenesses/@comment-4528153-20191123145514",
+    "Talk:Uniqueness/@comment-4528153-20200422024505": "Talk:Uniquenesses/@comment-4528153-20200422024505",
+    "Talk:Uniqueness/@comment-4528153-20200422024505/@comment-49.147.73.164-20200610125234": "Talk:Uniquenesses/@comment-4528153-20200422024505/@comment-49.147.73.164-20200610125234",
+    "Talk:Uniqueness/@comment-45321982-20200427170029": "Talk:Uniquenesses/@comment-45321982-20200427170029",
+    "Talk:Uniqueness/@comment-45321982-20200427170029/@comment-45321982-20200427170229": "Talk:Uniquenesses/@comment-45321982-20200427170029/@comment-45321982-20200427170229",
+    "Talk:Uniqueness/@comment-49.144.234.112-20191025064517": "Talk:Uniquenesses/@comment-49.144.234.112-20191025064517",
+    "Talk:Uniqueness/@comment-85.12.241.178-20200814111726": "Talk:Uniquenesses/@comment-85.12.241.178-20200814111726",
+    "Talk:Uniqueness/@comment-85.12.241.178-20200814111726/@comment-44822048-20200814141633": "Talk:Uniquenesses/@comment-85.12.241.178-20200814111726/@comment-44822048-20200814141633",
+    "Great Old One": "Above the Sequence",
+    "Great Old Dominator": "Above the Sequence",
+    "Fate": "River of Fate",
+    "Pathway": "Pathways",
+    "Mirrored Original Creator": "Original Creator#Mirrored Original Creator",
+    "Outer Deity": "Outer Deities",
+    "Boons": "Pathways#Advancement by Boons",
+    "Boon": "Pathways#Advancement by Boons",
+    "King of Angels": "Kings of Angels",
+    "Celestial Worthy": "Celestial Worthy of Heaven and Earth for Blessings",
+    "Transmigrator": "Transmigrators",
+    "Talk:Transmigrator/@comment-113.173.104.226-20200510230808": "Talk:Transmigrators/@comment-113.173.104.226-20200510230808",
+    "Talk:Transmigrator/@comment-113.173.104.226-20200510230808/@comment-113.173.104.226-20200518101334": "Talk:Transmigrators/@comment-113.173.104.226-20200510230808/@comment-113.173.104.226-20200518101334",
+    "Talk:Transmigrator/@comment-113.173.104.226-20200510230808/@comment-58.84.146.117-20200511010759": "Talk:Transmigrators/@comment-113.173.104.226-20200510230808/@comment-58.84.146.117-20200511010759",
+    "Talk:Transmigrator/@comment-119.42.56.151-20200505211450": "Talk:Transmigrators/@comment-119.42.56.151-20200505211450",
+    "Talk:Transmigrator/@comment-119.42.56.151-20200505211450/@comment-106.198.245.177-20200808134604": "Talk:Transmigrators/@comment-119.42.56.151-20200505211450/@comment-106.198.245.177-20200808134604",
+    "Talk:Transmigrator/@comment-119.42.56.151-20200505211450/@comment-14.169.114.97-20200809104541": "Talk:Transmigrators/@comment-119.42.56.151-20200505211450/@comment-14.169.114.97-20200809104541",
+    "Talk:Transmigrator/@comment-119.42.56.151-20200505211450/@comment-44822048-20200809111411": "Talk:Transmigrators/@comment-119.42.56.151-20200505211450/@comment-44822048-20200809111411",
+    "Talk:Transmigrator/@comment-119.42.56.151-20200505211450/@comment-44903057-20200506065927": "Talk:Transmigrators/@comment-119.42.56.151-20200505211450/@comment-44903057-20200506065927",
+    "Talk:Transmigrator/@comment-61.92.54.58-20200429075530": "Talk:Transmigrators/@comment-61.92.54.58-20200429075530",
+    "Talk:The Original Creator/@comment-119.56.109.67-20200211013634": "Talk:Original Creator/@comment-119.56.109.67-20200211013634",
+    "Talk:The Original Creator/@comment-171.96.189.0-20200210185623": "Talk:Original Creator/@comment-171.96.189.0-20200210185623",
+    "Talk:The Original Creator/@comment-171.96.189.0-20200210185623/@comment-43362576-20200210214505": "Talk:Original Creator/@comment-171.96.189.0-20200210185623/@comment-43362576-20200210214505",
+    "Talk:The Original Creator/@comment-180.254.114.79-20200323070026": "Talk:Original Creator/@comment-180.254.114.79-20200323070026",
+    "Talk:The Original Creator/@comment-180.254.114.79-20200323070026/@comment-34756581-20200323073247": "Talk:Original Creator/@comment-180.254.114.79-20200323070026/@comment-34756581-20200323073247",
+    "Talk:The Original Creator/@comment-180.254.114.79-20200323070026/@comment-70.113.21.228-20200514165433": "Talk:Original Creator/@comment-180.254.114.79-20200323070026/@comment-70.113.21.228-20200514165433",
+    "Talk:The Original Creator/@comment-207.237.105.8-20200615125536": "Talk:Original Creator/@comment-207.237.105.8-20200615125536",
+    "Talk:The Original Creator/@comment-36.72.212.202-20200210170700": "Talk:Original Creator/@comment-36.72.212.202-20200210170700",
+    "Talk:The Original Creator/@comment-36.72.212.202-20200210170700/@comment-43400390-20200211020515": "Talk:Original Creator/@comment-36.72.212.202-20200210170700/@comment-43400390-20200211020515",
+    "Talk:The Original Creator/@comment-43400390-20200220021848": "Talk:Original Creator/@comment-43400390-20200220021848",
+    "Talk:The Original Creator/@comment-43400390-20200220021848/@comment-192.119.160.144-20200220064113": "Talk:Original Creator/@comment-43400390-20200220021848/@comment-192.119.160.144-20200220064113",
+    "Talk:The Original Creator/@comment-43400390-20200220021848/@comment-43362576-20200220060806": "Talk:Original Creator/@comment-43400390-20200220021848/@comment-43362576-20200220060806",
+    "Talk:The Original Creator/@comment-44507871-20200210191334": "Talk:Original Creator/@comment-44507871-20200210191334",
+    "Talk:The Original Creator/@comment-44507871-20200210191334/@comment-107.170.186.79-20200210195739": "Talk:Original Creator/@comment-44507871-20200210191334/@comment-107.170.186.79-20200210195739",
+    "Talk:The Original Creator/@comment-44507871-20200210191334/@comment-43362576-20200210212557": "Talk:Original Creator/@comment-44507871-20200210191334/@comment-43362576-20200210212557",
+    "Talk:The Original Creator/@comment-44507871-20200210191334/@comment-43400390-20200211020113": "Talk:Original Creator/@comment-44507871-20200210191334/@comment-43400390-20200211020113",
+    "Talk:The Original Creator/@comment-44507871-20200210191334/@comment-44507871-20200419171518": "Talk:Original Creator/@comment-44507871-20200210191334/@comment-44507871-20200419171518",
+    "Talk:The Original Creator/@comment-45321982-20200402100120": "Talk:Original Creator/@comment-45321982-20200402100120",
+    "Talk:The Original Creator/@comment-45321982-20200402100120/@comment-103.227.252.229-20200407094258": "Talk:Original Creator/@comment-45321982-20200402100120/@comment-103.227.252.229-20200407094258",
+    "Talk:The Original Creator/@comment-45321982-20200402100120/@comment-141.0.9.66-20200407130447": "Talk:Original Creator/@comment-45321982-20200402100120/@comment-141.0.9.66-20200407130447",
+    "Talk:The Original Creator/@comment-45321982-20200402100120/@comment-45138624-20200407092528": "Talk:Original Creator/@comment-45321982-20200402100120/@comment-45138624-20200407092528",
+    "Talk:The Original Creator/@comment-46.146.115.193-20200511220223": "Talk:Original Creator/@comment-46.146.115.193-20200511220223",
+    "Oldest One": "Original Creator",
+    "Astral Barrier": "Original_Creator#Astral_Barrier",
+    "First Blasphemy Slate": "Blasphemy_Slate#First_Blasphemy_Slate",
+    "Second Blasphemy Slate": "Blasphemy_Slate#Second_Blasphemy_Slate",
+    "Dreamless Pathway": "Eternal Edict Pathway",
+    "Dreamless Pathway/Abilities": "Eternal Edict Pathway/Abilities",
+    "Dreamless Pathway/Advancement": "Eternal Edict Pathway/Advancement",
+    "Dreamless Pathway/List of Beyonders": "Eternal Edict Pathway/List of Beyonders",
+    "Dreamless Pathway/Misc": "Eternal Edict Pathway/Misc",
+    "Dreamless Pathway/Related Groups": "Eternal Edict Pathway/Related Groups",
+    "0-62": "Staff of the Stars",
+    "0-61": "Box of the Great Old Ones",
+    "0-59": "The Divine Kingdom Without People",
+    "0-36": "Thorned Crown",
+    "0-32": "Theater With Curtains That Never Draw",
+    "0-17": "Angel of Concealment",
+    "0-15": "The Fourth Sun",
+    "0-13": "The Last Banquet",
+    "0-08": "Quill of Alzuhod",
+    "0-05": "Magic Wishing Lamp",
+    "0-02": "Trunsoest Brass Book",
+    "0-01": "Salinger's Blood Banner",
+    "2-111": "Arrodes",
+    "1-82": "Ullamos Statue",
+    "1-42": "Berserker's Armor",
+    "2-37": "Dream of Eternity",
+    "2-247": "Pride Armor",
+    "2-217": "Tanago Scarecrow",
+    "2-105": "Blood Vessel Thief",
+    "2-078": "Door of Death",
+    "2-049": "Antigonus Family Puppet",
+    "2-030": "Inexhaustible Poison",
+    "3-1328": "Eye of Crystal",
+    "3-0782": "Mutated Sun Sacred Emblem",
+    "3-0625": "Misfortune Cloth Puppet",
+    "3-0611": "Peaceful Hair Strands",
+    "3-0271": "Spirit Medium's Mirror",
+    "Dao Integrators": "Daoism#Dao Integrators",
+    "Dao Integrator": "Daoism#Dao Integrators",
+    "Grisha Adam": "Adam",
+    "Gehrman Sparrow": "Klein Moretti",
+    "Sherlock Moriarty": "Klein Moretti",
+    "Dwayne Dantès": "Klein Moretti",
+    "Merlin Hermes": "Klein Moretti",
+    "The Fool": "Klein Moretti",
+    "Merchandises": "Merchandise",
+    "True Gods": "Gods",
+    "True God": "Gods",
+    "Orthodox Gods": "List of Orthodox Organizations",
+    "God of Craftsmanship": "God of Steam and Machinery",
+    "User:Bright5787": "User:SpectacularPhantasm",
+    "Fog of History": "Historical Void",
+    "Cuttlefish's WeChat Post: \"Darkness Potion Formulas\"": "Cuttlefish's WeChat Post: \"Complete Potion Formulas of the Sleepless Pathway\"",
+    "Philanias": "Mother of the Sky",
+    "Seer Pathway": "Fool Pathway",
+    "Law of Convergence": "Beyonders",
+    "Law of Beyonder Characteristics Convergence": "Beyonders",
+    "Law of Beyonder Characteristics Indestructibility": "Beyonders",
+    "Law of Indestructibility": "Beyonders",
+    "Law of Conservation": "Beyonders",
+    "Law of Beyonder Characteristics Conservation": "Beyonders",
+    "Advancement Ritual": "Beyonders",
+    "Non-standard Pathways": "Pathways#Non-Standard_Pathways",
+    "Phoenix Ancestor": "Gregrace",
+    "Underworld Emperor": "Salinger",
+    "Apocalypse": "The Apocalypse",
+    "File:Donghua Poster Episode 3.jpg": "File:Donghua Poster Episode 4.jpg",
+    "Genie": "Magic Wishing Lamp",
+    "Ruler of Calamity": "Lumian Lee",
+    "Ciel Dubois": "Lumian Lee",
+    "Louis Berry": "Lumian Lee",
+    "Divine Kingdom": "Divine Kingdoms",
+    "File:LOTM Donghua World Premiere.jpg": "File:Donghua Key Visual Episode 1.jpg",
+    "War of the Four Emperors": "Fourth_Epoch#War_of_the_Four_Emperors",
+    "Beyonder": "Beyonders",
+    "Talk:Beyonder/@comment-134.90.149.149-20190831185017": "Talk:Beyonders/@comment-134.90.149.149-20190831185017",
+    "Talk:Beyonder/@comment-134.90.149.149-20190831185017/@comment-40054991-20190901012241": "Talk:Beyonders/@comment-134.90.149.149-20190831185017/@comment-40054991-20190901012241",
+    "Talk:Beyonder/@comment-134.90.149.149-20190831185017/@comment-43303905-20190831191012": "Talk:Beyonders/@comment-134.90.149.149-20190831185017/@comment-43303905-20190831191012",
+    "Talk:Beyonder/@comment-134.90.149.149-20190831185017/@comment-43351821-20190901005512": "Talk:Beyonders/@comment-134.90.149.149-20190831185017/@comment-43351821-20190901005512",
+    "Talk:Beyonder/@comment-36.68.67.123-20200303084352": "Talk:Beyonders/@comment-36.68.67.123-20200303084352",
+    "Talk:Beyonder/@comment-36.80.239.30-20200114120243": "Talk:Beyonders/@comment-36.80.239.30-20200114120243",
+    "Talk:Beyonder/@comment-36.80.239.30-20200114120243/@comment-43362576-20200114122241": "Talk:Beyonders/@comment-36.80.239.30-20200114120243/@comment-43362576-20200114122241",
+    "Talk:Beyonder/@comment-36.80.239.30-20200114120243/@comment-49.144.239.237-20200114123027": "Talk:Beyonders/@comment-36.80.239.30-20200114120243/@comment-49.144.239.237-20200114123027",
+    "Talk:Beyonder/@comment-39573133-20190814211736": "Talk:Beyonders/@comment-39573133-20190814211736",
+    "Talk:Beyonder/@comment-39573133-20190814211736/@comment-40054991-20190814211932": "Talk:Beyonders/@comment-39573133-20190814211736/@comment-40054991-20190814211932",
+    "Talk:Beyonder/@comment-43362576-20191216130357": "Talk:Beyonders/@comment-43362576-20191216130357",
+    "Talk:Beyonder/@comment-43719986-20190910222624": "Talk:Beyonders/@comment-43719986-20190910222624",
+    "Talk:Beyonder/@comment-43719986-20190910222624/@comment-38356591-20190911060015": "Talk:Beyonders/@comment-43719986-20190910222624/@comment-38356591-20190911060015",
+    "Talk:Beyonder/@comment-43719986-20190910222624/@comment-40054991-20190910224043": "Talk:Beyonders/@comment-43719986-20190910222624/@comment-40054991-20190910224043",
+    "Talk:Beyonder/@comment-43719986-20190910222624/@comment-40054991-20190910231934": "Talk:Beyonders/@comment-43719986-20190910222624/@comment-40054991-20190910231934",
+    "Talk:Beyonder/@comment-43719986-20190910222624/@comment-43351821-20190910223611": "Talk:Beyonders/@comment-43719986-20190910222624/@comment-43351821-20190910223611",
+    "Talk:Beyonder/@comment-43719986-20190910222624/@comment-43351821-20190910231217": "Talk:Beyonders/@comment-43719986-20190910222624/@comment-43351821-20190910231217",
+    "Talk:Beyonder/@comment-43719986-20190910222624/@comment-43351821-20190911000152": "Talk:Beyonders/@comment-43719986-20190910222624/@comment-43351821-20190911000152",
+    "Talk:Beyonder/@comment-43719986-20190911001655": "Talk:Beyonders/@comment-43719986-20190911001655",
+    "Talk:Beyonder/@comment-43719986-20190911001655/@comment-119.56.108.153-20191030070807": "Talk:Beyonders/@comment-43719986-20190911001655/@comment-119.56.108.153-20191030070807",
+    "Talk:Beyonder/@comment-43719986-20190911001655/@comment-43351821-20190911002833": "Talk:Beyonders/@comment-43719986-20190911001655/@comment-43351821-20190911002833",
+    "Talk:Beyonder/@comment-43719986-20190911001655/@comment-43351821-20190911024236": "Talk:Beyonders/@comment-43719986-20190911001655/@comment-43351821-20190911024236",
+    "Talk:Beyonder/@comment-43719986-20190911001655/@comment-43400390-20190911022557": "Talk:Beyonders/@comment-43719986-20190911001655/@comment-43400390-20190911022557",
+    "Talk:Beyonder/@comment-45424008-20200502091419": "Talk:Beyonders/@comment-45424008-20200502091419",
+    "Talk:Beyonder/@comment-5381052-20200108171659": "Talk:Beyonders/@comment-5381052-20200108171659",
+    "Talk:Beyonder/@comment-5381052-20200108171659/@comment-182.0.170.211-20200109004839": "Talk:Beyonders/@comment-5381052-20200108171659/@comment-182.0.170.211-20200109004839",
+    "Talk:Beyonder/@comment-5381052-20200108171659/@comment-44507871-20200108175229": "Talk:Beyonders/@comment-5381052-20200108171659/@comment-44507871-20200108175229",
+    "Talk:Beyonder/@comment-5381052-20200108171659/@comment-44822048-20200108173034": "Talk:Beyonders/@comment-5381052-20200108171659/@comment-44822048-20200108173034",
+    "Talk:Beyonder/@comment-5381052-20200108171659/@comment-5381052-20200109040336": "Talk:Beyonders/@comment-5381052-20200108171659/@comment-5381052-20200109040336",
+    "Talk:Beyonder/@comment-75.72.171.29-20200501101506": "Talk:Beyonders/@comment-75.72.171.29-20200501101506",
+    "Talk:Beyonder/@comment-75.72.171.29-20200501101506/@comment-45906374-20200528211907": "Talk:Beyonders/@comment-75.72.171.29-20200501101506/@comment-45906374-20200528211907",
+    "Talk:Beyonder/@comment-84.160.109.115-20190814235403": "Talk:Beyonders/@comment-84.160.109.115-20190814235403",
+    "Talk:Beyonder/@comment-84.160.109.115-20190814235403/@comment-40054991-20190815202359": "Talk:Beyonders/@comment-84.160.109.115-20190814235403/@comment-40054991-20190815202359",
+    "File:Lord of Mysteries Global Release.jpeg": "File:Donghua Key Visual Episode 2.jpeg",
+    "Great Existences": "Above the Sequence",
+    "Great Existence": "Above the Sequence",
+    "Saint": "Sequence#Saints",
+    "Saints": "Sequence#Saints",
+    "File:\"WHO AM I..?\".jpg": "File:Tianwen Kadokawa - \"WHO AM I..?\".jpg",
+    "Great Mother": "Mother Goddess of Depravity",
+    "Sequence 0": "Gods",
+    "True Creator's Spawn": "Tingen City Doomsday",
+    "Godhood": "Gods#Godhood",
+    "Styx River": "Underworld#Inside_The_Underworld",
+    "Specter Empire": "Treasures#Specter_Empire",
+    "Cuttlefish's WeChat Post: \"I actually have all the sequence names already thought of.\"": "Archive:Cuttlefish's WeChat Post: \"I actually have all the sequence names already thought of.\"",
+    "Cuttlefish's WeChat Post: \"Tyrant Pathway Abilities (Happy Mid-Autumn Festival for Everyone\"": "Archive:Cuttlefish's WeChat Post: \"Tyrant Pathway Abilities (Happy Mid-Autumn Festival for Everyone\"",
+    "Archive:Cuttlefish's WeChat Post: \"Tyrant Pathway Abilities (Happy Mid-Autumn Festival for Everyone\")": "Archive:Cuttlefish's WeChat Post: \"Tyrant Pathway Abilities (Happy Mid-Autumn Festival for Everyone)\"",
+    "Archive:Cuttlefish's WeChat Post: \"I actually have all the sequence names already thought of.\"": "Archive:Cuttlefish's WeChat Post: \"Proof that I m not winging the pathway sequence names and I do have a script in mind\"",
+    "Cuttlefish's WeChat Post: \"Answers Regarding the Beauty Goddess Beyonder Characteristics and Supplementation of the Demoness Pathway Abilities\"": "Archive:Cuttlefish's WeChat Post: \"Answers Regarding the Beauty Goddess Beyonder Characteristics and Supplementation of the Demoness Pathway Abilities\"",
+    "Cuttlefish's WeChat Post: \"An Extremely Simplified Historical Timeline of the World of Mysteries\"": "Archive:Cuttlefish's WeChat Post: \"An Extremely Simplified Historical Timeline of the World of Mysteries\"",
+    "Cuttlefish's WeChat Post: \"Abilities of the Spectator Pathway\"": "Archive:Cuttlefish's WeChat Post: \"Abilities of the Spectator Pathway\"",
+    "Cuttlefish's WeChat Post: \"Fate Pathway Abilities\"": "Archive:Cuttlefish's WeChat Post: \"Fortune Pathway Abilities\"",
+    "Cuttlefish's WeChat Post: \"Tyrant Pathway Potion Formulas\"": "Archive:Cuttlefish's WeChat Post: \"Tyrant Pathway Potion Formulas\"",
+    "Cuttlefish's WeChat Post: \"Complete Formulas of the Spectator Pathway\"": "Archive:Cuttlefish's WeChat Post: \"Complete Formulas of the Spectator Pathway\"",
+    "Cuttlefish's WeChat Post: \"Complete Formulas of the Moon Pathway\"": "Archive:Cuttlefish's WeChat Post: \"Complete Formulas of the Moon Pathway\"",
+    "Pinnacle of Sequences": "Lord of Mysteries: Pinnacle of Sequences",
+    "God": "Gods"
+  },
+  "pathways": {
+    "abyss": {
+      "0": [
+        "Farbauti"
+      ],
+      "2": [
+        "Basil"
+      ],
+      "5": [
+        "Jason Beria",
+        "Kircheis"
+      ],
+      "6": [
+        "Devil Dog"
+      ],
+      "8": [
+        "Squall"
+      ]
+    },
+    "black-emperor": {
+      "0": [
+        "Roselle Gustav",
+        "Solomon"
+      ],
+      "1": [
+        "George Augustus III"
+      ],
+      "3": [
+        "Nast Solomon"
+      ],
+      "4": [
+        "Qonas Kilgor",
+        "Savigny Solomon"
+      ],
+      "5": [
+        "Lockhart Siakam",
+        "Pacheco Dwayne"
+      ],
+      "6": [
+        "Luan",
+        "Mithor King"
+      ],
+      "9": [
+        "Rafter Pound"
+      ]
+    },
+    "chained": {
+      "0": [
+        "Kvastir"
+      ],
+      "1": [
+        "Chained God",
+        "Suah"
+      ],
+      "2": [
+        "Barranca",
+        "Reinette Tinekerr"
+      ],
+      "3": [
+        "Mahmosi"
+      ],
+      "4": [
+        "Shanks",
+        "Sharron",
+        "Zatwen"
+      ],
+      "5": [
+        "Maric",
+        "Senor",
+        "Steve"
+      ],
+      "6": [
+        "Jason",
+        "Maveti"
+      ],
+      "7": [
+        "Tyre"
+      ],
+      "8": [
+        "Flight Ken"
+      ]
+    },
+    "darkness": {
+      "0": [
+        "Evernight Goddess",
+        "Flegrea"
+      ],
+      "2": [
+        "Arianna",
+        "Mother of the Sky"
+      ],
+      "3": [
+        "Anthony Stevenson",
+        "Ilya"
+      ],
+      "4": [
+        "Crestet Cesimir",
+        "Ince Zangwill",
+        "Leonard Mitchell",
+        "Nim",
+        "Selena"
+      ],
+      "5": [
+        "Eric",
+        "Soest"
+      ],
+      "7": [
+        "Aiur Harson",
+        "Davy Raymond",
+        "Dunn Smith"
+      ],
+      "8": [
+        "Borgia",
+        "Seeka Tron"
+      ],
+      "9": [
+        "Kenley White",
+        "Royale Reideen"
+      ]
+    },
+    "death": {
+      "-2": [
+        "Artificial Death"
+      ],
+      "0": [
+        "Gregrace",
+        "Salinger"
+      ],
+      "1": [
+        "Sia Palenque Eggers"
+      ],
+      "2": [
+        "Azik Eggers",
+        "Haiter"
+      ],
+      "3": [
+        "Hawick"
+      ],
+      "4": [
+        "Patrick Bryan"
+      ],
+      "5": [
+        "Daly Simone",
+        "Ludwell",
+        "Maysanchez",
+        "Ulika"
+      ],
+      "7": [
+        "Frye"
+      ],
+      "8": [
+        "Lorotta"
+      ]
+    },
+    "demoness": {
+      "0": [
+        "Primordial Demoness"
+      ],
+      "3": [
+        "Clarice",
+        "Katarina Pelle"
+      ],
+      "4": [
+        "Panatiya",
+        "Trissy"
+      ],
+      "5": [
+        "Tracy"
+      ],
+      "6": [
+        "Sharon"
+      ],
+      "7": [
+        "Shermane"
+      ]
+    },
+    "door": {
+      "1": [
+        "Bethel Abraham"
+      ],
+      "4": [
+        "Botis",
+        "Fors Wall"
+      ],
+      "5": [
+        "Lewis Wien"
+      ],
+      "7": [
+        "Dorian Gray Abraham",
+        "Lawrence Nord",
+        "Verdu Garcia"
+      ],
+      "9": [
+        "Aulisa"
+      ]
+    },
+    "error": {
+      "1": [
+        "Jacob",
+        "Zoroast"
+      ],
+      "2": [
+        "Amon",
+        "Pallez Zoroast"
+      ],
+      "4": [
+        "Flora Jacob"
+      ],
+      "5": [
+        "Mobet Zoroast"
+      ],
+      "6": [
+        "Jodeson"
+      ],
+      "7": [
+        "Hazel Macht"
+      ],
+      "8": [
+        "Lanevus"
+      ],
+      "9": [
+        "Phil"
+      ]
+    },
+    "fool": {
+      "0": [
+        "Klein Moretti"
+      ],
+      "1": [
+        "Zaratul Senior"
+      ],
+      "2": [
+        "Antigonus",
+        "Kotar",
+        "Zaratul"
+      ],
+      "5": [
+        "Rosago"
+      ],
+      "7": [
+        "Suited Clown"
+      ]
+    },
+    "hanged-man": {
+      "0": [
+        "True Creator"
+      ],
+      "1": [
+        "Sasrir"
+      ],
+      "2": [
+        "Steph"
+      ],
+      "4": [
+        "Kisma",
+        "Leomaster",
+        "Lovia Tiffany"
+      ],
+      "5": [
+        "Mr. A"
+      ],
+      "6": [
+        "Giant",
+        "Heath Doyle"
+      ],
+      "9": [
+        "Hanass Vincent",
+        "Sirius Arapis"
+      ]
+    },
+    "hermit": {
+      "0": [
+        "Hidden Sage"
+      ],
+      "2": [
+        "Bernadette Gustav",
+        "Retia Austin",
+        "Torriope"
+      ],
+      "3": [
+        "Cattleya"
+      ],
+      "4": [
+        "Kmerolo"
+      ],
+      "5": [
+        "Nikila"
+      ],
+      "7": [
+        "Hendry"
+      ],
+      "9": [
+        "Old Neil"
+      ]
+    },
+    "justiciar": {
+      "0": [
+        "Trunsoest"
+      ],
+      "1": [
+        "Kaslana",
+        "William Augustus I"
+      ],
+      "2": [
+        "Dlink Augustus",
+        "Tamara"
+      ],
+      "3": [
+        "Grove Augustus"
+      ],
+      "4": [
+        "Amyrius Rieveldt",
+        "Celt",
+        "Georgina Augustus",
+        "Xio Derecha"
+      ],
+      "5": [
+        "Alfred Hall",
+        "Frunziar Edward",
+        "Mason Dere",
+        "Moran Avigny",
+        "Stratford"
+      ],
+      "6": [
+        "Harras",
+        "Noelia",
+        "Pallas Negan"
+      ],
+      "7": [
+        "Andy Haydn",
+        "Belize",
+        "Camus Castiya",
+        "Katy",
+        "Wendel"
+      ],
+      "8": [
+        "Elland Kag",
+        "Parker"
+      ]
+    },
+    "moon": {
+      "1": [
+        "Auernia"
+      ],
+      "2": [
+        "Olmer"
+      ],
+      "3": [
+        "Nibbs Odora"
+      ],
+      "4": [
+        "Emlyn White",
+        "Klarman",
+        "Mistral"
+      ],
+      "5": [
+        "Ernes Boyar"
+      ],
+      "6": [
+        "Cosmi Odora",
+        "Rus Báthory",
+        "Waymandy",
+        "Windsor Behring"
+      ],
+      "7": [
+        "Argos",
+        "Galis Kevin"
+      ],
+      "8": [
+        "Darkwill"
+      ],
+      "9": [
+        "Glaint"
+      ]
+    },
+    "mother": {
+      "0": [
+        "Lilith"
+      ],
+      "2": [
+        "Omebella",
+        "Roland"
+      ],
+      "4": [
+        "Agrippina"
+      ],
+      "5": [
+        "Frank Lee",
+        "Ukfa Connerchris"
+      ]
+    },
+    "paragon": {
+      "0": [
+        "God of Steam and Machinery"
+      ],
+      "2": [
+        "Bornova Gustav"
+      ],
+      "4": [
+        "Horamick Haydn"
+      ],
+      "6": [
+        "Cielf June"
+      ],
+      "7": [
+        "Portland Moment"
+      ],
+      "8": [
+        "Ciel Gustav"
+      ],
+      "9": [
+        "Melissa Moretti"
+      ]
+    },
+    "red-priest": {
+      "0": [
+        "Alista Tudor"
+      ],
+      "1": [
+        "Einhorn",
+        "Floren Sauron",
+        "Medici",
+        "Sauron",
+        "Sauron-Einhorn-Medici"
+      ],
+      "2": [
+        "Awatoma Einhorn"
+      ],
+      "3": [
+        "Jenna",
+        "Tony Twain"
+      ],
+      "4": [
+        "Anderson Hood",
+        "Egor Einhorn"
+      ],
+      "5": [
+        "Aurore Lee"
+      ],
+      "6": [
+        "Bakerland Jean Madan",
+        "Danitz Dubois"
+      ],
+      "7": [
+        "Helene"
+      ],
+      "9": [
+        "Meursault",
+        "Pasha"
+      ]
+    },
+    "sun": {
+      "0": [
+        "Eternal Blazing Sun"
+      ],
+      "4": [
+        "Derrick Berg"
+      ],
+      "5": [
+        "Snowman"
+      ],
+      "6": [
+        "Orpheus"
+      ]
+    },
+    "twilight-giant": {
+      "0": [
+        "Aurmir",
+        "God of Combat"
+      ],
+      "2": [
+        "Bladel",
+        "Gandalf",
+        "Larrion"
+      ],
+      "3": [
+        "Colin Iliad",
+        "Murskogan",
+        "Waite Chirmont"
+      ],
+      "5": [
+        "Bulatov Ivan",
+        "Gonlun",
+        "Groselle",
+        "Legere",
+        "Liaval"
+      ],
+      "6": [
+        "Uddel",
+        "Utravsky"
+      ],
+      "8": [
+        "Darc Regence",
+        "Ozil"
+      ],
+      "9": [
+        "Roy"
+      ]
+    },
+    "tyrant": {
+      "0": [
+        "Lord of Storms",
+        "Soniathrym"
+      ],
+      "2": [
+        "Cohinem",
+        "Gaard II"
+      ],
+      "3": [
+        "Jahn Kottman",
+        "Kalvetua"
+      ],
+      "4": [
+        "Ace Snake",
+        "Alger Wilson",
+        "Randall Valentinus"
+      ],
+      "5": [
+        "Siatas"
+      ],
+      "6": [
+        "Millet",
+        "Qilangos"
+      ],
+      "7": [
+        "Nina"
+      ],
+      "8": [
+        "Havre",
+        "Swain"
+      ],
+      "9": [
+        "Biles",
+        "Hamilton"
+      ]
+    },
+    "visionary": {
+      "0": [
+        "Adam",
+        "Ankewelt"
+      ],
+      "1": [
+        "Alzuhod"
+      ],
+      "2": [
+        "Ariehogg",
+        "Hermes",
+        "Ma'am Greed",
+        "Miss Sloth",
+        "Mr. Envy",
+        "Mr. Gluttony",
+        "Mr. Lust"
+      ],
+      "3": [
+        "Audrey Hall",
+        "Pauli Derlau"
+      ],
+      "4": [
+        "Hvin Rambis"
+      ],
+      "5": [
+        "Susie"
+      ],
+      "7": [
+        "Aiflor",
+        "Hood Eugen"
+      ],
+      "8": [
+        "Escalante Oseleka"
+      ],
+      "9": [
+        "Daxter Guderian",
+        "Mr. Harry"
+      ]
+    },
+    "wheel-of-fortune": {
+      "1": [
+        "Ouroboros",
+        "Will Auceptin"
+      ],
+      "4": [
+        "Ricciardo"
+      ],
+      "5": [
+        "Enzo"
+      ]
+    },
+    "white-tower": {
+      "0": [
+        "God of Knowledge and Wisdom"
+      ],
+      "4": [
+        "Lucca Brewster"
+      ],
+      "5": [
+        "Edwina Edwards"
+      ],
+      "7": [
+        "Berg",
+        "Isengard Stanton"
+      ]
+    }
+  },
+  "unmapped": [
+    {
+      "wiki_title": "Mr. Franky",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Wendy Smyrin",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Selena Wood",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Benson Moretti",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Cuttlefish That Loves Diving",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": ""
+    },
+    {
+      "wiki_title": "Ancient Sun God",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Deceased {{c|Resurrected as [[Adam]]}}{{Cite Book|1|1346}}{{Cite Book|2|393}}",
+      "pathway_inferred": "error"
+    },
+    {
+      "wiki_title": "Mother Tree of Desire",
+      "pathway_raw": "|above_the_sequence = {{Seq|Mother Tree of Desire}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "{{Alive}} Alive {{c|Injured}}"
+    },
+    {
+      "wiki_title": "Mother Goddess of Depravity",
+      "pathway_raw": "|above_the_sequence = {{Seq|Mother Goddess of Depravity}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Agalito",
+      "pathway_raw": "Abyss\n|sequence_type(book2) = Abyss",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "pathway_inferred": "abyss"
+    },
+    {
+      "wiki_title": "Earl Hall",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Caitlyn Hall",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Ikanser Bernard",
+      "pathway_raw": "Paragon",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "pathway_inferred": "paragon"
+    },
+    {
+      "wiki_title": "Edessak Augustus",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Ian Wright",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Kolobo",
+      "pathway_raw": "|sequence_rank =",
+      "sequence_rank_raw": "|sequence_name =",
+      "sequence_name": "|aliases =",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Cynthia",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Rozanne",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Maury Macht",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Walter",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Richardson",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Old Kohler",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Aaron Ceres",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Mary Schott",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Talim Dumont",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Mike Joseph",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Jevington Augustus",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Hibbert Hall",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Animal Trainer",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Original Creator",
+      "pathway_raw": "|authorities = All [[Pathways]]",
+      "sequence_rank_raw": "|sequence_type=",
+      "sequence_name": null,
+      "vital_status": "{{Alive}} In Slumber"
+    },
+    {
+      "wiki_title": "Stelyn Sammer",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Ademisaul",
+      "pathway_raw": "Wheel of Fortune",
+      "sequence_rank_raw": "Half",
+      "sequence_name": "Monster",
+      "vital_status": "Alive",
+      "pathway_inferred": "wheel-of-fortune"
+    },
+    {
+      "wiki_title": "Elizabeth",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Amandina",
+      "pathway_raw": "Darkness\n| sequence_rank(book2)       = 6\n| sequence_name(book2)       = Soul Assurer",
+      "sequence_rank_raw": "6\n| sequence_name(book2)       = Soul Assurer",
+      "sequence_name": "Soul Assurer",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Underworld Daoist",
+      "pathway_raw": "|authorities(book2) = {{Pathway|Death|Darkness|Twilight Giant}}\n|sefirot(book2) = {{seq|River of Eternal Darkness}}\n|above_the_sequence(book2) =",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "pathway_inferred": "death"
+    },
+    {
+      "wiki_title": "Orianna",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Aguesid Negan",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Nolfi",
+      "pathway_raw": "Condenser",
+      "sequence_rank_raw": "| novel                      =\n {{Cite Book|2|530}}\n*{{Cite Book|2|533}} {{c|Name Revealed}} \n| sequence_type(book2) = Condenser",
+      "sequence_name": "| sequence_rank(book2)       =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Framis Cage",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Batna Comté",
+      "pathway_raw": "| relatives= \n|partner(s)=[[Nolfi]] {{c|Lover}}",
+      "sequence_rank_raw": "| novel                      ={{Cite Book|2|516}} \n| sequence_type(book2) =",
+      "sequence_name": "| sequence_rank(book2)       =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Celestial Worthy of Heaven and Earth for Blessings",
+      "pathway_raw": "|authorities = \n* {{Pathway/group|LoM\n    |Fool_note={{c|Former}}\n    |Error_note={{c|Former}}\n    |Door_note={{c|Former}}\n  }}\n{{SpoilerToggle/context|\n* {{Pathway/group|ED\n    |Darkness_note={{c|Former}}\n    |Death_note={{c|Former}}\n    |Twilight Giant_note={{c|Former}}\n  }}\n* {{Pathway/group|TA\n    |Black Emperor_note={{c|Former}}\n    |Justiciar_note={{c|Former}}\n  }}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "{{Alive}} Alive {{c|Fused with [[Klein Moretti|The Fool]]}}"
+    },
+    {
+      "wiki_title": "Primordial God Almighty",
+      "pathway_raw": "|authorities = \n* {{Pathway/group|GA\n    |Visionary_note={{c|Former}}\n    |Hanged Man_note={{c|Former}}\n    |Sun_note={{c|Former}}\n    |Tyrant_note={{c|Former}}\n    |White Tower_note={{c|Former}}\n  }}\n{{SpoilerToggle/context|\n* {{Pathway/group|CoD\n    |Red Priest_note={{c|Former}}\n    |Demoness_note={{c|Former}}\n  }}\n* {{Pathway/group|FoD\n    |Abyss_note={{c|Former}}\n    |Chained_note={{c|Former}}\n  }}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Son of Chaos",
+      "pathway_raw": "|above_the_sequence = {{Seq|Son of Chaos}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Ray Bieber",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Barton",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Alicia Tamara",
+      "pathway_raw": "Black Emperor",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "pathway_inferred": "black-emperor"
+    },
+    {
+      "wiki_title": "Jack",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Jurgen Cooper",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Alice Moretti",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Welch McGovern",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Bredt",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Cesare Francis",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Megose",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Gawain",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Glacis",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Joyce Meyer",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Ed Sheeran",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "High-Dimensional Overseer",
+      "pathway_raw": "|above_the_sequence = {{Seq|High-Dimensional Overseer}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Supernova Dominator",
+      "pathway_raw": "|above_the_sequence = {{Seq|Supernova Dominator}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Monarch of Decay",
+      "pathway_raw": "|above_the_sequence = {{Seq|Monarch of Decay}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Inextinguishable Ravings",
+      "pathway_raw": "|above_the_sequence = {{Seq|Inextinguishable Ravings}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Primordial Hunger",
+      "pathway_raw": "|above_the_sequence = {{Seq|Primordial Hunger}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Edwards",
+      "pathway_raw": "|former_pathway =",
+      "sequence_rank_raw": "|novel = \n {{Cite Book|1|59}} {{c|Mentioned}}\n {{Cite Book|1|1300}}",
+      "sequence_name": "|sequence_rank =",
+      "vital_status": "unknown"
+    },
+    {
+      "wiki_title": "Capim",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Vernal Fnarr",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Carnot",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Kalat",
+      "pathway_raw": "unknown",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Edmonton",
+      "pathway_raw": "unknown\n|affiliation(s) = [[Resistance]]",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Ralph",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Connors Viktor",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Leticia Dolera",
+      "pathway_raw": "|sequence_rank =",
+      "sequence_rank_raw": "|sequence_name =",
+      "sequence_name": "|novel = {{Cite Book|1|532}}",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Baynfel",
+      "pathway_raw": "Hanged Man\n| sequence_name(book2)       = \n| sequence_rank(book2)       =",
+      "sequence_rank_raw": "| novel                      = {{Cite Book|2|503}}\n|partner(s)                  = [[Lumian Lee]] {{c|Summoner}}",
+      "sequence_name": "| sequence_rank(book2)       =",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Robert",
+      "pathway_raw": "Death\n| sequence_name(book2)       = Spirit Medium\n| sequence_rank(book2)       = 7",
+      "sequence_rank_raw": "7",
+      "sequence_name": "Spirit Medium\n| sequence_rank(book2)       = 7",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Perle",
+      "pathway_raw": "Chaos Mist\n| sequence_name(book2)       = Vortex Weaver \n| sequence_rank(book2)       = 3\n| subordinate(s)             = [[Jebus Lata]]{{status|dead}}",
+      "sequence_rank_raw": "3\n| subordinate(s)             = [[Jebus Lata]]{{status|dead}}",
+      "sequence_name": "Vortex Weaver \n| sequence_rank(book2)       = 3\n| subordinate(s)             = [[Jebus Lata]]{{status|dead}}",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Lumian Lee",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Millet Carter",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Pualis de Roquefort",
+      "pathway_raw": "Moon\n|sequence_rank(book2) = 1\n|sequence_name(book2) = Beauty Goddess\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4\n|sequence_name2(book2) = Madame",
+      "sequence_rank_raw": "1\n|sequence_name(book2) = Beauty Goddess\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4\n|sequence_name2(book2) = Madame",
+      "sequence_name": "Beauty Goddess\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4\n|sequence_name2(book2) = Madame",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Naboredisley",
+      "pathway_raw": "Chained\n|sequence_rank(book2)= 1\n|sequence_name(book2)= Abomination\n|progression(book2)= {{Pathway|Abyss}} {{c|Sequence 9 - 2}}",
+      "sequence_rank_raw": "1\n|sequence_name(book2)= Abomination\n|progression(book2)= {{Pathway|Abyss}} {{c|Sequence 9 - 2}}",
+      "sequence_name": "Abomination\n|progression(book2)= {{Pathway|Abyss}} {{c|Sequence 9 - 2}}",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Ava Lizier",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Guillaume Bénet",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_name": "Fate Appropriator",
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Pierre Berry",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 6\n|sequence_name(book2) = Ascetic",
+      "sequence_rank_raw": "6\n|sequence_name(book2) = Ascetic",
+      "sequence_name": "Ascetic",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Ryan Vitia",
+      "pathway_raw": "Twilight Giant \n|sequence_name(book2) = Dawn Paladin \n|sequence_rank(book2) = 6",
+      "sequence_rank_raw": "6",
+      "sequence_name": "Dawn Paladin \n|sequence_rank(book2) = 6",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Valentine de Lacourt",
+      "pathway_raw": "Sun \n|sequence_name(book2) = Solar High Priest \n|sequence_rank(book2) = 7",
+      "sequence_rank_raw": "7",
+      "sequence_name": "Solar High Priest \n|sequence_rank(book2) = 7",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Leah Bellot",
+      "pathway_raw": "Fool \n|sequence_name(book2) = Magician \n|sequence_rank(book2) = 7",
+      "sequence_rank_raw": "7",
+      "sequence_name": "Magician \n|sequence_rank(book2) = 7",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Reimund Greg",
+      "pathway_raw": "|sequence_name =",
+      "sequence_rank_raw": "|novel = {{Cite Book|2|3}}",
+      "sequence_name": "|sequence_rank =",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Naroka",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Circle of Inevitability",
+      "pathway_raw": "|above_the_sequence = {{Seq|Circle of Inevitability}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Jebus Lata",
+      "pathway_raw": "Chaos Mist\n| sequence_name(book2)       = Under the Table\n| sequence_rank(book2)       = 5",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Under the Table\n| sequence_rank(book2)       = 5",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Sybil Berry",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 7\n|sequence_name(book2) = Contractee",
+      "sequence_rank_raw": "7\n|sequence_name(book2) = Contractee",
+      "sequence_name": "Contractee",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Charlie Collent",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Osta Trul",
+      "pathway_raw": "Hanged Man\n|sequence_name(book2) = Secrets Suppliant\n|sequence_rank(book2) = 9",
+      "sequence_rank_raw": "9",
+      "sequence_name": "Secrets Suppliant\n|sequence_rank(book2) = 9",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Brignais",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Margot",
+      "pathway_raw": "Red Priest\n|sequence_name(book2) = Provoker\n|sequence_rank(book2) = 8",
+      "sequence_rank_raw": "8",
+      "sequence_name": "Provoker\n|sequence_rank(book2) = 8",
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Susanna Matisse",
+      "pathway_raw": "Patriarch\n|sequence_name(book2) = Fallen Tree Spirit\n|sequence_rank(book2) = 5",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Fallen Tree Spirit\n|sequence_rank(book2) = 5",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Roger",
+      "pathway_raw": "Chaos Primogenitor \n|sequence_name(book2) = Heretic Spellmaster \n|sequence_rank(book2) = 7",
+      "sequence_rank_raw": "7",
+      "sequence_name": "Heretic Spellmaster \n|sequence_rank(book2) = 7",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Wilson",
+      "pathway_raw": "Chaos Primogenitor \n|sequence_name(book2) = Villain\n|sequence_rank(book2) = 9",
+      "sequence_rank_raw": "9",
+      "sequence_name": "Villain\n|sequence_rank(book2) = 9",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Termiboros",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 1\n|sequence_name(book2) = Angel of Redemption",
+      "sequence_rank_raw": "1\n|sequence_name(book2) = Angel of Redemption",
+      "sequence_name": "Angel of Redemption",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Mr. K",
+      "pathway_raw": "Hanged Man\n|sequence_name(book2) = Shepherd \n|sequence_rank(book2) = 5",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Shepherd \n|sequence_rank(book2) = 5",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Angoulême de François",
+      "pathway_raw": "Sun\n|sequence_name(book2) = Unshadowed\n|sequence_rank(book2) = 4",
+      "sequence_rank_raw": "4",
+      "sequence_name": "Unshadowed\n|sequence_rank(book2) = 4",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Louis Lund",
+      "pathway_raw": "Chaos Primogenitor\n|sequence_rank(book2) = 8\n|sequence_name(book2) = Gardener\n|master(s) = \n* [[Pualis de Roquefort]]\n* [[Béost]]",
+      "sequence_rank_raw": "8\n|sequence_name(book2) = Gardener\n|master(s) = \n* [[Pualis de Roquefort]]\n* [[Béost]]",
+      "sequence_name": "Gardener\n|master(s) = \n* [[Pualis de Roquefort]]\n* [[Béost]]",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Ive",
+      "pathway_raw": "Patriarch\n|sequence_name(book2) = Scrooge\n|sequence_rank(book2) = 9",
+      "sequence_rank_raw": "9",
+      "sequence_name": "Scrooge\n|sequence_rank(book2) = 9",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Anthony Reid",
+      "pathway_raw": "Visionary\n|sequence_name(book2) = Manipulator\n|sequence_rank(book2) = 4",
+      "sequence_rank_raw": "4",
+      "sequence_name": "Manipulator\n|sequence_rank(book2) = 4",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Franca Roland",
+      "pathway_raw": "Demoness\n|sequence_rank(book2) = 2\n|sequence_name(book2) = Catastrophe",
+      "sequence_rank_raw": "2\n|sequence_name(book2) = Catastrophe",
+      "sequence_name": "Catastrophe",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Ait",
+      "pathway_raw": "Twilight Giant\n|sequence_name(book2) = Pugilist\n|sequence_rank(book2) = 8",
+      "sequence_rank_raw": "8",
+      "sequence_name": "Pugilist\n|sequence_rank(book2) = 8",
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Hedsey",
+      "pathway_raw": "Patriarch \n|sequence_name(book2) = Sex Addict \n|sequence_rank(book2) = 8",
+      "sequence_rank_raw": "8",
+      "sequence_name": "Sex Addict \n|sequence_rank(book2) = 8",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Simon",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Gardner Martin",
+      "pathway_raw": "Red Priest\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Reaper",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Reaper",
+      "sequence_name": "Reaper",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Béost",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Cathy",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Christo",
+      "pathway_raw": "Moon\n|sequence_rank(book2) = 8\n|sequence_name(book2) = Beast Tamer",
+      "sequence_rank_raw": "8\n|sequence_name(book2) = Beast Tamer",
+      "sequence_name": "Beast Tamer",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Travis Everett",
+      "pathway_raw": "|sequence_name =",
+      "sequence_rank_raw": "|novel = {{Cite Book|2|172}}",
+      "sequence_name": "|sequence_rank =",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Rentas",
+      "pathway_raw": "Patriarch\n|sequence_rank(book2) = 7\n|sequence_name(book2) = Actor",
+      "sequence_rank_raw": "7\n|sequence_name(book2) = Actor",
+      "sequence_name": "Actor",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Weber",
+      "pathway_raw": "|sequence_rank =",
+      "sequence_rank_raw": "|sequence_name =",
+      "sequence_name": "|novel = {{Cite Book|1|1281}}",
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Kaspars Kalinin",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": ""
+    },
+    {
+      "wiki_title": "Harman",
+      "pathway_raw": "Chaos Primogenitor\n| sequence_name(book2)       = Gardener\n| sequence_rank(book2)       = 8",
+      "sequence_rank_raw": "8",
+      "sequence_name": "Gardener\n| sequence_rank(book2)       = 8",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Castina",
+      "pathway_raw": "Chaos Primogenitor\n| sequence_name(book2)       =\n| sequence_rank(book2)       =",
+      "sequence_rank_raw": "| novel                      = {{Cite Book|2|147}}",
+      "sequence_name": "| sequence_rank(book2)       =",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Hugues Artois",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Flameng",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Elodie",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Ruhr",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Michel",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Tybalt Jacques",
+      "pathway_raw": "Second Law\n| sequence_name(book2) = Patient\n| sequence_rank(book2) = 9",
+      "sequence_rank_raw": "9",
+      "sequence_name": "Patient\n| sequence_rank(book2) = 9",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Imre",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Lady Moon",
+      "pathway_raw": "Chaos Primogenitor\n| sequence_name(book2)       = Divine Mother\n| sequence_rank(book2)       = 3",
+      "sequence_rank_raw": "3",
+      "sequence_name": "Divine Mother\n| sequence_rank(book2)       = 3",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Cassandra",
+      "pathway_raw": "| novel                      = {{Cite Book|2|195}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Charlotte Calvino",
+      "pathway_raw": null,
+      "sequence_rank_raw": "7",
+      "sequence_name": "Actor\n| sequence_rank(book2)       = 7",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Viève",
+      "pathway_raw": "Sun\n| sequence_name(book2)       = White Angel\n| sequence_rank(book2)       = 1",
+      "sequence_rank_raw": "1",
+      "sequence_name": "White Angel\n| sequence_rank(book2)       = 1",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Antoine",
+      "pathway_raw": "Twilight Giant \n|sequence_name(book2) =  \n|sequence_rank(book2) =Mid-Sequence",
+      "sequence_rank_raw": "Mid-Sequence",
+      "sequence_name": "|sequence_rank(book2) =Mid-Sequence",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Lugano Toscano",
+      "pathway_raw": "Mother\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Druid",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Druid",
+      "sequence_name": "Druid",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Rhea",
+      "pathway_raw": "Tyrant\n| sequence_name(book2)       = Folk of Rage \n| sequence_rank(book2)       = 8",
+      "sequence_rank_raw": "8",
+      "sequence_name": "Folk of Rage \n| sequence_rank(book2)       = 8",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Olson",
+      "pathway_raw": "Red Priest \n| sequence_name(book2)       =Reaper\n| sequence_rank(book2)       =5",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Reaper\n| sequence_rank(book2)       =5",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Monette",
+      "pathway_raw": "Error",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "pathway_inferred": "error"
+    },
+    {
+      "wiki_title": "Ludwig Phil",
+      "pathway_raw": "Tail-Devourer\n|sequence_rank(book2) = 1\n|sequence_name(book2) = Chaos Gastric Juices",
+      "sequence_rank_raw": "1\n|sequence_name(book2) = Chaos Gastric Juices",
+      "sequence_name": "Chaos Gastric Juices",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Bilt Brando",
+      "pathway_raw": "unknown",
+      "sequence_rank_raw": "7 or 6",
+      "sequence_name": "|novel =\n{{Cite Book|1|614}}\n|affiliation(s)=[[Adventurer Association]] {{c|Founder}}",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Albus Medici",
+      "pathway_raw": "Red Priest\n| sequence_rank(book2)       = 5\n| sequence_name(book2)       = Reaper",
+      "sequence_rank_raw": "5\n| sequence_name(book2)       = Reaper",
+      "sequence_name": "Reaper",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Diest",
+      "pathway_raw": "|sequence_rank =",
+      "sequence_rank_raw": "|vital_status = Alive",
+      "sequence_name": "|species = \n*Mythical Creature\n*Human {{c|Former}}\n|occupation(s) =President of the [[Iron and Blood Cross Order]]",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Devajo Andariel",
+      "pathway_raw": "|sequence_rank =",
+      "sequence_rank_raw": "|sequence_name =",
+      "sequence_name": "|aliases =",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Cali",
+      "pathway_raw": "Chained\n| sequence_name(book2)       = Wraith\n| sequence_rank(book2)       = 5",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Wraith\n| sequence_rank(book2)       = 5",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Juan Oro",
+      "pathway_raw": "Condenser",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Tidal Scholar\n| sequence_rank(book2)       = 5",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Antoine (Secret Order)",
+      "pathway_raw": "Fool\n| sequence_type(book2)       = Fool",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "pathway_inferred": "fool"
+    },
+    {
+      "wiki_title": "Montserrat",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Howl Constantine",
+      "pathway_raw": "Tyrant\n|sequence_rank(book2)=5\n|sequence_name(book2)=Ocean Songster",
+      "sequence_rank_raw": "5\n|sequence_name(book2)=Ocean Songster",
+      "sequence_name": "Ocean Songster",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Iveljsta Eggers",
+      "pathway_raw": "Chained\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Wraith",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Wraith",
+      "sequence_name": "Wraith",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Snarner Einhorn",
+      "pathway_raw": "Red Priest\n|sequence_rank(book2)=2\n|sequence_name(book2)=Weather Warlock",
+      "sequence_rank_raw": "2\n|sequence_name(book2)=Weather Warlock",
+      "sequence_name": "Weather Warlock",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Hela",
+      "pathway_raw": "Death\n| sequence_name(book2)       = Ferryman\n| sequence_rank(book2)       = 3",
+      "sequence_rank_raw": "3",
+      "sequence_name": "Ferryman\n| sequence_rank(book2)       = 3",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Bram Andariel",
+      "pathway_raw": "|sequence_rank =",
+      "sequence_rank_raw": "|sequence_name =",
+      "sequence_name": "|aliases =",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Loki",
+      "pathway_raw": "Fool \n|sequence_name(book2) = Marionettist \n|sequence_rank(book2) = 5",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Marionettist \n|sequence_rank(book2) = 5",
+      "vital_status": "{{dead}} [[:Category:Deceased|Deceased]] {{c|Resurrected 3 times, taken over by [[Zaratul]]}}"
+    },
+    {
+      "wiki_title": "Krismona",
+      "pathway_raw": "Demoness\n| sequence_name(book2)       = Catastrophe\n| sequence_rank(book2)       = 2",
+      "sequence_rank_raw": "2",
+      "sequence_name": "Catastrophe\n| sequence_rank(book2)       = 2",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Marianne",
+      "pathway_raw": "Darkness\n| sequence_name(book2)       = Servant of Concealment\n| sequence_rank(book2)       = 2",
+      "sequence_rank_raw": "2",
+      "sequence_name": "Servant of Concealment\n| sequence_rank(book2)       = 2",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Lius",
+      "pathway_raw": "Death\n| sequence_name(book2)       = Death Consul\n| sequence_rank(book2)       = 2",
+      "sequence_rank_raw": "2",
+      "sequence_name": "Death Consul\n| sequence_rank(book2)       = 2",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Poufer Sauron",
+      "pathway_raw": "Red Priest\n| sequence_name(book2)       =\n| sequence_rank(book2)       =",
+      "sequence_rank_raw": "| novel                      = \n {{Cite Book|2|339}} {{c|Mentioned}}\n {{Cite Book|2|340}}",
+      "sequence_name": "| sequence_rank(book2)       =",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Vermonda Sauron",
+      "pathway_raw": "Red Priest\n| sequence_name(book2)       =Conqueror\n| sequence_rank(book2)       = 1",
+      "sequence_rank_raw": "1",
+      "sequence_name": "Conqueror\n| sequence_rank(book2)       = 1",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Browns Sauron",
+      "pathway_raw": "Demoness\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Affliction\n|master(s) = [[Clarice]]",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Affliction\n|master(s) = [[Clarice]]",
+      "sequence_name": "Affliction\n|master(s) = [[Clarice]]",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Elros Einhorn",
+      "pathway_raw": "Red Priest\n|sequence_rank(book2) =\n|sequence_name(book2) =",
+      "sequence_rank_raw": "|sequence_name(book2) =",
+      "sequence_name": "|relatives = \n* [[Poufer Sauron]]{{status|dead}} {{c|Cousin}}\n* [[Snarner Einhorn]]",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "I Know Someone",
+      "pathway_raw": "Visionary \n|sequence_name(book2) = Hypnotist \n|sequence_rank(book2) = 6",
+      "sequence_rank_raw": "6",
+      "sequence_name": "Hypnotist \n|sequence_rank(book2) = 6",
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Mad Lady",
+      "pathway_raw": "Door \n|sequence_name(book2) = Traveler \n|sequence_rank(book2) = 5",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Traveler \n|sequence_rank(book2) = 5",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Ultraman",
+      "pathway_raw": "Sun\n|sequence_rank(book2)=5\n|sequence_name(book2)=Priest of Light\n|sequence_type2(book2)=Condenser\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Tidal Scholar",
+      "sequence_rank_raw": "5\n|sequence_name(book2)=Priest of Light\n|sequence_type2(book2)=Condenser\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Tidal Scholar",
+      "sequence_name": "Priest of Light\n|sequence_type2(book2)=Condenser\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Tidal Scholar",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Bard",
+      "pathway_raw": "Error\n|sequence_name(book2) = Dream Stealer\n|sequence_rank(book2) = 5",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Dream Stealer\n|sequence_rank(book2) = 5",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Beatrice Incourt",
+      "pathway_raw": "Patriarch",
+      "sequence_rank_raw": "6",
+      "sequence_name": "Recipient\n| sequence_rank(book2)       = 6",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Maipú Meyer",
+      "pathway_raw": "Patriarch",
+      "sequence_rank_raw": "6",
+      "sequence_name": "Recipient\n| sequence_rank(book2)       = 6",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Bouvard Pont-Péro",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 6\n|sequence_name(book2) = Ascetic",
+      "sequence_rank_raw": "6\n|sequence_name(book2) = Ascetic",
+      "sequence_name": "Ascetic",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Paulina",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 7\n|sequence_name(book2) = Contractee",
+      "sequence_rank_raw": "7\n|sequence_name(book2) = Contractee",
+      "sequence_name": "Contractee",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Philip",
+      "pathway_raw": "Red Priest\n|sequence_rank(book2)=5\n|sequence_name(book2)=Reaper\n|sequence_type2(book2)=Eternal Edict\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Deceased",
+      "sequence_rank_raw": "5\n|sequence_name(book2)=Reaper\n|sequence_type2(book2)=Eternal Edict\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Deceased",
+      "sequence_name": "Reaper\n|sequence_type2(book2)=Eternal Edict\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Deceased",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Gabriel",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Séraphine",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Voisin Sanson",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 4\n|sequence_name(book2) = Circle Inhabitant",
+      "sequence_rank_raw": "4\n|sequence_name(book2) = Circle Inhabitant",
+      "sequence_name": "Circle Inhabitant",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Burman",
+      "pathway_raw": "Death \n|sequence_rank(book2) = 6 \n|sequence_name(book2) = Spirit Guide",
+      "sequence_rank_raw": "6 \n|sequence_name(book2) = Spirit Guide",
+      "sequence_name": "Spirit Guide",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Chen Tu",
+      "pathway_raw": "| sequence_name(book2)       =\n| sequence_rank(book2)       =",
+      "sequence_rank_raw": "| novel                      = {{Cite Book|2|319}}",
+      "sequence_name": "| sequence_rank(book2)       =",
+      "vital_status": "| realm                      ="
+    },
+    {
+      "wiki_title": "Goddess of Fate",
+      "pathway_raw": "|above_the_sequence(book2) = {{Seq|Goddess of Fate}}\n|authorities(book2) = {{Pathway/group|GoF|}}\n|sefirot(book2) = Unnamed Sefirah of {{Pathway|Eternal Edict}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Plessy Descartes",
+      "pathway_raw": "| sequence_name(book2)       = \n| sequence_rank(book2)       =",
+      "sequence_rank_raw": "| novel                      =\n{{Cite Book|2|504}}",
+      "sequence_name": "| sequence_rank(book2)       =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Hisoka",
+      "pathway_raw": "Abyss\n|sequence_rank(book2)=5\n|sequence_name(book2)=Desire Apostle\n|sequence_type2(book2)=Chained\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Wraith",
+      "sequence_rank_raw": "5\n|sequence_name(book2)=Desire Apostle\n|sequence_type2(book2)=Chained\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Wraith",
+      "sequence_name": "Desire Apostle\n|sequence_type2(book2)=Chained\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Wraith",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Luke Sammer",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Doragu Gale",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "La Nou Bruch",
+      "pathway_raw": "Moon\n|sequence_name(book2) = Vampire \n|sequence_rank(book2) = 7",
+      "sequence_rank_raw": "7",
+      "sequence_name": "Vampire \n|sequence_rank(book2) = 7",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "William Sikes",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Clémence Athana",
+      "pathway_raw": "Visionary\n| sequence_rank(book2)       = 4\n| sequence_name(book2)       = Manipulator",
+      "sequence_rank_raw": "4\n| sequence_name(book2)       = Manipulator",
+      "sequence_name": "Manipulator",
+      "vital_status": "Turned into [[Sealed Artifact]] [[1-147]]"
+    },
+    {
+      "wiki_title": "Chasel Sávio",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Sow",
+      "pathway_raw": "Twilight Giant\n|sequence_rank(book2)=8\n|sequence_name(book2)=Pugilist",
+      "sequence_rank_raw": "8\n|sequence_name(book2)=Pugilist",
+      "sequence_name": "Pugilist",
+      "vital_status": "dead|height=Over 1.8 meters"
+    },
+    {
+      "wiki_title": "Reaza",
+      "pathway_raw": "Death\n| sequence_name(book2)       = Gatekeeper\n| sequence_rank(book2)       = 5",
+      "sequence_rank_raw": "5",
+      "sequence_name": "Gatekeeper\n| sequence_rank(book2)       = 5",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Celestial Master",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "pathway_inferred": "hermit"
+    },
+    {
+      "wiki_title": "Tutanssess II",
+      "pathway_raw": "Chained",
+      "sequence_rank_raw": "|sequence_name =",
+      "sequence_name": "|novel = \n {{Cite Book|1|875}} {{c|Mentioned}}\n*{{Cite Book|1|880}}{{c|As a Mummy}}",
+      "vital_status": "dead",
+      "pathway_inferred": "chained"
+    },
+    {
+      "wiki_title": "Zedus",
+      "pathway_raw": "Moon\n| sequence_name(book2)       = Life-Giver\n| sequence_rank(book2)       = 2\n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
+      "sequence_rank_raw": "2\n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
+      "sequence_name": "Life-Giver\n| sequence_rank(book2)       = 2\n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
+      "vital_status": "Alive (Resurrected)"
+    },
+    {
+      "wiki_title": "Palenque Taciblius",
+      "pathway_raw": "unknown",
+      "sequence_rank_raw": "4",
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Loban",
+      "pathway_raw": "|sequence_rank(book2)=\n|sequence_name(book2)=",
+      "sequence_rank_raw": "|sequence_name(book2)=",
+      "sequence_name": "|novel={{Cite Book|2|661}}",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Jasmine",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Syndras",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Smine",
+      "pathway_raw": "| sequence_rank              =",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| novel                      = {{Cite Book|1|632}}",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Hilbert Alucard",
+      "pathway_raw": "Visionary",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| novel                      = {{Cite Book|1|339}}",
+      "vital_status": "Alive",
+      "pathway_inferred": "visionary"
+    },
+    {
+      "wiki_title": "Stephen Hampres",
+      "pathway_raw": "Visionary",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| novel                      = {{Cite Book|1|405}}",
+      "vital_status": "Alive",
+      "pathway_inferred": "visionary"
+    },
+    {
+      "wiki_title": "Prinpino",
+      "pathway_raw": "Mother\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| sequence_type2(book2)      = Moon\n| sequence_type3(book2)      = Chaos Primogenitor",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| sequence_type2(book2)      = Moon\n| sequence_type3(book2)      = Chaos Primogenitor",
+      "sequence_name": "| sequence_type2(book2)      = Moon\n| sequence_type3(book2)      = Chaos Primogenitor",
+      "vital_status": "deceased"
+    },
+    {
+      "wiki_title": "Roy King",
+      "pathway_raw": "Wheel of Fortune",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| novel                      = {{Cite Book|1|585}} {{c|Mentioned}}",
+      "vital_status": "Alive",
+      "pathway_inferred": "wheel-of-fortune"
+    },
+    {
+      "wiki_title": "Oxyto",
+      "pathway_raw": "Moon\n|sequence_rank(book2) = 4\n|sequence_name(book2) = Shaman King",
+      "sequence_rank_raw": "4\n|sequence_name(book2) = Shaman King",
+      "sequence_name": "Shaman King",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Fernandez Oro",
+      "pathway_raw": "Condenser",
+      "sequence_rank_raw": "7",
+      "sequence_name": "Star Sacrificer\n| sequence_rank(book2)       = 7",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Peacock",
+      "pathway_raw": "Black Emperor\n|sequence_rank(book2) = 4\n|sequence_name(book2) = Earl of the Fallen",
+      "sequence_rank_raw": "4\n|sequence_name(book2) = Earl of the Fallen",
+      "sequence_name": "Earl of the Fallen",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Mason",
+      "pathway_raw": "Twilight Giant\n| sequence_rank(book2)       = 8\n| sequence_name(book2)       = Pugilist",
+      "sequence_rank_raw": "8\n| sequence_name(book2)       = Pugilist",
+      "sequence_name": "Pugilist",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Claude",
+      "pathway_raw": "Paragon\n| sequence_rank(book2)       = Saint\n| sequence_name(book2)       = ?",
+      "sequence_rank_raw": "Saint\n| sequence_name(book2)       = ?",
+      "sequence_name": "?",
+      "vital_status": "unknown"
+    },
+    {
+      "wiki_title": "Sallent Empaya",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Class Khizi",
+      "pathway_raw": "unknown\n| sequence_rank(book2)       = \n| sequence_name(book2)       =",
+      "sequence_rank_raw": "| sequence_name(book2)       =",
+      "sequence_name": "| novel                      = {{Cite Book|2|518}} {{c|Mentioned}}",
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Holle Sassen",
+      "pathway_raw": "| sequence_rank(book2)       = \n| sequence_name(book2)       =",
+      "sequence_rank_raw": "| sequence_name(book2)       =",
+      "sequence_name": "| novel                      = {{Cite Book|2|520}} {{c|Mentioned}}",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Harrison",
+      "pathway_raw": "Error\n| sequence_rank(book2)       = 5\n| sequence_name(book2)       = Dream Stealer\n| sequence_type2(book2)      = \n| sequence_rank2(book2)      = \n| sequence_name2(book2)      =",
+      "sequence_rank_raw": "5\n| sequence_name(book2)       = Dream Stealer\n| sequence_type2(book2)      = \n| sequence_rank2(book2)      = \n| sequence_name2(book2)      =",
+      "sequence_name": "Dream Stealer\n| sequence_type2(book2)      = \n| sequence_rank2(book2)      = \n| sequence_name2(book2)      =",
+      "vital_status": "unknown"
+    },
+    {
+      "wiki_title": "Aiur Moria",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Hilarion",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Venithan",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Kuthumi",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Serapis",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Iesus",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Saint Germain",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Jörg",
+      "pathway_raw": "Black Emperor\n| sequence_rank(book2)       = \n| sequence_name(book2)       =",
+      "sequence_rank_raw": "| sequence_name(book2)       =",
+      "sequence_name": "| novel                      = {{Cite Book|2|783}}",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Julie",
+      "pathway_raw": "Demoness\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Affliction\n|occupation(s)= Waitress at Carnivore Bar",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Affliction\n|occupation(s)= Waitress at Carnivore Bar",
+      "sequence_name": "Affliction\n|occupation(s)= Waitress at Carnivore Bar",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Lez",
+      "pathway_raw": "Tail-Devourer\n|sequence_rank(book2) = 6\n|sequence_name(book2) = Chef\n|master(s)=",
+      "sequence_rank_raw": "6\n|sequence_name(book2) = Chef\n|master(s)=",
+      "sequence_name": "Chef\n|master(s)=",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Worms",
+      "pathway_raw": "Error\n| sequence_rank(book2)       = 9\n| sequence_name(book2)       = Marauder",
+      "sequence_rank_raw": "9\n| sequence_name(book2)       = Marauder",
+      "sequence_name": "Marauder",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Bainar",
+      "pathway_raw": "Tail-Devourer\n| sequence_rank(book2)       = 5\n| sequence_name(book2)       = Depriver",
+      "sequence_rank_raw": "5\n| sequence_name(book2)       = Depriver",
+      "sequence_name": "Depriver",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Gusain",
+      "pathway_raw": "Red Priest\n|sequence_rank(book2) = 4 {{c|Half}}\n|sequence_name(book2) = Iron-blooded Knight\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4 {{c|Half}}\n|sequence_name2(book2) = Madame\n|master(s)=",
+      "sequence_rank_raw": "4 {{c|Half}}\n|sequence_name(book2) = Iron-blooded Knight\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4 {{c|Half}}\n|sequence_name2(book2) = Madame\n|master(s)=",
+      "sequence_name": "Iron-blooded Knight\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4 {{c|Half}}\n|sequence_name2(book2) = Madame\n|master(s)=",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Wanak",
+      "pathway_raw": "Red Priest\n| sequence_rank(book2)       = 4 {{c|Half}}\n| sequence_name(book2)       = Iron-blooded Knight",
+      "sequence_rank_raw": "4 {{c|Half}}\n| sequence_name(book2)       = Iron-blooded Knight",
+      "sequence_name": "Iron-blooded Knight",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Doll Messenger",
+      "pathway_raw": "| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Celeste",
+      "pathway_raw": "Demoness\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Affliction\n|master(s)=",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Affliction\n|master(s)=",
+      "sequence_name": "Affliction\n|master(s)=",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Jack Walton",
+      "pathway_raw": "Paragon\n| sequence_name(book2)       = \n| sequence_rank(book2)       = Saint",
+      "sequence_rank_raw": "Saint",
+      "sequence_name": "| sequence_rank(book2)       = Saint",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Alexis",
+      "pathway_raw": "Moon\n|sequence_rank(book2) = 4\n|sequence_name(book2) = Shaman King",
+      "sequence_rank_raw": "4\n|sequence_name(book2) = Shaman King",
+      "sequence_name": "Shaman King",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Guei",
+      "pathway_raw": "White Tower\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Mysticism Magister\n|master(s)=",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Mysticism Magister\n|master(s)=",
+      "sequence_name": "Mysticism Magister\n|master(s)=",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Constace Sanson",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_name": "Fate Appropriator",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Annette Sanson",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_name": "Fate Appropriator",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Bliss Sanson",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_name": "Fate Appropriator",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Atur Sanson",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "sequence_name": "Fate Appropriator",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Professor",
+      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 5\n| sequence_name(book2)       = Constellations Master\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "5\n| sequence_name(book2)       = Constellations Master\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "Constellations Master\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Associate Professor",
+      "pathway_raw": "Hermit\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Isotope",
+      "pathway_raw": "Hermit\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Periodic Table",
+      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 6\n| sequence_name(book2)       = Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "6\n| sequence_name(book2)       = Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Headmaster",
+      "pathway_raw": "Moon\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Héloise",
+      "pathway_raw": "Eternal Edict\n|sequence_rank(book2)= 3\n|sequence_name(book2)= Fate's Attendant",
+      "sequence_rank_raw": "3\n|sequence_name(book2)= Fate's Attendant",
+      "sequence_name": "Fate's Attendant",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Sage",
+      "pathway_raw": "Sublunary Eye\n|sequence_rank(book2)= Saint\n|sequence_name(book2)= ?",
+      "sequence_rank_raw": "Saint\n|sequence_name(book2)= ?",
+      "sequence_name": "?",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Topsy",
+      "pathway_raw": "Tail-Devourer\n|sequence_rank(book2)= 3\n|sequence_name(book2)= Hydra",
+      "sequence_rank_raw": "3\n|sequence_name(book2)= Hydra",
+      "sequence_name": "Hydra",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Hart",
+      "pathway_raw": "Chaos Primogenitor\n|sequence_rank(book2)= 3\n|sequence_name(book2)= Divine Mother",
+      "sequence_rank_raw": "3\n|sequence_name(book2)= Divine Mother",
+      "sequence_name": "Divine Mother",
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Higdon",
+      "pathway_raw": "Second Law\n|sequence_rank(book2)= 4\n|sequence_name(book2)= Doomed One",
+      "sequence_rank_raw": "4\n|sequence_name(book2)= Doomed One",
+      "sequence_name": "Doomed One",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Stonemason",
+      "pathway_raw": "Paragon\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Someone",
+      "pathway_raw": "Error\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Breeder Master",
+      "pathway_raw": "Mother\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Apollo",
+      "pathway_raw": "Sun\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Judith",
+      "pathway_raw": "Demoness\n| sequence_name(book2)       = Catastrophe\n| sequence_rank(book2)       = 2\n| disciple(s)                =",
+      "sequence_rank_raw": "2\n| disciple(s)                =",
+      "sequence_name": "Catastrophe\n| sequence_rank(book2)       = 2\n| disciple(s)                =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Yalenna",
+      "pathway_raw": "Demoness\n| sequence_name(book2)       = Unaging\n| sequence_rank(book2)       = 3\n| progression(book2)         = {{Pathway|Red Priest}} {{c|Sequence 9 - 5}}\n| disciple(s)                =",
+      "sequence_rank_raw": "3\n| progression(book2)         = {{Pathway|Red Priest}} {{c|Sequence 9 - 5}}\n| disciple(s)                =",
+      "sequence_name": "Unaging\n| sequence_rank(book2)       = 3\n| progression(book2)         = {{Pathway|Red Priest}} {{c|Sequence 9 - 5}}\n| disciple(s)                =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Louis Gustav",
+      "pathway_raw": "Unknown \n| sequence_rank(book2)       = Saint\n| sequence_name(book2)       =",
+      "sequence_rank_raw": "Saint\n| sequence_name(book2)       =",
+      "sequence_name": "| novel                      = {{Cite Book|2|899}} {{c|Mentioned}}",
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Grimm",
+      "pathway_raw": "|former_pathway =",
+      "sequence_rank_raw": "|novel = \n {{Cite Book|1|59}} {{c|Mentioned}}",
+      "sequence_name": "|sequence_rank =",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Julien Bello",
+      "pathway_raw": "Paragon\n| sequence_rank(book2) = 9\n| sequence_name(book2) = Savant",
+      "sequence_rank_raw": "9\n| sequence_name(book2) = Savant",
+      "sequence_name": "Savant",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Demoness of Purple",
+      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 2\n| sequence_name(book2)       = Catastrophe",
+      "sequence_rank_raw": "2\n| sequence_name(book2)       = Catastrophe",
+      "sequence_name": "Catastrophe",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Demoness of Blue",
+      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 2\n| sequence_name(book2)       = Catastrophe",
+      "sequence_rank_raw": "2\n| sequence_name(book2)       = Catastrophe",
+      "sequence_name": "Catastrophe",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Tissavica",
+      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 2\n| sequence_name(book2)       = Catastrophe",
+      "sequence_rank_raw": "2\n| sequence_name(book2)       = Catastrophe",
+      "sequence_name": "Catastrophe",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Niceea",
+      "pathway_raw": "Demoness\n|sequence_rank(book2) = 6\n|sequence_name(book2) = Pleasure\n|occupation(s)=",
+      "sequence_rank_raw": "6\n|sequence_name(book2) = Pleasure\n|occupation(s)=",
+      "sequence_name": "Pleasure\n|occupation(s)=",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Funkel",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Rebach",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Dalberro",
+      "pathway_raw": "Second Law\n|sequence_rank(book2)= 6\n|sequence_name(book2)= Disease Envoy",
+      "sequence_rank_raw": "6\n|sequence_name(book2)= Disease Envoy",
+      "sequence_name": "Disease Envoy",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Mocoxidos",
+      "pathway_raw": "Second Law\n|sequence_rank(book2)= 3\n|sequence_name(book2)= Left Hand of Decay",
+      "sequence_rank_raw": "3\n|sequence_name(book2)= Left Hand of Decay",
+      "sequence_name": "Left Hand of Decay",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Ohayes",
+      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 4\n| sequence_name(book2)       = Mysticologist",
+      "sequence_rank_raw": "4\n| sequence_name(book2)       = Mysticologist",
+      "sequence_name": "Mysticologist",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Gray",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Weimer",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Ol' Keaton",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Parvi",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Demoness of Scarlet",
+      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
+      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
+      "sequence_name": "Unaging",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Demoness of Silver",
+      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
+      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
+      "sequence_name": "Unaging",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Demoness of Orange",
+      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
+      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
+      "sequence_name": "Unaging",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Demoness of Green",
+      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
+      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
+      "sequence_name": "Unaging",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Demoness of Gold",
+      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
+      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
+      "sequence_name": "Unaging",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Demoness of Brown",
+      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
+      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
+      "sequence_name": "Unaging",
+      "vital_status": "{{alive}} Alive {{c|Corrupted}}"
+    },
+    {
+      "wiki_title": "Henry Augustus I",
+      "pathway_raw": "| sequence_rank              =",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| novel                      = \n{{Cite Book|1|20}} {{c|Mentioned}}\n{{Cite Book|2|963}} {{c|Mentioned}}",
+      "vital_status": "Unknown"
+    },
+    {
+      "wiki_title": "William Augustus VI",
+      "pathway_raw": "| sequence_rank              =",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| novel                      = \n{{Cite Book|1|20}} {{c|Mentioned}}\n{{Cite Book|2|963}} {{c|Mentioned}}",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "White Paper",
+      "pathway_raw": "| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Luo Shan",
+      "pathway_raw": "Sublunary Eye\n|sequence_rank(book2)= 7\n|sequence_name(book2)= Painter",
+      "sequence_rank_raw": "7\n|sequence_name(book2)= Painter",
+      "sequence_name": "Painter",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Mirror Roselle Gustav",
+      "pathway_raw": "Hermit\n| progression(book2)         = {{Pathway|Paragon}} {{c|Sequence 9-2}}",
+      "sequence_rank_raw": "1\n| sequence_type(book2)       = Hermit\n| progression(book2)         = {{Pathway|Paragon}} {{c|Sequence 9-2}}",
+      "sequence_name": "Knowledge Emperor\n| sequence_rank(book2)       = 1\n| sequence_type(book2)       = Hermit\n| progression(book2)         = {{Pathway|Paragon}} {{c|Sequence 9-2}}",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Ulyssan",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Tracey",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Pons Bénet",
+      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 8\n|sequence_name(book2) = Alms Monk",
+      "sequence_rank_raw": "8\n|sequence_name(book2) = Alms Monk",
+      "sequence_name": "Alms Monk",
+      "vital_status": "Dead"
+    },
+    {
+      "wiki_title": "Seids",
+      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Clairvoyant",
+      "sequence_rank_raw": "3\n| sequence_name(book2)       = Clairvoyant",
+      "sequence_name": "Clairvoyant",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Prototype",
+      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 6\n| sequence_name(book2)       = Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "6\n| sequence_name(book2)       = Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Condensed Matter",
+      "pathway_raw": "Hermit\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Bella",
+      "pathway_raw": "Paragon\n| sequence_rank(book2) = 6\n| sequence_name(book2) = Artisan\n| disciple(s) = [[Julien Bello]]",
+      "sequence_rank_raw": "6\n| sequence_name(book2) = Artisan\n| disciple(s) = [[Julien Bello]]",
+      "sequence_name": "Artisan\n| disciple(s) = [[Julien Bello]]",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Leon",
+      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 7\n| sequence_name(book2)       = Warlock\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_rank_raw": "7\n| sequence_name(book2)       = Warlock\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "sequence_name": "Warlock\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Sathipo Eir",
+      "pathway_raw": "Second Law\n|sequence_rank(book2)= 4\n|sequence_name(book2)= Doomed One",
+      "sequence_rank_raw": "4\n|sequence_name(book2)= Doomed One",
+      "sequence_name": "Doomed One",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Lucy Brook",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Tanko",
+      "pathway_raw": "Mother\n|sequence_rank(book2) = 9\n|sequence_name(book2) = Planter",
+      "sequence_rank_raw": "9\n|sequence_name(book2) = Planter",
+      "sequence_name": "Planter",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Tirié",
+      "pathway_raw": "Chained\n|sequence_rank(book2) = 1\n|sequence_name(book2) = Abomination",
+      "sequence_rank_raw": "1\n|sequence_name(book2) = Abomination",
+      "sequence_name": "Abomination",
+      "vital_status": "dead"
+    },
+    {
+      "wiki_title": "Edefana",
+      "pathway_raw": "Visionary\n| sequence_rank(book2)       = 2\n| sequence_name(book2)       = Discerner",
+      "sequence_rank_raw": "2\n| sequence_name(book2)       = Discerner",
+      "sequence_name": "Discerner",
+      "vital_status": "Deceased"
+    },
+    {
+      "wiki_title": "Dabomachie",
+      "pathway_raw": "Twilight Giant\n| sequence_name(book2)       = Hand of God\n| sequence_rank(book2)       = 1",
+      "sequence_rank_raw": "1",
+      "sequence_name": "Hand of God\n| sequence_rank(book2)       = 1",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Lutique",
+      "pathway_raw": "Sun\n| sequence_name(book2)       = White Angel\n| sequence_rank(book2)       = 1",
+      "sequence_rank_raw": "1",
+      "sequence_name": "White Angel\n| sequence_rank(book2)       = 1",
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Holy Monk",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "pathway_inferred": "wheel-of-fortune"
+    },
+    {
+      "wiki_title": "Master of the Shadow Cottage",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead",
+      "pathway_inferred": "abyss"
+    },
+    {
+      "wiki_title": "Malevolent Dragon",
+      "pathway_raw": "|authorities(book2) = {{Pathway|Red Priest|Demoness}}\n|sefirot(book2) = {{Seq|City of Calamity}} {{C|Consciousness of the Sefirah}}\n|above_the_sequence(book2) = {{Seq|Calamity of Destruction}} {{C|as a part of Lumian Lee}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "{{Alive}} Alive {{c|Fused into [[Lumian Lee]]}}",
+      "pathway_inferred": "red-priest"
+    },
+    {
+      "wiki_title": "Celestial Thearch",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "pathway_inferred": "justiciar"
+    },
+    {
+      "wiki_title": "Kapusky Reid",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Golden Buddha",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "|sex = Male",
+      "pathway_inferred": "wheel-of-fortune"
+    },
+    {
+      "wiki_title": "Pitch-Black Fiend",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead",
+      "pathway_inferred": "abyss"
+    },
+    {
+      "wiki_title": "Anna Wayne",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Bogda Jones",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Daisy",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive"
+    },
+    {
+      "wiki_title": "Elliott Vickroy",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Zhou Mingrui",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "| marital_status             = Single"
+    },
+    {
+      "wiki_title": "Regence",
+      "pathway_raw": "| sequence_rank              =",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| novel                      = \n{{Cite Book|1|210}} {{c|Mentioned}}",
+      "vital_status": "| sex                        = male"
+    },
+    {
+      "wiki_title": "Mr. Z",
+      "pathway_raw": "Hanged Man",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| novel                      = {{Cite Book|1|104}} {{c|Mentioned}}",
+      "vital_status": "alive",
+      "pathway_inferred": "hanged-man"
+    },
+    {
+      "wiki_title": "Angelica Barrehart",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Montsouris Ghost",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": ""
+    },
+    {
+      "wiki_title": "Teno Eggers",
+      "pathway_raw": "Death",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| novel                      = {{Cite Book|1|134}}",
+      "vital_status": "dead",
+      "pathway_inferred": "death"
+    },
+    {
+      "wiki_title": "Wright",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive"
+    },
+    {
+      "wiki_title": "Character Tabs",
+      "pathway_raw": "| sequence_rank              =",
+      "sequence_rank_raw": "| sequence_name              =",
+      "sequence_name": "| additional_pathways        =",
+      "vital_status": "| marital_status             ="
+    }
+  ]
+}

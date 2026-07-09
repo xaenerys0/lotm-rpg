@@ -103,4 +103,17 @@ export const VISIONARY_PATHWAY_LORE: LoreEntry[] = [
     ],
     tokenCount: 280,
   },
+  {
+    slug: "visionary-seq4-manipulator",
+    title: "Visionary Pathway — Sequence 4: Manipulator",
+    category: "pathway",
+    content: `The Manipulator is the Saint threshold of the Visionary pathway, where individual mind-reading blooms into mass psychological control. A Manipulator can weave Collective Emotional Resonance, nudging the mood of a crowd or an institution in a chosen direction without any single victim realizing they are being influenced. Virtual Persona allows them to project a convincing secondary self into the minds of others — a false friend, enemy, or witness indistinguishable from reality until dispelled. Deep Memory Implantation surpasses the Hypnotist's rewriting by planting entirely fabricated life experiences that the target accepts as their own history. The Manipulator also gains Authority of the Mind, making their spoken assertions feel intuitively true to weaker-willed listeners. The potion requires two main ingredients — the brain of a Mind Dragon and a vial of distilled crowd emotion — and three supplementary ingredients: Dreamweaver Spider silk, pollen of the Slumber Flower, and a mirror that has reflected a lie told by a Sequence 5 Beyonder. The advancement ritual demands altering the collective memory of a community regarding a significant event, then living within the rewritten history for a full lunar cycle without being exposed. The acting method requires the Manipulator to study groups as living minds, accept that truth is negotiated rather than fixed, and never enjoy the control so much that they forget their own identity. At Sequence 4 the Visionary pathway practitioner becomes a sculptor of consensus, and such power draws the Twilight Hermit Order's quiet attention.`,
+    pathway: "visionary",
+    epoch: 5,
+    npcs: ["Audrey Hall"],
+    sequences: [4],
+    tags: ["visionary-pathway", "manipulator", "saint-threshold", "memory", "consensus"],
+    tokenCount: 285,
+    narratorOnly: true,
+  },
 ];

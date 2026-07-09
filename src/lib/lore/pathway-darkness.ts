@@ -84,4 +84,23 @@ export const DARKNESS_PATHWAY_LORE: LoreEntry[] = [
     ],
     tokenCount: 270,
   },
+  {
+    slug: "darkness-seq4-nightwatcher",
+    title: "Darkness Pathway — Sequence 4: Nightwatcher",
+    category: "pathway",
+    content: `The Nightwatcher is the Saint threshold of the Darkness pathway, the point at which the practitioner becomes a moving institution of the night. A Nightwatcher can raise a Domain of Nightmares over a district, causing sleepers to share a single controlled dreamscape and turning the sleeping population into an unwitting surveillance network. They gain the Night Patrol, the ability to step between any two places touched by darkness as if they were adjacent, making them nearly impossible to corner. Concealment of Fate allows them to hide a person, object, or even a small event from divination and casual perception for a sustained period. Their Lullaby of the Long Night can force entire groups into slumber or, for the resistant, drain their will to fight. The potion requires two main ingredients — the eye of a Nightwatcher Beast and a shadow taken from the deepest hour of midwinter — and three supplementary ingredients: Dream-Eating Crow feathers, oil of the Midnight Beauty Flower, and a silver coin that has crossed the palm of an executed murderer. The advancement ritual requires standing watch over a city from sunset to sunrise without being seen, while preventing a designated supernatural intrusion from reaching its target. The acting method demands that the Nightwatcher embrace silence and concealment as virtues, guard the sleeping world without seeking recognition, and resist the temptation to become the nightmare they patrol against. At Sequence 4 the Darkness pathway practitioner becomes a sentinel of the hidden hours, and the Church of the Evernight Goddess measures such Saints against the safety of the night itself.`,
+    pathway: "darkness",
+    epoch: 5,
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "darkness-pathway",
+      "nightwatcher",
+      "saint-threshold",
+      "nightmares",
+      "concealment",
+    ],
+    tokenCount: 290,
+    narratorOnly: true,
+  },
 ];

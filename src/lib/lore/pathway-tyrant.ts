@@ -79,4 +79,23 @@ export const TYRANT_PATHWAY_LORE: LoreEntry[] = [
     ],
     tokenCount: 260,
   },
+  {
+    slug: "tyrant-seq4-cataclysmic-interrer",
+    title: "Tyrant Pathway — Sequence 4: Cataclysmic Interrer",
+    category: "pathway",
+    content: `The Cataclysmic Interrer is the Saint threshold of the Tyrant pathway, where weather-mastery escalates into geological and oceanic catastrophe. A Cataclysmic Interrer can call Earthquake, splitting streets and collapsing structures across a wide area, and raise Tsunami or rogue tidal waves when near the sea. Their Storm Domain can pin an entire battlefield under hurricane winds, driving rain, and relentless lightning for an extended period. They also gain Tyrant's Wrath, an aura that magnifies the obedience of allies and the terror of enemies within the storm's reach. The potion requires two main ingredients — the heart of a Sea-Tyrant and a lodestone struck by divine lightning — and three supplementary ingredients: fulgurite sand from a coastal strike, the blood of a Folk of Rage who died in battle, and a fragment of coral petrified by volcanic fury. The advancement ritual demands triggering a true natural disaster and then binding it back to dormancy before it reaches an inhabited area, proving mastery over the same forces one has unleashed. The acting method requires the Cataclysmic Interrer to meet every challenge with the storm's temper, to claim sovereignty over sea, sky, and shaking earth, and to remember that a tyrant who cannot control their own rage is merely a disaster with a name. At Sequence 4 the Tyrant pathway practitioner becomes a walking cataclysm, and the Church of the Lord of Storms either claims or destroys such a Saint.`,
+    pathway: "tyrant",
+    epoch: 5,
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "tyrant-pathway",
+      "cataclysmic-interrer",
+      "saint-threshold",
+      "earthquake",
+      "storm-domain",
+    ],
+    tokenCount: 285,
+    narratorOnly: true,
+  },
 ];

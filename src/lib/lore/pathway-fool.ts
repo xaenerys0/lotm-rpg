@@ -73,4 +73,23 @@ export const FOOL_PATHWAY_LORE: LoreEntry[] = [
     tags: ["fool-pathway", "marionettist", "puppeteer", "control", "mid-sequence-apex"],
     tokenCount: 280,
   },
+  {
+    slug: "fool-seq4-bizarro-sorcerer",
+    title: "Fool Pathway — Sequence 4: Bizarro Sorcerer",
+    category: "pathway",
+    content: `The Bizarro Sorcerer is the Saint threshold of the Fool pathway, where the performer becomes the stage itself. At this rung the Beyonder gains Wishing — the power to grant or twist spoken wishes within the bounds of spiritual cost, a dangerous echo of the miracles wielded by higher sequences. Bizarro Bulette allows the sorcerer to turn paper figurines into living, functional duplicates or creatures that obey simple commands. Advanced Marionette Control extends the strings from Sequence 5, permitting control of multiple high-quality marionettes with finer precision and at greater range. The Bizarro Sorcerer also begins to blur the line between illusion and substance, making staged wonders briefly real. The potion requires two main ingredients — the tongue of a Bizarro Bulette and the crystallized teardrop of a Scholar of Yore — and three supplementary ingredients: mercury from a broken mirror, thread spun by a Thousand-Faced Hunter, and ash of a burned marionette. The advancement ritual demands performing a miracle that is witnessed and believed by at least a hundred people, then revealing it as a deception while still leaving one element of it permanently real. The acting method requires the Bizarro Sorcerer to stage increasingly impossible performances, treat reality as a prop, and never explain how the trick is done — even to themselves. At Sequence 4 the Fool pathway practitioner crosses from puppeteer to illusionist-architect, and the hidden churches of the world begin to take notice.`,
+    pathway: "fool",
+    epoch: 5,
+    npcs: ["Klein Moretti"],
+    sequences: [4],
+    tags: [
+      "fool-pathway",
+      "bizarro-sorcerer",
+      "saint-threshold",
+      "wishing",
+      "marionette",
+    ],
+    tokenCount: 275,
+    narratorOnly: true,
+  },
 ];

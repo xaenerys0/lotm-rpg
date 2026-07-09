@@ -91,4 +91,17 @@ export const SUN_PATHWAY_LORE: LoreEntry[] = [
     ],
     tokenCount: 285,
   },
+  {
+    slug: "sun-seq4-unshadowed",
+    title: "Sun Pathway — Sequence 4: Unshadowed",
+    category: "pathway",
+    content: `The Unshadowed is the Saint threshold of the Sun pathway, where the practitioner's inner light becomes so intense that it leaves no room for shadow — literal or metaphorical. An Unshadowed casts no shadow and cannot be hidden by darkness, concealment, or ordinary illusion; their presence is a living candle that weak shadows flee. Solar Purification reaches a scale that can cleanse entire buildings or small neighborhoods of corruption and undeath, burning spiritual taint like parchment. They gain the Body of Light, a partial transformation that makes them highly resistant to physical harm, poison, and disease while rendering them painful to touch for creatures of darkness. Truth-Sight strips away lies within their radiance, making deception difficult to maintain in their presence. The potion requires two main ingredients — the heart of a Radiant Giant and a vial of sunlight collected at true noon from a place that has not seen shadow for a full day — and three supplementary ingredients: Phoenix feather ash, consecrated gold dust, and a drop of blood from a Priest of Light who died in service. The advancement ritual requires walking into a place of profound supernatural darkness and maintaining a self-sustained radiance from dusk until dawn without the light faltering. The acting method demands that the Unshadowed live without hidden deeds, illuminate corruption wherever it hides, and accept that their own shadowlessness makes them impossible to miss — both as savior and as target. At Sequence 4 the Sun pathway practitioner becomes a living hymn of judgment, and the Inquisition watches such growth with equal hope and fear.`,
+    pathway: "sun",
+    epoch: 5,
+    npcs: ["Derrick Berg"],
+    sequences: [4],
+    tags: ["sun-pathway", "unshadowed", "saint-threshold", "purification", "light"],
+    tokenCount: 290,
+    narratorOnly: true,
+  },
 ];

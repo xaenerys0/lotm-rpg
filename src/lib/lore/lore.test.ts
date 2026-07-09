@@ -1066,6 +1066,65 @@ describe("Lore content coverage", () => {
     expect(entry?.narratorOnly).toBe(true);
   });
 
+  it("Batch 1 pathways have narrator-only Sequence 4 Saint-threshold entries", () => {
+    const expected = [
+      { slug: "fool-seq4-bizarro-sorcerer", pathway: "fool", npcs: ["Klein Moretti"] },
+      { slug: "visionary-seq4-manipulator", pathway: "visionary", npcs: ["Audrey Hall"] },
+      { slug: "sun-seq4-unshadowed", pathway: "sun", npcs: ["Derrick Berg"] },
+      { slug: "death-seq4-undying", pathway: "death", npcs: ["Azik Eggers"] },
+      { slug: "darkness-seq4-nightwatcher", pathway: "darkness", npcs: [] },
+      { slug: "tyrant-seq4-cataclysmic-interrer", pathway: "tyrant", npcs: [] },
+      { slug: "door-seq4-secrets-sorcerer", pathway: "door", npcs: ["Bethel Abraham"] },
+      { slug: "hanged-man-seq4-black-knight", pathway: "hanged-man", npcs: [] },
+    ];
+    for (const { slug, pathway, npcs } of expected) {
+      const entry = ALL_LORE_ENTRIES.find((e) => e.slug === slug);
+      expect(entry).toBeDefined();
+      expect(entry?.pathway).toBe(pathway);
+      expect(entry?.sequences).toContain(4);
+      expect(entry?.narratorOnly).toBe(true);
+      for (const npc of npcs) {
+        expect(entry?.npcs).toContain(npc);
+      }
+    }
+  });
+
+  it("Batch 2 pathways have narrator-only Sequence 4 Saint-threshold entries", () => {
+    const expected = [
+      { slug: "white-tower-seq4-prophet", pathway: "white tower", npcs: [] },
+      { slug: "twilight-giant-seq4-demon-hunter", pathway: "twilight giant", npcs: [] },
+      { slug: "justiciar-seq4-imperative-mage", pathway: "justiciar", npcs: [] },
+      {
+        slug: "black-emperor-seq4-earl-of-the-fallen",
+        pathway: "black emperor",
+        npcs: [],
+      },
+      { slug: "red-priest-seq4-iron-blooded-knight", pathway: "red priest", npcs: [] },
+      { slug: "demoness-seq4-despair", pathway: "demoness", npcs: ["Judith"] },
+      { slug: "mother-seq4-classical-alchemist", pathway: "mother", npcs: [] },
+      { slug: "moon-seq4-shaman-king", pathway: "moon", npcs: [] },
+      { slug: "hermit-seq4-mysticologist", pathway: "hermit", npcs: [] },
+      { slug: "paragon-seq4-alchemist", pathway: "paragon", npcs: [] },
+      {
+        slug: "wheel-of-fortune-seq4-misfortune-mage",
+        pathway: "wheel of fortune",
+        npcs: ["Will Auceptin"],
+      },
+      { slug: "abyss-seq4-demon", pathway: "abyss", npcs: [] },
+      { slug: "chained-seq4-puppet", pathway: "chained", npcs: [] },
+    ];
+    for (const { slug, pathway, npcs } of expected) {
+      const entry = ALL_LORE_ENTRIES.find((e) => e.slug === slug);
+      expect(entry).toBeDefined();
+      expect(entry?.pathway).toBe(pathway);
+      expect(entry?.sequences).toContain(4);
+      expect(entry?.narratorOnly).toBe(true);
+      for (const npc of npcs) {
+        expect(entry?.npcs).toContain(npc);
+      }
+    }
+  });
+
   it("each pathway has an overview entry", () => {
     for (const pathway of [
       "fool",

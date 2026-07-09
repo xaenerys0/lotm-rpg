@@ -79,4 +79,23 @@ export const DOOR_PATHWAY_LORE: LoreEntry[] = [
     ],
     tokenCount: 270,
   },
+  {
+    slug: "door-seq4-secrets-sorcerer",
+    title: "Door Pathway — Sequence 4: Secrets Sorcerer",
+    category: "pathway",
+    content: `The Secrets Sorcerer is the Saint threshold of the Door pathway, where the freedom of the Traveler hardens into the architecture of hidden space. A Secrets Sorcerer can raise Concealed Spaces — rooms, vaults, or even small buildings removed from ordinary perception and divination, accessible only through the Sorcerer's chosen doors. They gain Dimensional Lock, the ability to seal a region against teleportation, Blink, and other spatial movement for the duration of a confrontation. Secret Replication allows them to reproduce a witnessed Beyonder power without first Recording it, provided they understand its underlying principle, though the copy is weaker and temporary. The Sorcerer can also weave Door Traps, turning any threshold into a spatial snare that sends trespassers to a prepared pocket space. The potion requires two main ingredients — the eye of a Planeswalker and a key forged from a fallen star — and three supplementary ingredients: the cast-off skin of a Wandering Hide, quicksilver touched by spirit-world moonlight, and a map drawn in blood by a Traveler who never reached their destination. The advancement ritual requires concealing a significant location so completely that even a Sequence 5 diviner fails to find it, then revealing it only after a full week has passed. The acting method demands that the Secrets Sorcerer treat every door as a secret to be kept, wander through spaces others cannot see, and never leave a threshold unguarded. At Sequence 4 the Door pathway practitioner becomes a keeper of forbidden geometries, and the Abraham family counts such Saints among its most guarded treasures.`,
+    pathway: "door",
+    epoch: 5,
+    npcs: ["Bethel Abraham"],
+    sequences: [4],
+    tags: [
+      "door-pathway",
+      "secrets-sorcerer",
+      "saint-threshold",
+      "concealed-space",
+      "spatial-lock",
+    ],
+    tokenCount: 290,
+    narratorOnly: true,
+  },
 ];
