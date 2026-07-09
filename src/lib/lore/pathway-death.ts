@@ -102,4 +102,23 @@ export const DEATH_PATHWAY_LORE: LoreEntry[] = [
     ],
     tokenCount: 295,
   },
+  {
+    slug: "death-seq4-undying",
+    title: "Death Pathway — Sequence 4: Undying",
+    category: "pathway",
+    content: `The Undying is the Saint threshold of the Death pathway, the rung where the practitioner stops fearing death by becoming death's refusal. An Undying possesses Resurrection: unless the body and spirit are completely annihilated, they can gradually revive from lethal injuries, their existence anchored to the River of Eternal Darkness. Their flesh and spirit adopt the Deathless Body, no longer aging, no longer needing food or sleep in any ordinary sense, and highly resistant to diseases, poisons, and mind-affecting powers that target the living. Death Authority deepens their command over undead and spirits, allowing them to bind and command a legion of the dead rather than mere handfuls. The Undying can also mark a target with the Seal of Mortality, hastening decay and making resurrection magic unreliable for the victim. The potion requires two main ingredients — a drop of water from the River of Eternal Darkness and the heart of an Undying King — and three supplementary ingredients: Graveyard Soil from a thousand-year tomb, a wraith's final breath, and the skull of a Gatekeeper who willingly surrendered their post. The advancement ritual demands dying and returning to life under one's own power, crossing the threshold of the Underworld and walking back without outside aid. The acting method requires the Undying to treat death as a river to be crossed rather than an enemy to be fought, to shepherd the dead with patience, and to remember that immortality is a responsibility rather than a prize. At Sequence 4 the Death pathway practitioner becomes a fixed point in the cycle of life and death, and the great powers of the Southern Continent take careful note.`,
+    pathway: "death",
+    epoch: 5,
+    npcs: ["Azik Eggers"],
+    sequences: [4],
+    tags: [
+      "death-pathway",
+      "undying",
+      "saint-threshold",
+      "resurrection",
+      "death-authority",
+    ],
+    tokenCount: 290,
+    narratorOnly: true,
+  },
 ];

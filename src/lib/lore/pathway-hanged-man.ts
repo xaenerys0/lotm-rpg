@@ -103,4 +103,23 @@ export const HANGED_MAN_PATHWAY_LORE: LoreEntry[] = [
     ],
     tokenCount: 270,
   },
+  {
+    slug: "hanged-man-seq4-black-knight",
+    title: "Hanged Man Pathway — Sequence 4: Black Knight",
+    category: "pathway",
+    content: `The Black Knight is the Saint threshold of the Hanged Man pathway, where flesh, shadow, and sacrificial obligation fuse into heavy armor of corruption. A Black Knight can manifest the Armor of Degeneration, a second skin of blackened flesh and writhing shadow that absorbs tremendous damage and lashes back with corrupting tendrils. They wield the Blade of Sacrifice, a weapon that grows deadlier the more the wielder bleeds for it — every wound taken becomes power to deliver. Their Curse of Sin brands a target with one of the Seven Deadly Sins, amplifying that vice until the victim's judgment collapses. Black Knights also gain the Rite of Burden, allowing them to voluntarily accept a curse or injury intended for another, turning the pathway's theme of sacrifice into a combat technique. The potion requires two main ingredients — the heart of a Degenerate Shepherd and the blood of a fallen paladin who died willingly — and three supplementary ingredients: shadow-stained steel from a cursed blade, seven crimson petals from a Blood-Rose, and a noose cut from the rope of an executed traitor. The advancement ritual demands defeating a stronger foe while bearing a self-inflicted wound that would kill an ordinary Beyonder, surviving through sacrifice rather than avoidance. The acting method requires the Black Knight to accept burdens gladly, to let degeneration strengthen rather than consume them, and to never sacrifice another for convenience. At Sequence 4 the Hanged Man pathway practitioner becomes a walking rite of sin and martyrdom, and the Rose School of Thought both reveres and fears such a Saint.`,
+    pathway: "hanged-man",
+    epoch: 5,
+    npcs: [],
+    sequences: [4],
+    tags: [
+      "hanged-man-pathway",
+      "black-knight",
+      "saint-threshold",
+      "degeneration",
+      "sacrifice",
+    ],
+    tokenCount: 295,
+    narratorOnly: true,
+  },
 ];
