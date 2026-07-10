@@ -658,548 +658,180 @@
   },
   "pathways": {
     "abyss": {
-      "0": [
-        "Farbauti"
-      ],
-      "2": [
-        "Basil"
-      ],
-      "5": [
-        "Jason Beria",
-        "Kircheis"
-      ],
-      "6": [
-        "Devil Dog"
-      ],
-      "8": [
-        "Squall"
-      ]
+      "0": ["Farbauti"],
+      "2": ["Basil"],
+      "5": ["Jason Beria", "Kircheis"],
+      "6": ["Devil Dog"],
+      "8": ["Squall"]
     },
     "black-emperor": {
-      "0": [
-        "Roselle Gustav",
-        "Solomon"
-      ],
-      "1": [
-        "George Augustus III"
-      ],
-      "3": [
-        "Nast Solomon"
-      ],
-      "4": [
-        "Qonas Kilgor",
-        "Savigny Solomon"
-      ],
-      "5": [
-        "Lockhart Siakam",
-        "Pacheco Dwayne"
-      ],
-      "6": [
-        "Luan",
-        "Mithor King"
-      ],
-      "9": [
-        "Rafter Pound"
-      ]
+      "0": ["Roselle Gustav", "Solomon"],
+      "1": ["George Augustus III"],
+      "3": ["Nast Solomon"],
+      "4": ["Qonas Kilgor", "Savigny Solomon"],
+      "5": ["Lockhart Siakam", "Pacheco Dwayne"],
+      "6": ["Luan", "Mithor King"],
+      "9": ["Rafter Pound"]
     },
     "chained": {
-      "0": [
-        "Kvastir"
-      ],
-      "1": [
-        "Chained God",
-        "Suah"
-      ],
-      "2": [
-        "Barranca",
-        "Reinette Tinekerr"
-      ],
-      "3": [
-        "Mahmosi"
-      ],
-      "4": [
-        "Shanks",
-        "Sharron",
-        "Zatwen"
-      ],
-      "5": [
-        "Maric",
-        "Senor",
-        "Steve"
-      ],
-      "6": [
-        "Jason",
-        "Maveti"
-      ],
-      "7": [
-        "Tyre"
-      ],
-      "8": [
-        "Flight Ken"
-      ]
+      "0": ["Kvastir"],
+      "1": ["Chained God", "Suah"],
+      "2": ["Barranca", "Reinette Tinekerr"],
+      "3": ["Mahmosi"],
+      "4": ["Shanks", "Sharron", "Zatwen"],
+      "5": ["Maric", "Senor", "Steve"],
+      "6": ["Jason", "Maveti"],
+      "7": ["Tyre"],
+      "8": ["Flight Ken"]
     },
     "darkness": {
-      "0": [
-        "Evernight Goddess",
-        "Flegrea"
-      ],
-      "2": [
-        "Arianna",
-        "Mother of the Sky"
-      ],
-      "3": [
-        "Anthony Stevenson",
-        "Ilya"
-      ],
-      "4": [
-        "Crestet Cesimir",
-        "Ince Zangwill",
-        "Leonard Mitchell",
-        "Nim",
-        "Selena"
-      ],
-      "5": [
-        "Eric",
-        "Soest"
-      ],
-      "7": [
-        "Aiur Harson",
-        "Davy Raymond",
-        "Dunn Smith"
-      ],
-      "8": [
-        "Borgia",
-        "Seeka Tron"
-      ],
-      "9": [
-        "Kenley White",
-        "Royale Reideen"
-      ]
+      "0": ["Evernight Goddess", "Flegrea"],
+      "2": ["Arianna", "Mother of the Sky"],
+      "3": ["Anthony Stevenson", "Ilya"],
+      "4": ["Crestet Cesimir", "Ince Zangwill", "Leonard Mitchell", "Nim", "Selena"],
+      "5": ["Eric", "Soest"],
+      "7": ["Aiur Harson", "Davy Raymond", "Dunn Smith"],
+      "8": ["Borgia", "Seeka Tron"],
+      "9": ["Kenley White", "Royale Reideen"]
     },
     "death": {
-      "-2": [
-        "Artificial Death"
-      ],
-      "0": [
-        "Gregrace",
-        "Salinger"
-      ],
-      "1": [
-        "Sia Palenque Eggers"
-      ],
-      "2": [
-        "Azik Eggers",
-        "Haiter"
-      ],
-      "3": [
-        "Hawick"
-      ],
-      "4": [
-        "Patrick Bryan"
-      ],
-      "5": [
-        "Daly Simone",
-        "Ludwell",
-        "Maysanchez",
-        "Ulika"
-      ],
-      "7": [
-        "Frye"
-      ],
-      "8": [
-        "Lorotta"
-      ]
+      "-2": ["Artificial Death"],
+      "0": ["Gregrace", "Salinger"],
+      "1": ["Sia Palenque Eggers"],
+      "2": ["Azik Eggers", "Haiter"],
+      "3": ["Hawick"],
+      "4": ["Patrick Bryan"],
+      "5": ["Daly Simone", "Ludwell", "Maysanchez", "Ulika"],
+      "7": ["Frye"],
+      "8": ["Lorotta"]
     },
     "demoness": {
-      "0": [
-        "Primordial Demoness"
-      ],
-      "3": [
-        "Clarice",
-        "Katarina Pelle"
-      ],
-      "4": [
-        "Panatiya",
-        "Trissy"
-      ],
-      "5": [
-        "Tracy"
-      ],
-      "6": [
-        "Sharon"
-      ],
-      "7": [
-        "Shermane"
-      ]
+      "0": ["Primordial Demoness"],
+      "3": ["Clarice", "Katarina Pelle"],
+      "4": ["Panatiya", "Trissy"],
+      "5": ["Tracy"],
+      "6": ["Sharon"],
+      "7": ["Shermane"]
     },
     "door": {
-      "1": [
-        "Bethel Abraham"
-      ],
-      "4": [
-        "Botis",
-        "Fors Wall"
-      ],
-      "5": [
-        "Lewis Wien"
-      ],
-      "7": [
-        "Dorian Gray Abraham",
-        "Lawrence Nord",
-        "Verdu Garcia"
-      ],
-      "9": [
-        "Aulisa"
-      ]
+      "1": ["Bethel Abraham"],
+      "4": ["Botis", "Fors Wall"],
+      "5": ["Lewis Wien"],
+      "7": ["Dorian Gray Abraham", "Lawrence Nord", "Verdu Garcia"],
+      "9": ["Aulisa"]
     },
     "error": {
-      "1": [
-        "Jacob",
-        "Zoroast"
-      ],
-      "2": [
-        "Amon",
-        "Pallez Zoroast"
-      ],
-      "4": [
-        "Flora Jacob"
-      ],
-      "5": [
-        "Mobet Zoroast"
-      ],
-      "6": [
-        "Jodeson"
-      ],
-      "7": [
-        "Hazel Macht"
-      ],
-      "8": [
-        "Lanevus"
-      ],
-      "9": [
-        "Phil"
-      ]
+      "1": ["Jacob", "Zoroast"],
+      "2": ["Amon", "Pallez Zoroast"],
+      "4": ["Flora Jacob"],
+      "5": ["Mobet Zoroast"],
+      "6": ["Jodeson"],
+      "7": ["Hazel Macht"],
+      "8": ["Lanevus"],
+      "9": ["Phil"]
     },
     "fool": {
-      "0": [
-        "Klein Moretti"
-      ],
-      "1": [
-        "Zaratul Senior"
-      ],
-      "2": [
-        "Antigonus",
-        "Kotar",
-        "Zaratul"
-      ],
-      "5": [
-        "Rosago"
-      ],
-      "7": [
-        "Suited Clown"
-      ]
+      "0": ["Klein Moretti"],
+      "1": ["Zaratul Senior"],
+      "2": ["Antigonus", "Kotar", "Zaratul"],
+      "5": ["Rosago"],
+      "7": ["Suited Clown"]
     },
     "hanged-man": {
-      "0": [
-        "True Creator"
-      ],
-      "1": [
-        "Sasrir"
-      ],
-      "2": [
-        "Steph"
-      ],
-      "4": [
-        "Kisma",
-        "Leomaster",
-        "Lovia Tiffany"
-      ],
-      "5": [
-        "Mr. A"
-      ],
-      "6": [
-        "Giant",
-        "Heath Doyle"
-      ],
-      "9": [
-        "Hanass Vincent",
-        "Sirius Arapis"
-      ]
+      "0": ["True Creator"],
+      "1": ["Sasrir"],
+      "2": ["Steph"],
+      "4": ["Kisma", "Leomaster", "Lovia Tiffany"],
+      "5": ["Mr. A"],
+      "6": ["Giant", "Heath Doyle"],
+      "9": ["Hanass Vincent", "Sirius Arapis"]
     },
     "hermit": {
-      "0": [
-        "Hidden Sage"
-      ],
-      "2": [
-        "Bernadette Gustav",
-        "Retia Austin",
-        "Torriope"
-      ],
-      "3": [
-        "Cattleya"
-      ],
-      "4": [
-        "Kmerolo"
-      ],
-      "5": [
-        "Nikila"
-      ],
-      "7": [
-        "Hendry"
-      ],
-      "9": [
-        "Old Neil"
-      ]
+      "0": ["Hidden Sage"],
+      "2": ["Bernadette Gustav", "Retia Austin", "Torriope"],
+      "3": ["Cattleya"],
+      "4": ["Kmerolo"],
+      "5": ["Nikila"],
+      "7": ["Hendry"],
+      "9": ["Old Neil"]
     },
     "justiciar": {
-      "0": [
-        "Trunsoest"
-      ],
-      "1": [
-        "Kaslana",
-        "William Augustus I"
-      ],
-      "2": [
-        "Dlink Augustus",
-        "Tamara"
-      ],
-      "3": [
-        "Grove Augustus"
-      ],
-      "4": [
-        "Amyrius Rieveldt",
-        "Celt",
-        "Georgina Augustus",
-        "Xio Derecha"
-      ],
-      "5": [
-        "Alfred Hall",
-        "Frunziar Edward",
-        "Mason Dere",
-        "Moran Avigny",
-        "Stratford"
-      ],
-      "6": [
-        "Harras",
-        "Noelia",
-        "Pallas Negan"
-      ],
-      "7": [
-        "Andy Haydn",
-        "Belize",
-        "Camus Castiya",
-        "Katy",
-        "Wendel"
-      ],
-      "8": [
-        "Elland Kag",
-        "Parker"
-      ]
+      "0": ["Trunsoest"],
+      "1": ["Kaslana", "William Augustus I"],
+      "2": ["Dlink Augustus", "Tamara"],
+      "3": ["Grove Augustus"],
+      "4": ["Amyrius Rieveldt", "Celt", "Georgina Augustus", "Xio Derecha"],
+      "5": ["Alfred Hall", "Frunziar Edward", "Mason Dere", "Moran Avigny", "Stratford"],
+      "6": ["Harras", "Noelia", "Pallas Negan"],
+      "7": ["Andy Haydn", "Belize", "Camus Castiya", "Katy", "Wendel"],
+      "8": ["Elland Kag", "Parker"]
     },
     "moon": {
-      "1": [
-        "Auernia"
-      ],
-      "2": [
-        "Olmer"
-      ],
-      "3": [
-        "Nibbs Odora"
-      ],
-      "4": [
-        "Emlyn White",
-        "Klarman",
-        "Mistral"
-      ],
-      "5": [
-        "Ernes Boyar"
-      ],
-      "6": [
-        "Cosmi Odora",
-        "Rus Báthory",
-        "Waymandy",
-        "Windsor Behring"
-      ],
-      "7": [
-        "Argos",
-        "Galis Kevin"
-      ],
-      "8": [
-        "Darkwill"
-      ],
-      "9": [
-        "Glaint"
-      ]
+      "1": ["Auernia"],
+      "2": ["Olmer"],
+      "3": ["Nibbs Odora"],
+      "4": ["Emlyn White", "Klarman", "Mistral"],
+      "5": ["Ernes Boyar"],
+      "6": ["Cosmi Odora", "Rus Báthory", "Waymandy", "Windsor Behring"],
+      "7": ["Argos", "Galis Kevin"],
+      "8": ["Darkwill"],
+      "9": ["Glaint"]
     },
     "mother": {
-      "0": [
-        "Lilith"
-      ],
-      "2": [
-        "Omebella",
-        "Roland"
-      ],
-      "4": [
-        "Agrippina"
-      ],
-      "5": [
-        "Frank Lee",
-        "Ukfa Connerchris"
-      ]
+      "0": ["Lilith"],
+      "2": ["Omebella", "Roland"],
+      "4": ["Agrippina"],
+      "5": ["Frank Lee", "Ukfa Connerchris"]
     },
     "paragon": {
-      "0": [
-        "God of Steam and Machinery"
-      ],
-      "2": [
-        "Bornova Gustav"
-      ],
-      "4": [
-        "Horamick Haydn"
-      ],
-      "6": [
-        "Cielf June"
-      ],
-      "7": [
-        "Portland Moment"
-      ],
-      "8": [
-        "Ciel Gustav"
-      ],
-      "9": [
-        "Melissa Moretti"
-      ]
+      "0": ["God of Steam and Machinery"],
+      "2": ["Bornova Gustav"],
+      "4": ["Horamick Haydn"],
+      "6": ["Cielf June"],
+      "7": ["Portland Moment"],
+      "8": ["Ciel Gustav"],
+      "9": ["Melissa Moretti"]
     },
     "red-priest": {
-      "0": [
-        "Alista Tudor"
-      ],
-      "1": [
-        "Einhorn",
-        "Floren Sauron",
-        "Medici",
-        "Sauron",
-        "Sauron-Einhorn-Medici"
-      ],
-      "2": [
-        "Awatoma Einhorn"
-      ],
-      "3": [
-        "Jenna",
-        "Tony Twain"
-      ],
-      "4": [
-        "Anderson Hood",
-        "Egor Einhorn"
-      ],
-      "5": [
-        "Aurore Lee"
-      ],
-      "6": [
-        "Bakerland Jean Madan",
-        "Danitz Dubois"
-      ],
-      "7": [
-        "Helene"
-      ],
-      "9": [
-        "Meursault",
-        "Pasha"
-      ]
+      "0": ["Alista Tudor"],
+      "1": ["Einhorn", "Floren Sauron", "Medici", "Sauron", "Sauron-Einhorn-Medici"],
+      "2": ["Awatoma Einhorn"],
+      "3": ["Jenna", "Tony Twain"],
+      "4": ["Anderson Hood", "Egor Einhorn"],
+      "5": ["Aurore Lee"],
+      "6": ["Bakerland Jean Madan", "Danitz Dubois"],
+      "7": ["Helene"],
+      "9": ["Meursault", "Pasha"]
     },
     "sun": {
-      "0": [
-        "Eternal Blazing Sun"
-      ],
-      "4": [
-        "Derrick Berg"
-      ],
-      "5": [
-        "Snowman"
-      ],
-      "6": [
-        "Orpheus"
-      ]
+      "0": ["Eternal Blazing Sun"],
+      "4": ["Derrick Berg"],
+      "5": ["Snowman"],
+      "6": ["Orpheus"]
     },
     "twilight-giant": {
-      "0": [
-        "Aurmir",
-        "God of Combat"
-      ],
-      "2": [
-        "Bladel",
-        "Gandalf",
-        "Larrion"
-      ],
-      "3": [
-        "Colin Iliad",
-        "Murskogan",
-        "Waite Chirmont"
-      ],
-      "5": [
-        "Bulatov Ivan",
-        "Gonlun",
-        "Groselle",
-        "Legere",
-        "Liaval"
-      ],
-      "6": [
-        "Uddel",
-        "Utravsky"
-      ],
-      "8": [
-        "Darc Regence",
-        "Ozil"
-      ],
-      "9": [
-        "Roy"
-      ]
+      "0": ["Aurmir", "God of Combat"],
+      "2": ["Bladel", "Gandalf", "Larrion"],
+      "3": ["Colin Iliad", "Murskogan", "Waite Chirmont"],
+      "5": ["Bulatov Ivan", "Gonlun", "Groselle", "Legere", "Liaval"],
+      "6": ["Uddel", "Utravsky"],
+      "8": ["Darc Regence", "Ozil"],
+      "9": ["Roy"]
     },
     "tyrant": {
-      "0": [
-        "Lord of Storms",
-        "Soniathrym"
-      ],
-      "2": [
-        "Cohinem",
-        "Gaard II"
-      ],
-      "3": [
-        "Jahn Kottman",
-        "Kalvetua"
-      ],
-      "4": [
-        "Ace Snake",
-        "Alger Wilson",
-        "Randall Valentinus"
-      ],
-      "5": [
-        "Siatas"
-      ],
-      "6": [
-        "Millet",
-        "Qilangos"
-      ],
-      "7": [
-        "Nina"
-      ],
-      "8": [
-        "Havre",
-        "Swain"
-      ],
-      "9": [
-        "Biles",
-        "Hamilton"
-      ]
+      "0": ["Lord of Storms", "Soniathrym"],
+      "2": ["Cohinem", "Gaard II"],
+      "3": ["Jahn Kottman", "Kalvetua"],
+      "4": ["Ace Snake", "Alger Wilson", "Randall Valentinus"],
+      "5": ["Siatas"],
+      "6": ["Millet", "Qilangos"],
+      "7": ["Nina"],
+      "8": ["Havre", "Swain"],
+      "9": ["Biles", "Hamilton"]
     },
     "visionary": {
-      "0": [
-        "Adam",
-        "Ankewelt"
-      ],
-      "1": [
-        "Alzuhod"
-      ],
+      "0": ["Adam", "Ankewelt"],
+      "1": ["Alzuhod"],
       "2": [
         "Ariehogg",
         "Hermes",
@@ -1209,54 +841,23 @@
         "Mr. Gluttony",
         "Mr. Lust"
       ],
-      "3": [
-        "Audrey Hall",
-        "Pauli Derlau"
-      ],
-      "4": [
-        "Hvin Rambis"
-      ],
-      "5": [
-        "Susie"
-      ],
-      "7": [
-        "Aiflor",
-        "Hood Eugen"
-      ],
-      "8": [
-        "Escalante Oseleka"
-      ],
-      "9": [
-        "Daxter Guderian",
-        "Mr. Harry"
-      ]
+      "3": ["Audrey Hall", "Pauli Derlau"],
+      "4": ["Hvin Rambis"],
+      "5": ["Susie"],
+      "7": ["Aiflor", "Hood Eugen"],
+      "8": ["Escalante Oseleka"],
+      "9": ["Daxter Guderian", "Mr. Harry"]
     },
     "wheel-of-fortune": {
-      "1": [
-        "Ouroboros",
-        "Will Auceptin"
-      ],
-      "4": [
-        "Ricciardo"
-      ],
-      "5": [
-        "Enzo"
-      ]
+      "1": ["Ouroboros", "Will Auceptin"],
+      "4": ["Ricciardo"],
+      "5": ["Enzo"]
     },
     "white-tower": {
-      "0": [
-        "God of Knowledge and Wisdom"
-      ],
-      "4": [
-        "Lucca Brewster"
-      ],
-      "5": [
-        "Edwina Edwards"
-      ],
-      "7": [
-        "Berg",
-        "Isengard Stanton"
-      ]
+      "0": ["God of Knowledge and Wisdom"],
+      "4": ["Lucca Brewster"],
+      "5": ["Edwina Edwards"],
+      "7": ["Berg", "Isengard Stanton"]
     }
   },
   "unmapped": [

@@ -66,9 +66,9 @@ const groupBSlugs = new Set([
   "chained-pathway-overview",
 ]);
 
-const seq4 = arrays.flat().filter(
-  (e) => e.sequences?.length === 1 && e.sequences[0] === 4
-);
+const seq4 = arrays
+  .flat()
+  .filter((e) => e.sequences?.length === 1 && e.sequences[0] === 4);
 const updatedOverviews = arrays.flat().filter((e) => groupBSlugs.has(e.slug));
 const entriesToEmit = [...updatedOverviews, ...seq4];
 

@@ -1074,14 +1074,14 @@ export const NPC_LORE: LoreEntry[] = [
     slug: "npc-lovia-tiffany",
     title: "Lovia Tiffany — City of Silver Council Elder",
     category: "npc",
-    content: `Lovia Tiffany is an elder of the City of Silver's ruling council and a Beyonder of the Shepherd pathway at Sequence 4 or 5. In the Forsaken Land she serves as both spiritual guide and combat leader, using the Shepherd's ability to command spirits and channel the dead to protect the city from the monsters that press against its walls. Lovia is grave, devout, and respected by the residents of the City of Silver for her long service and the sacrifices it has demanded. She works closely with Colin Iliad and the other council members to maintain order, conduct rituals, and train promising Beyonders. Lovia represents the Shepherd pathway's grim but necessary role in a city surrounded by death.`,
-    // CORPUS: wiki "Lovia Tiffany", novel Forsaken Land / City of Silver arcs
+    content: `Lovia Tiffany is an elder of the City of Silver's ruling council and a Beyonder of the Hanged Man pathway at Sequence 4 or 5 (a Shepherd risen toward Black Knight). In the Forsaken Land she serves as both spiritual guide and combat leader, using the Shepherd's ability to graze on spirits and marshal the dead to protect the city from the monsters that press against its walls. Lovia is grave, devout, and respected by the residents of the City of Silver for her long service and the sacrifices it has demanded. She works closely with Colin Iliad and the other council members to maintain order, conduct rituals, and train promising Beyonders. Lovia represents the Hanged Man pathway's grim but necessary role in a city surrounded by death.`,
+    // CORPUS: wiki "Lovia Tiffany" — "a Sequence 4 Black Knight of the Hanged Man Pathway" (Shepherd = Hanged Man Seq 5)
     epoch: 5,
     city: "silver",
-    pathway: "shepherd",
+    pathway: "hanged-man",
     npcs: ["Lovia Tiffany"],
     sequences: [],
-    tags: ["city-of-silver", "forsaken-land", "shepherd-pathway", "council-elder"],
+    tags: ["city-of-silver", "forsaken-land", "hanged-man-pathway", "council-elder"],
     tokenCount: 190,
     encounterConfig: {
       minPlayerSequence: 5,
