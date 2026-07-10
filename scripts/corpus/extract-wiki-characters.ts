@@ -44,7 +44,8 @@ function parseArgs(argv: string[]): { outputPath?: string } {
   return args;
 }
 
-const PATHWAY_KEYS = /\b(pathway|sequence|class)\b/i;
+const PATHWAY_KEYS = /\b(pathway|class)\b/i;
+const SEQUENCE_KEYS = /\bsequence\b/i;
 const AFFILIATION_KEYS =
   /\b(affiliation|organization|organization\(s\)|occupation|formerly)\b/i;
 const STATUS_KEYS = /\b(status|alive|dead|gender|species|hair|eye)\b/i;
@@ -133,7 +134,7 @@ async function main(): Promise<void> {
       categories,
       wordCount: doc ? doc.content.split(/\s+/).filter(Boolean).length : 0,
       pathway: pickCanonical(fields, PATHWAY_KEYS),
-      sequence: pickCanonical(fields, PATHWAY_KEYS),
+      sequence: pickCanonical(fields, SEQUENCE_KEYS),
       affiliation: pickCanonical(fields, AFFILIATION_KEYS),
       status: pickCanonical(fields, STATUS_KEYS),
       relatives: pickCanonical(fields, RELATIVE_KEYS),
@@ -142,6 +143,7 @@ async function main(): Promise<void> {
         Object.entries(fields).filter(
           ([k]) =>
             PATHWAY_KEYS.test(k) ||
+            SEQUENCE_KEYS.test(k) ||
             AFFILIATION_KEYS.test(k) ||
             STATUS_KEYS.test(k) ||
             RELATIVE_KEYS.test(k) ||

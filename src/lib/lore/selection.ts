@@ -76,8 +76,17 @@ export function selectCuratedLore(
     if (seen.has(entry.slug)) continue;
     seen.add(entry.slug);
 
-    if (!passesEpochGate(entry.epoch, epoch)) continue;
-    if (!passesActiveEpochGate(entry, epoch)) continue;
+    // Epoch gate: when an entry declares `encounterConfig.activeEpochs`, that
+    // set is authoritative (it may span epochs, e.g. a figure active in both
+    // epoch 4 and 5 like Bethel Abraham) and REPLACES the exact single-epoch
+    // gate — otherwise the exact `passesEpochGate` would drop the entry before
+    // `activeEpochs` was ever consulted. Entries without `activeEpochs` keep the
+    // exact single-epoch gate.
+    if (entry.encounterConfig?.activeEpochs?.length) {
+      if (!passesActiveEpochGate(entry, epoch)) continue;
+    } else if (!passesEpochGate(entry.epoch, epoch)) {
+      continue;
+    }
     if (!passesSequenceGate(entry.sequences, sequenceLevel)) continue;
     if (!passesEncounterGate(entry, sequenceLevel, encounterFilter)) continue;
     if (excluded && entry.npcs.some((n) => normalizeCanonName(n) === excluded)) {
