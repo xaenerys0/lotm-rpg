@@ -77,13 +77,15 @@ function sqlQuote(value: string | null): string {
   return "'" + value.replace(/'/g, "''").replace(/\\/g, "\\\\") + "'";
 }
 
+// npcs/tags/sequences are NOT NULL (default '{}') in lore_entries, so an empty
+// array must serialize to '{}', never null (a null violates the constraint).
 function sqlArray(values: string[] | null): string {
-  if (!values || values.length === 0) return "null";
+  if (!values || values.length === 0) return "'{}'";
   return "'{" + values.map((v) => `"${v.replace(/"/g, '\\"')}"`).join(",") + "}'";
 }
 
 function sqlIntArray(values: number[] | null): string {
-  if (!values || values.length === 0) return "null";
+  if (!values || values.length === 0) return "'{}'";
   return "'{" + values.join(",") + "}'";
 }
 
