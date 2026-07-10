@@ -11,7 +11,7 @@
     'white tower',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"white-tower-pathway","god-almighty-group","overview"}',
     225
@@ -37,7 +37,7 @@
     'twilight giant',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"twilight-giant-pathway","eternal-darkness-group","overview"}',
     220
@@ -63,7 +63,7 @@
     'justiciar',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"justiciar-pathway","order-group","overview"}',
     214
@@ -89,7 +89,7 @@
     'black emperor',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"black-emperor-pathway","order-group","overview"}',
     217
@@ -115,7 +115,7 @@
     'red priest',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"red-priest-pathway","combat-group","overview"}',
     209
@@ -141,7 +141,7 @@
     'demoness',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"demoness-pathway","combat-group","overview"}',
     216
@@ -167,7 +167,7 @@
     'mother',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"mother-pathway","life-group","overview"}',
     210
@@ -193,7 +193,7 @@
     'moon',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"moon-pathway","life-group","overview"}',
     217
@@ -219,7 +219,7 @@
     'hermit',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"hermit-pathway","knowledge-group","overview"}',
     222
@@ -245,7 +245,7 @@
     'paragon',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"paragon-pathway","knowledge-group","overview"}',
     213
@@ -271,7 +271,7 @@
     'wheel of fortune',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"wheel-of-fortune-pathway","wheel-of-fortune-group","overview"}',
     214
@@ -297,7 +297,7 @@
     'abyss',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"abyss-pathway","abyss-group","overview"}',
     212
@@ -323,7 +323,7 @@
     'chained',
     5,
     null,
-    null,
+    '{}',
     '{9,8,7,6,5,4,3,2,1}',
     '{"chained-pathway","abyss-group","overview"}',
     212
@@ -453,7 +453,7 @@
     'darkness',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"darkness-pathway","nightwatcher","saint-threshold","nightmares","concealment"}',
     290
@@ -479,7 +479,7 @@
     'tyrant',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"tyrant-pathway","cataclysmic-interrer","saint-threshold","earthquake","storm-domain"}',
     285
@@ -531,7 +531,7 @@
     'hanged-man',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"hanged-man-pathway","black-knight","saint-threshold","degeneration","sacrifice"}',
     295
@@ -557,7 +557,7 @@
     'white tower',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"white-tower-pathway","prophet","saint-threshold","foresight","oracle"}',
     290
@@ -583,7 +583,7 @@
     'twilight giant',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"twilight-giant-pathway","demon-hunter","saint-threshold","twilight-aura","hunt"}',
     290
@@ -609,7 +609,7 @@
     'justiciar',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"justiciar-pathway","imperative-mage","saint-threshold","law","authority"}',
     285
@@ -635,7 +635,7 @@
     'black emperor',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"black-emperor-pathway","earl-of-the-fallen","saint-threshold","corruption","disorder"}',
     290
@@ -661,7 +661,7 @@
     'red priest',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"red-priest-pathway","iron-blooded-knight","saint-threshold","war","flame"}',
     295
@@ -713,7 +713,7 @@
     'mother',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"mother-pathway","classical-alchemist","saint-threshold","alchemy","life"}',
     295
@@ -739,7 +739,7 @@
     'moon',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"moon-pathway","shaman-king","saint-threshold","blood-magic","beasts"}',
     295
@@ -765,7 +765,7 @@
     'hermit',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"hermit-pathway","mysticologist","saint-threshold","hidden-sage","secrets"}',
     295
@@ -791,7 +791,7 @@
     'paragon',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"paragon-pathway","alchemist","saint-threshold","craft","machinery"}',
     295
@@ -843,7 +843,7 @@
     'abyss',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"abyss-pathway","demon","saint-threshold","desire","hellfire"}',
     295
@@ -869,7 +869,7 @@
     'chained',
     5,
     null,
-    null,
+    '{}',
     '{4}',
     '{"chained-pathway","puppet","saint-threshold","body-transfer","binding"}',
     295
