@@ -14,4 +14,15 @@ values (
   ARRAY[4],
   ARRAY['error-pathway', 'parasite', 'saint-threshold', 'amon', 'worm-of-time'],
   270
-);
+)
+on conflict (slug) do update set
+  title = excluded.title,
+  category = excluded.category,
+  content = excluded.content,
+  pathway = excluded.pathway,
+  epoch = excluded.epoch,
+  city = excluded.city,
+  npcs = excluded.npcs,
+  sequences = excluded.sequences,
+  tags = excluded.tags,
+  token_count = excluded.token_count;

@@ -1284,7 +1284,11 @@ describe("Total lore corpus", () => {
   it("total token count is within expected MVP range", () => {
     const total = ALL_LORE_ENTRIES.reduce((sum, e) => sum + e.tokenCount, 0);
     expect(total).toBeGreaterThan(5000);
-    expect(total).toBeLessThan(80000);
+    // Ceiling grows as curated lore is intentionally expanded (world build-outs,
+    // the missing-Beyonders audit batches). These high-tier entries are
+    // narratorOnly + sequence-gated, so they rarely enter a live turn's budget;
+    // this guard only catches accidental corpus bloat. Bump it with each batch.
+    expect(total).toBeLessThan(95000);
   });
 
   it("every one of the 22 pathways has retrievable overview lore (issue #28)", () => {
