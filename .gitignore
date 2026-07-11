@@ -54,3 +54,6 @@ next-env.d.ts
 
 # corpus extraction artifacts
 /scripts/.cache/
+
+# scratch / audit artifacts (NPC audit, batch assembly, etc.)
+/tmp/

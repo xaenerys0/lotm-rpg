@@ -93,7 +93,7 @@ for (const [pathway, entries] of Object.entries(pathwayArrays)) {
 }
 
 // Deduplicate and sort
-for (const [name, data] of Object.entries(npcIndex)) {
+for (const data of Object.values(npcIndex)) {
   data.pathways = [...new Set(data.pathways)];
   data.sequences = [...new Set(data.sequences)].sort((a, b) => a - b);
 }
