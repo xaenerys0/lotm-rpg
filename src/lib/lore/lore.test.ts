@@ -1229,6 +1229,131 @@ describe("Lore content coverage", () => {
     }
   });
 
+  it("NPC backfill Batch 3 city-level Beyonders are city-keyed, not pathway-keyed", () => {
+    // The leak rule: regional NPCs carry a `city` and NO `pathway` field (a
+    // pathway field would inject them into every same-pathway prompt).
+    const citySlugs = [
+      "npc-ademisaul",
+      "npc-ait",
+      "npc-aiur-harson",
+      "npc-albus-medici",
+      "npc-amandina",
+      "npc-argos",
+      "npc-associate-professor",
+      "npc-bakerland-jean-madan",
+      "npc-basil",
+      "npc-belize",
+      "npc-berg",
+      "npc-borgia",
+      "npc-bram-andariel",
+      "npc-browns-sauron",
+      "npc-cali",
+      "npc-christo",
+      "npc-ciel-gustav",
+      "npc-cielf-june",
+      "npc-devajo-andariel",
+      "npc-devil-dog",
+      "npc-frunziar-edward",
+      "npc-frye",
+      "npc-galis-kevin",
+      "npc-gardner-martin",
+      "npc-glaint",
+      "npc-hanass-vincent",
+      "npc-harras",
+      "npc-havre",
+      "npc-hilbert-alucard",
+      "npc-hisoka",
+      "npc-i-know-someone",
+      "npc-ikanser-bernard",
+      "npc-kaslana",
+      "npc-katy",
+      "npc-kenley-white",
+      "npc-kolobo",
+      "npc-la-nou-bruch",
+      "npc-leah-bellot",
+      "npc-leon",
+      "npc-lewis-wien",
+      "npc-lorotta",
+      "npc-lugano-toscano",
+      "npc-margot",
+      "npc-meursault",
+      "npc-monette",
+      "npc-moran-avigny",
+      "npc-niceea",
+      "npc-olson",
+      "npc-osta-trul",
+      "npc-parker",
+      "npc-poufer-sauron",
+      "npc-professor",
+      "npc-reaza",
+      "npc-rhea",
+      "npc-robert",
+      "npc-rosago",
+      "npc-royale-reideen",
+      "npc-rus-bathory",
+      "npc-seeka-tron",
+      "npc-shermane",
+      "npc-simon",
+      "npc-sow",
+      "npc-stephen-hampres",
+      "npc-susie",
+      "npc-swain",
+      "npc-ulika",
+      "npc-waymandy",
+      "npc-windsor-behring",
+    ];
+    expect(citySlugs).toHaveLength(68);
+    for (const slug of citySlugs) {
+      const entry = ALL_LORE_ENTRIES.find((e) => e.slug === slug);
+      expect(entry, slug).toBeDefined();
+      expect(entry?.category).toBe("npc");
+      expect(entry?.narratorOnly).toBe(true);
+      expect(entry?.city, slug).toBeTruthy();
+      expect(entry?.pathway, slug).toBeUndefined();
+      expect(entry?.sequences.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("NPC backfill Batch 3 Seq 1-2 angels are pathway-keyed", () => {
+    const angelSlugs = [
+      "npc-dabomachie",
+      "npc-demoness-of-blue",
+      "npc-demoness-of-purple",
+      "npc-edefana",
+      "npc-lius",
+      "npc-lutique",
+      "npc-marianne",
+      "npc-mirror-roselle-gustav",
+      "npc-pualis-de-roquefort",
+      "npc-snarner-einhorn",
+      "npc-tirie",
+      "npc-tissavica",
+      "npc-zedus",
+    ];
+    expect(angelSlugs).toHaveLength(13);
+    for (const slug of angelSlugs) {
+      const entry = ALL_LORE_ENTRIES.find((e) => e.slug === slug);
+      expect(entry, slug).toBeDefined();
+      expect(entry?.pathway, slug).toBeTruthy();
+      expect(entry?.city).toBeUndefined();
+      expect(entry?.narratorOnly).toBe(true);
+      for (const seq of entry?.sequences ?? []) {
+        expect([1, 2]).toContain(seq);
+      }
+    }
+  });
+
+  it("Batch 3 spot-checks pin canon city/role", () => {
+    const havre = ALL_LORE_ENTRIES.find((e) => e.slug === "npc-havre");
+    expect(havre?.city).toBe("tingen");
+    expect(havre?.npcs).toContain("Old Neil");
+    const hisoka = ALL_LORE_ENTRIES.find((e) => e.slug === "npc-hisoka");
+    expect(hisoka?.city).toBe("balam");
+    const lutique = ALL_LORE_ENTRIES.find((e) => e.slug === "npc-lutique");
+    expect(lutique?.pathway).toBe("sun");
+    expect(lutique?.sequences).toContain(1);
+  });
+
   it("each pathway has an overview entry", () => {
     for (const pathway of [
       "fool",
@@ -1392,8 +1517,9 @@ describe("Total lore corpus", () => {
     // the missing-Beyonders audit batches). These high-tier entries are
     // narratorOnly + sequence-gated, so they rarely enter a live turn's budget;
     // this guard only catches accidental corpus bloat. Bump it with each batch.
-    // Bumped for NPC backfill Batch 2 (54 Seq 3-4 Saints & demigods, ~12k tokens).
-    expect(total).toBeLessThan(110000);
+    // Bumped for NPC backfill Batch 2 (54 Seq 3-4 Saints & demigods, ~12k tokens)
+    // and Batch 3 (81 city-level Beyonders + Seq 1-2 angels, ~18k tokens).
+    expect(total).toBeLessThan(130000);
   });
 
   it("every one of the 22 pathways has retrievable overview lore (issue #28)", () => {
