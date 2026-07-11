@@ -1354,6 +1354,89 @@ describe("Lore content coverage", () => {
     expect(lutique?.sequences).toContain(1);
   });
 
+  it("NPC backfill Batch 4 no-city Beyonders are RAG-only (no city, no pathway, Seq 5-9)", () => {
+    // RAG-only: named Seq 5-9 individuals with no stable active-city base — no
+    // `city` and no `pathway` field, gated to their own sequence.
+    const noCitySlugs = [
+      "npc-andy-haydn",
+      "npc-davy-raymond",
+      "npc-elland-kag",
+      "npc-eric",
+      "npc-hamilton",
+      "npc-heath-doyle",
+      "npc-hendry",
+      "npc-jodeson",
+      "npc-kircheis",
+      "npc-maveti",
+      "npc-millet",
+      "npc-mr-harry",
+      "npc-orpheus",
+      "npc-squall",
+      "npc-verdu-garcia",
+      "npc-wendel",
+    ];
+    expect(noCitySlugs).toHaveLength(16);
+    for (const slug of noCitySlugs) {
+      const entry = ALL_LORE_ENTRIES.find((e) => e.slug === slug);
+      expect(entry, slug).toBeDefined();
+      expect(entry?.category).toBe("npc");
+      expect(entry?.narratorOnly).toBe(true);
+      expect(entry?.city, slug).toBeUndefined();
+      expect(entry?.pathway, slug).toBeUndefined();
+      expect(entry?.sequences, slug).toHaveLength(1);
+      expect([5, 6, 7, 8, 9]).toContain(entry?.sequences[0]);
+    }
+  });
+
+  it("NPC backfill Batch 4 non-Beyonders are city-keyed with no sequence and no pathway", () => {
+    const nonBeySlugs = [
+      "npc-aaron-ceres",
+      "npc-alice-moretti",
+      "npc-bredt",
+      "npc-cassandra",
+      "npc-cesare-francis",
+      "npc-elizabeth",
+      "npc-flameng",
+      "npc-gabriel",
+      "npc-glacis",
+      "npc-jurgen-cooper",
+      "npc-mary-schott",
+      "npc-maury-macht",
+      "npc-michel",
+      "npc-mike-joseph",
+      "npc-mr-franky",
+      "npc-old-kohler",
+      "npc-orianna",
+      "npc-richardson",
+      "npc-rozanne",
+      "npc-ruhr",
+      "npc-stelyn-sammer",
+      "npc-talim-dumont",
+      "npc-travis-everett",
+      "npc-walter",
+      "npc-wendy-smyrin",
+    ];
+    expect(nonBeySlugs).toHaveLength(25);
+    for (const slug of nonBeySlugs) {
+      const entry = ALL_LORE_ENTRIES.find((e) => e.slug === slug);
+      expect(entry, slug).toBeDefined();
+      expect(entry?.category).toBe("npc");
+      expect(entry?.narratorOnly).toBe(true);
+      expect(entry?.pathway, slug).toBeUndefined();
+      expect(["tingen", "backlund", "trier"], slug).toContain(entry?.city);
+      expect(entry?.sequences, slug).toHaveLength(0);
+    }
+  });
+
+  it("Batch 4 spot-checks pin canon keying", () => {
+    const kircheis = ALL_LORE_ENTRIES.find((e) => e.slug === "npc-kircheis");
+    expect(kircheis?.city).toBeUndefined();
+    expect(kircheis?.sequences).toEqual([5]);
+    const franky = ALL_LORE_ENTRIES.find((e) => e.slug === "npc-mr-franky");
+    expect(franky?.city).toBe("tingen");
+    expect(franky?.sequences).toEqual([]);
+  });
+
   it("each pathway has an overview entry", () => {
     for (const pathway of [
       "fool",
