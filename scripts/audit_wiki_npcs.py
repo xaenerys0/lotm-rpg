@@ -117,7 +117,17 @@ def parse_infobox(text: str) -> dict:
     # Also book2 variants
     fields = base_fields + [f"{f}(book2)" for f in base_fields]
     for field in fields:
-        fm = re.search(rf"\|\s*{re.escape(field)}\s*=\s*(.*?)\n(?=\|\s*\w+\s*=|\}})", box, re.DOTALL)
+        # Capture up to the end of the value's line(s), stopping at the next
+        # infobox field (`| name =`, incl. `(book2)` variants) or the closing
+        # `}}`. Use [ \t]* (not \s*) after `=` so a BLANK field yields empty
+        # instead of swallowing subsequent lines — that over-capture is what
+        # pulled spurious sequence numbers (e.g. a "1" from a later |novel=
+        # citation) and mis-tiered blank-rank Saints.
+        pattern = (
+            r"\|\s*" + re.escape(field) + r"\s*=[ \t]*(.*?)\n"
+            r"(?=\s*\|\s*[\w()]+\s*=|\s*\}\})"
+        )
+        fm = re.search(pattern, box, re.DOTALL)
         if fm:
             val = fm.group(1).strip()
             val = re.sub(r"<ref[^>]*/?>", "", val)
@@ -152,6 +162,30 @@ def extract_sequence_number(rank: str | None) -> int | str | None:
     for key, val in text_rank_map.items():
         if key in r:
             return val
+    return None
+
+
+CATEGORY_RE = re.compile(r"\[\[Category:([^\]|]+)", re.IGNORECASE)
+
+
+def extract_categories(text: str) -> list[str]:
+    """All [[Category:...]] tags on a page (title portion only)."""
+    return [m.strip() for m in CATEGORY_RE.findall(text)]
+
+
+def infer_sequence_from_categories(categories: list[str]) -> str | None:
+    """Fallback tiering when sequence_rank is blank.
+
+    The wiki tags Saint-tier figures with [[Category:Book One Saint]] /
+    [[Category:Book Two Saint]] even when the infobox sequence_rank is empty
+    (this is how the 7 carryover saints were originally lost to `unmapped` and
+    then hand-mislabeled). The category can't distinguish Seq 3 from Seq 4, so
+    return an ambiguous marker to surface the figure for per-candidate
+    verification rather than guessing a concrete number.
+    """
+    for c in categories:
+        if re.search(r"\bsaint\b", c, re.IGNORECASE):
+            return "saint?"
     return None
 
 
@@ -230,6 +264,13 @@ def main():
                         break
 
         seq_num = extract_sequence_number(info.get("sequence_rank") or info.get("sequence_rank(book2)"))
+        seq_source = "sequence_rank" if seq_num is not None else None
+        if seq_num is None:
+            # Blank/unrecognized rank: fall back to Saint category tags so the
+            # figure lands in a distinguishable bucket instead of generic unmapped.
+            seq_num = infer_sequence_from_categories(extract_categories(text))
+            if seq_num is not None:
+                seq_source = "category-saint"
         seq_name = info.get("sequence_name") or info.get("sequence_name(book2)")
         status = info.get("vital_status", "") or info.get("vital_status(book2)", "")
 
@@ -239,6 +280,7 @@ def main():
             "sequence_rank_raw": info.get("sequence_rank") or info.get("sequence_rank(book2)"),
             "sequence_name": seq_name,
             "vital_status": status,
+            "seq_source": seq_source,
         }
 
         if pathway and seq_num is not None:
@@ -259,11 +301,17 @@ def main():
         "unmapped": unmapped,
     }
 
+    # Sequence keys are mostly ints but may include the string "saint?" marker;
+    # order ints numerically first, then string markers (never compare int to str).
+    def seq_sort_key(kv):
+        k = kv[0]
+        return (1, str(k)) if isinstance(k, str) else (0, k)
+
     for pathway in sorted(pathway_seq_chars.keys()):
         seqs = pathway_seq_chars[pathway]
         report["pathways"][pathway] = {
             str(seq): sorted([c["wiki_title"] for c in chars])
-            for seq, chars in sorted(seqs.items(), key=lambda x: x[0])
+            for seq, chars in sorted(seqs.items(), key=seq_sort_key)
         }
 
     OUT_PATH.write_text(json.dumps(report, indent=2, ensure_ascii=False))

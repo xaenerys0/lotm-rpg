@@ -1,7 +1,7 @@
 {
   "total_character_pages": 556,
-  "mapped_count": 257,
-  "unmapped_count": 299,
+  "mapped_count": 346,
+  "unmapped_count": 210,
   "redirect_map": {
     "Main Page": "Lord of Mysteries Wiki",
     "Sealed Artifacts": "Sealed Artifact",
@@ -659,37 +659,39 @@
   "pathways": {
     "abyss": {
       "0": ["Farbauti"],
-      "2": ["Basil"],
-      "5": ["Jason Beria", "Kircheis"],
-      "6": ["Devil Dog"],
+      "5": ["Hisoka", "Jason Beria", "Kircheis"],
+      "6": ["Devajo Andariel", "Devil Dog"],
+      "7": ["Bram Andariel"],
       "8": ["Squall"]
     },
     "black-emperor": {
       "0": ["Roselle Gustav", "Solomon"],
       "1": ["George Augustus III"],
       "3": ["Nast Solomon"],
-      "4": ["Qonas Kilgor", "Savigny Solomon"],
+      "4": ["Peacock", "Qonas Kilgor", "Savigny Solomon"],
       "5": ["Lockhart Siakam", "Pacheco Dwayne"],
       "6": ["Luan", "Mithor King"],
       "9": ["Rafter Pound"]
     },
     "chained": {
       "0": ["Kvastir"],
-      "1": ["Chained God", "Suah"],
+      "1": ["Chained God", "Naboredisley", "Suah", "Tirié"],
       "2": ["Barranca", "Reinette Tinekerr"],
       "3": ["Mahmosi"],
       "4": ["Shanks", "Sharron", "Zatwen"],
-      "5": ["Maric", "Senor", "Steve"],
+      "5": ["Cali", "Iveljsta Eggers", "Maric", "Senor", "Steve"],
       "6": ["Jason", "Maveti"],
       "7": ["Tyre"],
-      "8": ["Flight Ken"]
+      "8": ["Flight Ken"],
+      "saint?": ["Tutanssess II"]
     },
     "darkness": {
       "0": ["Evernight Goddess", "Flegrea"],
-      "2": ["Arianna", "Mother of the Sky"],
+      "2": ["Arianna", "Marianne", "Mother of the Sky"],
       "3": ["Anthony Stevenson", "Ilya"],
       "4": ["Crestet Cesimir", "Ince Zangwill", "Leonard Mitchell", "Nim", "Selena"],
       "5": ["Eric", "Soest"],
+      "6": ["Amandina"],
       "7": ["Aiur Harson", "Davy Raymond", "Dunn Smith"],
       "8": ["Borgia", "Seeka Tron"],
       "9": ["Kenley White", "Royale Reideen"]
@@ -698,25 +700,45 @@
       "-2": ["Artificial Death"],
       "0": ["Gregrace", "Salinger"],
       "1": ["Sia Palenque Eggers"],
-      "2": ["Azik Eggers", "Haiter"],
-      "3": ["Hawick"],
+      "2": ["Azik Eggers", "Haiter", "Lius"],
+      "3": ["Hawick", "Hela"],
       "4": ["Patrick Bryan"],
-      "5": ["Daly Simone", "Ludwell", "Maysanchez", "Ulika"],
-      "7": ["Frye"],
+      "5": ["Daly Simone", "Ludwell", "Maysanchez", "Reaza", "Ulika"],
+      "6": ["Burman"],
+      "7": ["Frye", "Robert"],
       "8": ["Lorotta"]
     },
     "demoness": {
       "0": ["Primordial Demoness"],
-      "3": ["Clarice", "Katarina Pelle"],
+      "2": [
+        "Demoness of Blue",
+        "Demoness of Purple",
+        "Franca Roland",
+        "Judith",
+        "Krismona",
+        "Tissavica"
+      ],
+      "3": [
+        "Clarice",
+        "Demoness of Brown",
+        "Demoness of Gold",
+        "Demoness of Green",
+        "Demoness of Orange",
+        "Demoness of Scarlet",
+        "Demoness of Silver",
+        "Jenna",
+        "Katarina Pelle",
+        "Yalenna"
+      ],
       "4": ["Panatiya", "Trissy"],
-      "5": ["Tracy"],
-      "6": ["Sharon"],
+      "5": ["Browns Sauron", "Celeste", "Julie", "Tracy"],
+      "6": ["Niceea", "Sharon"],
       "7": ["Shermane"]
     },
     "door": {
       "1": ["Bethel Abraham"],
       "4": ["Botis", "Fors Wall"],
-      "5": ["Lewis Wien"],
+      "5": ["Lewis Wien", "Mad Lady"],
       "7": ["Dorian Gray Abraham", "Lawrence Nord", "Verdu Garcia"],
       "9": ["Aulisa"]
     },
@@ -724,40 +746,42 @@
       "1": ["Jacob", "Zoroast"],
       "2": ["Amon", "Pallez Zoroast"],
       "4": ["Flora Jacob"],
-      "5": ["Mobet Zoroast"],
+      "5": ["Bard", "Harrison", "Mobet Zoroast"],
       "6": ["Jodeson"],
       "7": ["Hazel Macht"],
       "8": ["Lanevus"],
-      "9": ["Phil"]
+      "9": ["Phil", "Worms"]
     },
     "fool": {
       "0": ["Klein Moretti"],
       "1": ["Zaratul Senior"],
       "2": ["Antigonus", "Kotar", "Zaratul"],
-      "5": ["Rosago"],
-      "7": ["Suited Clown"]
+      "5": ["Loki", "Rosago"],
+      "7": ["Leah Bellot", "Suited Clown"]
     },
     "hanged-man": {
       "0": ["True Creator"],
       "1": ["Sasrir"],
       "2": ["Steph"],
       "4": ["Kisma", "Leomaster", "Lovia Tiffany"],
-      "5": ["Mr. A"],
+      "5": ["Mr. A", "Mr. K"],
       "6": ["Giant", "Heath Doyle"],
-      "9": ["Hanass Vincent", "Sirius Arapis"]
+      "9": ["Hanass Vincent", "Osta Trul", "Sirius Arapis"]
     },
     "hermit": {
       "0": ["Hidden Sage"],
+      "1": ["Mirror Roselle Gustav"],
       "2": ["Bernadette Gustav", "Retia Austin", "Torriope"],
-      "3": ["Cattleya"],
-      "4": ["Kmerolo"],
-      "5": ["Nikila"],
-      "7": ["Hendry"],
+      "3": ["Cattleya", "Seids"],
+      "4": ["Kmerolo", "Ohayes"],
+      "5": ["Nikila", "Professor"],
+      "6": ["Periodic Table", "Prototype"],
+      "7": ["Hendry", "Leon"],
       "9": ["Old Neil"]
     },
     "justiciar": {
       "0": ["Trunsoest"],
-      "1": ["Kaslana", "William Augustus I"],
+      "1": ["William Augustus I"],
       "2": ["Dlink Augustus", "Tamara"],
       "3": ["Grove Augustus"],
       "4": ["Amyrius Rieveldt", "Celt", "Georgina Augustus", "Xio Derecha"],
@@ -767,55 +791,62 @@
       "8": ["Elland Kag", "Parker"]
     },
     "moon": {
-      "1": ["Auernia"],
-      "2": ["Olmer"],
+      "1": ["Auernia", "Pualis de Roquefort"],
+      "2": ["Olmer", "Zedus"],
       "3": ["Nibbs Odora"],
-      "4": ["Emlyn White", "Klarman", "Mistral"],
+      "4": ["Alexis", "Emlyn White", "Klarman", "Mistral", "Oxyto"],
       "5": ["Ernes Boyar"],
       "6": ["Cosmi Odora", "Rus Báthory", "Waymandy", "Windsor Behring"],
-      "7": ["Argos", "Galis Kevin"],
-      "8": ["Darkwill"],
+      "7": ["Argos", "Galis Kevin", "La Nou Bruch"],
+      "8": ["Christo", "Darkwill"],
       "9": ["Glaint"]
     },
     "mother": {
       "0": ["Lilith"],
       "2": ["Omebella", "Roland"],
       "4": ["Agrippina"],
-      "5": ["Frank Lee", "Ukfa Connerchris"]
+      "5": ["Frank Lee", "Lugano Toscano", "Montserrat", "Ukfa Connerchris"],
+      "9": ["Tanko"]
     },
     "paragon": {
       "0": ["God of Steam and Machinery"],
       "2": ["Bornova Gustav"],
-      "4": ["Horamick Haydn"],
-      "6": ["Cielf June"],
+      "4": ["Claude", "Horamick Haydn", "Jack Walton"],
+      "6": ["Bella", "Cielf June"],
       "7": ["Portland Moment"],
       "8": ["Ciel Gustav"],
-      "9": ["Melissa Moretti"]
+      "9": ["Julien Bello", "Melissa Moretti"]
     },
     "red-priest": {
       "0": ["Alista Tudor"],
-      "1": ["Einhorn", "Floren Sauron", "Medici", "Sauron", "Sauron-Einhorn-Medici"],
-      "2": ["Awatoma Einhorn"],
-      "3": ["Jenna", "Tony Twain"],
-      "4": ["Anderson Hood", "Egor Einhorn"],
-      "5": ["Aurore Lee"],
+      "1": ["Einhorn", "Medici", "Sauron", "Sauron-Einhorn-Medici", "Vermonda Sauron"],
+      "2": ["Awatoma Einhorn", "Diest", "Snarner Einhorn"],
+      "3": ["Tony Twain"],
+      "4": ["Anderson Hood", "Egor Einhorn", "Gusain", "Wanak"],
+      "5": ["Albus Medici", "Aurore Lee", "Gardner Martin", "Olson", "Philip"],
       "6": ["Bakerland Jean Madan", "Danitz Dubois"],
       "7": ["Helene"],
-      "9": ["Meursault", "Pasha"]
+      "8": ["Margot"],
+      "9": ["Meursault", "Pasha"],
+      "saint?": ["Floren Sauron"]
     },
     "sun": {
       "0": ["Eternal Blazing Sun"],
-      "4": ["Derrick Berg"],
-      "5": ["Snowman"],
-      "6": ["Orpheus"]
+      "1": ["Lutique", "Viève"],
+      "4": ["Angoulême de François", "Derrick Berg"],
+      "5": ["Snowman", "Ultraman"],
+      "6": ["Orpheus"],
+      "7": ["Valentine de Lacourt"]
     },
     "twilight-giant": {
       "0": ["Aurmir", "God of Combat"],
-      "2": ["Bladel", "Gandalf", "Larrion"],
+      "1": ["Dabomachie"],
+      "2": ["Bladel", "Larrion"],
       "3": ["Colin Iliad", "Murskogan", "Waite Chirmont"],
+      "4": ["Gandalf"],
       "5": ["Bulatov Ivan", "Gonlun", "Groselle", "Legere", "Liaval"],
-      "6": ["Uddel", "Utravsky"],
-      "8": ["Darc Regence", "Ozil"],
+      "6": ["Ryan Vitia", "Uddel", "Utravsky"],
+      "8": ["Ait", "Darc Regence", "Mason", "Ozil", "Simon", "Sow"],
       "9": ["Roy"]
     },
     "tyrant": {
@@ -823,41 +854,37 @@
       "2": ["Cohinem", "Gaard II"],
       "3": ["Jahn Kottman", "Kalvetua"],
       "4": ["Ace Snake", "Alger Wilson", "Randall Valentinus"],
-      "5": ["Siatas"],
+      "5": ["Howl Constantine", "Siatas"],
       "6": ["Millet", "Qilangos"],
       "7": ["Nina"],
-      "8": ["Havre", "Swain"],
+      "8": ["Havre", "Rhea", "Swain"],
       "9": ["Biles", "Hamilton"]
     },
     "visionary": {
       "0": ["Adam", "Ankewelt"],
       "1": ["Alzuhod"],
-      "2": [
-        "Ariehogg",
-        "Hermes",
-        "Ma'am Greed",
-        "Miss Sloth",
-        "Mr. Envy",
-        "Mr. Gluttony",
-        "Mr. Lust"
-      ],
+      "2": ["Ariehogg", "Edefana", "Hermes"],
       "3": ["Audrey Hall", "Pauli Derlau"],
-      "4": ["Hvin Rambis"],
+      "4": ["Anthony Reid", "Clémence Athana", "Hvin Rambis"],
       "5": ["Susie"],
+      "6": ["I Know Someone"],
       "7": ["Aiflor", "Hood Eugen"],
       "8": ["Escalante Oseleka"],
-      "9": ["Daxter Guderian", "Mr. Harry"]
+      "9": ["Daxter Guderian", "Mr. Harry"],
+      "saint?": ["Ma'am Greed", "Miss Sloth", "Mr. Envy", "Mr. Gluttony", "Mr. Lust"]
     },
     "wheel-of-fortune": {
       "1": ["Ouroboros", "Will Auceptin"],
       "4": ["Ricciardo"],
-      "5": ["Enzo"]
+      "5": ["Enzo"],
+      "8": ["Kolobo"]
     },
     "white-tower": {
       "0": ["God of Knowledge and Wisdom"],
       "4": ["Lucca Brewster"],
-      "5": ["Edwina Edwards"],
-      "7": ["Berg", "Isengard Stanton"]
+      "5": ["Edwina Edwards", "Guei"],
+      "7": ["Berg", "Isengard Stanton"],
+      "8": ["Brignais"]
     }
   },
   "unmapped": [
@@ -866,35 +893,41 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Wendy Smyrin",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Selena Wood",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Benson Moretti",
-      "pathway_raw": null,
-      "sequence_rank_raw": null,
+      "pathway_raw": "Black Emperor",
+      "sequence_rank_raw": "?",
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null,
+      "pathway_inferred": "black-emperor"
     },
     {
       "wiki_title": "Cuttlefish That Loves Diving",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": ""
+      "vital_status": "",
+      "seq_source": null
     },
     {
       "wiki_title": "Ancient Sun God",
@@ -902,28 +935,32 @@
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "Deceased {{c|Resurrected as [[Adam]]}}{{Cite Book|1|1346}}{{Cite Book|2|393}}",
+      "seq_source": null,
       "pathway_inferred": "error"
     },
     {
       "wiki_title": "Mother Tree of Desire",
-      "pathway_raw": "|above_the_sequence = {{Seq|Mother Tree of Desire}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "{{Alive}} Alive {{c|Injured}}"
+      "vital_status": "{{Alive}} Alive {{c|Injured}}",
+      "seq_source": null
     },
     {
       "wiki_title": "Mother Goddess of Depravity",
-      "pathway_raw": "|above_the_sequence = {{Seq|Mother Goddess of Depravity}}",
-      "sequence_rank_raw": null,
-      "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Agalito",
-      "pathway_raw": "Abyss\n|sequence_type(book2) = Abyss",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null
+    },
+    {
+      "wiki_title": "Agalito",
+      "pathway_raw": "Abyss",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "abyss"
     },
     {
@@ -931,14 +968,16 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Caitlyn Hall",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Ikanser Bernard",
@@ -946,6 +985,7 @@
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "paragon"
     },
     {
@@ -953,126 +993,136 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Ian Wright",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Kolobo",
-      "pathway_raw": "|sequence_rank =",
-      "sequence_rank_raw": "|sequence_name =",
-      "sequence_name": "|aliases =",
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Cynthia",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Rozanne",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Maury Macht",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Walter",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Richardson",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Old Kohler",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Aaron Ceres",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Mary Schott",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Talim Dumont",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Mike Joseph",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Jevington Augustus",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Hibbert Hall",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Animal Trainer",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Original Creator",
-      "pathway_raw": "|authorities = All [[Pathways]]",
-      "sequence_rank_raw": "|sequence_type=",
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "{{Alive}} In Slumber"
+      "vital_status": "{{Alive}} In Slumber",
+      "seq_source": null
     },
     {
       "wiki_title": "Stelyn Sammer",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Ademisaul",
@@ -1080,6 +1130,7 @@
       "sequence_rank_raw": "Half",
       "sequence_name": "Monster",
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "wheel-of-fortune"
     },
     {
@@ -1087,21 +1138,16 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Amandina",
-      "pathway_raw": "Darkness\n| sequence_rank(book2)       = 6\n| sequence_name(book2)       = Soul Assurer",
-      "sequence_rank_raw": "6\n| sequence_name(book2)       = Soul Assurer",
-      "sequence_name": "Soul Assurer",
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Underworld Daoist",
-      "pathway_raw": "|authorities(book2) = {{Pathway|Death|Darkness|Twilight Giant}}\n|sefirot(book2) = {{seq|River of Eternal Darkness}}\n|above_the_sequence(book2) =",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "alive",
+      "seq_source": null,
       "pathway_inferred": "death"
     },
     {
@@ -1109,70 +1155,80 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Aguesid Negan",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Nolfi",
       "pathway_raw": "Condenser",
-      "sequence_rank_raw": "| novel                      =\n {{Cite Book|2|530}}\n*{{Cite Book|2|533}} {{c|Name Revealed}} \n| sequence_type(book2) = Condenser",
-      "sequence_name": "| sequence_rank(book2)       =",
-      "vital_status": "alive"
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Framis Cage",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Batna Comté",
-      "pathway_raw": "| relatives= \n|partner(s)=[[Nolfi]] {{c|Lover}}",
-      "sequence_rank_raw": "| novel                      ={{Cite Book|2|516}} \n| sequence_type(book2) =",
-      "sequence_name": "| sequence_rank(book2)       =",
-      "vital_status": "alive"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Celestial Worthy of Heaven and Earth for Blessings",
-      "pathway_raw": "|authorities = \n* {{Pathway/group|LoM\n    |Fool_note={{c|Former}}\n    |Error_note={{c|Former}}\n    |Door_note={{c|Former}}\n  }}\n{{SpoilerToggle/context|\n* {{Pathway/group|ED\n    |Darkness_note={{c|Former}}\n    |Death_note={{c|Former}}\n    |Twilight Giant_note={{c|Former}}\n  }}\n* {{Pathway/group|TA\n    |Black Emperor_note={{c|Former}}\n    |Justiciar_note={{c|Former}}\n  }}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "{{Alive}} Alive {{c|Fused with [[Klein Moretti|The Fool]]}}"
+      "vital_status": "{{Alive}} Alive {{c|Fused with [[Klein Moretti|The Fool]]}}",
+      "seq_source": null
     },
     {
       "wiki_title": "Primordial God Almighty",
-      "pathway_raw": "|authorities = \n* {{Pathway/group|GA\n    |Visionary_note={{c|Former}}\n    |Hanged Man_note={{c|Former}}\n    |Sun_note={{c|Former}}\n    |Tyrant_note={{c|Former}}\n    |White Tower_note={{c|Former}}\n  }}\n{{SpoilerToggle/context|\n* {{Pathway/group|CoD\n    |Red Priest_note={{c|Former}}\n    |Demoness_note={{c|Former}}\n  }}\n* {{Pathway/group|FoD\n    |Abyss_note={{c|Former}}\n    |Chained_note={{c|Former}}\n  }}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Deceased"
+      "vital_status": "Deceased",
+      "seq_source": null
     },
     {
       "wiki_title": "Son of Chaos",
-      "pathway_raw": "|above_the_sequence = {{Seq|Son of Chaos}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Ray Bieber",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Deceased"
+      "vital_status": "Deceased",
+      "seq_source": null
     },
     {
       "wiki_title": "Barton",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Alicia Tamara",
@@ -1180,6 +1236,7 @@
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "black-emperor"
     },
     {
@@ -1187,595 +1244,514 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Jurgen Cooper",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Alice Moretti",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Welch McGovern",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Bredt",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Cesare Francis",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Megose",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Gawain",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Glacis",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Joyce Meyer",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Ed Sheeran",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "High-Dimensional Overseer",
-      "pathway_raw": "|above_the_sequence = {{Seq|High-Dimensional Overseer}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Supernova Dominator",
-      "pathway_raw": "|above_the_sequence = {{Seq|Supernova Dominator}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Monarch of Decay",
-      "pathway_raw": "|above_the_sequence = {{Seq|Monarch of Decay}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Inextinguishable Ravings",
-      "pathway_raw": "|above_the_sequence = {{Seq|Inextinguishable Ravings}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Primordial Hunger",
-      "pathway_raw": "|above_the_sequence = {{Seq|Primordial Hunger}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Edwards",
-      "pathway_raw": "|former_pathway =",
-      "sequence_rank_raw": "|novel = \n {{Cite Book|1|59}} {{c|Mentioned}}\n {{Cite Book|1|1300}}",
-      "sequence_name": "|sequence_rank =",
-      "vital_status": "unknown"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "unknown",
+      "seq_source": null
     },
     {
       "wiki_title": "Capim",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Vernal Fnarr",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Carnot",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Kalat",
       "pathway_raw": "unknown",
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Edmonton",
-      "pathway_raw": "unknown\n|affiliation(s) = [[Resistance]]",
+      "pathway_raw": "unknown",
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Ralph",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Connors Viktor",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Leticia Dolera",
-      "pathway_raw": "|sequence_rank =",
-      "sequence_rank_raw": "|sequence_name =",
-      "sequence_name": "|novel = {{Cite Book|1|532}}",
-      "vital_status": "Dead"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Baynfel",
-      "pathway_raw": "Hanged Man\n| sequence_name(book2)       = \n| sequence_rank(book2)       =",
-      "sequence_rank_raw": "| novel                      = {{Cite Book|2|503}}\n|partner(s)                  = [[Lumian Lee]] {{c|Summoner}}",
-      "sequence_name": "| sequence_rank(book2)       =",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Robert",
-      "pathway_raw": "Death\n| sequence_name(book2)       = Spirit Medium\n| sequence_rank(book2)       = 7",
-      "sequence_rank_raw": "7",
-      "sequence_name": "Spirit Medium\n| sequence_rank(book2)       = 7",
-      "vital_status": "Alive"
+      "pathway_raw": "Hanged Man",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "seq_source": null,
+      "pathway_inferred": "hanged-man"
     },
     {
       "wiki_title": "Perle",
-      "pathway_raw": "Chaos Mist\n| sequence_name(book2)       = Vortex Weaver \n| sequence_rank(book2)       = 3\n| subordinate(s)             = [[Jebus Lata]]{{status|dead}}",
-      "sequence_rank_raw": "3\n| subordinate(s)             = [[Jebus Lata]]{{status|dead}}",
-      "sequence_name": "Vortex Weaver \n| sequence_rank(book2)       = 3\n| subordinate(s)             = [[Jebus Lata]]{{status|dead}}",
-      "vital_status": "dead"
+      "pathway_raw": "Chaos Mist",
+      "sequence_rank_raw": "3",
+      "sequence_name": "Vortex Weaver",
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Lumian Lee",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Millet Carter",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Pualis de Roquefort",
-      "pathway_raw": "Moon\n|sequence_rank(book2) = 1\n|sequence_name(book2) = Beauty Goddess\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4\n|sequence_name2(book2) = Madame",
-      "sequence_rank_raw": "1\n|sequence_name(book2) = Beauty Goddess\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4\n|sequence_name2(book2) = Madame",
-      "sequence_name": "Beauty Goddess\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4\n|sequence_name2(book2) = Madame",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Naboredisley",
-      "pathway_raw": "Chained\n|sequence_rank(book2)= 1\n|sequence_name(book2)= Abomination\n|progression(book2)= {{Pathway|Abyss}} {{c|Sequence 9 - 2}}",
-      "sequence_rank_raw": "1\n|sequence_name(book2)= Abomination\n|progression(book2)= {{Pathway|Abyss}} {{c|Sequence 9 - 2}}",
-      "sequence_name": "Abomination\n|progression(book2)= {{Pathway|Abyss}} {{c|Sequence 9 - 2}}",
-      "vital_status": "dead"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Ava Lizier",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Guillaume Bénet",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "5",
       "sequence_name": "Fate Appropriator",
-      "vital_status": "Deceased"
+      "vital_status": "Deceased",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Pierre Berry",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 6\n|sequence_name(book2) = Ascetic",
-      "sequence_rank_raw": "6\n|sequence_name(book2) = Ascetic",
-      "sequence_name": "Ascetic",
-      "vital_status": "Dead"
-    },
-    {
-      "wiki_title": "Ryan Vitia",
-      "pathway_raw": "Twilight Giant \n|sequence_name(book2) = Dawn Paladin \n|sequence_rank(book2) = 6",
+      "pathway_raw": "Eternal Aeon",
       "sequence_rank_raw": "6",
-      "sequence_name": "Dawn Paladin \n|sequence_rank(book2) = 6",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Valentine de Lacourt",
-      "pathway_raw": "Sun \n|sequence_name(book2) = Solar High Priest \n|sequence_rank(book2) = 7",
-      "sequence_rank_raw": "7",
-      "sequence_name": "Solar High Priest \n|sequence_rank(book2) = 7",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Leah Bellot",
-      "pathway_raw": "Fool \n|sequence_name(book2) = Magician \n|sequence_rank(book2) = 7",
-      "sequence_rank_raw": "7",
-      "sequence_name": "Magician \n|sequence_rank(book2) = 7",
-      "vital_status": "Alive"
+      "sequence_name": "Ascetic",
+      "vital_status": "Dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Reimund Greg",
-      "pathway_raw": "|sequence_name =",
-      "sequence_rank_raw": "|novel = {{Cite Book|2|3}}",
-      "sequence_name": "|sequence_rank =",
-      "vital_status": "Dead"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Naroka",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Circle of Inevitability",
-      "pathway_raw": "|above_the_sequence = {{Seq|Circle of Inevitability}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Jebus Lata",
-      "pathway_raw": "Chaos Mist\n| sequence_name(book2)       = Under the Table\n| sequence_rank(book2)       = 5",
+      "pathway_raw": "Chaos Mist",
       "sequence_rank_raw": "5",
-      "sequence_name": "Under the Table\n| sequence_rank(book2)       = 5",
-      "vital_status": "dead"
+      "sequence_name": "Under the Table",
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Sybil Berry",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 7\n|sequence_name(book2) = Contractee",
-      "sequence_rank_raw": "7\n|sequence_name(book2) = Contractee",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "7",
       "sequence_name": "Contractee",
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Charlie Collent",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Osta Trul",
-      "pathway_raw": "Hanged Man\n|sequence_name(book2) = Secrets Suppliant\n|sequence_rank(book2) = 9",
-      "sequence_rank_raw": "9",
-      "sequence_name": "Secrets Suppliant\n|sequence_rank(book2) = 9",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Brignais",
-      "pathway_raw": null,
-      "sequence_rank_raw": null,
-      "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Margot",
-      "pathway_raw": "Red Priest\n|sequence_name(book2) = Provoker\n|sequence_rank(book2) = 8",
-      "sequence_rank_raw": "8",
-      "sequence_name": "Provoker\n|sequence_rank(book2) = 8",
-      "vital_status": "Deceased"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Susanna Matisse",
-      "pathway_raw": "Patriarch\n|sequence_name(book2) = Fallen Tree Spirit\n|sequence_rank(book2) = 5",
+      "pathway_raw": "Patriarch",
       "sequence_rank_raw": "5",
-      "sequence_name": "Fallen Tree Spirit\n|sequence_rank(book2) = 5",
-      "vital_status": "Dead"
+      "sequence_name": "Fallen Tree Spirit",
+      "vital_status": "Dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Roger",
-      "pathway_raw": "Chaos Primogenitor \n|sequence_name(book2) = Heretic Spellmaster \n|sequence_rank(book2) = 7",
+      "pathway_raw": "Chaos Primogenitor",
       "sequence_rank_raw": "7",
-      "sequence_name": "Heretic Spellmaster \n|sequence_rank(book2) = 7",
-      "vital_status": "Dead"
+      "sequence_name": "Heretic Spellmaster",
+      "vital_status": "Dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Wilson",
-      "pathway_raw": "Chaos Primogenitor \n|sequence_name(book2) = Villain\n|sequence_rank(book2) = 9",
+      "pathway_raw": "Chaos Primogenitor",
       "sequence_rank_raw": "9",
-      "sequence_name": "Villain\n|sequence_rank(book2) = 9",
-      "vital_status": "Alive"
+      "sequence_name": "Villain",
+      "vital_status": "Alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Termiboros",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 1\n|sequence_name(book2) = Angel of Redemption",
-      "sequence_rank_raw": "1\n|sequence_name(book2) = Angel of Redemption",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "1",
       "sequence_name": "Angel of Redemption",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Mr. K",
-      "pathway_raw": "Hanged Man\n|sequence_name(book2) = Shepherd \n|sequence_rank(book2) = 5",
-      "sequence_rank_raw": "5",
-      "sequence_name": "Shepherd \n|sequence_rank(book2) = 5",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Angoulême de François",
-      "pathway_raw": "Sun\n|sequence_name(book2) = Unshadowed\n|sequence_rank(book2) = 4",
-      "sequence_rank_raw": "4",
-      "sequence_name": "Unshadowed\n|sequence_rank(book2) = 4",
-      "vital_status": "Alive"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Louis Lund",
-      "pathway_raw": "Chaos Primogenitor\n|sequence_rank(book2) = 8\n|sequence_name(book2) = Gardener\n|master(s) = \n* [[Pualis de Roquefort]]\n* [[Béost]]",
-      "sequence_rank_raw": "8\n|sequence_name(book2) = Gardener\n|master(s) = \n* [[Pualis de Roquefort]]\n* [[Béost]]",
-      "sequence_name": "Gardener\n|master(s) = \n* [[Pualis de Roquefort]]\n* [[Béost]]",
-      "vital_status": "Alive"
+      "pathway_raw": "Chaos Primogenitor",
+      "sequence_rank_raw": "8",
+      "sequence_name": "Gardener",
+      "vital_status": "Alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Ive",
-      "pathway_raw": "Patriarch\n|sequence_name(book2) = Scrooge\n|sequence_rank(book2) = 9",
+      "pathway_raw": "Patriarch",
       "sequence_rank_raw": "9",
-      "sequence_name": "Scrooge\n|sequence_rank(book2) = 9",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Anthony Reid",
-      "pathway_raw": "Visionary\n|sequence_name(book2) = Manipulator\n|sequence_rank(book2) = 4",
-      "sequence_rank_raw": "4",
-      "sequence_name": "Manipulator\n|sequence_rank(book2) = 4",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Franca Roland",
-      "pathway_raw": "Demoness\n|sequence_rank(book2) = 2\n|sequence_name(book2) = Catastrophe",
-      "sequence_rank_raw": "2\n|sequence_name(book2) = Catastrophe",
-      "sequence_name": "Catastrophe",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Ait",
-      "pathway_raw": "Twilight Giant\n|sequence_name(book2) = Pugilist\n|sequence_rank(book2) = 8",
-      "sequence_rank_raw": "8",
-      "sequence_name": "Pugilist\n|sequence_rank(book2) = 8",
-      "vital_status": "Deceased"
+      "sequence_name": "Scrooge",
+      "vital_status": "Alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Hedsey",
-      "pathway_raw": "Patriarch \n|sequence_name(book2) = Sex Addict \n|sequence_rank(book2) = 8",
+      "pathway_raw": "Patriarch",
       "sequence_rank_raw": "8",
-      "sequence_name": "Sex Addict \n|sequence_rank(book2) = 8",
-      "vital_status": "Dead"
-    },
-    {
-      "wiki_title": "Simon",
-      "pathway_raw": null,
-      "sequence_rank_raw": null,
-      "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Gardner Martin",
-      "pathway_raw": "Red Priest\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Reaper",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Reaper",
-      "sequence_name": "Reaper",
-      "vital_status": "dead"
+      "sequence_name": "Sex Addict",
+      "vital_status": "Dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Béost",
-      "pathway_raw": null,
-      "sequence_rank_raw": null,
-      "sequence_name": null,
-      "vital_status": "Alive"
+      "pathway_raw": "Chaos Primogenitor",
+      "sequence_rank_raw": "7",
+      "sequence_name": "Heretic Spellmaster",
+      "vital_status": "Alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Cathy",
-      "pathway_raw": null,
-      "sequence_rank_raw": null,
-      "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Christo",
-      "pathway_raw": "Moon\n|sequence_rank(book2) = 8\n|sequence_name(book2) = Beast Tamer",
-      "sequence_rank_raw": "8\n|sequence_name(book2) = Beast Tamer",
-      "sequence_name": "Beast Tamer",
-      "vital_status": "Alive"
+      "pathway_raw": "Chaos Primogenitor",
+      "sequence_rank_raw": "7",
+      "sequence_name": "Heretic Spellmaster",
+      "vital_status": "Alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Travis Everett",
-      "pathway_raw": "|sequence_name =",
-      "sequence_rank_raw": "|novel = {{Cite Book|2|172}}",
-      "sequence_name": "|sequence_rank =",
-      "vital_status": "Alive"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Rentas",
-      "pathway_raw": "Patriarch\n|sequence_rank(book2) = 7\n|sequence_name(book2) = Actor",
-      "sequence_rank_raw": "7\n|sequence_name(book2) = Actor",
+      "pathway_raw": "Patriarch",
+      "sequence_rank_raw": "7",
       "sequence_name": "Actor",
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Weber",
-      "pathway_raw": "|sequence_rank =",
-      "sequence_rank_raw": "|sequence_name =",
-      "sequence_name": "|novel = {{Cite Book|1|1281}}",
-      "vital_status": "Deceased"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Deceased",
+      "seq_source": null
     },
     {
       "wiki_title": "Kaspars Kalinin",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": ""
+      "vital_status": "",
+      "seq_source": null
     },
     {
       "wiki_title": "Harman",
-      "pathway_raw": "Chaos Primogenitor\n| sequence_name(book2)       = Gardener\n| sequence_rank(book2)       = 8",
+      "pathway_raw": "Chaos Primogenitor",
       "sequence_rank_raw": "8",
-      "sequence_name": "Gardener\n| sequence_rank(book2)       = 8",
-      "vital_status": "dead"
+      "sequence_name": "Gardener",
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Castina",
-      "pathway_raw": "Chaos Primogenitor\n| sequence_name(book2)       =\n| sequence_rank(book2)       =",
-      "sequence_rank_raw": "| novel                      = {{Cite Book|2|147}}",
-      "sequence_name": "| sequence_rank(book2)       =",
-      "vital_status": "dead"
+      "pathway_raw": "Chaos Primogenitor",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Hugues Artois",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Flameng",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Elodie",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Ruhr",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Michel",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Tybalt Jacques",
-      "pathway_raw": "Second Law\n| sequence_name(book2) = Patient\n| sequence_rank(book2) = 9",
+      "pathway_raw": "Second Law",
       "sequence_rank_raw": "9",
-      "sequence_name": "Patient\n| sequence_rank(book2) = 9",
-      "vital_status": "dead"
+      "sequence_name": "Patient",
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Imre",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Lady Moon",
-      "pathway_raw": "Chaos Primogenitor\n| sequence_name(book2)       = Divine Mother\n| sequence_rank(book2)       = 3",
+      "pathway_raw": "Chaos Primogenitor",
       "sequence_rank_raw": "3",
-      "sequence_name": "Divine Mother\n| sequence_rank(book2)       = 3",
-      "vital_status": "dead"
+      "sequence_name": "Divine Mother",
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Cassandra",
-      "pathway_raw": "| novel                      = {{Cite Book|2|195}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Charlotte Calvino",
       "pathway_raw": null,
       "sequence_rank_raw": "7",
-      "sequence_name": "Actor\n| sequence_rank(book2)       = 7",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Viève",
-      "pathway_raw": "Sun\n| sequence_name(book2)       = White Angel\n| sequence_rank(book2)       = 1",
-      "sequence_rank_raw": "1",
-      "sequence_name": "White Angel\n| sequence_rank(book2)       = 1",
-      "vital_status": "alive"
+      "sequence_name": "Actor",
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Antoine",
-      "pathway_raw": "Twilight Giant \n|sequence_name(book2) =  \n|sequence_rank(book2) =Mid-Sequence",
+      "pathway_raw": "Twilight Giant",
       "sequence_rank_raw": "Mid-Sequence",
-      "sequence_name": "|sequence_rank(book2) =Mid-Sequence",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Lugano Toscano",
-      "pathway_raw": "Mother\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Druid",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Druid",
-      "sequence_name": "Druid",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Rhea",
-      "pathway_raw": "Tyrant\n| sequence_name(book2)       = Folk of Rage \n| sequence_rank(book2)       = 8",
-      "sequence_rank_raw": "8",
-      "sequence_name": "Folk of Rage \n| sequence_rank(book2)       = 8",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Olson",
-      "pathway_raw": "Red Priest \n| sequence_name(book2)       =Reaper\n| sequence_rank(book2)       =5",
-      "sequence_rank_raw": "5",
-      "sequence_name": "Reaper\n| sequence_rank(book2)       =5",
-      "vital_status": "dead"
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "seq_source": null,
+      "pathway_inferred": "twilight-giant"
     },
     {
       "wiki_title": "Monette",
@@ -1783,337 +1759,189 @@
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "error"
     },
     {
       "wiki_title": "Ludwig Phil",
-      "pathway_raw": "Tail-Devourer\n|sequence_rank(book2) = 1\n|sequence_name(book2) = Chaos Gastric Juices",
-      "sequence_rank_raw": "1\n|sequence_name(book2) = Chaos Gastric Juices",
+      "pathway_raw": "Tail-Devourer",
+      "sequence_rank_raw": "1",
       "sequence_name": "Chaos Gastric Juices",
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Bilt Brando",
       "pathway_raw": "unknown",
       "sequence_rank_raw": "7 or 6",
-      "sequence_name": "|novel =\n{{Cite Book|1|614}}\n|affiliation(s)=[[Adventurer Association]] {{c|Founder}}",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Albus Medici",
-      "pathway_raw": "Red Priest\n| sequence_rank(book2)       = 5\n| sequence_name(book2)       = Reaper",
-      "sequence_rank_raw": "5\n| sequence_name(book2)       = Reaper",
-      "sequence_name": "Reaper",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Diest",
-      "pathway_raw": "|sequence_rank =",
-      "sequence_rank_raw": "|vital_status = Alive",
-      "sequence_name": "|species = \n*Mythical Creature\n*Human {{c|Former}}\n|occupation(s) =President of the [[Iron and Blood Cross Order]]",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Devajo Andariel",
-      "pathway_raw": "|sequence_rank =",
-      "sequence_rank_raw": "|sequence_name =",
-      "sequence_name": "|aliases =",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Cali",
-      "pathway_raw": "Chained\n| sequence_name(book2)       = Wraith\n| sequence_rank(book2)       = 5",
-      "sequence_rank_raw": "5",
-      "sequence_name": "Wraith\n| sequence_rank(book2)       = 5",
-      "vital_status": "Dead"
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Juan Oro",
       "pathway_raw": "Condenser",
       "sequence_rank_raw": "5",
-      "sequence_name": "Tidal Scholar\n| sequence_rank(book2)       = 5",
-      "vital_status": "dead"
+      "sequence_name": "Tidal Scholar",
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Antoine (Secret Order)",
-      "pathway_raw": "Fool\n| sequence_type(book2)       = Fool",
+      "pathway_raw": "Fool",
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "fool"
     },
     {
-      "wiki_title": "Montserrat",
-      "pathway_raw": null,
+      "wiki_title": "Kaslana",
+      "pathway_raw": "Justiciar",
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Howl Constantine",
-      "pathway_raw": "Tyrant\n|sequence_rank(book2)=5\n|sequence_name(book2)=Ocean Songster",
-      "sequence_rank_raw": "5\n|sequence_name(book2)=Ocean Songster",
-      "sequence_name": "Ocean Songster",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Iveljsta Eggers",
-      "pathway_raw": "Chained\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Wraith",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Wraith",
-      "sequence_name": "Wraith",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Snarner Einhorn",
-      "pathway_raw": "Red Priest\n|sequence_rank(book2)=2\n|sequence_name(book2)=Weather Warlock",
-      "sequence_rank_raw": "2\n|sequence_name(book2)=Weather Warlock",
-      "sequence_name": "Weather Warlock",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Hela",
-      "pathway_raw": "Death\n| sequence_name(book2)       = Ferryman\n| sequence_rank(book2)       = 3",
-      "sequence_rank_raw": "3",
-      "sequence_name": "Ferryman\n| sequence_rank(book2)       = 3",
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Bram Andariel",
-      "pathway_raw": "|sequence_rank =",
-      "sequence_rank_raw": "|sequence_name =",
-      "sequence_name": "|aliases =",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Loki",
-      "pathway_raw": "Fool \n|sequence_name(book2) = Marionettist \n|sequence_rank(book2) = 5",
-      "sequence_rank_raw": "5",
-      "sequence_name": "Marionettist \n|sequence_rank(book2) = 5",
-      "vital_status": "{{dead}} [[:Category:Deceased|Deceased]] {{c|Resurrected 3 times, taken over by [[Zaratul]]}}"
-    },
-    {
-      "wiki_title": "Krismona",
-      "pathway_raw": "Demoness\n| sequence_name(book2)       = Catastrophe\n| sequence_rank(book2)       = 2",
-      "sequence_rank_raw": "2",
-      "sequence_name": "Catastrophe\n| sequence_rank(book2)       = 2",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Marianne",
-      "pathway_raw": "Darkness\n| sequence_name(book2)       = Servant of Concealment\n| sequence_rank(book2)       = 2",
-      "sequence_rank_raw": "2",
-      "sequence_name": "Servant of Concealment\n| sequence_rank(book2)       = 2",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Lius",
-      "pathway_raw": "Death\n| sequence_name(book2)       = Death Consul\n| sequence_rank(book2)       = 2",
-      "sequence_rank_raw": "2",
-      "sequence_name": "Death Consul\n| sequence_rank(book2)       = 2",
-      "vital_status": "dead"
+      "vital_status": "Alive",
+      "seq_source": null,
+      "pathway_inferred": "justiciar"
     },
     {
       "wiki_title": "Poufer Sauron",
-      "pathway_raw": "Red Priest\n| sequence_name(book2)       =\n| sequence_rank(book2)       =",
-      "sequence_rank_raw": "| novel                      = \n {{Cite Book|2|339}} {{c|Mentioned}}\n {{Cite Book|2|340}}",
-      "sequence_name": "| sequence_rank(book2)       =",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Vermonda Sauron",
-      "pathway_raw": "Red Priest\n| sequence_name(book2)       =Conqueror\n| sequence_rank(book2)       = 1",
-      "sequence_rank_raw": "1",
-      "sequence_name": "Conqueror\n| sequence_rank(book2)       = 1",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Browns Sauron",
-      "pathway_raw": "Demoness\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Affliction\n|master(s) = [[Clarice]]",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Affliction\n|master(s) = [[Clarice]]",
-      "sequence_name": "Affliction\n|master(s) = [[Clarice]]",
-      "vital_status": "alive"
+      "pathway_raw": "Red Priest",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead",
+      "seq_source": null,
+      "pathway_inferred": "red-priest"
     },
     {
       "wiki_title": "Elros Einhorn",
-      "pathway_raw": "Red Priest\n|sequence_rank(book2) =\n|sequence_name(book2) =",
-      "sequence_rank_raw": "|sequence_name(book2) =",
-      "sequence_name": "|relatives = \n* [[Poufer Sauron]]{{status|dead}} {{c|Cousin}}\n* [[Snarner Einhorn]]",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "I Know Someone",
-      "pathway_raw": "Visionary \n|sequence_name(book2) = Hypnotist \n|sequence_rank(book2) = 6",
-      "sequence_rank_raw": "6",
-      "sequence_name": "Hypnotist \n|sequence_rank(book2) = 6",
-      "vital_status": "Deceased"
-    },
-    {
-      "wiki_title": "Mad Lady",
-      "pathway_raw": "Door \n|sequence_name(book2) = Traveler \n|sequence_rank(book2) = 5",
-      "sequence_rank_raw": "5",
-      "sequence_name": "Traveler \n|sequence_rank(book2) = 5",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Ultraman",
-      "pathway_raw": "Sun\n|sequence_rank(book2)=5\n|sequence_name(book2)=Priest of Light\n|sequence_type2(book2)=Condenser\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Tidal Scholar",
-      "sequence_rank_raw": "5\n|sequence_name(book2)=Priest of Light\n|sequence_type2(book2)=Condenser\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Tidal Scholar",
-      "sequence_name": "Priest of Light\n|sequence_type2(book2)=Condenser\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Tidal Scholar",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Bard",
-      "pathway_raw": "Error\n|sequence_name(book2) = Dream Stealer\n|sequence_rank(book2) = 5",
-      "sequence_rank_raw": "5",
-      "sequence_name": "Dream Stealer\n|sequence_rank(book2) = 5",
-      "vital_status": "dead"
+      "pathway_raw": "Red Priest",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "red-priest"
     },
     {
       "wiki_title": "Beatrice Incourt",
       "pathway_raw": "Patriarch",
       "sequence_rank_raw": "6",
-      "sequence_name": "Recipient\n| sequence_rank(book2)       = 6",
-      "vital_status": "dead"
+      "sequence_name": "Recipient",
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Maipú Meyer",
       "pathway_raw": "Patriarch",
       "sequence_rank_raw": "6",
-      "sequence_name": "Recipient\n| sequence_rank(book2)       = 6",
-      "vital_status": "alive"
+      "sequence_name": "Recipient",
+      "vital_status": "alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Bouvard Pont-Péro",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 6\n|sequence_name(book2) = Ascetic",
-      "sequence_rank_raw": "6\n|sequence_name(book2) = Ascetic",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "6",
       "sequence_name": "Ascetic",
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Paulina",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 7\n|sequence_name(book2) = Contractee",
-      "sequence_rank_raw": "7\n|sequence_name(book2) = Contractee",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "7",
       "sequence_name": "Contractee",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Philip",
-      "pathway_raw": "Red Priest\n|sequence_rank(book2)=5\n|sequence_name(book2)=Reaper\n|sequence_type2(book2)=Eternal Edict\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Deceased",
-      "sequence_rank_raw": "5\n|sequence_name(book2)=Reaper\n|sequence_type2(book2)=Eternal Edict\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Deceased",
-      "sequence_name": "Reaper\n|sequence_type2(book2)=Eternal Edict\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Deceased",
-      "vital_status": "dead"
+      "vital_status": "alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Gabriel",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Séraphine",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Voisin Sanson",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 4\n|sequence_name(book2) = Circle Inhabitant",
-      "sequence_rank_raw": "4\n|sequence_name(book2) = Circle Inhabitant",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "4",
       "sequence_name": "Circle Inhabitant",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Burman",
-      "pathway_raw": "Death \n|sequence_rank(book2) = 6 \n|sequence_name(book2) = Spirit Guide",
-      "sequence_rank_raw": "6 \n|sequence_name(book2) = Spirit Guide",
-      "sequence_name": "Spirit Guide",
-      "vital_status": "Dead"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Chen Tu",
-      "pathway_raw": "| sequence_name(book2)       =\n| sequence_rank(book2)       =",
-      "sequence_rank_raw": "| novel                      = {{Cite Book|2|319}}",
-      "sequence_name": "| sequence_rank(book2)       =",
-      "vital_status": "| realm                      ="
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "",
+      "seq_source": null
     },
     {
       "wiki_title": "Goddess of Fate",
-      "pathway_raw": "|above_the_sequence(book2) = {{Seq|Goddess of Fate}}\n|authorities(book2) = {{Pathway/group|GoF|}}\n|sefirot(book2) = Unnamed Sefirah of {{Pathway|Eternal Edict}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Plessy Descartes",
-      "pathway_raw": "| sequence_name(book2)       = \n| sequence_rank(book2)       =",
-      "sequence_rank_raw": "| novel                      =\n{{Cite Book|2|504}}",
-      "sequence_name": "| sequence_rank(book2)       =",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Hisoka",
-      "pathway_raw": "Abyss\n|sequence_rank(book2)=5\n|sequence_name(book2)=Desire Apostle\n|sequence_type2(book2)=Chained\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Wraith",
-      "sequence_rank_raw": "5\n|sequence_name(book2)=Desire Apostle\n|sequence_type2(book2)=Chained\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Wraith",
-      "sequence_name": "Desire Apostle\n|sequence_type2(book2)=Chained\n|sequence_rank2(book2)=5\n|sequence_name2(book2)=Wraith",
-      "vital_status": "dead"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": "category-saint"
     },
     {
       "wiki_title": "Luke Sammer",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Doragu Gale",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
-      "wiki_title": "La Nou Bruch",
-      "pathway_raw": "Moon\n|sequence_name(book2) = Vampire \n|sequence_rank(book2) = 7",
-      "sequence_rank_raw": "7",
-      "sequence_name": "Vampire \n|sequence_rank(book2) = 7",
-      "vital_status": "Alive"
+      "wiki_title": "Basil",
+      "pathway_raw": "Abyss",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "abyss"
     },
     {
       "wiki_title": "William Sikes",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Clémence Athana",
-      "pathway_raw": "Visionary\n| sequence_rank(book2)       = 4\n| sequence_name(book2)       = Manipulator",
-      "sequence_rank_raw": "4\n| sequence_name(book2)       = Manipulator",
-      "sequence_name": "Manipulator",
-      "vital_status": "Turned into [[Sealed Artifact]] [[1-147]]"
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Chasel Sávio",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Sow",
-      "pathway_raw": "Twilight Giant\n|sequence_rank(book2)=8\n|sequence_name(book2)=Pugilist",
-      "sequence_rank_raw": "8\n|sequence_name(book2)=Pugilist",
-      "sequence_name": "Pugilist",
-      "vital_status": "dead|height=Over 1.8 meters"
-    },
-    {
-      "wiki_title": "Reaza",
-      "pathway_raw": "Death\n| sequence_name(book2)       = Gatekeeper\n| sequence_rank(book2)       = 5",
-      "sequence_rank_raw": "5",
-      "sequence_name": "Gatekeeper\n| sequence_rank(book2)       = 5",
-      "vital_status": "dead"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Celestial Master",
@@ -2121,718 +1949,501 @@
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "hermit"
-    },
-    {
-      "wiki_title": "Tutanssess II",
-      "pathway_raw": "Chained",
-      "sequence_rank_raw": "|sequence_name =",
-      "sequence_name": "|novel = \n {{Cite Book|1|875}} {{c|Mentioned}}\n*{{Cite Book|1|880}}{{c|As a Mummy}}",
-      "vital_status": "dead",
-      "pathway_inferred": "chained"
-    },
-    {
-      "wiki_title": "Zedus",
-      "pathway_raw": "Moon\n| sequence_name(book2)       = Life-Giver\n| sequence_rank(book2)       = 2\n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
-      "sequence_rank_raw": "2\n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
-      "sequence_name": "Life-Giver\n| sequence_rank(book2)       = 2\n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
-      "vital_status": "Alive (Resurrected)"
     },
     {
       "wiki_title": "Palenque Taciblius",
       "pathway_raw": "unknown",
       "sequence_rank_raw": "4",
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Loban",
-      "pathway_raw": "|sequence_rank(book2)=\n|sequence_name(book2)=",
-      "sequence_rank_raw": "|sequence_name(book2)=",
-      "sequence_name": "|novel={{Cite Book|2|661}}",
-      "vital_status": "alive"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Jasmine",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Syndras",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Smine",
-      "pathway_raw": "| sequence_rank              =",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| novel                      = {{Cite Book|1|632}}",
-      "vital_status": "Alive"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Hilbert Alucard",
       "pathway_raw": "Visionary",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| novel                      = {{Cite Book|1|339}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "visionary"
     },
     {
       "wiki_title": "Stephen Hampres",
       "pathway_raw": "Visionary",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| novel                      = {{Cite Book|1|405}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "visionary"
     },
     {
       "wiki_title": "Prinpino",
-      "pathway_raw": "Mother\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| sequence_type2(book2)      = Moon\n| sequence_type3(book2)      = Chaos Primogenitor",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| sequence_type2(book2)      = Moon\n| sequence_type3(book2)      = Chaos Primogenitor",
-      "sequence_name": "| sequence_type2(book2)      = Moon\n| sequence_type3(book2)      = Chaos Primogenitor",
-      "vital_status": "deceased"
+      "pathway_raw": "Mother",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "deceased",
+      "seq_source": null,
+      "pathway_inferred": "mother"
     },
     {
       "wiki_title": "Roy King",
       "pathway_raw": "Wheel of Fortune",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| novel                      = {{Cite Book|1|585}} {{c|Mentioned}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "wheel-of-fortune"
-    },
-    {
-      "wiki_title": "Oxyto",
-      "pathway_raw": "Moon\n|sequence_rank(book2) = 4\n|sequence_name(book2) = Shaman King",
-      "sequence_rank_raw": "4\n|sequence_name(book2) = Shaman King",
-      "sequence_name": "Shaman King",
-      "vital_status": "Alive"
     },
     {
       "wiki_title": "Fernandez Oro",
       "pathway_raw": "Condenser",
       "sequence_rank_raw": "7",
-      "sequence_name": "Star Sacrificer\n| sequence_rank(book2)       = 7",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Peacock",
-      "pathway_raw": "Black Emperor\n|sequence_rank(book2) = 4\n|sequence_name(book2) = Earl of the Fallen",
-      "sequence_rank_raw": "4\n|sequence_name(book2) = Earl of the Fallen",
-      "sequence_name": "Earl of the Fallen",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Mason",
-      "pathway_raw": "Twilight Giant\n| sequence_rank(book2)       = 8\n| sequence_name(book2)       = Pugilist",
-      "sequence_rank_raw": "8\n| sequence_name(book2)       = Pugilist",
-      "sequence_name": "Pugilist",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Claude",
-      "pathway_raw": "Paragon\n| sequence_rank(book2)       = Saint\n| sequence_name(book2)       = ?",
-      "sequence_rank_raw": "Saint\n| sequence_name(book2)       = ?",
-      "sequence_name": "?",
-      "vital_status": "unknown"
+      "sequence_name": "Star Sacrificer",
+      "vital_status": "alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Sallent Empaya",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Class Khizi",
-      "pathway_raw": "unknown\n| sequence_rank(book2)       = \n| sequence_name(book2)       =",
-      "sequence_rank_raw": "| sequence_name(book2)       =",
-      "sequence_name": "| novel                      = {{Cite Book|2|518}} {{c|Mentioned}}",
-      "vital_status": "Alive"
+      "pathway_raw": "unknown",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Holle Sassen",
-      "pathway_raw": "| sequence_rank(book2)       = \n| sequence_name(book2)       =",
-      "sequence_rank_raw": "| sequence_name(book2)       =",
-      "sequence_name": "| novel                      = {{Cite Book|2|520}} {{c|Mentioned}}",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Harrison",
-      "pathway_raw": "Error\n| sequence_rank(book2)       = 5\n| sequence_name(book2)       = Dream Stealer\n| sequence_type2(book2)      = \n| sequence_rank2(book2)      = \n| sequence_name2(book2)      =",
-      "sequence_rank_raw": "5\n| sequence_name(book2)       = Dream Stealer\n| sequence_type2(book2)      = \n| sequence_rank2(book2)      = \n| sequence_name2(book2)      =",
-      "sequence_name": "Dream Stealer\n| sequence_type2(book2)      = \n| sequence_rank2(book2)      = \n| sequence_name2(book2)      =",
-      "vital_status": "unknown"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Aiur Moria",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Hilarion",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Venithan",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Kuthumi",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Serapis",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Iesus",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Saint Germain",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Jörg",
-      "pathway_raw": "Black Emperor\n| sequence_rank(book2)       = \n| sequence_name(book2)       =",
-      "sequence_rank_raw": "| sequence_name(book2)       =",
-      "sequence_name": "| novel                      = {{Cite Book|2|783}}",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Julie",
-      "pathway_raw": "Demoness\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Affliction\n|occupation(s)= Waitress at Carnivore Bar",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Affliction\n|occupation(s)= Waitress at Carnivore Bar",
-      "sequence_name": "Affliction\n|occupation(s)= Waitress at Carnivore Bar",
-      "vital_status": "dead"
+      "pathway_raw": "Black Emperor",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "black-emperor"
     },
     {
       "wiki_title": "Lez",
-      "pathway_raw": "Tail-Devourer\n|sequence_rank(book2) = 6\n|sequence_name(book2) = Chef\n|master(s)=",
-      "sequence_rank_raw": "6\n|sequence_name(book2) = Chef\n|master(s)=",
-      "sequence_name": "Chef\n|master(s)=",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Worms",
-      "pathway_raw": "Error\n| sequence_rank(book2)       = 9\n| sequence_name(book2)       = Marauder",
-      "sequence_rank_raw": "9\n| sequence_name(book2)       = Marauder",
-      "sequence_name": "Marauder",
-      "vital_status": "dead"
+      "pathway_raw": "Tail-Devourer",
+      "sequence_rank_raw": "6",
+      "sequence_name": "Chef",
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Bainar",
-      "pathway_raw": "Tail-Devourer\n| sequence_rank(book2)       = 5\n| sequence_name(book2)       = Depriver",
-      "sequence_rank_raw": "5\n| sequence_name(book2)       = Depriver",
+      "pathway_raw": "Tail-Devourer",
+      "sequence_rank_raw": "5",
       "sequence_name": "Depriver",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Gusain",
-      "pathway_raw": "Red Priest\n|sequence_rank(book2) = 4 {{c|Half}}\n|sequence_name(book2) = Iron-blooded Knight\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4 {{c|Half}}\n|sequence_name2(book2) = Madame\n|master(s)=",
-      "sequence_rank_raw": "4 {{c|Half}}\n|sequence_name(book2) = Iron-blooded Knight\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4 {{c|Half}}\n|sequence_name2(book2) = Madame\n|master(s)=",
-      "sequence_name": "Iron-blooded Knight\n|sequence_type2(book2) = Chaos Primogenitor\n|sequence_rank2(book2) = 4 {{c|Half}}\n|sequence_name2(book2) = Madame\n|master(s)=",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Wanak",
-      "pathway_raw": "Red Priest\n| sequence_rank(book2)       = 4 {{c|Half}}\n| sequence_name(book2)       = Iron-blooded Knight",
-      "sequence_rank_raw": "4 {{c|Half}}\n| sequence_name(book2)       = Iron-blooded Knight",
-      "sequence_name": "Iron-blooded Knight",
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Doll Messenger",
-      "pathway_raw": "| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Celeste",
-      "pathway_raw": "Demoness\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Affliction\n|master(s)=",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Affliction\n|master(s)=",
-      "sequence_name": "Affliction\n|master(s)=",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Jack Walton",
-      "pathway_raw": "Paragon\n| sequence_name(book2)       = \n| sequence_rank(book2)       = Saint",
-      "sequence_rank_raw": "Saint",
-      "sequence_name": "| sequence_rank(book2)       = Saint",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Alexis",
-      "pathway_raw": "Moon\n|sequence_rank(book2) = 4\n|sequence_name(book2) = Shaman King",
-      "sequence_rank_raw": "4\n|sequence_name(book2) = Shaman King",
-      "sequence_name": "Shaman King",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Guei",
-      "pathway_raw": "White Tower\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Mysticism Magister\n|master(s)=",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Mysticism Magister\n|master(s)=",
-      "sequence_name": "Mysticism Magister\n|master(s)=",
-      "vital_status": "dead"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Constace Sanson",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "5",
       "sequence_name": "Fate Appropriator",
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Annette Sanson",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "5",
       "sequence_name": "Fate Appropriator",
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Bliss Sanson",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "5",
       "sequence_name": "Fate Appropriator",
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Atur Sanson",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 5\n|sequence_name(book2) = Fate Appropriator",
-      "sequence_rank_raw": "5\n|sequence_name(book2) = Fate Appropriator",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "5",
       "sequence_name": "Fate Appropriator",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Professor",
-      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 5\n| sequence_name(book2)       = Constellations Master\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "5\n| sequence_name(book2)       = Constellations Master\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "Constellations Master\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Associate Professor",
-      "pathway_raw": "Hermit\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
+      "pathway_raw": "Hermit",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "hermit"
     },
     {
       "wiki_title": "Isotope",
-      "pathway_raw": "Hermit\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Periodic Table",
-      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 6\n| sequence_name(book2)       = Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "6\n| sequence_name(book2)       = Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
+      "pathway_raw": "Hermit",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "hermit"
     },
     {
       "wiki_title": "Headmaster",
-      "pathway_raw": "Moon\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
+      "pathway_raw": "Moon",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "moon"
     },
     {
       "wiki_title": "Héloise",
-      "pathway_raw": "Eternal Edict\n|sequence_rank(book2)= 3\n|sequence_name(book2)= Fate's Attendant",
-      "sequence_rank_raw": "3\n|sequence_name(book2)= Fate's Attendant",
+      "pathway_raw": "Eternal Edict",
+      "sequence_rank_raw": "3",
       "sequence_name": "Fate's Attendant",
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Sage",
-      "pathway_raw": "Sublunary Eye\n|sequence_rank(book2)= Saint\n|sequence_name(book2)= ?",
-      "sequence_rank_raw": "Saint\n|sequence_name(book2)= ?",
+      "pathway_raw": "Sublunary Eye",
+      "sequence_rank_raw": "Saint",
       "sequence_name": "?",
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Topsy",
-      "pathway_raw": "Tail-Devourer\n|sequence_rank(book2)= 3\n|sequence_name(book2)= Hydra",
-      "sequence_rank_raw": "3\n|sequence_name(book2)= Hydra",
+      "pathway_raw": "Tail-Devourer",
+      "sequence_rank_raw": "3",
       "sequence_name": "Hydra",
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Hart",
-      "pathway_raw": "Chaos Primogenitor\n|sequence_rank(book2)= 3\n|sequence_name(book2)= Divine Mother",
-      "sequence_rank_raw": "3\n|sequence_name(book2)= Divine Mother",
+      "pathway_raw": "Chaos Primogenitor",
+      "sequence_rank_raw": "3",
       "sequence_name": "Divine Mother",
-      "vital_status": "Deceased"
+      "vital_status": "Deceased",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Higdon",
-      "pathway_raw": "Second Law\n|sequence_rank(book2)= 4\n|sequence_name(book2)= Doomed One",
-      "sequence_rank_raw": "4\n|sequence_name(book2)= Doomed One",
+      "pathway_raw": "Second Law",
+      "sequence_rank_raw": "4",
       "sequence_name": "Doomed One",
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Stonemason",
-      "pathway_raw": "Paragon\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
+      "pathway_raw": "Paragon",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "paragon"
     },
     {
       "wiki_title": "Someone",
-      "pathway_raw": "Error\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
+      "pathway_raw": "Error",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "error"
     },
     {
       "wiki_title": "Breeder Master",
-      "pathway_raw": "Mother\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
+      "pathway_raw": "Mother",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "mother"
     },
     {
       "wiki_title": "Apollo",
-      "pathway_raw": "Sun\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Judith",
-      "pathway_raw": "Demoness\n| sequence_name(book2)       = Catastrophe\n| sequence_rank(book2)       = 2\n| disciple(s)                =",
-      "sequence_rank_raw": "2\n| disciple(s)                =",
-      "sequence_name": "Catastrophe\n| sequence_rank(book2)       = 2\n| disciple(s)                =",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Yalenna",
-      "pathway_raw": "Demoness\n| sequence_name(book2)       = Unaging\n| sequence_rank(book2)       = 3\n| progression(book2)         = {{Pathway|Red Priest}} {{c|Sequence 9 - 5}}\n| disciple(s)                =",
-      "sequence_rank_raw": "3\n| progression(book2)         = {{Pathway|Red Priest}} {{c|Sequence 9 - 5}}\n| disciple(s)                =",
-      "sequence_name": "Unaging\n| sequence_rank(book2)       = 3\n| progression(book2)         = {{Pathway|Red Priest}} {{c|Sequence 9 - 5}}\n| disciple(s)                =",
-      "vital_status": "alive"
+      "pathway_raw": "Sun",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "sun"
     },
     {
       "wiki_title": "Louis Gustav",
-      "pathway_raw": "Unknown \n| sequence_rank(book2)       = Saint\n| sequence_name(book2)       =",
-      "sequence_rank_raw": "Saint\n| sequence_name(book2)       =",
-      "sequence_name": "| novel                      = {{Cite Book|2|899}} {{c|Mentioned}}",
-      "vital_status": "Deceased"
+      "pathway_raw": "Unknown",
+      "sequence_rank_raw": "Saint",
+      "sequence_name": null,
+      "vital_status": "Deceased",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Grimm",
-      "pathway_raw": "|former_pathway =",
-      "sequence_rank_raw": "|novel = \n {{Cite Book|1|59}} {{c|Mentioned}}",
-      "sequence_name": "|sequence_rank =",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Julien Bello",
-      "pathway_raw": "Paragon\n| sequence_rank(book2) = 9\n| sequence_name(book2) = Savant",
-      "sequence_rank_raw": "9\n| sequence_name(book2) = Savant",
-      "sequence_name": "Savant",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Demoness of Purple",
-      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 2\n| sequence_name(book2)       = Catastrophe",
-      "sequence_rank_raw": "2\n| sequence_name(book2)       = Catastrophe",
-      "sequence_name": "Catastrophe",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Demoness of Blue",
-      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 2\n| sequence_name(book2)       = Catastrophe",
-      "sequence_rank_raw": "2\n| sequence_name(book2)       = Catastrophe",
-      "sequence_name": "Catastrophe",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Tissavica",
-      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 2\n| sequence_name(book2)       = Catastrophe",
-      "sequence_rank_raw": "2\n| sequence_name(book2)       = Catastrophe",
-      "sequence_name": "Catastrophe",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Niceea",
-      "pathway_raw": "Demoness\n|sequence_rank(book2) = 6\n|sequence_name(book2) = Pleasure\n|occupation(s)=",
-      "sequence_rank_raw": "6\n|sequence_name(book2) = Pleasure\n|occupation(s)=",
-      "sequence_name": "Pleasure\n|occupation(s)=",
-      "vital_status": "alive"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Funkel",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Rebach",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Dalberro",
-      "pathway_raw": "Second Law\n|sequence_rank(book2)= 6\n|sequence_name(book2)= Disease Envoy",
-      "sequence_rank_raw": "6\n|sequence_name(book2)= Disease Envoy",
+      "pathway_raw": "Second Law",
+      "sequence_rank_raw": "6",
       "sequence_name": "Disease Envoy",
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Mocoxidos",
-      "pathway_raw": "Second Law\n|sequence_rank(book2)= 3\n|sequence_name(book2)= Left Hand of Decay",
-      "sequence_rank_raw": "3\n|sequence_name(book2)= Left Hand of Decay",
+      "pathway_raw": "Second Law",
+      "sequence_rank_raw": "3",
       "sequence_name": "Left Hand of Decay",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Ohayes",
-      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 4\n| sequence_name(book2)       = Mysticologist",
-      "sequence_rank_raw": "4\n| sequence_name(book2)       = Mysticologist",
-      "sequence_name": "Mysticologist",
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Gray",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Weimer",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Ol' Keaton",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Parvi",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
-    },
-    {
-      "wiki_title": "Demoness of Scarlet",
-      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
-      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
-      "sequence_name": "Unaging",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Demoness of Silver",
-      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
-      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
-      "sequence_name": "Unaging",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Demoness of Orange",
-      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
-      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
-      "sequence_name": "Unaging",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Demoness of Green",
-      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
-      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
-      "sequence_name": "Unaging",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Demoness of Gold",
-      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
-      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
-      "sequence_name": "Unaging",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Demoness of Brown",
-      "pathway_raw": "Demoness\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Unaging",
-      "sequence_rank_raw": "3\n| sequence_name(book2)       = Unaging",
-      "sequence_name": "Unaging",
-      "vital_status": "{{alive}} Alive {{c|Corrupted}}"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Henry Augustus I",
-      "pathway_raw": "| sequence_rank              =",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| novel                      = \n{{Cite Book|1|20}} {{c|Mentioned}}\n{{Cite Book|2|963}} {{c|Mentioned}}",
-      "vital_status": "Unknown"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "Unknown",
+      "seq_source": null
     },
     {
       "wiki_title": "William Augustus VI",
-      "pathway_raw": "| sequence_rank              =",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| novel                      = \n{{Cite Book|1|20}} {{c|Mentioned}}\n{{Cite Book|2|963}} {{c|Mentioned}}",
-      "vital_status": "dead"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "dead",
+      "seq_source": null
     },
     {
       "wiki_title": "White Paper",
-      "pathway_raw": "| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =\n| authorities(book2)         =",
-      "vital_status": "alive"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Luo Shan",
-      "pathway_raw": "Sublunary Eye\n|sequence_rank(book2)= 7\n|sequence_name(book2)= Painter",
-      "sequence_rank_raw": "7\n|sequence_name(book2)= Painter",
+      "pathway_raw": "Sublunary Eye",
+      "sequence_rank_raw": "7",
       "sequence_name": "Painter",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Mirror Roselle Gustav",
-      "pathway_raw": "Hermit\n| progression(book2)         = {{Pathway|Paragon}} {{c|Sequence 9-2}}",
-      "sequence_rank_raw": "1\n| sequence_type(book2)       = Hermit\n| progression(book2)         = {{Pathway|Paragon}} {{c|Sequence 9-2}}",
-      "sequence_name": "Knowledge Emperor\n| sequence_rank(book2)       = 1\n| sequence_type(book2)       = Hermit\n| progression(book2)         = {{Pathway|Paragon}} {{c|Sequence 9-2}}",
-      "vital_status": "alive"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Ulyssan",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Deceased"
+      "vital_status": "Deceased",
+      "seq_source": "category-saint"
     },
     {
       "wiki_title": "Tracey",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Dead"
+      "vital_status": "Dead",
+      "seq_source": null
     },
     {
       "wiki_title": "Pons Bénet",
-      "pathway_raw": "Eternal Aeon\n|sequence_rank(book2) = 8\n|sequence_name(book2) = Alms Monk",
-      "sequence_rank_raw": "8\n|sequence_name(book2) = Alms Monk",
+      "pathway_raw": "Eternal Aeon",
+      "sequence_rank_raw": "8",
       "sequence_name": "Alms Monk",
-      "vital_status": "Dead"
-    },
-    {
-      "wiki_title": "Seids",
-      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 3\n| sequence_name(book2)       = Clairvoyant",
-      "sequence_rank_raw": "3\n| sequence_name(book2)       = Clairvoyant",
-      "sequence_name": "Clairvoyant",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Prototype",
-      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 6\n| sequence_name(book2)       = Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "6\n| sequence_name(book2)       = Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "Scrolls Professor\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
+      "vital_status": "Dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Condensed Matter",
-      "pathway_raw": "Hermit\n| sequence_rank(book2)       = \n| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "| sequence_name(book2)       = \n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Bella",
-      "pathway_raw": "Paragon\n| sequence_rank(book2) = 6\n| sequence_name(book2) = Artisan\n| disciple(s) = [[Julien Bello]]",
-      "sequence_rank_raw": "6\n| sequence_name(book2) = Artisan\n| disciple(s) = [[Julien Bello]]",
-      "sequence_name": "Artisan\n| disciple(s) = [[Julien Bello]]",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Leon",
-      "pathway_raw": "Hermit\n| sequence_rank(book2)       = 7\n| sequence_name(book2)       = Warlock\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_rank_raw": "7\n| sequence_name(book2)       = Warlock\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "sequence_name": "Warlock\n| additional_pathways(book2) =\n| former_pathway(book2)      =",
-      "vital_status": "alive"
+      "pathway_raw": "Hermit",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "alive",
+      "seq_source": null,
+      "pathway_inferred": "hermit"
     },
     {
       "wiki_title": "Sathipo Eir",
-      "pathway_raw": "Second Law\n|sequence_rank(book2)= 4\n|sequence_name(book2)= Doomed One",
-      "sequence_rank_raw": "4\n|sequence_name(book2)= Doomed One",
+      "pathway_raw": "Second Law",
+      "sequence_rank_raw": "4",
       "sequence_name": "Doomed One",
-      "vital_status": "dead"
+      "vital_status": "dead",
+      "seq_source": "sequence_rank"
     },
     {
       "wiki_title": "Lucy Brook",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Tanko",
-      "pathway_raw": "Mother\n|sequence_rank(book2) = 9\n|sequence_name(book2) = Planter",
-      "sequence_rank_raw": "9\n|sequence_name(book2) = Planter",
-      "sequence_name": "Planter",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Tirié",
-      "pathway_raw": "Chained\n|sequence_rank(book2) = 1\n|sequence_name(book2) = Abomination",
-      "sequence_rank_raw": "1\n|sequence_name(book2) = Abomination",
-      "sequence_name": "Abomination",
-      "vital_status": "dead"
-    },
-    {
-      "wiki_title": "Edefana",
-      "pathway_raw": "Visionary\n| sequence_rank(book2)       = 2\n| sequence_name(book2)       = Discerner",
-      "sequence_rank_raw": "2\n| sequence_name(book2)       = Discerner",
-      "sequence_name": "Discerner",
-      "vital_status": "Deceased"
-    },
-    {
-      "wiki_title": "Dabomachie",
-      "pathway_raw": "Twilight Giant\n| sequence_name(book2)       = Hand of God\n| sequence_rank(book2)       = 1",
-      "sequence_rank_raw": "1",
-      "sequence_name": "Hand of God\n| sequence_rank(book2)       = 1",
-      "vital_status": "alive"
-    },
-    {
-      "wiki_title": "Lutique",
-      "pathway_raw": "Sun\n| sequence_name(book2)       = White Angel\n| sequence_rank(book2)       = 1",
-      "sequence_rank_raw": "1",
-      "sequence_name": "White Angel\n| sequence_rank(book2)       = 1",
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Holy Monk",
@@ -2840,6 +2451,7 @@
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "wheel-of-fortune"
     },
     {
@@ -2848,14 +2460,16 @@
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "dead",
+      "seq_source": null,
       "pathway_inferred": "abyss"
     },
     {
       "wiki_title": "Malevolent Dragon",
-      "pathway_raw": "|authorities(book2) = {{Pathway|Red Priest|Demoness}}\n|sefirot(book2) = {{Seq|City of Calamity}} {{C|Consciousness of the Sefirah}}\n|above_the_sequence(book2) = {{Seq|Calamity of Destruction}} {{C|as a part of Lumian Lee}}",
+      "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "{{Alive}} Alive {{c|Fused into [[Lumian Lee]]}}",
+      "seq_source": null,
       "pathway_inferred": "red-priest"
     },
     {
@@ -2864,6 +2478,7 @@
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "Alive",
+      "seq_source": null,
       "pathway_inferred": "justiciar"
     },
     {
@@ -2871,14 +2486,16 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Golden Buddha",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "|sex = Male",
+      "vital_status": "",
+      "seq_source": null,
       "pathway_inferred": "wheel-of-fortune"
     },
     {
@@ -2887,6 +2504,7 @@
       "sequence_rank_raw": null,
       "sequence_name": null,
       "vital_status": "dead",
+      "seq_source": null,
       "pathway_inferred": "abyss"
     },
     {
@@ -2894,49 +2512,56 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Bogda Jones",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Daisy",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "Alive"
+      "vital_status": "Alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Elliott Vickroy",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Zhou Mingrui",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "| marital_status             = Single"
+      "vital_status": "",
+      "seq_source": null
     },
     {
       "wiki_title": "Regence",
-      "pathway_raw": "| sequence_rank              =",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| novel                      = \n{{Cite Book|1|210}} {{c|Mentioned}}",
-      "vital_status": "| sex                        = male"
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "",
+      "seq_source": null
     },
     {
       "wiki_title": "Mr. Z",
       "pathway_raw": "Hanged Man",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| novel                      = {{Cite Book|1|104}} {{c|Mentioned}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
       "vital_status": "alive",
+      "seq_source": null,
       "pathway_inferred": "hanged-man"
     },
     {
@@ -2944,21 +2569,24 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Montsouris Ghost",
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": ""
+      "vital_status": "",
+      "seq_source": null
     },
     {
       "wiki_title": "Teno Eggers",
       "pathway_raw": "Death",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| novel                      = {{Cite Book|1|134}}",
+      "sequence_rank_raw": null,
+      "sequence_name": null,
       "vital_status": "dead",
+      "seq_source": null,
       "pathway_inferred": "death"
     },
     {
@@ -2966,14 +2594,16 @@
       "pathway_raw": null,
       "sequence_rank_raw": null,
       "sequence_name": null,
-      "vital_status": "alive"
+      "vital_status": "alive",
+      "seq_source": null
     },
     {
       "wiki_title": "Character Tabs",
-      "pathway_raw": "| sequence_rank              =",
-      "sequence_rank_raw": "| sequence_name              =",
-      "sequence_name": "| additional_pathways        =",
-      "vital_status": "| marital_status             ="
+      "pathway_raw": null,
+      "sequence_rank_raw": null,
+      "sequence_name": null,
+      "vital_status": "",
+      "seq_source": null
     }
   ]
 }
