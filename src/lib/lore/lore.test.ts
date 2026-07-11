@@ -1125,6 +1125,110 @@ describe("Lore content coverage", () => {
     }
   });
 
+  it("NPC backfill Batch 2 has 54 narrator-only Seq 3-4 Saint/demigod NPCs", () => {
+    // The audit backfill of missing high-tier Beyonders (Sequence 3-4). Every
+    // entry is a pathway-keyed, narrator-only, epoch-5 npc gated to Seq 3 or 4.
+    const slugs = [
+      "npc-agrippina",
+      "npc-alexis",
+      "npc-amyrius-rieveldt",
+      "npc-anthony-reid",
+      "npc-anthony-stevenson",
+      "npc-celt",
+      "npc-claude",
+      "npc-clemence-athana",
+      "npc-crestet-cesimir",
+      "npc-demoness-of-brown",
+      "npc-demoness-of-gold",
+      "npc-demoness-of-green",
+      "npc-demoness-of-orange",
+      "npc-demoness-of-scarlet",
+      "npc-demoness-of-silver",
+      "npc-flora-jacob",
+      "npc-floren-sauron",
+      "npc-gandalf",
+      "npc-georgina-augustus",
+      "npc-grove-augustus",
+      "npc-gusain",
+      "npc-hela",
+      "npc-jack-walton",
+      "npc-jenna",
+      "npc-kisma",
+      "npc-klarman",
+      "npc-kmerolo",
+      "npc-leomaster",
+      "npc-lucca-brewster",
+      "npc-maam-greed",
+      "npc-mahmosi",
+      "npc-miss-sloth",
+      "npc-mistral",
+      "npc-mr-envy",
+      "npc-mr-gluttony",
+      "npc-mr-lust",
+      "npc-murskogan",
+      "npc-nast-solomon",
+      "npc-nibbs-odora",
+      "npc-ohayes",
+      "npc-oxyto",
+      "npc-peacock",
+      "npc-randall-valentinus",
+      "npc-ricciardo",
+      "npc-savigny-solomon",
+      "npc-seids",
+      "npc-selena",
+      "npc-tony-twain",
+      "npc-trissy",
+      "npc-tutanssess-ii",
+      "npc-wanak",
+      "npc-xio-derecha",
+      "npc-yalenna",
+      "npc-zatwen",
+    ];
+    expect(slugs).toHaveLength(54);
+    for (const slug of slugs) {
+      const entry = ALL_LORE_ENTRIES.find((e) => e.slug === slug);
+      expect(entry, slug).toBeDefined();
+      expect(entry?.category).toBe("npc");
+      expect(entry?.epoch).toBe(5);
+      expect(entry?.narratorOnly).toBe(true);
+      expect(entry?.pathway).toBeTruthy();
+      expect(entry?.sequences.length).toBeGreaterThan(0);
+      for (const seq of entry?.sequences ?? []) {
+        expect([3, 4]).toContain(seq);
+      }
+    }
+  });
+
+  it("Batch 2 spot-checks pin canon pathway/sequence/relationships", () => {
+    const expected = [
+      {
+        slug: "npc-nast-solomon",
+        pathway: "black-emperor",
+        seq: 3,
+        npc: "Klein Moretti",
+      },
+      { slug: "npc-floren-sauron", pathway: "red-priest", seq: 4, npc: "Floren Sauron" },
+      { slug: "npc-gandalf", pathway: "twilight-giant", seq: 4, npc: "Gandalf" },
+      { slug: "npc-tutanssess-ii", pathway: "chained", seq: 4, npc: "Sharron" },
+      {
+        slug: "npc-grove-augustus",
+        pathway: "justiciar",
+        seq: 3,
+        npc: "Georgina Augustus",
+      },
+      { slug: "npc-ricciardo", pathway: "wheel-of-fortune", seq: 4, npc: "Roy King" },
+      { slug: "npc-maam-greed", pathway: "visionary", seq: 4, npc: "Ma'am Greed" },
+      { slug: "npc-hela", pathway: "death", seq: 3, npc: "Hela" },
+    ];
+    for (const { slug, pathway, seq, npc } of expected) {
+      const entry = ALL_LORE_ENTRIES.find((e) => e.slug === slug);
+      expect(entry, slug).toBeDefined();
+      expect(entry?.pathway).toBe(pathway);
+      expect(entry?.sequences).toContain(seq);
+      expect(entry?.npcs).toContain(npc);
+    }
+  });
+
   it("each pathway has an overview entry", () => {
     for (const pathway of [
       "fool",
@@ -1288,7 +1392,8 @@ describe("Total lore corpus", () => {
     // the missing-Beyonders audit batches). These high-tier entries are
     // narratorOnly + sequence-gated, so they rarely enter a live turn's budget;
     // this guard only catches accidental corpus bloat. Bump it with each batch.
-    expect(total).toBeLessThan(95000);
+    // Bumped for NPC backfill Batch 2 (54 Seq 3-4 Saints & demigods, ~12k tokens).
+    expect(total).toBeLessThan(110000);
   });
 
   it("every one of the 22 pathways has retrievable overview lore (issue #28)", () => {

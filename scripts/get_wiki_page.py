@@ -12,21 +12,29 @@ Usage:
 
 import json
 import os
-import re
 import sys
+import xml.etree.ElementTree as ET
 
 REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 XML = os.path.join(REPO, "corpus", "wiki", "lordofthemystery_pages_current.xml")
 AUDIT = os.path.join(REPO, "corpus", "audit_wiki_npcs.json")
 
 
-def unescape(t: str) -> str:
-    return (
-        t.replace("&lt;", "<")
-        .replace("&gt;", ">")
-        .replace("&quot;", '"')
-        .replace("&amp;", "&")
-    )
+def load_pages() -> dict:
+    """title -> wikitext. Uses XML parsing rather than a linear regex, which
+    mis-pairs <title>/<text> across some pages (e.g. 'Crestet Cesimir')."""
+    ns = {"mw": "http://www.mediawiki.org/xml/export-0.11/"}
+    root = ET.parse(XML).getroot()
+    pages = {}
+    for page in root.findall(".//mw:page", ns):
+        title_el = page.find("mw:title", ns)
+        text_el = page.find(".//mw:text", ns)
+        if title_el is None or title_el.text is None:
+            continue
+        pages[title_el.text.strip()] = (
+            text_el.text if text_el is not None and text_el.text else ""
+        )
+    return pages
 
 
 def main() -> int:
@@ -34,13 +42,7 @@ def main() -> int:
         print("usage: get_wiki_page.py <page title>", file=sys.stderr)
         return 2
     name = sys.argv[1].strip()
-    xml = open(XML, encoding="utf-8").read()
-    pages = {
-        m.group(1).strip(): m.group(2)
-        for m in re.finditer(
-            r"<title>(.*?)</title>.*?<text[^>]*>(.*?)</text>", xml, re.S
-        )
-    }
+    pages = load_pages()
     txt = pages.get(name)
     if txt is None and os.path.exists(AUDIT):
         redirects = json.load(open(AUDIT)).get("redirect_map", {})
@@ -52,7 +54,7 @@ def main() -> int:
     if txt is None:
         print(f"# NO PAGE FOUND for {name!r}", file=sys.stderr)
         return 1
-    print(unescape(txt))
+    print(txt)
     return 0
 
 
