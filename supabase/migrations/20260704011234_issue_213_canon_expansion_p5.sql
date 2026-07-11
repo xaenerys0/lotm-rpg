@@ -1,0 +1,14 @@
+-- issue_213_canon_expansion_p5 — APPLIED OUT-OF-BAND to the live database on
+-- 2026-07-04 (via the Supabase MCP), BEFORE its migration file was committed.
+--
+-- This is an intentional PLACEHOLDER with no statements. It exists only so the
+-- local migration history matches the remote database (otherwise `supabase db
+-- push` refuses: "remote migration versions not found in local migrations
+-- directory"). Because the live DB already recorded this version, it never runs
+-- there again.
+--
+-- The rows this migration originally inserted/updated were CAPTURED and
+-- RE-VERIFIED against the wiki corpus in
+--   20260704020000_capture_issue213_expansion.sql
+-- (an idempotent `on conflict do update` upsert), which reproduces the same
+-- state on a fresh database. See supabase/CLAUDE.md entry #41 for the full story.
