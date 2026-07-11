@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * Extract all NPC names currently referenced in the lore system.
+ * Extract all NPC identities currently represented in the lore system.
  * Outputs tmp/current_lore_npcs.json with:
  *   npcName -> { sources: [slug...], pathway?, sequences? }
  */
@@ -63,14 +63,64 @@ const npcIndex: Record<
   { sources: string[]; pathways: string[]; sequences: number[] }
 > = {};
 
-function add(entry: LoreEntry) {
-  for (const name of entry.npcs) {
+/** Map a dossier slug to its adjacent `// CORPUS: wiki "..."` page title. */
+function corpusPagesBySlug(): Record<string, string> {
+  const source = fs.readFileSync(path.resolve("src/lib/lore/npcs.ts"), "utf8");
+  const pages: Record<string, string> = {};
+  let pendingPage: string | undefined;
+
+  for (const line of source.split("\n")) {
+    const corpusMatch = line.match(/^\s*\/\/\s*CORPUS:\s*wiki\s+"([^"]+)"/);
+    if (corpusMatch) pendingPage = corpusMatch[1];
+
+    const slugMatch = line.match(/^\s*slug:\s*"([^"]+)"/);
+    if (slugMatch && pendingPage) {
+      pages[slugMatch[1]] = pendingPage;
+      pendingPage = undefined;
+    }
+  }
+
+  return pages;
+}
+
+function slugName(slug: string): string | undefined {
+  if (!slug.startsWith("npc-")) return undefined;
+  return slug
+    .slice("npc-".length)
+    .split("-")
+    .filter(Boolean)
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function titlePrimaryName(title: string): string {
+  return title.split(/\s+(?:—|–|-)\s+/, 1)[0].trim();
+}
+
+function add(
+  entry: LoreEntry,
+  pathway?: string,
+  corpusPages: Record<string, string> = {},
+) {
+  // `npcs` names are supplementary references. NPC dossiers also identify
+  // themselves through their slug, title, and (when available) wiki citation.
+  const names = new Set(entry.npcs);
+  if (entry.category === "npc") {
+    const derivedSlugName = slugName(entry.slug);
+    if (derivedSlugName) names.add(derivedSlugName);
+    const primaryTitle = titlePrimaryName(entry.title);
+    if (primaryTitle) names.add(primaryTitle);
+    const corpusPage = corpusPages[entry.slug];
+    if (corpusPage) names.add(corpusPage);
+  }
+
+  for (const name of names) {
     if (!npcIndex[name]) {
       npcIndex[name] = { sources: [], pathways: [], sequences: [] };
     }
     npcIndex[name].sources.push(entry.slug);
-    if (entry.pathway) {
-      npcIndex[name].pathways.push(entry.pathway);
+    if (pathway ?? entry.pathway) {
+      npcIndex[name].pathways.push(pathway ?? entry.pathway!);
     }
     if (entry.sequences?.length) {
       npcIndex[name].sequences.push(...entry.sequences);
@@ -78,24 +128,35 @@ function add(entry: LoreEntry) {
   }
 }
 
+const corpusPages = corpusPagesBySlug();
+
 for (const npc of NPC_LORE) {
-  add(npc);
+  add(npc, undefined, corpusPages);
 }
 
 for (const [pathway, entries] of Object.entries(pathwayArrays)) {
   for (const entry of entries) {
     if (entry.npcs.length) {
-      // Ensure pathway is set if missing
-      if (!entry.pathway) entry.pathway = pathway;
-      add(entry);
+      // Do not mutate imported lore entries just to supply audit metadata.
+      add(entry, entry.pathway ?? pathway);
     }
   }
 }
 
 // Deduplicate and sort
 for (const data of Object.values(npcIndex)) {
+  data.sources = [...new Set(data.sources)];
   data.pathways = [...new Set(data.pathways)];
   data.sequences = [...new Set(data.sequences)].sort((a, b) => a - b);
+}
+
+// Regression guard: Tirié has no self-reference in `npcs`, so this verifies
+// dossier identity extraction from its title and inline CORPUS page reference.
+if (
+  corpusPages["npc-tirie"] !== "Tirié" ||
+  !npcIndex["Tirié"]?.sources.includes("npc-tirie")
+) {
+  throw new Error("NPC identity extraction failed to resolve Tirié from npc-tirie");
 }
 
 const outPath = path.resolve("tmp/current_lore_npcs.json");

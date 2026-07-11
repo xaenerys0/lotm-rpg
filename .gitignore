@@ -58,3 +58,6 @@ next-env.d.ts
 # scratch / audit artifacts (NPC audit, batch assembly, etc.)
 /tmp/
 scripts/__pycache__/
+
+# local orchestration state
+.slim/deepwork/
