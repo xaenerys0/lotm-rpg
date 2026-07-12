@@ -34,6 +34,16 @@ export {
   type ChurchArtifactGrantResult,
 } from "./world-state";
 
+export {
+  applyTransactions,
+  formatPence,
+  TRANSACTION_FUNDS_CAP,
+  type TransactionKind,
+  type AppliedTransaction,
+  type RefusedTransaction,
+  type TransactionsResult,
+} from "./transactions";
+
 export { cityForLocation, isReachable, type ReachableResult } from "./place-graph";
 
 export { createCanonCharacterSession, stripSelfFromNpcs } from "./canon-takeover";

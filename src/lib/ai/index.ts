@@ -27,6 +27,7 @@ export type {
   PromptInput,
   RetrievedLoreChunk,
   CodexUpdateInput,
+  TransactionIntent,
   PinnedCodexEntity,
   ChatMessage,
   ProviderRequest,

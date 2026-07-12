@@ -49,6 +49,17 @@ export interface GameSession {
    * increment-skewed `turnCount`. Always null when `lastResolution` is null.
    */
   lastResolutionTurn: number | null;
+  /**
+   * The in-turn deals the engine applied / refused on the last committed turn
+   * (issue #226), surfaced in the consequences recap. Transient per-turn UI data
+   * like `lastResolution` (not a durable sub-state) — it rides the plain
+   * serialize/deserialize (`...s`) spread and is absent when the turn brokered no
+   * transactions. NEVER AI-mutable; the engine (`applyTransactions`) sets it.
+   */
+  lastTransactions?: {
+    applied: import("./transactions").AppliedTransaction[];
+    refused: import("./transactions").RefusedTransaction[];
+  };
   errorMessage: string | null;
   errorCode: AIErrorCode | "CONFIG_MISSING" | null;
   /**

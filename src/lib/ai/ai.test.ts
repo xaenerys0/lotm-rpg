@@ -1719,10 +1719,29 @@ describe("providers", () => {
         "proposedSelfChange",
         "pursuers",
         "codexUpdates",
+        "transactions",
         "runningSummary",
       ]) {
         expect(props).toContain(field);
       }
+    });
+
+    it("declares the transaction kinds as a closed enum", () => {
+      const txn = AI_RESPONSE_JSON_SCHEMA.properties.transactions;
+      expect(txn.type).toBe("array");
+      expect(txn.items.properties.kind.enum).toEqual([
+        "purchase",
+        "sale",
+        "barter",
+        "commission",
+        "gift",
+      ]);
+      expect(txn.items.required).toEqual(["kind", "counterparty"]);
+      // itemsIn may only bring in mundane/uniqueness (reagents stay engine-gated).
+      expect(txn.items.properties.itemsIn.items.properties.category.enum).toEqual([
+        "mundane",
+        "uniqueness",
+      ]);
     });
 
     it("accepts a representative response that parseAIResponse also parses", () => {
@@ -1731,10 +1750,25 @@ describe("providers", () => {
         choices: [{ id: "1", text: "Wait", type: "action" }],
         sanityEventTags: ["routine"],
         codexUpdates: [{ kind: "person", name: "Sien", status: "ally" }],
+        transactions: [
+          {
+            kind: "purchase",
+            counterparty: "a street vendor",
+            fundsDelta: -60,
+            itemsIn: [
+              {
+                name: "Tin Lantern",
+                description: "A dented lantern.",
+                category: "mundane",
+              },
+            ],
+          },
+        ],
       };
       const parsed = parseAIResponse(JSON.stringify(sample));
       expect(parsed.narrative).toBe("The gaslight flickers.");
       expect(parsed.choices?.[0]?.type).toBe("action");
+      expect(parsed.transactions?.[0]?.kind).toBe("purchase");
     });
   });
 
@@ -1950,6 +1984,18 @@ describe("prompts", () => {
       );
       expect(layer.content).toContain("involuntaryCause");
       expect(layer.content).toContain("Never fabricate Beyonder-tier canon");
+    });
+
+    it("instructs the narrator on the engine-authoritative transaction channel (issue #226)", () => {
+      const layer = buildSystemPrompt([], []);
+      expect(layer.content).toContain('"transactions"');
+      expect(layer.content).toContain("The ENGINE is authoritative");
+      // Narrate the deal as struck/underway, not a finished fact (decision 2).
+      expect(layer.content).toMatch(/STRUCK or UNDERWAY/);
+      // itemsIn stays mundane/uniqueness — reagents remain engine-gated.
+      expect(layer.content).toMatch(
+        /may NOT acquire a potion formula, Beyonder Characteristic/,
+      );
     });
 
     it("tells the narrator drinking the advancement potion is a control, not a choice (potion-consumption clarity)", () => {
@@ -3610,6 +3656,92 @@ describe("validation", () => {
         JSON.stringify({ narrative: "Nothing.", fundsDiscovered: "lots" }),
       );
       expect(bad.fundsDiscovered).toBeUndefined();
+    });
+
+    it("carries well-formed transactions and drops malformed / unknown-kind ones", () => {
+      const result = parseAIResponse(
+        JSON.stringify({
+          narrative: "Deals struck.",
+          transactions: [
+            {
+              kind: "purchase",
+              counterparty: "a fence",
+              fundsDelta: -120,
+              itemsIn: [
+                { name: "Brass Key", description: "A key.", category: "mundane" },
+              ],
+            },
+            {
+              kind: "sale",
+              counterparty: "a collector",
+              itemsOut: [{ name: "Old Amulet", description: "A trinket." }],
+              reason: "raising coin",
+            },
+            { kind: "commission", counterparty: "an artisan" }, // missing commission block is fine
+            { kind: "bogus", counterparty: "nobody" }, // unknown kind → dropped
+            { kind: "gift", counterparty: "" }, // empty counterparty → dropped
+            "not an object", // non-object → dropped
+          ],
+        }),
+      );
+      expect(result.transactions).toHaveLength(3);
+      expect(result.transactions?.[0]).toMatchObject({
+        kind: "purchase",
+        counterparty: "a fence",
+        fundsDelta: -120,
+      });
+      expect(result.transactions?.[0]?.itemsIn?.[0]?.name).toBe("Brass Key");
+      expect(result.transactions?.[1]?.itemsOut?.[0]?.name).toBe("Old Amulet");
+      expect(result.transactions?.[1]?.reason).toBe("raising coin");
+    });
+
+    it("parses a commission transaction with its artifice inputs", () => {
+      const result = parseAIResponse(
+        JSON.stringify({
+          narrative: "The artisan agrees.",
+          transactions: [
+            {
+              kind: "commission",
+              counterparty: "Mr. Azik",
+              commission: {
+                characteristicItemName: "Sequence 6 Marauder Beyonder Characteristic",
+                artifactName: "Whispering Compass",
+                flavor: "brass and bone",
+              },
+            },
+          ],
+        }),
+      );
+      expect(result.transactions?.[0]?.commission).toEqual({
+        characteristicItemName: "Sequence 6 Marauder Beyonder Characteristic",
+        artifactName: "Whispering Compass",
+        flavor: "brass and bone",
+      });
+    });
+
+    it("caps transactions at MAX_TRANSACTIONS and omits when none survive", () => {
+      const many = Array.from({ length: 9 }, (_, i) => ({
+        kind: "gift",
+        counterparty: `giver ${i}`,
+      }));
+      const capped = parseAIResponse(
+        JSON.stringify({ narrative: "Presents.", transactions: many }),
+      );
+      expect(capped.transactions).toHaveLength(4);
+      const none = parseAIResponse(
+        JSON.stringify({
+          narrative: "Nothing.",
+          transactions: [{ kind: "unknown", counterparty: "x" }],
+        }),
+      );
+      expect(none.transactions).toBeUndefined();
+    });
+
+    it("ignores a non-array transactions field", () => {
+      const result = parseAIResponse(
+        JSON.stringify({ narrative: "x", transactions: "nope" }),
+      );
+      expect(result.transactions).toBeUndefined();
     });
 
     it("throws on non-JSON input", () => {

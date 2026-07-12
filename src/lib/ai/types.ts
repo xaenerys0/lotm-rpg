@@ -239,6 +239,72 @@ export interface AIResponse {
    * restatement of the whole cast, so the per-turn output cost stays small.
    */
   codexUpdates?: CodexUpdateInput[];
+  /**
+   * In-turn transactions the narrator brokered (issue #226): a purchase, sale,
+   * barter, artifact commission, or gift that happened in the fiction this turn.
+   * Loosely typed at the boundary like `codexUpdates`/`fundsDiscovered`, and — like
+   * money/items — deliberately NOT on the AI-mutable `worldStateChanges` allowlist.
+   * `parseAIResponse` carries a sanitized, count-capped array through; the ENGINE
+   * (never the AI) validates and applies each intent atomically in `applyResolution`
+   * (`@/lib/game/transactions` → `world-state.ts`): affordability, ownership,
+   * category, tradeability, capability, and per-turn caps are all engine-enforced,
+   * and an invalid intent is refused as in-world narration (a `SessionFact` lead),
+   * never applied silently. This preserves the issue-#90 anti-exploit guarantee by
+   * replacing the blanket block with engine-enforced validation.
+   */
+  transactions?: TransactionIntent[];
+}
+
+/**
+ * A single narrator-emitted in-turn transaction (issue #226), loosely typed at
+ * the AI boundary. The engine (`@/lib/game/transactions` `applyTransactions`) is
+ * the single real validation + application point — it verifies affordability,
+ * ownership (`hasItemMatching`), category rules (reagents/sealed-artifacts can
+ * never be minted IN — they keep their existing acquisition gates), tradeability
+ * for anything sold/gifted away, artifice gates for a commission, and per-turn
+ * caps, then applies through the tested primitives (`adjustFunds`,
+ * `addItemToInventory`, `removeItemsByName`, `craftArtifact`). Nothing here is
+ * trusted: fields are hints the engine clamps or refuses.
+ */
+export interface TransactionIntent {
+  /** The kind of exchange. Validated against the known set downstream. */
+  kind: string;
+  /**
+   * Who the character dealt with, a descriptive label (e.g. "a Backlund fence").
+   * Not presence-gated — used for the memory fact / consequences wording only.
+   */
+  counterparty: string;
+  /**
+   * Signed pence from the PLAYER's wallet POV: negative when the character pays
+   * (a purchase), positive when they receive (a sale). The engine clamps it to a
+   * per-turn cap and, for a sale, to the item's fair price band. IGNORED for a
+   * `commission` (the artifice engine computes and debits the fee itself).
+   */
+  fundsDelta?: number;
+  /**
+   * Items the character RECEIVES. Restricted by the engine exactly like
+   * `itemsDiscovered` — only `mundane` loot and the singular `uniqueness` artifact
+   * may arrive; a reagent/`sealed-artifact` here is refused with a story lead.
+   */
+  itemsIn?: Item[];
+  /**
+   * Items the character GIVES UP. The engine requires the character actually holds
+   * each (category + name via `hasItemMatching`) and that it is tradeable-away
+   * (the marketplace's `isMarketTradeable`/`canFenceItem` rules).
+   */
+  itemsOut?: Item[];
+  /** Why the exchange happened, for the memory fact / consequences wording. */
+  reason?: string;
+  /**
+   * Commission-only: the inputs the engine routes through `craftArtifact`. The
+   * `characteristicItemName` must match a carried Beyonder Characteristic; the
+   * artifice gates (capability, consumed characteristic, fee, capacity) apply.
+   */
+  commission?: {
+    characteristicItemName: string;
+    artifactName: string;
+    flavor?: string;
+  };
 }
 
 /**

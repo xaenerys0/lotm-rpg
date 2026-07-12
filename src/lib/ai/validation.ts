@@ -1,5 +1,5 @@
 import type { Item, ValidationResult, Violation } from "@/lib/types/rules";
-import type { AIResponse, CodexUpdateInput } from "./types";
+import type { AIResponse, CodexUpdateInput, TransactionIntent } from "./types";
 import { createMalformedOutputError } from "./errors";
 
 // Residual free-form sanity bounds (issue #95): tightened to ±5 — the engine
@@ -33,6 +33,23 @@ const VALID_ITEM_CATEGORIES = [
 // point (kind/importance whitelist + length caps); this is just a loose,
 // drop-not-throw boundary carry (like `journalEntry`).
 const MAX_CODEX_UPDATES = 6;
+
+// The transaction kinds the narrator may emit (issue #226). Exported so
+// `response-schema.ts` reuses the exact list in its structured-output enum
+// rather than re-declaring it (single source of truth). The engine
+// (`@/lib/game/transactions`) is the single real validation point.
+export const VALID_TRANSACTION_KINDS = [
+  "purchase",
+  "sale",
+  "barter",
+  "commission",
+  "gift",
+];
+// At most this many transactions are carried from one turn (issue #226). A deal
+// or two per beat is realistic; a flood is a misbehaving narrator. Loose,
+// drop-not-throw boundary carry (like `codexUpdates`) — the engine enforces the
+// real caps (affordability, valuation, per-turn funds) when it applies them.
+const MAX_TRANSACTIONS = 4;
 
 /**
  * Guarantee every choice has a unique, non-empty id. Ids double as React keys —
@@ -263,6 +280,73 @@ export function parseAIResponse(raw: string): AIResponse {
       .slice(0, MAX_CODEX_UPDATES);
     if (updates.length > 0) {
       response.codexUpdates = updates;
+    }
+  }
+
+  // In-turn transactions (issue #226) — carried through loosely, like
+  // `codexUpdates`: keep well-formed items (a known `kind` + non-empty
+  // `counterparty`), coerce fields, drop the rest, and cap the count. The engine
+  // (`@/lib/game/transactions` `applyTransactions`) is the single real validation
+  // + application point (affordability / ownership / category / caps).
+  if (Array.isArray(obj.transactions)) {
+    const coerceItems = (value: unknown): Item[] | undefined => {
+      if (!Array.isArray(value)) return undefined;
+      const items = value
+        .filter(
+          (i: unknown): i is Record<string, unknown> =>
+            typeof i === "object" && i !== null && !Array.isArray(i),
+        )
+        .map((i) => ({
+          name: String(i.name ?? "").trim(),
+          description: String(i.description ?? ""),
+          category: VALID_ITEM_CATEGORIES.includes(String(i.category))
+            ? (String(i.category) as Item["category"])
+            : ("mundane" as Item["category"]),
+        }))
+        .filter((i) => i.name !== "");
+      return items.length > 0 ? items : undefined;
+    };
+    const transactions = obj.transactions
+      .filter(
+        (t: unknown): t is Record<string, unknown> =>
+          typeof t === "object" && t !== null && !Array.isArray(t),
+      )
+      .map((t) => {
+        const intent: TransactionIntent = {
+          kind: String(t.kind ?? ""),
+          counterparty: String(t.counterparty ?? "").trim(),
+        };
+        if (
+          t.fundsDelta !== undefined &&
+          t.fundsDelta !== null &&
+          Number.isFinite(Number(t.fundsDelta))
+        ) {
+          intent.fundsDelta = Number(t.fundsDelta);
+        }
+        const itemsIn = coerceItems(t.itemsIn);
+        if (itemsIn) intent.itemsIn = itemsIn;
+        const itemsOut = coerceItems(t.itemsOut);
+        if (itemsOut) intent.itemsOut = itemsOut;
+        if (typeof t.reason === "string" && t.reason.trim() !== "") {
+          intent.reason = t.reason.trim();
+        }
+        if (typeof t.commission === "object" && t.commission !== null) {
+          const c = t.commission as Record<string, unknown>;
+          const characteristicItemName = String(c.characteristicItemName ?? "").trim();
+          const artifactName = String(c.artifactName ?? "").trim();
+          if (characteristicItemName !== "" && artifactName !== "") {
+            intent.commission = { characteristicItemName, artifactName };
+            if (typeof c.flavor === "string" && c.flavor.trim() !== "") {
+              intent.commission.flavor = c.flavor.trim();
+            }
+          }
+        }
+        return intent;
+      })
+      .filter((t) => VALID_TRANSACTION_KINDS.includes(t.kind) && t.counterparty !== "")
+      .slice(0, MAX_TRANSACTIONS);
+    if (transactions.length > 0) {
+      response.transactions = transactions;
     }
   }
 
