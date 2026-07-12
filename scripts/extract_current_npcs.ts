@@ -63,22 +63,40 @@ const npcIndex: Record<
   { sources: string[]; pathways: string[]; sequences: number[] }
 > = {};
 
-/** Map a dossier slug to its adjacent `// CORPUS: wiki "..."` page title. */
+/**
+ * Map a dossier slug to its `// CORPUS: wiki "..."` page title.
+ *
+ * The comment and the `slug:` line may appear in EITHER order within an entry:
+ * Batch 1-4 entries put the comment immediately before `slug:`, but several
+ * older dossiers put it after `content:` (i.e. after their own slug). A single
+ * forward-scanning "pending page" therefore mis-binds the after-slug comments
+ * to the NEXT entry's slug. Instead, accumulate the slug and page seen within
+ * each top-level array entry and pair them at the entry boundary (`  },`),
+ * which is order-independent.
+ */
 function corpusPagesBySlug(): Record<string, string> {
   const source = fs.readFileSync(path.resolve("src/lib/lore/npcs.ts"), "utf8");
   const pages: Record<string, string> = {};
-  let pendingPage: string | undefined;
+  let slug: string | undefined;
+  let page: string | undefined;
+
+  const flush = () => {
+    if (slug && page) pages[slug] = page;
+    slug = undefined;
+    page = undefined;
+  };
 
   for (const line of source.split("\n")) {
     const corpusMatch = line.match(/^\s*\/\/\s*CORPUS:\s*wiki\s+"([^"]+)"/);
-    if (corpusMatch) pendingPage = corpusMatch[1];
+    if (corpusMatch) page = corpusMatch[1];
 
     const slugMatch = line.match(/^\s*slug:\s*"([^"]+)"/);
-    if (slugMatch && pendingPage) {
-      pages[slugMatch[1]] = pendingPage;
-      pendingPage = undefined;
-    }
+    if (slugMatch) slug = slugMatch[1];
+
+    // Top-level entries close with a 2-space-indented `},` on its own line.
+    if (/^ {2}\},?\s*$/.test(line)) flush();
   }
+  flush();
 
   return pages;
 }
@@ -151,10 +169,14 @@ for (const data of Object.values(npcIndex)) {
 }
 
 // Regression guard: Tirié has no self-reference in `npcs`, so this verifies
-// dossier identity extraction from its title and inline CORPUS page reference.
+// dossier identity extraction from its title and inline CORPUS page reference
+// (comment-BEFORE-slug convention). npc-roselle-gustav exercises the
+// comment-AFTER-slug convention, which a naive forward scan mis-binds to the
+// next entry — so it must resolve to its own page, not a neighbour's.
 if (
   corpusPages["npc-tirie"] !== "Tirié" ||
-  !npcIndex["Tirié"]?.sources.includes("npc-tirie")
+  !npcIndex["Tirié"]?.sources.includes("npc-tirie") ||
+  corpusPages["npc-roselle-gustav"] !== "Roselle Gustav"
 ) {
   throw new Error("NPC identity extraction failed to resolve Tirié from npc-tirie");
 }

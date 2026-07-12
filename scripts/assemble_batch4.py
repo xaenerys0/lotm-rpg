@@ -29,6 +29,11 @@ def ts_str(s):
     return s.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
 
 
+def ts_dq(s):
+    """Escape for a double-quoted TS literal (backslash first, then quote)."""
+    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def sql_str(s):
     return s.replace("'", "''")
 
@@ -100,8 +105,8 @@ def main() -> int:
     # ---- TS ----
     ts_lines = []
     for man, e, group in entries:
-        npcs = ", ".join('"' + x.replace('"', '\\"') + '"' for x in e.get("npcs", []))
-        tags = ", ".join('"' + x.replace('"', '\\"') + '"' for x in e.get("tags", []))
+        npcs = ", ".join('"' + ts_dq(x) + '"' for x in e.get("npcs", []))
+        tags = ", ".join('"' + ts_dq(x) + '"' for x in e.get("tags", []))
         seqs = ", ".join(str(int(x)) for x in e.get("sequences", []))
         page = man["canonicalWikiTitle"]
         key_line = f'    city: "{e["city"]}",\n' if group == "non-beyonder" else ""
@@ -109,7 +114,7 @@ def main() -> int:
             "  {\n"
             f'    // CORPUS: wiki "{page}" (Char infobox + lead/history)\n'
             f'    slug: "{e["slug"]}",\n'
-            f'    title: "{e["title"].replace(chr(34), chr(92) + chr(34))}",\n'
+            f'    title: "{ts_dq(e["title"])}",\n'
             '    category: "npc",\n'
             f'    content: `{ts_str(e["content"])}`,\n'
             + key_line
