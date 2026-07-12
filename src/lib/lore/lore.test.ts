@@ -1600,9 +1600,10 @@ describe("Total lore corpus", () => {
     // the missing-Beyonders audit batches). These high-tier entries are
     // narratorOnly + sequence-gated, so they rarely enter a live turn's budget;
     // this guard only catches accidental corpus bloat. Bump it with each batch.
-    // Bumped for NPC backfill Batch 2 (54 Seq 3-4 Saints & demigods, ~12k tokens)
-    // and Batch 3 (81 city-level Beyonders + Seq 1-2 angels, ~18k tokens).
-    expect(total).toBeLessThan(130000);
+    // Bumped through NPC backfill Batch 4 (~128.6k actual). Ceiling set with
+    // headroom for the remaining Batch 5/6 audit entries; still catches gross
+    // accidental bloat (e.g. an unintended near-doubling).
+    expect(total).toBeLessThan(150000);
   });
 
   it("every one of the 22 pathways has retrievable overview lore (issue #28)", () => {

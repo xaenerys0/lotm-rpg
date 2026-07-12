@@ -127,7 +127,10 @@ def city_hits(text, fields):
     haystack = "\n".join(locations)
     hits = []
     for slug, city in ACTIVE_CITIES.items():
-        if re.search(rf"\b{re.escape(city)}\b", haystack, re.I):
+        # City NAMES are proper nouns (always capitalized as wiki links/titles),
+        # so match case-SENSITIVELY — otherwise "Constant" the city false-matches
+        # the adjective "constant" in prose/origin text.
+        if re.search(rf"\b{re.escape(city)}\b", haystack):
             hits.append(slug)
     return hits
 
@@ -141,7 +144,7 @@ def active_cities(text):
     """
     stable = city_hits(text, ("residence", "resident", "location", "city", "origin"))
     for slug, city in ACTIVE_CITIES.items():
-        if re.search(rf"\[\[Category:[^\]]*\b{re.escape(city)}\b", text, re.I) and slug not in stable:
+        if re.search(rf"\[\[Category:[^\]]*\b{re.escape(city)}\b", text) and slug not in stable:
             stable.append(slug)
     if stable:
         return stable
@@ -154,11 +157,13 @@ def confirmed_sequence(text, expected, locator):
     if not match:
         return None
     raw = match.group(1).strip()
-    exact = re.fullmatch(r"([5-9])", raw)
-    if not exact or exact.group(1) != str(expected):
+    # Accept an annotated rank ("5", "5 (Desire Apostle)", "5{{c|...}}") by
+    # reading the LEADING sequence digit, not only a bare digit.
+    lead = re.match(r"(\d)\b", raw)
+    if not lead or lead.group(1) != str(expected) or not 5 <= int(lead.group(1)) <= 9:
         return None
     return {
-        "sequence": int(exact.group(1)),
+        "sequence": int(lead.group(1)),
         "evidenceLocator": locator,
         "evidenceExcerpt": f"sequence_rank = {raw}",
     }
@@ -170,7 +175,7 @@ def epoch_scoped_narrative_role(text, name, locator):
         plain = re.sub(r"\[\[([^\]|]+)\|([^\]]+)\]\]", r"\2", block)
         plain = re.sub(r"\[\[([^\]]+)\]\]", r"\1", plain)
         if (re.search(r"\b(?:Fifth|5th)\s+Epoch\b", plain, re.I)
-                and re.search(re.escape(name), plain, re.I)):
+                and re.search(rf"\b{re.escape(name)}\b", plain, re.I)):
             excerpt = re.sub(r"\s+", " ", plain).strip()
             return {
                 "rationale": f"Corpus Fifth-Epoch narrative role: {excerpt[:300]}",
@@ -262,7 +267,9 @@ def main():
                 return None
             rationale = (narrative["rationale"] if narrative else
                          "Missing audit-unmapped named mortal/social candidate with stable city evidence; no pathway key is inferred.")
-        candidate_identity_keys.update(identity_keys)
+        # NOTE: identity_keys are reserved by the CALLER on commit (below), not
+        # here — otherwise a candidate the caller drops for a within-run slug
+        # collision would still reserve its aliases and reject a later valid one.
         return {
             "candidateId": f"batch4-{group}-{slug_base}",
             "canonicalWikiTitle": canonical_title,
@@ -277,7 +284,7 @@ def main():
             "epoch": epoch(text, locator),
             "selectionRationale": rationale,
             "sourceLocator": locator,
-        }, {"title": canonical_title, "redirectChain": chain, "found": True, "wikitext": text}
+        }, {"title": canonical_title, "redirectChain": chain, "found": True, "wikitext": text}, identity_keys
 
     candidates, bundle, used_names, used_slugs = [], {}, set(), set()
     for pathway in sorted(report["missing_by_pathway_sequence"]):
@@ -289,9 +296,15 @@ def main():
                     exclusions["no-city-beyonder"].append(f"{name}: non-individual/generic label")
                     continue
                 result = add("no-city-beyonder", name, sequence, pathway)
-                if result and result[0]["expectedSlug"] not in used_slugs:
-                    candidate, source = result; candidates.append(candidate); bundle[candidate["candidateId"]] = source
-                    used_names.add(name); used_slugs.add(candidate["expectedSlug"])
+                if result:
+                    candidate, source, ikeys = result
+                    if candidate["expectedSlug"] in used_slugs:
+                        exclusions["no-city-beyonder"].append(
+                            f"{name}: expectedSlug {candidate['expectedSlug']} collides with an already-selected candidate")
+                    else:
+                        candidates.append(candidate); bundle[candidate["candidateId"]] = source
+                        used_names.add(name); used_slugs.add(candidate["expectedSlug"])
+                        candidate_identity_keys.update(ikeys)
     for name in report["missing_non_beyonders"]:
         if len([c for c in candidates if c["group"] == "non-beyonder"]) >= 25:
             break
@@ -304,9 +317,15 @@ def main():
             exclusions["non-beyonder"].append(f"{name}: possible Beyonder/other-pathway metadata")
             continue
         result = add("non-beyonder", name, "unknown")
-        if result and result[0]["expectedSlug"] not in used_slugs:
-            candidate, source = result; candidates.append(candidate); bundle[candidate["candidateId"]] = source
-            used_names.add(name); used_slugs.add(candidate["expectedSlug"])
+        if result:
+            candidate, source, ikeys = result
+            if candidate["expectedSlug"] in used_slugs:
+                exclusions["non-beyonder"].append(
+                    f"{name}: expectedSlug {candidate['expectedSlug']} collides with an already-selected candidate")
+            else:
+                candidates.append(candidate); bundle[candidate["candidateId"]] = source
+                used_names.add(name); used_slugs.add(candidate["expectedSlug"])
+                candidate_identity_keys.update(ikeys)
 
     ids = [candidate["candidateId"] for candidate in candidates]
     assert len(ids) == len(set(ids)) and len(used_slugs) == len(candidates)

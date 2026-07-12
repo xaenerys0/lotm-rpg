@@ -184,7 +184,10 @@ def infer_sequence_from_categories(categories: list[str]) -> str | None:
     verification rather than guessing a concrete number.
     """
     for c in categories:
-        if re.search(r"\bsaint\b", c, re.IGNORECASE):
+        # Match only the Saint RANK categories ("Saint", "Book One/Two Saint"),
+        # not any category that merely contains the word (e.g. an org/place like
+        # "Saint Samson Cathedral clergy"), which would mis-tier a low-Seq figure.
+        if re.fullmatch(r"(?:book (?:one|two) )?saint", c.strip(), re.IGNORECASE):
             return "saint?"
     return None
 

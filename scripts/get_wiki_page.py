@@ -45,7 +45,8 @@ def main() -> int:
     pages = load_pages()
     txt = pages.get(name)
     if txt is None and os.path.exists(AUDIT):
-        redirects = json.load(open(AUDIT)).get("redirect_map", {})
+        with open(AUDIT, encoding="utf-8") as fh:
+            redirects = json.load(fh).get("redirect_map", {})
         lower = {k.lower(): v for k, v in redirects.items()}
         target = lower.get(name.lower())
         if target and target in pages:

@@ -37,6 +37,11 @@ def ts_str(s: str) -> str:
     return s.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
 
 
+def ts_dq(s: str) -> str:
+    """Escape for a double-quoted TS literal (backslash first, then quote)."""
+    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def sql_str(s: str) -> str:
     return s.replace("'", "''")
 
@@ -107,8 +112,8 @@ def main() -> int:
         page_by_name = {t["name"]: t.get("page", t["name"]) for t in json.load(open(TASKLIST))}
     ts_lines = []
     for _r, e in entries:
-        npcs = ", ".join('"' + x.replace('"', '\\"') + '"' for x in e.get("npcs", []))
-        tags = ", ".join('"' + x.replace('"', '\\"') + '"' for x in e.get("tags", []))
+        npcs = ", ".join('"' + ts_dq(x) + '"' for x in e.get("npcs", []))
+        tags = ", ".join('"' + ts_dq(x) + '"' for x in e.get("tags", []))
         seqs = ", ".join(str(int(x)) for x in e.get("sequences", []))
         page = page_by_name.get(_r["name"], _r["name"])
         ts_lines.append(
@@ -117,7 +122,7 @@ def main() -> int:
             "sequence_rank/sequence_name, titles, affiliations, allies + "
             "lead/history)\n"
             f'    slug: "{e["slug"]}",\n'
-            f'    title: "{e["title"].replace(chr(34), chr(92)+chr(34))}",\n'
+            f'    title: "{ts_dq(e["title"])}",\n'
             '    category: "npc",\n'
             f'    content: `{ts_str(e["content"])}`,\n'
             f'    pathway: "{e["pathway"]}",\n'
@@ -173,9 +178,11 @@ def main() -> int:
         "  tags = excluded.tags,\n"
         "  token_count = excluded.token_count"
     )
-    open(os.path.join(REPO, "tmp", "batch2_seed.sql"), "w").write(
-        header + ",\n".join(sql_rows) + on_conflict + ";\n"
-    )
+    sql_path = os.path.join(REPO, "tmp", "batch2_seed.sql")
+    if sql_rows:
+        open(sql_path, "w").write(header + ",\n".join(sql_rows) + on_conflict + ";\n")
+    else:
+        open(sql_path, "w").write("-- Batch 2: 0 assembled entries — no seed.\n")
 
     # ---- report ----
     print(f"entries assembled: {len(entries)}")

@@ -32,6 +32,11 @@ def ts_str(s):
     return s.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
 
 
+def ts_dq(s):
+    """Escape for a double-quoted TS literal (backslash first, then quote)."""
+    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def sql_str(s):
     return s.replace("'", "''")
 
@@ -93,8 +98,8 @@ def main() -> int:
     # ---- TS ----
     ts_lines = []
     for r, e, group in entries:
-        npcs = ", ".join('"' + x.replace('"', '\\"') + '"' for x in e.get("npcs", []))
-        tags = ", ".join('"' + x.replace('"', '\\"') + '"' for x in e.get("tags", []))
+        npcs = ", ".join('"' + ts_dq(x) + '"' for x in e.get("npcs", []))
+        tags = ", ".join('"' + ts_dq(x) + '"' for x in e.get("tags", []))
         seqs = ", ".join(str(int(x)) for x in e.get("sequences", []))
         page = page_by_name.get(r["name"], r["name"])
         key_line = (f'    city: "{e["city"]}",\n' if group == "city"
@@ -104,7 +109,7 @@ def main() -> int:
             f'    // CORPUS: wiki "{page}" (Char infobox: sequence_type/'
             "sequence_rank/sequence_name, residence, affiliations + lead/history)\n"
             f'    slug: "{e["slug"]}",\n'
-            f'    title: "{e["title"].replace(chr(34), chr(92) + chr(34))}",\n'
+            f'    title: "{ts_dq(e["title"])}",\n'
             '    category: "npc",\n'
             f'    content: `{ts_str(e["content"])}`,\n'
             + key_line
@@ -149,9 +154,11 @@ def main() -> int:
         "  npcs = excluded.npcs,\n  sequences = excluded.sequences,\n"
         "  tags = excluded.tags,\n  token_count = excluded.token_count"
     )
-    open(os.path.join(REPO, "tmp", "batch3_seed.sql"), "w").write(
-        header + ",\n".join(rows) + on_conflict + ";\n"
-    )
+    sql_path = os.path.join(REPO, "tmp", "batch3_seed.sql")
+    if rows:
+        open(sql_path, "w").write(header + ",\n".join(rows) + on_conflict + ";\n")
+    else:
+        open(sql_path, "w").write("-- Batch 3: 0 assembled entries — no seed.\n")
 
     city_n = sum(1 for _, _, g in entries if g == "city")
     print(f"entries assembled: {len(entries)} ({city_n} city, {len(entries) - city_n} angel)")
