@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { Item } from "@/lib/types/rules";
+import { getSequence } from "@/lib/rules";
 
 import {
   ARTISAN_SEQUENCE,
@@ -88,6 +89,37 @@ describe("parseCharacteristicItem", () => {
     ).toBeUndefined();
     // An unknown pathway name.
     expect(parseCharacteristicItem(characteristic(6, "Nonexistent"))).toBeUndefined();
+  });
+
+  it("parses the canon ROLE-based naming the player actually carries", () => {
+    // Round-trip against the rules engine so the test never hard-codes a canon
+    // role string: build "{role} Beyonder Characteristic" from getSequence — the
+    // form deliverHuntedItem / precipitation / applyCanonMainIngredient mint — and
+    // assert it resolves back to the same (pathway, sequence).
+    const cases: Array<[number, number]> = [
+      [1, 9], // Fool pathway, Sequence 9
+      [PARAGON_PATHWAY_ID, 6], // Paragon Artisan (the reported case)
+      [19, 4],
+    ];
+    for (const [pathwayId, sequence] of cases) {
+      const seq = getSequence(pathwayId, sequence)!;
+      const roleItem: Item = {
+        name: `${seq.name} Beyonder Characteristic`,
+        description: "A precipitated characteristic.",
+        category: "main-ingredient",
+      };
+      expect(parseCharacteristicItem(roleItem)).toEqual({ pathwayId, sequence });
+    }
+  });
+
+  it("rejects a role-suffixed name that matches no known role", () => {
+    expect(
+      parseCharacteristicItem({
+        name: "Nonexistent Role Beyonder Characteristic",
+        description: "",
+        category: "main-ingredient",
+      }),
+    ).toBeUndefined();
   });
 });
 
