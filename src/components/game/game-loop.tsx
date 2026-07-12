@@ -142,6 +142,7 @@ import {
   startHunt,
   clearHunt,
   advanceActiveHunts,
+  applyTransactions,
   convergenceNarratorContext,
   resolveCharacteristicLedger,
   recordPrecipitation,
@@ -1945,6 +1946,25 @@ export function GameLoop({ sessionId }: { sessionId: string }) {
       for (const name of resolution.response.pursuers ?? []) {
         updated = markPursuer(updated, name);
       }
+      // In-turn deals (issue #226): the narrator brokered a purchase/sale/barter/
+      // commission/gift; the ENGINE validates and applies each atomically (funds,
+      // inventory, artifice), reusing the tested primitives — money/items still
+      // never ride the AI-mutable allowlist. Applied AFTER itemsDiscovered/
+      // fundsDiscovered (committed in applyResolution), so a same-turn "found then
+      // sold" reads predictably. Refused deals become in-world memory facts. The
+      // outcomes ride `lastTransactions` for the consequences recap.
+      const traded = applyTransactions(
+        updated,
+        resolution.response.transactions,
+        Date.now(),
+      );
+      updated = {
+        ...traded.session,
+        lastTransactions:
+          traded.applied.length > 0 || traded.refused.length > 0
+            ? { applied: traded.applied, refused: traded.refused }
+            : undefined,
+      };
       // A turn of play closes the distance on every active hunt (and keeps the
       // AI-visible quest labels in sync).
       const tracked = advanceActiveHunts(updated);
@@ -4690,6 +4710,11 @@ function ResolutionRecap({
   ).total;
   const hasSanityImpact = sanityTotal !== 0;
   const hasActingEval = response.actingEvaluation !== undefined;
+  // In-turn deals the engine applied/refused this turn (issue #226).
+  const dealings = session.lastTransactions;
+  const hasDealings =
+    dealings !== undefined &&
+    (dealings.applied.length > 0 || dealings.refused.length > 0);
 
   // Digestion display. The recap renders AFTER the turn was committed on a normal
   // turn (resolveChoice → applyAndCommitTurn → applyResolution already advanced
@@ -4846,6 +4871,32 @@ function ResolutionRecap({
                 </div>
               </div>
             ))}
+        </div>
+      )}
+
+      {/* In-turn deals (issue #226): what the engine actually moved (or refused)
+          this turn — the mechanical truth behind the narrated exchange. Applied
+          deals read as diegetic summaries; refused ones as the in-world reason the
+          deal fell through. */}
+      {hasDealings && (
+        <div className="mb-6 space-y-3 rounded-md border border-border/30 bg-background/50 p-4">
+          <p className="text-[10px] tracking-[0.2em] text-muted uppercase">Dealings</p>
+          {dealings!.applied.map((t, i) => (
+            <div key={`deal-${i}`} className="flex items-start gap-2 text-sm">
+              <span className="mt-0.5 text-gold" aria-hidden="true">
+                {"⚖"}
+              </span>
+              <span className="text-foreground/80">{t.summary}</span>
+            </div>
+          ))}
+          {dealings!.refused.map((t, i) => (
+            <div key={`deal-refused-${i}`} className="flex items-start gap-2 text-sm">
+              <span className="mt-0.5 text-muted" aria-hidden="true">
+                {"✕"}
+              </span>
+              <span className="text-foreground/70">{t.reason}</span>
+            </div>
+          ))}
         </div>
       )}
 

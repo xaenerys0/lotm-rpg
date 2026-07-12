@@ -26,7 +26,11 @@
  * can't drift. The item-category enum is the deliberate `mundane`/`uniqueness`
  * SUBSET of `VALID_ITEM_CATEGORIES` (the narrator may not mint reagents/formulas).
  */
-import { VALID_CHOICE_TYPES, VALID_SANITY_EVENT_TAGS } from "./validation";
+import {
+  VALID_CHOICE_TYPES,
+  VALID_SANITY_EVENT_TAGS,
+  VALID_TRANSACTION_KINDS,
+} from "./validation";
 
 /** A scalar value for world-state old/new fields (no arbitrary objects/arrays). */
 const SCALAR_VALUE = {
@@ -162,6 +166,62 @@ export const AI_RESPONSE_JSON_SCHEMA = {
           status: { type: "string" },
           importance: { type: "string", enum: ["pivotal", "standard"] },
           resolved: { type: "boolean" },
+        },
+      },
+    },
+    transactions: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["kind", "counterparty"],
+        properties: {
+          kind: { type: "string", enum: [...VALID_TRANSACTION_KINDS] },
+          counterparty: { type: "string" },
+          // Signed pence, player-wallet POV; the engine clamps it. Ignored for a
+          // commission (the artifice engine computes the fee itself).
+          fundsDelta: { type: "number" },
+          // Items RECEIVED — the narrator may only bring in ordinary loot or the
+          // singular pathway artifact; reagents/sealed-artifacts stay engine-gated.
+          itemsIn: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["name", "description", "category"],
+              properties: {
+                name: { type: "string" },
+                description: { type: "string" },
+                category: { type: "string", enum: ["mundane", "uniqueness"] },
+              },
+            },
+          },
+          // Items GIVEN UP — the engine verifies ownership by name against the
+          // real inventory and its tradeability, so the category here is advisory.
+          itemsOut: {
+            type: "array",
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: ["name"],
+              properties: {
+                name: { type: "string" },
+                description: { type: "string" },
+                category: { type: "string" },
+              },
+            },
+          },
+          reason: { type: "string" },
+          commission: {
+            type: "object",
+            additionalProperties: false,
+            required: ["characteristicItemName", "artifactName"],
+            properties: {
+              characteristicItemName: { type: "string" },
+              artifactName: { type: "string" },
+              flavor: { type: "string" },
+            },
+          },
         },
       },
     },
