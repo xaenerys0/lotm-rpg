@@ -1,5 +1,5 @@
 import type { SessionFact } from "@/lib/ai";
-import { getPathway } from "@/lib/rules";
+import { getPathway, getSequence } from "@/lib/rules";
 import type { ArtifactGrade } from "@/lib/lore";
 import type { Item } from "@/lib/types/rules";
 
@@ -73,25 +73,56 @@ export function gradeForCharacteristicSequence(seq: number): ArtifactGrade | nul
 }
 
 const CHARACTERISTIC_NAME_RE = /^Sequence (\d+) (.+) Beyonder Characteristic$/;
+const ROLE_CHARACTERISTIC_RE = /^(.+) Beyonder Characteristic$/;
 
 /**
- * Parse a Beyonder Characteristic item into its pathway + sequence. Only a true
- * `main-ingredient` "Sequence N <Pathway> Beyonder Characteristic" fuses — a
- * creature-material main ingredient returns `undefined` (canon: an artifact
- * fuses a Characteristic, not a beast part). Pure.
+ * Parse a Beyonder Characteristic item into its pathway + sequence. Two carried
+ * namings resolve, because the game mints characteristics under both:
+ *
+ *  1. The explicit `pathways.ts` recipe naming, `"Sequence N <Pathway> Beyonder
+ *     Characteristic"` — resolved by pathway name.
+ *  2. The canon ROLE-based naming, `"{role} Beyonder Characteristic"` (e.g.
+ *     "Astronomer Beyonder Characteristic") — what the player actually carries
+ *     from a hunt (`deliverHuntedItem`), a precipitation drop
+ *     (`ledgerCharacteristicItemName`), or the canon main ingredient
+ *     (`applyCanonMainIngredient`). Resolved by looking the role up across every
+ *     pathway/sequence via `getSequence` (the inverse of
+ *     `ledgerCharacteristicItemName`), so an artificer can actually fuse the
+ *     characteristics they hold.
+ *
+ * A creature-material main ingredient ("Dust of Ancient Wraiths") matches no role
+ * and returns `undefined` (canon: an artifact fuses a Characteristic, not a beast
+ * part). Pure.
  */
 export function parseCharacteristicItem(
   item: Item,
 ): { pathwayId: number; sequence: number } | undefined {
   if (item.category !== "main-ingredient") return undefined;
-  const match = CHARACTERISTIC_NAME_RE.exec(item.name);
-  if (!match) return undefined;
-  const sequence = Number(match[1]);
-  if (!Number.isInteger(sequence)) return undefined;
-  const pathwayName = match[2].trim().toLowerCase();
+
+  // (1) Explicit "Sequence N <Pathway> Beyonder Characteristic".
+  const explicit = CHARACTERISTIC_NAME_RE.exec(item.name);
+  if (explicit) {
+    const sequence = Number(explicit[1]);
+    const pathwayName = explicit[2].trim().toLowerCase();
+    for (let id = 1; id <= 22; id += 1) {
+      if (getPathway(id)?.name.toLowerCase() === pathwayName) {
+        return { pathwayId: id, sequence };
+      }
+    }
+    return undefined;
+  }
+
+  // (2) Canon role-based "{role} Beyonder Characteristic" — the naming actually
+  // carried. Resolve the role to its pathway + sequence. Role names are unique
+  // per rung across the pathways, so the first match is authoritative.
+  const roleMatch = ROLE_CHARACTERISTIC_RE.exec(item.name);
+  if (!roleMatch) return undefined;
+  const role = roleMatch[1].trim().toLowerCase();
   for (let id = 1; id <= 22; id += 1) {
-    if (getPathway(id)?.name.toLowerCase() === pathwayName) {
-      return { pathwayId: id, sequence };
+    for (let seq = 0; seq <= 9; seq += 1) {
+      if (getSequence(id, seq)?.name.toLowerCase() === role) {
+        return { pathwayId: id, sequence: seq };
+      }
     }
   }
   return undefined;

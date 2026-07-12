@@ -4,6 +4,7 @@ import type { Item } from "@/lib/types/rules";
 import type { TransactionIntent } from "@/lib/ai";
 
 import { TRANSACTION_FUNDS_CAP, applyTransactions, formatPence } from "./transactions";
+import { getSequence } from "@/lib/rules";
 import { PARAGON_PATHWAY_ID } from "./artifice";
 import { getFunds } from "./marketplace";
 import { createDefaultGameState, createSession } from "./session";
@@ -399,6 +400,43 @@ describe("applyTransactions — commission", () => {
     expect(getFunds(next.gameState)).toBeLessThan(100_000);
     expect(applied[0]).toMatchObject({ kind: "commission", counterparty: "an artisan" });
     expect(applied[0].summary).toContain("Commissioned Whispering Compass");
+  });
+
+  it("commissions from a ROLE-named characteristic (the naming players actually carry)", () => {
+    // A precipitation drop / hunt spoil is named "{role} Beyonder Characteristic",
+    // not "Sequence N <Pathway> …" — the artifice parser must resolve it, else the
+    // commission (and the character-tab Artifice panel) can't see it.
+    const roleName = `${getSequence(PARAGON_PATHWAY_ID, 6)!.name} Beyonder Characteristic`;
+    const s = session(
+      [{ name: roleName, description: "Precipitated.", category: "main-ingredient" }],
+      100_000,
+      PARAGON_PATHWAY_ID,
+      6,
+    );
+    const {
+      session: next,
+      applied,
+      refused,
+    } = applyTransactions(
+      s,
+      [
+        {
+          kind: "commission",
+          counterparty: "an artisan",
+          commission: {
+            characteristicItemName: roleName,
+            artifactName: "Star Astrolabe",
+          },
+        },
+      ],
+      NOW,
+    );
+    expect(refused).toEqual([]);
+    expect(applied[0].summary).toContain("Commissioned Star Astrolabe");
+    expect(names(next.gameState.inventory)).not.toContain(roleName);
+    expect(next.gameState.inventory.some((i) => i.category === "sealed-artifact")).toBe(
+      true,
+    );
   });
 
   it("refuses a commission with no inputs", () => {
