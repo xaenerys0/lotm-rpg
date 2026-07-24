@@ -77,6 +77,7 @@ docs/
 ├── codex-design.md        # Story-consistency Codex — entity registry, pinned ground-truth, sheet tab
 ├── pathway-switching-design.md  # Pathway switching & cross-pathway ability fusion (issue #211) — canon, lineage data model, fusion algorithm
 ├── laws-simulation-design.md    # Cosmic Laws of Beyonder Characteristics wired into play (issue #212) — precipitation ledger, Convergence beat, validator retirement
+├── entity-death-design.md       # Authoritative entity death & characteristic precipitation (issue #227) — entity registry, trusted profiles, canon mortality, characteristic unit identity, application receipts
 ├── society-design.md            # AI-driven Society tab — canon pre-seed, invitation mechanic, AI generators, world integration
 ├── cloud-migration-research.md  # Cross-device cloud-sync research notes
 ├── scene-art-testing.md   # Scene-art / image-generation testing notes

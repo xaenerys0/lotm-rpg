@@ -26,6 +26,7 @@
     "corpus:character-report": "tsx scripts/corpus/generate-character-report.ts --output scripts/.cache/tier2-report.json"
   },
   "dependencies": {
+    "@noble/hashes": "2.2.0",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.108.2",
     "next": "16.2.6",
