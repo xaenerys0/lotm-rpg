@@ -183,6 +183,18 @@ export interface GameSession {
    */
   characteristicLedger?: import("@/lib/types/rules").WorldCharacteristicLedger;
   /**
+   * The authoritative entity registry (issue #227): who exists in this chronicle,
+   * whether they are alive, and — when a trusted profile has been assigned — what
+   * they own. It is the single identity/life-state authority the roster, presence,
+   * society, person-Codex, and combat records become foreign keys to, replacing
+   * four independent name-keyed answers. Absent on saves that predate it; strictly
+   * validated when present (`isValidEntityRegistryShape`) and preserved on the
+   * deserialize `...s` spread, exactly like `characteristicLedger`. No DB
+   * migration — it serializes inside the session blob. `createSession` seeds the
+   * player's own record; every other actor is registered as the story reaches it.
+   */
+  entityRegistry?: import("@/lib/types/entities").EntityRegistryState;
+  /**
    * Tracked-NPC roster (issue #101): the durable cast the player is bound to —
    * allies who follow (a party) and hostiles who follow (pursuers) — distinct
    * from the transient, scene-scoped `gameState.npcsPresent`. Followers are

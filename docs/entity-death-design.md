@@ -180,6 +180,24 @@ result.
    `entity-death.ts` authorization, `@/lib/lore/entity-profiles.ts` curated
    profiles and mortality policies. The registry rides along as an optional,
    strictly-validated session sub-state; authority does not move yet.
+
+   Corpus gaps this phase deliberately leaves fail-closed, for a ruling rather
+   than invention:
+
+   - **Ownership** is authored only for the six corpus-confirmed named foes. The
+     other seven bestiary entries (the lost-control rampager, the haunting evil
+     spirit, the headless sea-cult creature, the sea-god zealot, the Feysac
+     brigand, desperate thugs, the rogue monster) are generic filler with no
+     canon individual behind them, so nothing is authored; a fight against one
+     goes through the versioned generator (Beyonder-framed ⇒ its own rung;
+     mundane ⇒ none; otherwise unknown).
+   - **Mortality** is authored for those six plus the playable canon roster.
+     Every other canon figure in `npcs.ts` — hundreds of dossiers, including the
+     Sequence 0–4 gods, angels, and saints — has no policy and is therefore
+     protected. `protectedBestiaryIds()` reports the bestiary side of that gap.
+   - **Materials**: no `harvestableMaterials` are authored, since the corpus names
+     none for these six.
+
 3. **Serialization & legacy reconciliation** — session/combat v2, foreign-key
    authority flip, conservative legacy identity + characteristic migration, the
    ambiguous-item re-identification path, `preserve-session-no-replay` for a
