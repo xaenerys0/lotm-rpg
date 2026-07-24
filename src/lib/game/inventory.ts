@@ -14,6 +14,22 @@ export const REAGENT_CATEGORIES = new Set<Item["category"]>([
   "potion-formula",
 ]);
 
+/**
+ * Every `Item["category"]` there is — the single runtime enumeration of the six
+ * kinds, so a persistence validator and the type union can never drift (adding a
+ * seventh category is a compile error here, not a silently-accepted save). Used by
+ * the entity-registry snapshot validator (`@/lib/game/entities`); the AI boundary
+ * keeps its own deliberately NARROWER mintable subset in `@/lib/ai/validation`.
+ */
+export const ITEM_CATEGORIES: readonly Item["category"][] = [
+  "main-ingredient",
+  "supplementary-ingredient",
+  "potion-formula",
+  "mundane",
+  "uniqueness",
+  "sealed-artifact",
+];
+
 /** Whether a category is an advancement-ladder reagent (see `REAGENT_CATEGORIES`). */
 export function isReagentCategory(category: Item["category"]): boolean {
   return REAGENT_CATEGORIES.has(category);

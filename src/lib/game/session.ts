@@ -21,6 +21,12 @@ import { isValidRitualStateShape } from "./ritual";
 import { isValidAscensionRiteShape } from "./ascension-rite";
 import { isValidPathwayLineageShape } from "./pathway-lineage";
 import { isValidCharacteristicLedgerShape } from "./characteristic-ledger";
+import {
+  emptyEntityRegistry,
+  isValidEntityRegistryShape,
+  registerEntity,
+} from "./entities";
+import { playerEntityId } from "./stable-identifiers";
 import { isValidIdentityStateShape } from "./identity";
 import { isValidProfileStateShape } from "./profile";
 import { joinRoster, isValidTrackedNpcStateShape } from "./tracked-npcs";
@@ -31,7 +37,9 @@ import {
   seedSocietyMembership,
   type SocietyState,
 } from "./society";
+import { getCanonCharacter } from "@/lib/lore/canon-characters";
 import { DEFAULT_EPOCH_ID, getEpoch } from "@/lib/lore/epochs";
+import type { EntityRegistryState } from "@/lib/types/entities";
 import type { StartScenario } from "@/lib/lore/start-scenarios";
 import { archetypeGrounding, type StartArchetype } from "@/lib/lore/start-archetypes";
 import type { GameSession, GameSessionSummary, GamePhase } from "./types";
@@ -87,9 +95,44 @@ export function createSession(
     // round-trips cleanly; a legacy save that predates the field is instead
     // backfilled from its accumulated state on deserialize.
     codexState: emptyCodexState(),
+    // The authoritative entity registry (issue #227) starts holding exactly one
+    // record: the player. Every other actor is registered as the story reaches
+    // them, and a legacy save without a registry simply has none until the
+    // migration phase links its name-keyed surfaces.
+    entityRegistry: seedPlayerEntity(gameState),
     createdAt: now,
     updatedAt: now,
   };
+}
+
+/**
+ * The registry a new chronicle starts with: the player's own entity, identified by
+ * the existing `GameState.characterId` so no second player identity is ever
+ * invented. Alive, profile `unknown` (the player's mechanics come from the rules
+ * engine, not a profile snapshot), and NOT listed as present — the player is never
+ * one of their own scene NPCs.
+ *
+ * A canon-character takeover (issue #92) also seeds the figure's canon ALIASES, so
+ * `resolveEntityByName` recognises the player under every name the fiction uses
+ * ("Sherlock Moriarty", "Dwayne Dantès") instead of answering `not-found` and
+ * letting migration mint a SECOND record for the player — the doppelganger case
+ * `stripSelfFromNpcs` guards on the presence side. The canon `canonRef` is
+ * deliberately NOT set: it keys the mortality policy, and the player's own death is
+ * owned by the failure engine, not by a canon figure's killable-after window.
+ */
+function seedPlayerEntity(gameState: GameState): EntityRegistryState {
+  const preset = gameState.canonCharacterId
+    ? getCanonCharacter(gameState.canonCharacterId)
+    : undefined;
+  const result = registerEntity(emptyEntityRegistry(), {
+    entityId: playerEntityId(gameState.characterId),
+    displayName: gameState.characterName ?? "",
+    ...(preset ? { aliases: [preset.displayName, ...preset.aliases] } : {}),
+    kind: "player",
+    introducedAtTurn: 0,
+    source: { kind: "player" },
+  });
+  return result.registry;
 }
 
 /**
@@ -593,6 +636,13 @@ export function isValidSessionShape(obj: unknown): boolean {
     s.characteristicLedger !== undefined &&
     !isValidCharacteristicLedgerShape(s.characteristicLedger)
   ) {
+    return false;
+  }
+
+  // The authoritative entity registry (issue #227) is optional but strict when
+  // present — it rides the deserialize `...s` spread; absent means a save that
+  // predates it (its name-keyed surfaces are linked by the migration phase).
+  if (s.entityRegistry !== undefined && !isValidEntityRegistryShape(s.entityRegistry)) {
     return false;
   }
 
