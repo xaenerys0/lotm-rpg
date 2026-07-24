@@ -40,6 +40,43 @@ export interface Item {
    * an item's behaviour differs from its category's default.
    */
   consumable?: boolean;
+  /**
+   * Present only on a carried Beyonder Characteristic (issue #227). Two items
+   * with the same `name` are different objects: this metadata's `unitId` is the
+   * item's identity, equal to the `unitId` of the precipitated unit it was
+   * recovered from, so a characteristic is consumed / traded / lost exactly once.
+   * Absent on a legacy save's characteristic until migration resolves it.
+   */
+  characteristic?: CharacteristicItemMetadata;
+}
+
+/** The identity of one precipitated characteristic AND of the item carrying it. */
+export type CharacteristicUnitId = string;
+
+/**
+ * What FORM a precipitated characteristic took (issue #227). A death normally
+ * leaves the raw characteristic; a Beyonder who died having LOST CONTROL may
+ * instead leave it bound inside a mystical item — "or it could be a mystical
+ * artifact that requires sealing" (Book 1, ch. 218) — which yields the original
+ * characteristic when purified or destroyed. A fused unit is NOT a church-graded
+ * Sealed Artifact (grades are after-the-fact designations, so none is claimed at
+ * drop time) and is not advancement- or artifice-usable until it is purified back
+ * to `"raw"`, keeping the same `unitId`.
+ */
+export type CharacteristicForm = "raw" | "fused-mystical";
+
+/** Where a carried characteristic came from — its unforgeable provenance. */
+export type CharacteristicOrigin =
+  | { kind: "death"; deathEventId: string }
+  | { kind: "legacy-import"; migrationId: string }
+  | { kind: "curated-acquisition"; acquisitionId: string };
+
+export interface CharacteristicItemMetadata {
+  unitId: CharacteristicUnitId;
+  pathwayId: number;
+  sequenceLevel: number;
+  form: CharacteristicForm;
+  origin: CharacteristicOrigin;
 }
 
 /** Whether a ritual step is a tangible material or a lived condition/deed. */

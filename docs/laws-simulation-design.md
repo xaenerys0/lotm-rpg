@@ -94,3 +94,18 @@ Wiring points:
 The `LawType` union still carries `"conservation"` / `"prerequisite"` for
 completeness, but no function emits them; `"indestructibility"` /
 `"convergence"` are the live tags.
+
+## Superseded by issue #227
+
+The Indestructibility wiring described above fires only on a combat `"victory"`
+over an enemy flagged `isBeyonder` with a `pathwayId`, and applies the drop in the
+React layer. Canon is cause-agnostic, and characteristic-bearing creatures, NPC
+deaths, and deaths narrated outside combat all precipitate too. Issue #227 replaces
+that narrow trigger with an authorized-death model — one entity registry, trusted
+mechanical profiles (ownership is never inferred from `isBeyonder`/`pathwayId`),
+canon mortality gating, exact characteristic `unitId` identity, and a pure engine
+transaction guarded by application receipts.
+
+The ledger keeps its meaning here (cumulative player-**recovery** history);
+unrecovered precipitation moves into per-death records. See
+**`docs/entity-death-design.md`** for the current design of record.
